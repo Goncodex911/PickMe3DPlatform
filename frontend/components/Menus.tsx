@@ -118,3 +118,157 @@ export function LangMenu({ p, onLang, side, size }: { p: Palette; onLang: (l: La
     </Popover>
   );
 }
+
+import { ProfileModal } from "./ProfileModal";
+
+export function ProfileMenu({ p, size = 40, side = "down" }: { p: Palette; size?: number; side?: "down" | "right" }) {
+  const [open, setOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    try {
+      const u = JSON.parse(localStorage.getItem("pickme3d_user") || "null");
+      setUser(u);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      // Don't close if clicking inside modal
+      const modalElement = document.getElementById("profile-modal-root");
+      if (modalElement && modalElement.contains(e.target as Node)) return;
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("pointerdown", onDown);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("pickme3d_token");
+    localStorage.removeItem("pickme3d_user");
+    window.location.reload();
+  };
+
+  const handleUpdateSuccess = (updatedUser: any) => {
+    setUser(updatedUser);
+    localStorage.setItem("pickme3d_user", JSON.stringify(updatedUser));
+    setModalOpen(false);
+  };
+
+  const anchor: React.CSSProperties =
+    side === "down"
+      ? { top: size + 8, right: 0, transformOrigin: "top right" }
+      : { left: size + 8, bottom: 0, transformOrigin: "bottom left" };
+  const hidden = side === "down" ? { opacity: 0, y: -6, scale: 0.96 } : { opacity: 0, x: -6, scale: 0.96 };
+
+  return (
+    <>
+      <div ref={ref} style={{ position: "relative" }}>
+        <button
+          onClick={() => setOpen((o) => !o)}
+          title="Profile"
+          className="m3-press"
+          style={{
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            border: "none",
+            padding: 0,
+            background: open ? p.secondaryContainer : "transparent",
+            cursor: "pointer",
+            display: "grid",
+            placeItems: "center",
+            overflow: "hidden",
+          }}
+        >
+          {user?.picture ? (
+            <img src={user.picture} alt="Avatar" style={{ width: size - 4, height: size - 4, borderRadius: "50%", objectFit: "cover" }} />
+          ) : (
+            <Icon name="account_circle" size={size - 4} color={p.onSurfaceVariant} />
+          )}
+        </button>
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              role="menu"
+              initial={hidden}
+              animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+              exit={hidden}
+              transition={{ duration: 0.16, ease: EASE }}
+              style={{
+                position: "absolute",
+                padding: 6,
+                borderRadius: 18,
+                background: p.surfaceContainerLow,
+                boxShadow: "0 6px 20px rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.04)",
+                zIndex: 60,
+                minWidth: 160,
+                ...anchor,
+              }}
+            >
+              <div style={{ padding: "8px 12px", borderBottom: `1px solid ${p.outlineVariant}`, marginBottom: 6 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: p.onSurface }}>{user?.name || "Người dùng"}</div>
+                <div style={{ fontSize: 12, color: p.onSurfaceVariant }}>{user?.email}</div>
+              </div>
+              <button
+                onClick={() => {
+                  window.location.href = "/settings";
+                }}
+                className="m3-press"
+                style={{
+                  width: "100%",
+                  height: 40,
+                  padding: "0 14px",
+                  borderRadius: 12,
+                  border: "none",
+                  background: "transparent",
+                  color: p.onSurface,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  marginBottom: 2,
+                }}
+              >
+                <Icon name="person" size={18} />
+                Hồ sơ cá nhân
+              </button>
+              <button
+                onClick={handleLogout}
+                className="m3-press"
+                style={{
+                  width: "100%",
+                  height: 40,
+                  padding: "0 14px",
+                  borderRadius: 12,
+                  border: "none",
+                  background: "transparent",
+                  color: p.error,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+              >
+                <Icon name="logout" size={18} />
+                Đăng xuất
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </>
+  );
+}
