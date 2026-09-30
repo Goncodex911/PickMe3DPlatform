@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 
 export interface ScrollCanvasProps {
-  /** Total number of frames in the sequence (default: 390) */
+  /** Total number of frames in the sequence (default: 344) */
   totalFrames?: number;
   /** Base path for the frame images */
   framePrefix?: string;
@@ -21,8 +21,8 @@ export interface ScrollCanvasProps {
   showHud?: boolean;
   /** Optional custom overlay content (can be a node or render function receiving progress & frame) */
   children?:
-    | React.ReactNode
-    | ((props: { progress: number; currentFrame: number }) => React.ReactNode);
+  | React.ReactNode
+  | ((props: { progress: number; currentFrame: number }) => React.ReactNode);
   /** Custom class name for the wrapper */
   className?: string;
   /** Callback fired on scroll progress change */
@@ -30,12 +30,12 @@ export interface ScrollCanvasProps {
 }
 
 export default function ScrollCanvas({
-  totalFrames = 390,
+  totalFrames = 344,
   framePrefix = "/frames/frame-",
   frameExtension = ".webp",
   padDigits = 3,
   scrollHeight = "400vh",
-  lerpFactor = 0.12,
+  lerpFactor = 0.8,
   fit = "cover",
   showHud = true,
   children,
@@ -218,7 +218,7 @@ export default function ScrollCanvas({
           try {
             // Pre-decode off the main thread if supported
             if ("decode" in img) {
-              await img.decode().catch(() => {});
+              await img.decode().catch(() => { });
             }
           } finally {
             imagesRef.current[index] = img;
@@ -310,7 +310,7 @@ export default function ScrollCanvas({
           const idx = remaining[currentIndex++];
           try {
             await loadSingleFrame(idx);
-          } catch {}
+          } catch { }
         }
       }
 
