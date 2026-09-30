@@ -1,88 +1,67 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
-import { Skeleton } from "@/components/Skeleton";
-import { isLang, setGlobalLang, type Lang } from "@/lib/i18n";
-
-const loadEditor = () => import("./Editor");
-/* the editor chunk starts downloading as soon as this module runs, alongside hydration,
-   instead of waiting for the first client render */
-if (typeof window !== "undefined") void loadEditor();
-
-const Editor = dynamic(loadEditor, { ssr: false, loading: () => null });
-
-/** the static page: the editor's shell with nothing in it, standing over the editor until
- *  the document has been read, then fading away to show the real one in its place */
-function Boot({ done }: { done: boolean }) {
-  return (
-    <div className="m3e-boot" data-done={done ? "" : undefined} aria-busy={!done} aria-hidden={done}>
-      <Skeleton />
-    </div>
-  );
-}
-
-function initialLanguage(): Lang {
-  try {
-    const ui = JSON.parse(localStorage.getItem("m3e:ui") ?? "null");
-    if (isLang(ui?.lang)) return ui.lang;
-  } catch {}
-  const language = (navigator.language ?? "").toLowerCase();
-  return language.startsWith("zh") ? "zh" : language.startsWith("ko") ? "ko" : language.startsWith("ja") ? "ja" : "en";
-}
-
-/** how long the overlay takes to fade; matches .m3e-boot in globals.css */
-const BOOT_FADE_MS = 420;
-
+import { useRouter } from "next/navigation";
+import LoginPage from "@/components/LoginPage";
 import LandingPage from "@/components/LandingPage";
 
 export default function Page() {
-  const [lang, setLang] = useState<Lang | null>(null);
-  const [phase, setPhase] = useState<"loading" | "fading" | "done">("loading");
-  
-  // Auth state
+  const router = useRouter();
+  // Auth state: null while checking localStorage, boolean afterwards
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
-    // Check if token exists in localStorage
     const token = localStorage.getItem("pickme3d_token");
+    const storedUser = localStorage.getItem("pickme3d_user");
+
     if (token) {
       setIsAuthenticated(true);
+      if (storedUser) {
+        try {
+          setCurrentUser(JSON.parse(storedUser));
+        } catch {}
+      }
     } else {
       setIsAuthenticated(false);
+      setCurrentUser(null);
     }
-
-    const initialLang = initialLanguage();
-    document.documentElement.lang = initialLang;
-    setGlobalLang(initialLang);
-    setLang(initialLang);
   }, []);
-
-  useEffect(() => {
-    if (phase !== "fading") return;
-    const id = setTimeout(() => setPhase("done"), BOOT_FADE_MS);
-    return () => clearTimeout(id);
-  }, [phase]);
 
   const handleLoginSuccess = (token: string, user: any) => {
     localStorage.setItem("pickme3d_token", token);
     localStorage.setItem("pickme3d_user", JSON.stringify(user));
+    setCurrentUser(user);
     setIsAuthenticated(true);
   };
 
-  // Prevent flashing by showing nothing while checking auth
+  const handleLogout = () => {
+    localStorage.removeItem("pickme3d_token");
+    localStorage.removeItem("pickme3d_user");
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+  };
+
+  // Prevent flash while checking auth
   if (isAuthenticated === null) {
-    return <Boot done={false} />;
+    return (
+      <div className="w-full h-screen bg-[#090d16] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-transparent border-t-red-500 border-r-white" />
+      </div>
+    );
   }
 
+  // First time visitor -> show LoginPage first
   if (!isAuthenticated) {
-    return <LandingPage onLoginSuccess={handleLoginSuccess} />;
+    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
   }
 
+  // Once logged in -> show LandingPage with START NOW buttons
   return (
-    <>
-      {lang && <Editor initialLang={lang} onReady={() => setPhase((p) => (p === "loading" ? "fading" : p))} />}
-      {phase !== "done" && <Boot done={phase === "fading"} />}
-    </>
+    <LandingPage
+      user={currentUser}
+      onStartNow={() => router.push("/editor/")}
+      onLogout={handleLogout}
+    />
   );
 }
