@@ -119,7 +119,7 @@ export default function LandingPage({
       const introTl = gsap.timeline({ defaults: { ease: "power3.out" } });
       introTl
         .from(".landing-nav", { y: -30, opacity: 0, duration: 1.0 })
-        .from(phoneFrameRef.current, { y: 90, scale: 0.9, opacity: 0, duration: 1.4 }, "-=0.5");
+        .fromTo(phoneFrameRef.current, { y: 50, scale: 0.78, opacity: 0 }, { y: 0, scale: 0.92, opacity: 1, duration: 1.4 }, "-=0.5");
 
       // 2. Master Storytelling Pinned Scrubbed Timeline
       const masterTl = gsap.timeline({
@@ -163,7 +163,7 @@ export default function LandingPage({
         .to(phoneFrameRef.current, {
           rotateY: -8,
           rotateX: 4,
-          scale: 1.02,
+          scale: 0.92,
           duration: 0.8,
           ease: "power2.out",
         })
@@ -236,13 +236,13 @@ export default function LandingPage({
         .to(".beat-5-text", { opacity: 1, y: 0, duration: 0.6 }, "-=0.2")
         // Dismiss inspector panel
         .to(".inspector-panel", { x: 60, opacity: 0, duration: 0.5 })
-        // Zoom phone into full-view focus
+        // Zoom phone into comfortable focus (balanced zoom-out to ensure bottom is fully visible)
         .to(
           phoneFrameRef.current,
           {
             rotateY: 0,
             rotateX: 0,
-            scale: 1.15,
+            scale: 0.98,
             duration: 1.0,
             ease: "power3.inOut",
           },
@@ -301,7 +301,7 @@ export default function LandingPage({
           </a>
           <a href="#story" className="hover:text-white transition-colors">Tính năng kéo thả</a>
           <a href="#templates" className="hover:text-white transition-colors">Bộ sưu tập mẫu</a>
-          <a href="#shopify" className="hover:text-white transition-colors">Đồng bộ Shopify</a>
+          <a href="#features" className="hover:text-white transition-colors">Tính năng nổi bật</a>
           <a href="#pricing" className="hover:text-white transition-colors">Bảng giá</a>
         </nav>
 
@@ -370,11 +370,11 @@ export default function LandingPage({
       </header>
 
       {/* ------------------------------------------------------------- */}
-      {/* SECTION 1: HERO TALL SCROLL AREA WITH STICKY 3D CANVAS (390F) */}
+      {/* SECTION 1: HERO TALL SCROLL AREA WITH STICKY 3D CANVAS (344F) */}
       {/* ------------------------------------------------------------- */}
       <section id="hero-3d-canvas" className="relative w-full">
         <ScrollCanvas
-          totalFrames={390}
+          totalFrames={344}
           framePrefix="/frames/frame-"
           frameExtension=".webp"
           scrollHeight="400vh"
@@ -403,7 +403,7 @@ export default function LandingPage({
         />
 
         {/* Ambient colored lighting behind phone */}
-        <div className="phone-aura-glow absolute w-[520px] h-[720px] rounded-full bg-gradient-to-tr from-red-600/30 via-indigo-600/20 to-teal-400/25 blur-3xl pointer-events-none opacity-40 transition-opacity" />
+        <div className="phone-aura-glow absolute w-[380px] h-[550px] rounded-full bg-gradient-to-tr from-red-600/30 via-indigo-600/20 to-teal-400/25 blur-3xl pointer-events-none opacity-40 transition-opacity" />
 
         {/* ----------------------------------------------------------- */}
         {/* NARRATIVE BEAT LABELS (Dedicated Left Editorial Card) */}
@@ -486,10 +486,10 @@ export default function LandingPage({
               className="text-3xl sm:text-4xl lg:text-5xl font-normal leading-tight text-white mb-3"
               style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic" }}
             >
-              Xuất bản 1 chạm tới Shopify & Web.
+              Xuất bản 1 chạm tới Cửa Hàng & Web.
             </h2>
             <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Cửa hàng trực tuyến của bạn đã sẵn sàng! Xuất mã nguồn React/Tailwind hoặc đồng bộ trực tiếp lên Shopify Store với 1 cú click chuột.
+              Cửa hàng trực tuyến của bạn đã sẵn sàng! Xuất mã nguồn React/Tailwind hoặc đồng bộ trực tiếp lên hệ thống thương mại trực tuyến với 1 cú click chuột.
             </p>
           </div>
         </div>
@@ -536,36 +536,36 @@ export default function LandingPage({
         {/* ----------------------------------------------------------- */}
         <div
           ref={phoneFrameRef}
-          className="relative w-[320px] sm:w-[350px] md:w-[370px] h-[670px] sm:h-[720px] md:h-[760px] rounded-[52px] p-3.5 bg-gradient-to-b from-[#2a303c] via-[#161a23] to-[#0c0f17] shadow-[0_25px_80px_-15px_rgba(0,0,0,0.95),0_0_50px_rgba(229,43,43,0.15)] border-[3.5px] border-[#4b5563]/60 transition-transform z-20 flex flex-col justify-between"
+          className="relative w-[275px] sm:w-[295px] md:w-[315px] h-[495px] sm:h-[525px] md:h-[555px] rounded-[44px] p-2.5 bg-gradient-to-b from-[#2a303c] via-[#161a23] to-[#0c0f17] shadow-[0_25px_80px_-15px_rgba(0,0,0,0.95),0_0_50px_rgba(229,43,43,0.15)] border-[3px] border-[#4b5563]/60 transition-transform z-20 flex flex-col justify-between"
           style={{ willChange: "transform" }}
         >
           {/* Outer Titanium Rim Buttons */}
-          <div className="absolute -left-[5px] top-28 w-[3px] h-12 rounded-l-sm bg-slate-600" />
-          <div className="absolute -left-[5px] top-44 w-[3px] h-12 rounded-l-sm bg-slate-600" />
-          <div className="absolute -right-[5px] top-36 w-[3px] h-16 rounded-r-sm bg-slate-600" />
+          <div className="absolute -left-[5px] top-20 w-[3px] h-9 rounded-l-sm bg-slate-600" />
+          <div className="absolute -left-[5px] top-32 w-[3px] h-9 rounded-l-sm bg-slate-600" />
+          <div className="absolute -right-[5px] top-26 w-[3px] h-12 rounded-r-sm bg-slate-600" />
 
           {/* Inner Display Screen */}
-          <div className="phone-inner-bg relative w-full h-full rounded-[42px] overflow-hidden bg-slate-100 text-slate-900 flex flex-col transition-colors duration-700 shadow-inner">
+          <div className="phone-inner-bg relative w-full h-full rounded-[34px] overflow-hidden bg-slate-100 text-slate-900 flex flex-col transition-colors duration-700 shadow-inner">
             {/* Top Speaker / Dynamic Island */}
-            <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-28 h-6 rounded-full bg-black flex items-center justify-between px-2.5 z-40 shadow-sm">
-              <span className="w-2.5 h-2.5 rounded-full bg-slate-900 border border-slate-800" />
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-5 rounded-full bg-black flex items-center justify-between px-2 z-40 shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-slate-900 border border-slate-800" />
               <div className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[9px] font-mono text-white/90">Aura</span>
+                <span className="text-[8px] font-mono text-white/90">Aura</span>
               </div>
             </div>
 
             {/* Mobile Header Bar */}
-            <div className="pt-10 px-4 pb-2.5 flex items-center justify-between z-30">
-              <span className="material-symbols-rounded text-lg phone-dynamic-text text-slate-800">menu</span>
+            <div className="pt-7 px-3.5 pb-1.5 flex items-center justify-between z-30">
+              <span className="material-symbols-rounded text-base phone-dynamic-text text-slate-800">menu</span>
               <span
                 style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic" }}
-                className="text-lg font-bold tracking-wider phone-dynamic-text text-slate-900"
+                className="text-base font-bold tracking-wider phone-dynamic-text text-slate-900"
               >
                 AURA ATELIER
               </span>
               <div className="relative cursor-pointer phone-cart-badge">
-                <span className="material-symbols-rounded text-lg phone-dynamic-text text-slate-800">shopping_bag</span>
+                <span className="material-symbols-rounded text-base phone-dynamic-text text-slate-800">shopping_bag</span>
                 <span className="phone-cart-count absolute -top-1 -right-1.5 w-3.5 h-3.5 rounded-full bg-red-600 text-white text-[9px] font-bold flex items-center justify-center">
                   0
                 </span>
@@ -573,15 +573,15 @@ export default function LandingPage({
             </div>
 
             {/* Scrollable Store Canvas Inside Phone */}
-            <div className="flex-1 overflow-y-auto px-3.5 pb-16 space-y-3.5 scrollbar-none">
+            <div className="flex-1 overflow-y-auto px-3 pb-10 space-y-2.5 scrollbar-none">
               {/* SLOT 1: Editorial Fashion Banner (Target for Drag & Drop) */}
-              <div className="phone-drop-slot-banner relative w-full h-36 rounded-2xl overflow-hidden shadow-sm opacity-20 scale-95 transition-all">
+              <div className="phone-drop-slot-banner relative w-full h-28 rounded-2xl overflow-hidden shadow-sm opacity-20 scale-95 transition-all">
                 <img src="/hero/card-couture.png" alt="Haute Couture" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-3">
-                  <span className="text-[9px] font-mono uppercase tracking-widest text-red-400">Spring Capsule</span>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-2.5">
+                  <span className="text-[8px] font-mono uppercase tracking-widest text-red-400">Spring Capsule</span>
                   <span
                     style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic" }}
-                    className="text-lg text-white font-normal leading-tight"
+                    className="text-base text-white font-normal leading-tight"
                   >
                     The Tailored Silhouette
                   </span>
@@ -589,7 +589,7 @@ export default function LandingPage({
               </div>
 
               {/* SECTION TITLE: Quần Áo & Trang Phục Mùa Mới */}
-              <div className="flex items-center justify-between pt-1">
+              <div className="flex items-center justify-between pt-0.5">
                 <span className="text-xs font-semibold tracking-wide phone-dynamic-text text-slate-900">
                   Bộ Sưu Tập Trang Phục
                 </span>
@@ -647,19 +647,19 @@ export default function LandingPage({
             </div>
 
             {/* Success Toast Notification inside Phone */}
-            <div className="phone-success-toast absolute bottom-4 left-4 right-4 p-2.5 rounded-xl bg-emerald-600 text-white text-xs font-medium flex items-center gap-2 shadow-lg transform translate-y-16 opacity-0 transition-all z-40">
-              <span className="material-symbols-rounded text-base">check_circle</span>
+            <div className="phone-success-toast absolute bottom-3 left-3 right-3 p-2 rounded-xl bg-emerald-600 text-white text-[11px] font-medium flex items-center gap-1.5 shadow-lg transform translate-y-16 opacity-0 transition-all z-40">
+              <span className="material-symbols-rounded text-sm">check_circle</span>
               <span>Đã thêm Áo Dạ Chiffon vào giỏ hàng!</span>
             </div>
 
             {/* Bottom Home Indicator */}
-            <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-32 h-1 rounded-full bg-slate-400/50" />
+            <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-24 h-1 rounded-full bg-slate-400/50" />
           </div>
 
           {/* Floating Badges for BEAT 6 (Publish Anywhere) */}
           <div className="publish-badge-floating absolute -top-8 -right-8 px-4 py-2 rounded-2xl bg-emerald-500/90 text-white text-xs font-bold shadow-xl border border-white/20 backdrop-blur-md flex items-center gap-2 opacity-0 transform translate-y-4">
             <span className="material-symbols-rounded text-base">verified</span>
-            <span>Shopify Store Live!</span>
+            <span>Online Store Live!</span>
           </div>
 
           <div className="publish-badge-floating absolute -bottom-6 -left-8 px-4 py-2 rounded-2xl bg-[#0d131f]/95 text-white text-xs font-mono border border-white/20 shadow-xl backdrop-blur-md flex items-center gap-2 opacity-0 transform translate-y-4">
@@ -713,7 +713,7 @@ export default function LandingPage({
       {/* ------------------------------------------------------------- */}
       {/* SECTION 3: KEY PRODUCT PILLARS & FEATURES */}
       {/* ------------------------------------------------------------- */}
-      <section className="py-28 px-6 sm:px-12 max-w-7xl mx-auto border-t border-white/10">
+      <section id="features" className="py-28 px-6 sm:px-12 max-w-7xl mx-auto border-t border-white/10">
         <div className="text-center max-w-2xl mx-auto mb-16">
           <span className="text-red-400 font-mono text-xs uppercase tracking-widest block mb-2">Designed for Creators</span>
           <h2
@@ -723,7 +723,7 @@ export default function LandingPage({
             Mọi công cụ để bán thời trang trực tuyến.
           </h2>
           <p className="text-sm text-slate-400 leading-relaxed">
-            Kết hợp sự tự do của Figma, sức mạnh thương mại của Shopify và tốc độ của AI Studio.
+            Kết hợp sự tự do của Figma, sức mạnh thương mại điện tử hiện đại và tốc độ của AI Studio.
           </p>
         </div>
 
@@ -751,13 +751,13 @@ export default function LandingPage({
               <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <span className="material-symbols-rounded text-2xl">sync_alt</span>
               </div>
-              <h3 className="text-xl font-semibold text-white mb-3">Đồng Bộ Trực Tiếp Shopify</h3>
+              <h3 className="text-xl font-semibold text-white mb-3">Đồng Bộ Đa Kênh Thương Mại</h3>
               <p className="text-xs sm:text-sm text-slate-400 leading-relaxed mb-6">
-                Kết nối gian hàng Shopify có sẵn chỉ bằng API token: sản phẩm, giá bán, tồn kho tự động ánh xạ lên giao diện điện thoại.
+                Kết nối gian hàng trực tuyến có sẵn chỉ bằng API token: sản phẩm, giá bán, tồn kho tự động ánh xạ lên giao diện điện thoại.
               </p>
             </div>
             <span className="text-xs font-mono text-blue-400 flex items-center gap-1">
-              <span>Shopify Storefront API</span>
+              <span>Storefront E-Commerce API</span>
               <span className="material-symbols-rounded text-sm">arrow_forward</span>
             </span>
           </div>

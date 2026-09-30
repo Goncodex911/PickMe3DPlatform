@@ -56,7 +56,7 @@ export default function CanvasDemoPage() {
 
       {/* The Sticky HTML5 Canvas Component */}
       <ScrollCanvas
-        totalFrames={390}
+        totalFrames={344}
         framePrefix="/frames/frame-"
         frameExtension=".webp"
         scrollHeight="400vh"
