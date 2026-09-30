@@ -2,7 +2,7 @@
 
 html,
 body {
-  height: 100%;
+  min-height: 100%;
 }
 /* in-app browsers (X, Instagram, LINE) may not know dvh; fall back to vh
    and let JS override with the measured visual viewport when available */

@@ -119,11 +119,8 @@ export function LangMenu({ p, onLang, side, size }: { p: Palette; onLang: (l: La
   );
 }
 
-import { ProfileModal } from "./ProfileModal";
-
 export function ProfileMenu({ p, size = 40, side = "down" }: { p: Palette; size?: number; side?: "down" | "right" }) {
   const [open, setOpen] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const [user, setUser] = useState<any>(null);
 
@@ -131,7 +128,7 @@ export function ProfileMenu({ p, size = 40, side = "down" }: { p: Palette; size?
     try {
       const u = JSON.parse(localStorage.getItem("pickme3d_user") || "null");
       setUser(u);
-    } catch {}
+    } catch { }
   }, []);
 
   useEffect(() => {
@@ -155,12 +152,6 @@ export function ProfileMenu({ p, size = 40, side = "down" }: { p: Palette; size?
     localStorage.removeItem("pickme3d_token");
     localStorage.removeItem("pickme3d_user");
     window.location.reload();
-  };
-
-  const handleUpdateSuccess = (updatedUser: any) => {
-    setUser(updatedUser);
-    localStorage.setItem("pickme3d_user", JSON.stringify(updatedUser));
-    setModalOpen(false);
   };
 
   const anchor: React.CSSProperties =
