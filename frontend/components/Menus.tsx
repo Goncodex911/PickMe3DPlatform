@@ -211,7 +211,7 @@ export function ProfileMenu({ p, size = 40, side = "down" }: { p: Palette; size?
               </div>
               <button
                 onClick={() => {
-                  window.location.href = "/settings";
+                  window.location.href = "/profile";
                 }}
                 className="m3-press"
                 style={{
