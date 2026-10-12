@@ -300,34 +300,38 @@ export default function LandingPage({
             <span>3D Sticky Canvas</span>
           </a>
           <a href="#story" className="hover:text-white transition-colors">Tính năng kéo thả</a>
-          <a href="#templates" className="hover:text-white transition-colors">Bộ sưu tập mẫu</a>
+          <Link href="/templates" className="hover:text-white transition-colors flex items-center gap-1">
+            <span>Bộ sưu tập mẫu</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+          </Link>
           <a href="#features" className="hover:text-white transition-colors">Tính năng nổi bật</a>
           <a href="#pricing" className="hover:text-white transition-colors">Bảng giá</a>
         </nav>
 
         <div className="flex items-center gap-3 pointer-events-auto">
-          <Link
-            href="/canvas-demo"
-            className="hidden sm:flex px-4 py-2 rounded-full border border-red-500/40 hover:border-red-500 bg-red-500/10 text-xs font-semibold tracking-wider text-red-400 transition-all cursor-pointer items-center gap-1.5"
-          >
-            <span className="material-symbols-rounded text-sm">view_in_ar</span>
-            <span>DEMO 390 FRAMES</span>
-          </Link>
+
           {currentUser ? (
             <div className="flex items-center gap-2.5">
-              {/* User Avatar & Name Pill */}
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 backdrop-blur-md text-xs">
+              {/* User Avatar & Name Pill -> Links to Profile */}
+              <Link
+                href="/profile"
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 hover:border-red-500/50 backdrop-blur-md text-xs cursor-pointer transition-all group"
+                title="Xem trang Hồ sơ cá nhân & các mẫu đã thiết kế"
+              >
                 {currentUser.picture ? (
-                  <img src={currentUser.picture} alt="" className="w-5 h-5 rounded-full object-cover" />
+                  <img src={currentUser.picture} alt="" className="w-5 h-5 rounded-full object-cover group-hover:scale-105 transition-transform" />
                 ) : (
-                  <span className="w-5 h-5 rounded-full bg-red-600 flex items-center justify-center text-[10px] font-bold text-white">
+                  <span className="w-5 h-5 rounded-full bg-red-600 flex items-center justify-center text-[10px] font-bold text-white group-hover:scale-105 transition-transform">
                     {currentUser.name ? currentUser.name[0] : "U"}
                   </span>
                 )}
-                <span className="text-slate-200 font-medium max-w-[120px] truncate">
+                <span className="text-slate-200 group-hover:text-white font-medium max-w-[120px] truncate">
                   {currentUser.name || "Creator"}
                 </span>
-              </div>
+                <span className="material-symbols-rounded text-xs text-slate-400 group-hover:text-red-400 transition-colors">
+                  person
+                </span>
+              </Link>
 
               {/* Glowing START NOW Button -> Redirects to Canvas Editor */}
               <button
@@ -593,7 +597,9 @@ export default function LandingPage({
                 <span className="text-xs font-semibold tracking-wide phone-dynamic-text text-slate-900">
                   Bộ Sưu Tập Trang Phục
                 </span>
-                <span className="text-[10px] text-red-500 font-medium">Xem tất cả</span>
+                <Link href="/templates" className="text-[10px] text-red-500 font-semibold hover:underline">
+                  Xem tất cả
+                </Link>
               </div>
 
               {/* PRODUCT GRID: 2 Columns of Fashion Clothing */}
@@ -706,6 +712,117 @@ export default function LandingPage({
           <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400">
             <span>Grid Layout</span>
             <span className="text-white font-mono">2-Col Fluid</span>
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------- */}
+      {/* SECTION 2.5: COMMUNITY TEMPLATES SHOWCASE */}
+      {/* ------------------------------------------------------------- */}
+      <section id="templates" className="py-24 px-6 sm:px-12 max-w-7xl mx-auto border-t border-white/10 relative">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-red-600/10 rounded-full blur-[140px] pointer-events-none" />
+
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold mb-3">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span>COMMUNITY DESIGNS</span>
+            </div>
+            <h2
+              className="text-3xl sm:text-4xl font-normal text-white"
+              style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic" }}
+            >
+              Bộ sưu tập mẫu có sẵn
+            </h2>
+            <p className="text-sm text-slate-400 mt-2 max-w-xl leading-relaxed">
+              Duyệt các bộ trang phục thịnh hành được chia sẻ bởi cộng đồng thiết kế. Chọn mẫu yêu thích để mở trực tiếp trong Canvas Editor và may đo theo phong cách của bạn.
+            </p>
+          </div>
+
+          <Link
+            href="/templates"
+            className="px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-bold text-white transition-all flex items-center gap-2 self-start md:self-auto shrink-0 shadow-lg"
+          >
+            <span>Xem toàn bộ bộ sưu tập</span>
+            <span className="material-symbols-rounded text-sm">arrow_forward</span>
+          </Link>
+        </div>
+
+        {/* 3 Featured Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Card 1 */}
+          <div className="group rounded-2xl bg-[#0f1626]/80 border border-white/10 hover:border-red-500/50 shadow-lg hover:shadow-[0_8px_30px_rgba(229,43,43,0.2)] transition-all overflow-hidden flex flex-col justify-between">
+            <div className="relative aspect-[4/5] overflow-hidden bg-slate-900">
+              <img src="/hero/card-couture.png" alt="Haute Couture" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-mono font-semibold uppercase bg-black/60 text-red-400 border border-red-500/30 backdrop-blur-md">
+                Haute Couture
+              </div>
+              <div className="absolute bottom-3 right-3 flex items-center gap-2 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[11px] text-slate-300">
+                <span className="flex items-center gap-1"><span className="material-symbols-rounded text-xs text-rose-500">favorite</span> 142</span>
+                <span>•</span>
+                <span className="flex items-center gap-1"><span className="material-symbols-rounded text-xs text-slate-400">visibility</span> 1.2k</span>
+              </div>
+            </div>
+            <div className="p-4 flex flex-col gap-2">
+              <h3 className="text-sm font-semibold text-white group-hover:text-red-400 transition-colors">Haute Couture Spring Blossom</h3>
+              <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">Bộ sưu tập dạ hội phong cách Haute Couture tinh tế với gam màu phấn và đường cắt may tối giản sang trọng.</p>
+              <div className="pt-3 border-t border-white/5 flex items-center justify-between">
+                <span className="text-[11px] text-slate-400">Bởi <strong>Atelier Vivienne</strong></span>
+                <Link href="/templates" className="px-3 py-1.5 rounded-full bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/40 text-[11px] font-semibold transition-all">
+                  Xem mẫu
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2 */}
+          <div className="group rounded-2xl bg-[#0f1626]/80 border border-white/10 hover:border-red-500/50 shadow-lg hover:shadow-[0_8px_30px_rgba(229,43,43,0.2)] transition-all overflow-hidden flex flex-col justify-between">
+            <div className="relative aspect-[4/5] overflow-hidden bg-slate-900">
+              <img src="/hero/card-noir.png" alt="Streetwear Noir" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-mono font-semibold uppercase bg-black/60 text-red-400 border border-red-500/30 backdrop-blur-md">
+                Streetwear
+              </div>
+              <div className="absolute bottom-3 right-3 flex items-center gap-2 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[11px] text-slate-300">
+                <span className="flex items-center gap-1"><span className="material-symbols-rounded text-xs text-rose-500">favorite</span> 230</span>
+                <span>•</span>
+                <span className="flex items-center gap-1"><span className="material-symbols-rounded text-xs text-slate-400">visibility</span> 2.1k</span>
+              </div>
+            </div>
+            <div className="p-4 flex flex-col gap-2">
+              <h3 className="text-sm font-semibold text-white group-hover:text-red-400 transition-colors">Cyberpunk Streetwear Noir</h3>
+              <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">Phong cách đường phố vị lai kết hợp tông đen ánh kim, áo khoác Chiffon Noir và chất liệu phản quang.</p>
+              <div className="pt-3 border-t border-white/5 flex items-center justify-between">
+                <span className="text-[11px] text-slate-400">Bởi <strong>Neo Tokyo Studio</strong></span>
+                <Link href="/templates" className="px-3 py-1.5 rounded-full bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/40 text-[11px] font-semibold transition-all">
+                  Xem mẫu
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3 */}
+          <div className="group rounded-2xl bg-[#0f1626]/80 border border-white/10 hover:border-red-500/50 shadow-lg hover:shadow-[0_8px_30px_rgba(229,43,43,0.2)] transition-all overflow-hidden flex flex-col justify-between">
+            <div className="relative aspect-[4/5] overflow-hidden bg-slate-900">
+              <img src="/hero/card-still-life.png" alt="Silk Organic" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-mono font-semibold uppercase bg-black/60 text-red-400 border border-red-500/30 backdrop-blur-md">
+                Organic Silk
+              </div>
+              <div className="absolute bottom-3 right-3 flex items-center gap-2 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[11px] text-slate-300">
+                <span className="flex items-center gap-1"><span className="material-symbols-rounded text-xs text-rose-500">favorite</span> 175</span>
+                <span>•</span>
+                <span className="flex items-center gap-1"><span className="material-symbols-rounded text-xs text-slate-400">visibility</span> 1.6k</span>
+              </div>
+            </div>
+            <div className="p-4 flex flex-col gap-2">
+              <h3 className="text-sm font-semibold text-white group-hover:text-red-400 transition-colors">Silk L&apos;Heure Organic Blouse</h3>
+              <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">Sơ mi lụa tơ tằm sinh thái L&apos;Heure nhẹ nhàng mềm mại, hoàn hảo cho phong cách thanh lịch công sở.</p>
+              <div className="pt-3 border-t border-white/5 flex items-center justify-between">
+                <span className="text-[11px] text-slate-400">Bởi <strong>Élégance Paris</strong></span>
+                <Link href="/templates" className="px-3 py-1.5 rounded-full bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/40 text-[11px] font-semibold transition-all">
+                  Xem mẫu
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>
