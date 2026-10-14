@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -10,6 +10,14 @@ import {
   deleteDesignApi,
   prepareEditorSession,
 } from "@/lib/templateService";
+import NotificationBell from "@/components/NotificationBell";
+import { CollectionCard } from "@/components/CollectionManager";
+import {
+  CollectionItem,
+  fetchMyCollectionsApi,
+  deleteCollectionApi,
+} from "@/lib/collectionService";
+import { updateMyProfileApi } from "@/lib/userService";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -28,6 +36,17 @@ export default function ProfilePage() {
   const [editName, setEditName] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
 
+  // Bio & Username editing
+  const [editBio, setEditBio] = useState("");
+  const [editUsername, setEditUsername] = useState("");
+  const [isEditingBio, setIsEditingBio] = useState(false);
+  const [savingBio, setSavingBio] = useState(false);
+
+  // Profile tab: designs | collections
+  const [profileTab, setProfileTab] = useState<"designs" | "collections">("designs");
+  const [collections, setCollections] = useState<CollectionItem[]>([]);
+  const [loadingCollections, setLoadingCollections] = useState(false);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
@@ -42,8 +61,11 @@ export default function ProfilePage() {
     const u = JSON.parse(storedUser);
     setUser(u);
     setEditName(u.name || "");
+    setEditBio(u.bio || "");
+    setEditUsername(u.username || "");
 
     loadDesigns();
+    loadCollections();
   }, [router]);
 
   const loadDesigns = async () => {
@@ -145,7 +167,7 @@ export default function ProfilePage() {
       const token = localStorage.getItem("pickme3d_token");
       if (token) {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/users/profile`,
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api"}/users/profile`,
           {
             method: "PUT",
             headers: {
@@ -172,6 +194,50 @@ export default function ProfilePage() {
     } finally {
       setSavingProfile(false);
       setIsEditingName(false);
+    }
+  };
+
+  // Save bio and username
+  const handleSaveBio = async () => {
+    setSavingBio(true);
+    const updates: Record<string, string> = {};
+    if (editBio !== (user.bio || "")) updates.bio = editBio.trim();
+    if (editUsername !== (user.username || "")) updates.username = editUsername.trim();
+
+    if (Object.keys(updates).length === 0) {
+      setIsEditingBio(false);
+      setSavingBio(false);
+      return;
+    }
+
+    const res = await updateMyProfileApi(updates);
+    if (res.success && res.data) {
+      setUser(res.data);
+      localStorage.setItem("pickme3d_user", JSON.stringify(res.data));
+      showToast("Đã cập nhật hồ sơ!");
+    } else {
+      showToast(res.message || "Không thể cập nhật hồ sơ.");
+    }
+    setSavingBio(false);
+    setIsEditingBio(false);
+  };
+
+  // Load collections
+  const loadCollections = async () => {
+    setLoadingCollections(true);
+    const cols = await fetchMyCollectionsApi();
+    setCollections(cols);
+    setLoadingCollections(false);
+  };
+
+  // Delete collection
+  const handleDeleteCollection = async (id: string) => {
+    const ok = await deleteCollectionApi(id);
+    if (ok) {
+      setCollections((prev) => prev.filter((c) => c._id !== id));
+      showToast("Đã xóa bộ sưu tập!");
+    } else {
+      showToast("Không thể xóa bộ sưu tập.");
     }
   };
 
@@ -239,6 +305,7 @@ export default function ProfilePage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <NotificationBell />
           <Link
             href="/editor"
             className="px-4 py-1.5 rounded-full bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 hover:opacity-95 text-xs font-bold text-white shadow-[0_0_20px_rgba(229,43,43,0.4)] transition-all flex items-center gap-1.5"
@@ -341,6 +408,80 @@ export default function ProfilePage() {
                 <p className="text-xs text-slate-400">
                   {user.jobRole || "Nhà thiết kế trang phục 3D & Thời trang số"}
                 </p>
+
+                {/* Bio */}
+                {isEditingBio ? (
+                  <div className="mt-2 space-y-2 max-w-md">
+                    <div>
+                      <label className="text-[10px] text-slate-500 uppercase font-mono">Username</label>
+                      <input
+                        type="text"
+                        value={editUsername}
+                        onChange={(e) => setEditUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+                        placeholder="vd: fashionista_99"
+                        className="w-full mt-0.5 px-3 py-1.5 rounded-lg bg-black/40 border border-white/15 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-red-500/50"
+                        maxLength={30}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-slate-500 uppercase font-mono">Giới thiệu</label>
+                      <textarea
+                        value={editBio}
+                        onChange={(e) => setEditBio(e.target.value)}
+                        placeholder="Viết một vài dòng giới thiệu về bạn..."
+                        className="w-full mt-0.5 px-3 py-2 rounded-lg bg-black/40 border border-white/15 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-red-500/50 resize-none"
+                        rows={3}
+                        maxLength={500}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleSaveBio}
+                        disabled={savingBio}
+                        className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-xs font-semibold text-white disabled:opacity-50"
+                      >
+                        {savingBio ? "Đang lưu..." : "Lưu hồ sơ"}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditBio(user.bio || "");
+                          setEditUsername(user.username || "");
+                          setIsEditingBio(false);
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-white/10 text-xs text-slate-300"
+                      >
+                        Hủy
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-2">
+                    {user.username && (
+                      <p className="text-xs text-red-400 font-medium mb-0.5">@{user.username}</p>
+                    )}
+                    {user.bio && (
+                      <p className="text-xs text-slate-300 leading-relaxed max-w-md whitespace-pre-line">{user.bio}</p>
+                    )}
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <button
+                        onClick={() => setIsEditingBio(true)}
+                        className="text-[11px] text-slate-500 hover:text-white flex items-center gap-0.5 transition-colors"
+                      >
+                        <span className="material-symbols-rounded text-xs">edit</span>
+                        <span>{user.bio ? "Chỉnh sửa hồ sơ" : "Thêm bio & username"}</span>
+                      </button>
+                      {user.username && (
+                        <Link
+                          href={`/creator/${user.username}`}
+                          className="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-0.5 transition-colors"
+                        >
+                          <span className="material-symbols-rounded text-xs">open_in_new</span>
+                          <span>Xem hồ sơ công khai</span>
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -355,14 +496,41 @@ export default function ProfilePage() {
                 <span className="text-[11px] text-slate-400 uppercase font-mono">Công khai</span>
               </div>
               <div className="px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-center">
-                <span className="block text-xl font-bold text-amber-400">{privateCount}</span>
-                <span className="text-[11px] text-slate-400 uppercase font-mono">Riêng tư</span>
+                <span className="block text-xl font-bold text-amber-400">{collections.length}</span>
+                <span className="text-[11px] text-slate-400 uppercase font-mono">BST</span>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Section: My Edited Templates / Designs */}
+        {/* Tab Switcher: Designs | Collections */}
+        <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10 w-fit">
+          <button
+            onClick={() => setProfileTab("designs")}
+            className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              profileTab === "designs"
+                ? "bg-red-600 text-white shadow-sm"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <span className="material-symbols-rounded text-sm">palette</span>
+            <span>Thiết kế ({designs.length})</span>
+          </button>
+          <button
+            onClick={() => setProfileTab("collections")}
+            className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              profileTab === "collections"
+                ? "bg-amber-600 text-white shadow-sm"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <span className="material-symbols-rounded text-sm">collections_bookmark</span>
+            <span>Bộ sưu tập ({collections.length})</span>
+          </button>
+        </div>
+
+        {/* Section: My Designs (visible when designs tab active) */}
+        {profileTab === "designs" && (
         <section className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-white/10">
             <div>
@@ -665,6 +833,57 @@ export default function ProfilePage() {
             </div>
           )}
         </section>
+        )}
+
+        {/* Section: My Collections (visible when collections tab active) */}
+        {profileTab === "collections" && (
+          <section className="space-y-6">
+            <div className="flex items-center justify-between pb-2 border-b border-white/10">
+              <div>
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <span className="material-symbols-rounded text-amber-400">collections_bookmark</span>
+                  <span>Bộ Sưu Tập Của Tôi ({collections.length})</span>
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Quản lý các bộ sưu tập thiết kế đã ghim của bạn.
+                </p>
+              </div>
+            </div>
+
+            {loadingCollections ? (
+              <div className="py-12 flex items-center justify-center">
+                <div className="w-6 h-6 border-2 border-slate-600 border-t-amber-400 rounded-full animate-spin" />
+              </div>
+            ) : collections.length === 0 ? (
+              <div className="py-16 text-center">
+                <span className="material-symbols-rounded text-3xl text-slate-600 block mb-2">
+                  collections_bookmark
+                </span>
+                <p className="text-xs text-slate-500 mb-3">
+                  Bạn chưa tạo bộ sưu tập nào. Hãy lưu các mẫu yêu thích từ trang chi tiết thiết kế.
+                </p>
+                <Link
+                  href="/templates"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-amber-500/20 text-amber-400 text-xs font-semibold hover:bg-amber-500/30 transition-colors"
+                >
+                  <span className="material-symbols-rounded text-sm">explore</span>
+                  <span>Khám phá mẫu thiết kế</span>
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {collections.map((col) => (
+                  <CollectionCard
+                    key={col._id}
+                    collection={col}
+                    isOwner={true}
+                    onDelete={handleDeleteCollection}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </main>
     </div>
   );

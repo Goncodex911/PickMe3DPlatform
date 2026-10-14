@@ -1,29 +1,98 @@
 const mongoose = require('mongoose');
 const Template = require('../models/Template');
+const { createNotification } = require('../helpers/notificationHelper');
 
 /**
- * @desc Get all public templates with filtering, search, and sorting
- * @route GET /api/templates
- * @access Public
+ * @desc    Get all public templates with filtering, search, and sorting
+ * @route   GET /api/templates
+ * @access  Public
+ *
+ * Query params:
+ *   category   - Filter by category
+ *   search     - Text search in title/description/tags
+ *   tags       - Comma-separated list of tags (multi-tag filter)
+ *   sort       - 'trending' | 'newest' | 'likes' | 'rating'
+ *   dateRange  - 'week' | 'month' | 'all'
+ *   forkable   - 'true' to show only forkable (public) templates
+ *   page       - Pagination page number
+ *   limit      - Items per page
  */
 exports.getTemplates = async (req, res, next) => {
   try {
-    const { category, search, sort = 'trending', page = 1, limit = 12 } = req.query;
+    const {
+      category,
+      search,
+      tags,
+      sort = 'trending',
+      dateRange,
+      forkable,
+      page = 1,
+      limit = 12,
+    } = req.query;
 
     const query = { isPublic: true };
 
+    // Category filter
     if (category && category !== 'All' && category !== 'Tất cả') {
       query.category = category;
     }
 
+    // Text search
     if (search && search.trim() !== '') {
       query.$or = [
         { title: { $regex: search.trim(), $options: 'i' } },
         { description: { $regex: search.trim(), $options: 'i' } },
-        { tags: { $in: [new RegExp(search.trim(), 'i')] } }
+        { tags: { $in: [new RegExp(search.trim(), 'i')] } },
       ];
     }
 
+    // Multi-tag filter (e.g. tags=casual,modern,minimalist)
+    if (tags && tags.trim() !== '') {
+      const tagList = tags
+        .split(',')
+        .map((t) => t.trim().toLowerCase())
+        .filter(Boolean);
+
+      if (tagList.length > 0) {
+        // Match templates that have ALL specified tags (case-insensitive)
+        const tagConditions = tagList.map((tag) => ({
+          tags: { $regex: new RegExp(`^${tag}$`, 'i') },
+        }));
+
+        if (query.$or) {
+          // Combine with existing $or from search using $and
+          query.$and = [{ $or: query.$or }, { $and: tagConditions }];
+          delete query.$or;
+        } else {
+          query.$and = tagConditions;
+        }
+      }
+    }
+
+    // Date range filter
+    if (dateRange && dateRange !== 'all') {
+      const now = new Date();
+      let dateFrom;
+
+      if (dateRange === 'week') {
+        dateFrom = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      } else if (dateRange === 'month') {
+        dateFrom = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      }
+
+      if (dateFrom) {
+        query.createdAt = { $gte: dateFrom };
+      }
+    }
+
+    // Forkable filter (only public templates with forksCount >= 0)
+    if (forkable === 'true') {
+      query.isPublic = true;
+      // All public templates are forkable, but we emphasize ones that have been forked
+      // This is semantically the same as isPublic: true (already set)
+    }
+
+    // Sorting
     let sortOption = {};
     if (sort === 'newest') {
       sortOption = { createdAt: -1 };
@@ -39,7 +108,7 @@ exports.getTemplates = async (req, res, next) => {
     const skip = (Number(page) - 1) * Number(limit);
     const total = await Template.countDocuments(query);
     const templates = await Template.find(query)
-      .populate('author', 'name picture jobRole')
+      .populate('author', 'name picture jobRole username')
       .sort(sortOption)
       .skip(skip)
       .limit(Number(limit));
@@ -63,9 +132,9 @@ exports.getTemplates = async (req, res, next) => {
 };
 
 /**
- * @desc Get template details by ID
- * @route GET /api/templates/:id
- * @access Public
+ * @desc    Get template details by ID
+ * @route   GET /api/templates/:id
+ * @access  Public
  */
 exports.getTemplateById = async (req, res, next) => {
   try {
@@ -73,7 +142,8 @@ exports.getTemplateById = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Template not found' });
     }
 
-    const template = await Template.findById(req.params.id).populate('author', 'name picture jobRole');
+    const template = await Template.findById(req.params.id)
+      .populate('author', 'name picture jobRole username');
 
     if (!template) {
       return res.status(404).json({ success: false, message: 'Template not found' });
@@ -93,9 +163,9 @@ exports.getTemplateById = async (req, res, next) => {
 };
 
 /**
- * @desc Create/Publish a new template
- * @route POST /api/templates
- * @access Private
+ * @desc    Create/Publish a new template
+ * @route   POST /api/templates
+ * @access  Private
  */
 exports.createTemplate = async (req, res, next) => {
   try {
@@ -126,9 +196,9 @@ exports.createTemplate = async (req, res, next) => {
 };
 
 /**
- * @desc Get templates created by current user
- * @route GET /api/templates/my-templates
- * @access Private
+ * @desc    Get templates created by current user
+ * @route   GET /api/templates/my-templates
+ * @access  Private
  */
 exports.getUserTemplates = async (req, res, next) => {
   try {
@@ -145,9 +215,9 @@ exports.getUserTemplates = async (req, res, next) => {
 };
 
 /**
- * @desc Update a template (privacy, tags, title, docData, etc.)
- * @route PUT /api/templates/:id
- * @access Private
+ * @desc    Update a template (privacy, tags, title, docData, etc.)
+ * @route   PUT /api/templates/:id
+ * @access  Private
  */
 exports.updateTemplate = async (req, res, next) => {
   try {
@@ -183,9 +253,9 @@ exports.updateTemplate = async (req, res, next) => {
 };
 
 /**
- * @desc Delete a template
- * @route DELETE /api/templates/:id
- * @access Private
+ * @desc    Delete a template
+ * @route   DELETE /api/templates/:id
+ * @access  Private
  */
 exports.deleteTemplate = async (req, res, next) => {
   try {
@@ -209,9 +279,9 @@ exports.deleteTemplate = async (req, res, next) => {
 };
 
 /**
- * @desc Track cover/fork of a template
- * @route POST /api/templates/:id/cover
- * @access Public
+ * @desc    Track cover/fork of a template
+ * @route   POST /api/templates/:id/cover
+ * @access  Public
  */
 exports.coverTemplate = async (req, res, next) => {
   try {
@@ -222,6 +292,17 @@ exports.coverTemplate = async (req, res, next) => {
 
     template.forksCount = (template.forksCount || 0) + 1;
     await template.save();
+
+    // Notify template owner about the fork (if actor info available from body)
+    if (template.author && req.body.actorId) {
+      await createNotification({
+        recipientId: template.author,
+        actorId: req.body.actorId,
+        type: 'fork',
+        templateId: template._id,
+        message: `Có người đã fork thiết kế "${template.title}" của bạn`,
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -234,9 +315,9 @@ exports.coverTemplate = async (req, res, next) => {
 };
 
 /**
- * @desc Like or unlike a template
- * @route POST /api/templates/:id/like
- * @access Private
+ * @desc    Like or unlike a template
+ * @route   POST /api/templates/:id/like
+ * @access  Private
  */
 exports.toggleLikeTemplate = async (req, res, next) => {
   try {
@@ -256,6 +337,17 @@ exports.toggleLikeTemplate = async (req, res, next) => {
     } else {
       template.likedBy.push(userId);
       template.likesCount = (template.likesCount || 0) + 1;
+
+      // Notify template owner about the like
+      if (template.author) {
+        await createNotification({
+          recipientId: template.author,
+          actorId: userId,
+          type: 'like',
+          templateId: template._id,
+          message: `${req.user.name} đã thích thiết kế "${template.title}" của bạn`,
+        });
+      }
     }
 
     await template.save();
@@ -271,9 +363,9 @@ exports.toggleLikeTemplate = async (req, res, next) => {
 };
 
 /**
- * @desc Add or update review/rating for a template
- * @route POST /api/templates/:id/review
- * @access Private
+ * @desc    Add or update review/rating for a template
+ * @route   POST /api/templates/:id/review
+ * @access  Private
  */
 exports.addTemplateReview = async (req, res, next) => {
   try {
@@ -314,6 +406,17 @@ exports.addTemplateReview = async (req, res, next) => {
         comment: comment || '',
         createdAt: new Date(),
       });
+
+      // Notify template owner about the new review
+      if (template.author) {
+        await createNotification({
+          recipientId: template.author,
+          actorId: userId,
+          type: 'review',
+          templateId: template._id,
+          message: `${userName} đã đánh giá ${numRating}★ cho "${template.title}"`,
+        });
+      }
     }
 
     // Recalculate rating stats

@@ -1,4 +1,4 @@
-﻿# 🚀 Đề Xuất Tính Năng Mới — PickMe3D Platform
+# 🚀 Đề Xuất Tính Năng Mới — PickMe3D Platform
 
 ## Tổng Quan Hiện Tại
 
@@ -36,35 +36,43 @@
 
 ---
 
-## 🟡 Nhóm 2: Tính Năng Nâng Cao — Cần Cả Frontend + Backend Mới
+## ✅ Nhóm 2: Tính Năng Nâng Cao — Cần Cả Frontend + Backend Mới (ĐÃ HOÀN THÀNH)
 
-### 2.1 — 🔔 Thông Báo & Hoạt Động
+### 2.1 — 🔔 Thông Báo & Hoạt Động ✅
 **Mô tả:** Khi người khác like / fork / review thiết kế của bạn → nhận thông báo  
-**Backend cần thêm:** Model `Notification`, endpoint `GET /api/notifications`  
-**Frontend:** Badge đỏ trên icon chuông ở header, panel thông báo trượt từ phải
+**Backend:** ✅ Model `Notification`, endpoint `GET /api/notifications`, helper tự động tạo notification  
+**Frontend:** ✅ `NotificationBell` component — Badge đỏ trên icon chuông, panel thông báo, mark read/all  
+**Tích hợp:** ✅ Đã tích hợp vào header trang Templates, Profile, Creator Profile, Template Detail
 
-### 2.2 — 👤 Trang Profile Công Khai
+### 2.2 — 👤 Trang Profile Công Khai ✅
 **Mô tả:** Mỗi user có trang `/creator/[username]` có thể chia sẻ  
-**Hiển thị:** Avatar, bio, tổng số thiết kế / lượt like / fork nhận được  
-**Backend cần thêm:** Endpoint `GET /api/users/:id/public`, field `bio` trong User model
+**Hiển thị:** ✅ Avatar, bio, username, tổng số thiết kế / lượt like / fork nhận được  
+**Backend:** ✅ Endpoint `GET /api/users/:id/public`, `GET /api/users/username/:username`, field `bio`+`username` trong User model  
+**Frontend:** ✅ Trang `/creator/[username]`, tab Thiết kế + Bộ sưu tập, stats cards  
+**Chỉnh sửa:** ✅ User có thể chỉnh bio/username từ trang Profile, link đến hồ sơ công khai  
+**Liên kết:** ✅ Tên tác giả trên Template Detail bấm được → mở Public Profile
 
-### 2.3 — 🔍 Tìm Kiếm Nâng Cao
+### 2.3 — 🔍 Tìm Kiếm Nâng Cao ✅
 **Mô tả:** Trang Templates hiện có search text đơn giản  
-**Nâng cấp:**
-- Filter đa hashtag (click nhiều tag cùng lúc)
-- Filter theo khoảng thời gian (tuần này / tháng này)
-- Filter "Chỉ hiện thiết kế đã fork được"
-- Backend: Index đã có `{ title: 'text', description: 'text', tags: 'text' }`
+**Nâng cấp:** ✅ Đã triển khai đầy đủ:
+- ✅ Filter đa hashtag (click nhiều tag cùng lúc)
+- ✅ Filter theo khoảng thời gian (tuần này / tháng này)
+- ✅ Filter "Chỉ hiện thiết kế đã fork được"
+- ✅ Backend: Index `{ title: 'text', description: 'text', tags: 'text' }` + query params `tags`, `dateRange`, `forkable`
+- ✅ Frontend: Component `AdvancedSearchFilters` tích hợp vào trang Templates
 
-### 2.4 — 💬 Bình Luận Trên Thiết Kế
+### 2.4 — 💬 Bình Luận Trên Thiết Kế ✅
 **Mô tả:** Hệ thống comment riêng (khác với review sao)  
-**Backend cần thêm:** Array `comments[]` trong Template model hoặc Model riêng  
-**Frontend:** Thread comment dưới detail view, có reply, like comment
+**Backend:** ✅ Model `Comment` riêng, CRUD endpoints, reply thread, like comment, tự động gửi notification  
+**Frontend:** ✅ `CommentThread` component — thread comment, reply, like, xóa  
+**Tích hợp:** ✅ Đã tích hợp vào trang chi tiết `/templates/[id]`
 
-### 2.5 — 📦 Bộ Sưu Tập (Collections)
+### 2.5 — 📦 Bộ Sưu Tập (Collections) ✅
 **Mô tả:** User có thể tạo "Board" / Collection để ghim các mẫu yêu thích  
 **Ví dụ:** "Mùa hè 2026", "Cảm hứng tối giản"  
-**Backend cần thêm:** Model `Collection { name, user, templates[] }`
+**Backend:** ✅ Model `Collection { name, description, user, templates[], isPublic, coverImage }`, CRUD endpoints  
+**Frontend:** ✅ `CollectionManager` — AddToCollectionModal + CollectionCard  
+**Tích hợp:** ✅ Nút "Lưu vào Bộ Sưu Tập" trên Template Detail, tab BST trên Profile, hiển thị trên Creator Profile
 
 ---
 
@@ -109,16 +117,17 @@
 
 ## 📊 Ma Trận Ưu Tiên
 
-| Tính năng | Độ khó | Giá trị | Nên làm trước? |
+| Tính năng | Độ khó | Giá trị | Trạng thái |
 |---|---|---|---|
-| Trang `/templates/[id]` | ⭐ Thấp | 🔥 Cao | ✅ Có |
-| Chỉnh sửa từ Profile | ⭐ Thấp | 🔥 Cao | ✅ Có |
+| Trang `/templates/[id]` | ⭐ Thấp | 🔥 Cao | ✅ Đã xong |
+| Chỉnh sửa từ Profile | ⭐ Thấp | 🔥 Cao | ✅ Đã xong |
 | Export PNG/PDF | ⭐⭐ Trung | 🔥 Cao | ✅ Có |
-| Trang Profile công khai | ⭐⭐ Trung | 🔥 Cao | ✅ Có |
-| Tìm kiếm nâng cao | ⭐⭐ Trung | 🟡 Trung | 🟡 Nên |
+| Trang Profile công khai | ⭐⭐ Trung | 🔥 Cao | ✅ Đã xong |
+| Tìm kiếm nâng cao | ⭐⭐ Trung | 🟡 Trung | ✅ Đã xong |
 | AI Generate | ⭐⭐⭐ Cao | 🔥 Cao | 🟡 Nên |
-| Collections/Board | ⭐⭐ Trung | 🟡 Trung | 🟡 Nên |
-| Embed Widget | ⭐ Thấp | 🟡 Trung | 🟡 Nên |
-| Thông báo | ⭐⭐⭐ Cao | 🟡 Trung | 🔴 Sau |
+| Collections/Board | ⭐⭐ Trung | 🟡 Trung | ✅ Đã xong |
+| Embed Widget | ⭐ Thấp | 🟡 Trung | ✅ Đã xong |
+| Thông báo | ⭐⭐⭐ Cao | 🟡 Trung | ✅ Đã xong |
+| Bình luận | ⭐⭐ Trung | 🟡 Trung | ✅ Đã xong |
 | Contest | ⭐⭐⭐⭐ Cao | 🔥 Cao | 🔴 Sau |
 | Gói trả phí | ⭐⭐⭐⭐ Cao | 🔥 Cao | 🔴 Sau |

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { TemplateItem, fetchTemplatesApi } from "@/lib/templateService";
 import TemplateCard from "@/components/TemplateCard";
 import TemplateDetailModal from "@/components/TemplateDetailModal";
+import AdvancedSearchFilters from "@/components/AdvancedSearchFilters";
+import NotificationBell from "@/components/NotificationBell";
 
 const CATEGORIES = [
   "Tất cả",
@@ -30,6 +32,11 @@ export default function TemplatesPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateItem | null>(null);
   const [isOfflineMode, setIsOfflineMode] = useState<boolean>(false);
 
+  // Advanced search filter state
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [dateRange, setDateRange] = useState<"week" | "month" | "all">("all");
+  const [forkable, setForkable] = useState<boolean>(false);
+
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
@@ -47,6 +54,9 @@ export default function TemplatesPage() {
         category: selectedCategory,
         search: searchQuery,
         sort: sortBy,
+        tags: selectedTags,
+        dateRange,
+        forkable,
       });
       if (isMounted) {
         setTemplates(res.templates);
@@ -59,7 +69,7 @@ export default function TemplatesPage() {
     return () => {
       isMounted = false;
     };
-  }, [selectedCategory, searchQuery, sortBy]);
+  }, [selectedCategory, searchQuery, sortBy, selectedTags, dateRange, forkable]);
 
   return (
     <div className="min-h-screen bg-[#070b14] text-white flex flex-col selection:bg-red-500 selection:text-white">
@@ -93,6 +103,9 @@ export default function TemplatesPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <NotificationBell />
+
+
           {currentUser && (
             <Link
               href="/profile"
@@ -170,6 +183,18 @@ export default function TemplatesPage() {
                   <span className="material-symbols-rounded text-sm">close</span>
                 </button>
               )}
+            </div>
+
+            {/* Advanced Search Filters */}
+            <div className="pt-3">
+              <AdvancedSearchFilters
+                selectedTags={selectedTags}
+                onTagsChange={setSelectedTags}
+                dateRange={dateRange}
+                onDateRangeChange={setDateRange}
+                forkable={forkable}
+                onForkableChange={setForkable}
+              />
             </div>
           </div>
         </div>

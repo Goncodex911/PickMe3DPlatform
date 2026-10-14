@@ -31,10 +31,25 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    username: {
+      type: String,
+      unique: true,
+      sparse: true,
+      lowercase: true,
+      trim: true,
+      maxlength: [30, 'Username cannot exceed 30 characters'],
+    },
+    bio: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: [500, 'Bio cannot exceed 500 characters'],
+    },
   },
   {
     timestamps: true,
   }
 );
+
 
 module.exports = mongoose.model('User', userSchema);
