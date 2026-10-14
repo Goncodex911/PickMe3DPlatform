@@ -129,6 +129,8 @@ import { hasShareHash, readShareHash } from "@/lib/share";
 import { LoadingIndicator } from "@/components/Loading";
 import { draftDesign } from "@/lib/ai";
 import { ShareDialog } from "@/components/ShareMenu";
+import SaveDesignModal from "@/components/SaveDesignModal";
+import { TemplateItem, fetchTemplateByIdApi } from "@/lib/templateService";
 import { ColorPanel } from "@/components/ColorPanel";
 import { MotionPanel, ShapePanel, TypePanel } from "@/components/ThemePanel";
 import { ThemeContext, ensureFontLoaded, ensureLangFontLoaded } from "@/lib/theme";
@@ -503,6 +505,8 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
   /** a project file waiting for the author to confirm replacing the canvas */
   const [pendingImport, setPendingImport] = useState<Doc | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
+  const [saveDesignOpen, setSaveDesignOpen] = useState(false);
+  const [editingDesign, setEditingDesign] = useState<TemplateItem | null>(null);
   /** the idea typed into the "ask an AI" dialog; kept here so a failed draft does not lose it */
   const [ideaText, setIdeaText] = useState("");
   /** a model is drafting a design right now */
@@ -764,6 +768,33 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
         hadDocRef.current = true;
         applyDoc(JSON.parse(d) as Partial<Doc>, false);
         // frame mode is decided by the device (media-query effect), not restored
+      }
+      if (typeof window !== "undefined") {
+        const urlParams = new URLSearchParams(window.location.search);
+        const editIdParam = urlParams.get("editId");
+        if (editIdParam) {
+          const editItem = localStorage.getItem("pickme3d_edit_item");
+          if (editItem) {
+            try {
+              const parsed = JSON.parse(editItem);
+              if ((parsed._id || parsed.id) === editIdParam) {
+                setEditingDesign(parsed);
+              }
+            } catch {}
+          } else {
+            fetchTemplateByIdApi(editIdParam).then((res) => {
+              if (res) {
+                setEditingDesign(res);
+                if (res.docData && !d) {
+                  applyDoc(res.docData as Partial<Doc>, false);
+                }
+              }
+            });
+          }
+        } else {
+          localStorage.removeItem("pickme3d_edit_id");
+          localStorage.removeItem("pickme3d_edit_item");
+        }
       }
       const before = d ? localStorage.getItem(BEFORE_KEY) : null;
       if (!d) localStorage.removeItem(BEFORE_KEY);
@@ -3210,8 +3241,13 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
           t.isContentEditable);
       if (typing) return;
       // dialogs, the preview and the prompt's full-screen cover own the keyboard while they are up
-      if (confirmClear || pendingImport !== null || shareOpen || previewId !== null || promptCoverUp) return;
+      if (confirmClear || pendingImport !== null || shareOpen || saveDesignOpen || previewId !== null || promptCoverUp) return;
       const mod = e.ctrlKey || e.metaKey;
+      if (mod && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        setSaveDesignOpen(true);
+        return;
+      }
       if (mod && e.key.toLowerCase() === "z") {
         e.preventDefault();
         if (e.shiftKey) redo();
@@ -3313,6 +3349,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     confirmClear,
     pendingImport,
     shareOpen,
+    saveDesignOpen,
     previewId,
     promptCoverUp,
     editAccess,
@@ -4428,6 +4465,8 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
             place={tidyTarget?.place}
             onPlace={tidyTarget ? (pl) => setPlace(tidyTarget, pl) : undefined}
             note={aiNote}
+            onSaveDesign={() => setSaveDesignOpen(true)}
+            editingDesignTitle={editingDesign?.title}
             onSaveProject={() => saveProject(doc)}
             onOpenProject={() => projectFileRef.current?.click()}
             onShare={!isMobile ? () => setShareOpen(true) : undefined}
@@ -4764,6 +4803,21 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
           p={p}
           onCancel={() => setConfirmClear(false)}
           onConfirm={clearAll}
+        />
+
+        <SaveDesignModal
+          open={saveDesignOpen}
+          onClose={() => setSaveDesignOpen(false)}
+          docData={doc}
+          editingDesign={editingDesign}
+          onSaved={(savedItem) => {
+            if (savedItem) {
+              setEditingDesign(savedItem);
+              try {
+                localStorage.setItem("pickme3d_edit_item", JSON.stringify(savedItem));
+              } catch {}
+            }
+          }}
         />
       </div>
 
