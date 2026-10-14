@@ -55,6 +55,8 @@ export function Toolbar({
   place,
   onPlace,
   note,
+  onSaveDesign,
+  editingDesignTitle,
   onSaveProject,
   onOpenProject,
   onShare,
@@ -93,6 +95,8 @@ export function Toolbar({
   onPlace?: (place: Place) => void;
   /** a short message shown beside the tidy button for a moment */
   note?: { text: string; icon: string } | null;
+  onSaveDesign?: () => void;
+  editingDesignTitle?: string | null;
   onSaveProject?: () => void;
   onOpenProject?: () => void;
   /** opens the "ask an AI" dialog from the left end of the zoom row */
@@ -126,6 +130,9 @@ export function Toolbar({
         <Pill p={p}>
           <IconBtn icon="undo" p={p} onClick={onUndo} disabled={!canUndo} title={t("undo", lang)} size={S} />
           <IconBtn icon="redo" p={p} onClick={onRedo} disabled={!canRedo} title={t("redo", lang)} size={S} />
+          {onSaveDesign && (
+            <IconBtn icon="cloud_upload" p={p} onClick={onSaveDesign} title="Lưu thiết kế" size={S} />
+          )}
           <IconBtn icon="translate" p={p} onClick={onLangSheet} title={t("language", lang)} size={S} />
           <IconBtn icon="palette" p={p} onClick={onSettings} title={t("settings", lang)} size={S} />
           <ProfileMenu p={p} size={S} />
@@ -374,6 +381,32 @@ export function Toolbar({
             title={t("clearAll", lang)}
             size={40}
           />
+          {onSaveDesign && (
+            <button
+              onClick={onSaveDesign}
+              title={editingDesignTitle ? `Đang chỉnh sửa: "${editingDesignTitle}". Nhấn để lưu.` : "Lưu thiết kế vào tài khoản (Profile & Khám phá)"}
+              className="m3-press"
+              style={{
+                height: 38,
+                padding: "0 14px 0 10px",
+                borderRadius: 19,
+                border: "none",
+                background: editingDesignTitle ? "#0284c7" : "linear-gradient(135deg, #ef4444 0%, #e11d48 100%)",
+                color: "#ffffff",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                whiteSpace: "nowrap",
+                boxShadow: editingDesignTitle ? "0 2px 8px rgba(2, 132, 199, 0.35)" : "0 2px 8px rgba(225, 29, 72, 0.35)",
+              }}
+            >
+              <Icon name={editingDesignTitle ? "edit_note" : "cloud_upload"} size={18} />
+              <span>{editingDesignTitle ? "Cập nhật" : "Lưu"}</span>
+            </button>
+          )}
           {onSaveProject && onOpenProject && (
             <Popover p={p} icon="folder_open" title={t("project", lang)} size={40}>
               {(close) => (
