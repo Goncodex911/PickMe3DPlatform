@@ -17,6 +17,9 @@ import {
 } from "@/lib/templateService";
 import { Preview } from "@/components/Preview";
 import { DEFAULT_THEME, paletteOf } from "@/lib/tokens";
+import CommentThread from "@/components/CommentThread";
+import { AddToCollectionModal } from "@/components/CollectionManager";
+import NotificationBell from "@/components/NotificationBell";
 
 interface TemplateDetailClientProps {
   id: string;
@@ -57,6 +60,9 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
   const [reviewsList, setReviewsList] = useState<TemplateReview[]>([]);
   const [avgRating, setAvgRating] = useState<number>(0);
   const [ratingsCount, setRatingsCount] = useState<number>(0);
+
+  // Collection modal state
+  const [collectionModalOpen, setCollectionModalOpen] = useState(false);
 
   useEffect(() => {
     if (!templateId) return;
@@ -618,6 +624,11 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
               </div>
             )}
           </div>
+
+          {/* Section: Comments */}
+          <div className="rounded-md bg-[#0e1422] border border-white/10 p-5">
+            <CommentThread templateId={templateId} />
+          </div>
         </section>
 
         {/* Right Column: Template Info & Actions (cols 8-12) */}
@@ -657,8 +668,9 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
 
             {/* Author Information + Follow Button */}
             <div className="p-3.5 rounded-md bg-slate-900 border border-white/5 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                {template.authorAvatar ? (
+              {(() => {
+                const authorUsername = template.author?.username;
+                const avatarEl = template.authorAvatar ? (
                   <img
                     src={template.authorAvatar}
                     alt=""
@@ -668,14 +680,33 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                   <div className="w-10 h-10 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center font-bold text-sm shrink-0 border border-white/10">
                     {template.authorName ? template.authorName[0] : "U"}
                   </div>
-                )}
-                <div className="min-w-0">
-                  <span className="text-[11px] text-slate-400 block">Tác giả thiết kế</span>
-                  <span className="text-sm font-semibold text-white truncate block">
-                    {template.authorName}
-                  </span>
-                </div>
-              </div>
+                );
+                const nameEl = (
+                  <div className="min-w-0">
+                    <span className="text-[11px] text-slate-400 block">Tác giả thiết kế</span>
+                    <span className="text-sm font-semibold text-white truncate block">
+                      {template.authorName}
+                    </span>
+                    {authorUsername && (
+                      <span className="text-[10px] text-red-400 font-medium">@{authorUsername}</span>
+                    )}
+                  </div>
+                );
+                return authorUsername ? (
+                  <Link
+                    href={`/creator/${authorUsername}`}
+                    className="flex items-center gap-3 min-w-0 hover:opacity-80 transition-opacity"
+                  >
+                    {avatarEl}
+                    {nameEl}
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-3 min-w-0">
+                    {avatarEl}
+                    {nameEl}
+                  </div>
+                );
+              })()}
 
               <button
                 type="button"
@@ -766,6 +797,16 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                   <span>Tải JSON</span>
                 </button>
               </div>
+
+              {/* Save to Collection Button */}
+              <button
+                type="button"
+                onClick={() => setCollectionModalOpen(true)}
+                className="w-full py-2.5 px-4 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 font-semibold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              >
+                <span className="material-symbols-rounded text-sm">bookmark</span>
+                <span>Lưu vào Bộ Sưu Tập</span>
+              </button>
             </div>
           </div>
         </aside>
@@ -845,6 +886,13 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
           onClose={() => setFullInteractiveOpen(false)}
         />
       )}
+
+      {/* Add to Collection Modal */}
+      <AddToCollectionModal
+        templateId={templateId}
+        isOpen={collectionModalOpen}
+        onClose={() => setCollectionModalOpen(false)}
+      />
     </div>
   );
 }

@@ -33,7 +33,7 @@ export interface TemplateItem {
   updatedAt?: string;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
 /**
  * Fetches only real public templates from MongoDB Atlas + any local public designs
@@ -42,6 +42,9 @@ export async function fetchTemplatesApi(params?: {
   category?: string;
   search?: string;
   sort?: string;
+  tags?: string[];
+  dateRange?: 'week' | 'month' | 'all';
+  forkable?: boolean;
 }): Promise<{ templates: TemplateItem[]; isOffline?: boolean }> {
   let serverList: TemplateItem[] = [];
 
@@ -55,6 +58,15 @@ export async function fetchTemplatesApi(params?: {
     }
     if (params?.sort) {
       url.searchParams.set("sort", params.sort);
+    }
+    if (params?.tags && params.tags.length > 0) {
+      url.searchParams.set("tags", params.tags.join(","));
+    }
+    if (params?.dateRange && params.dateRange !== "all") {
+      url.searchParams.set("dateRange", params.dateRange);
+    }
+    if (params?.forkable) {
+      url.searchParams.set("forkable", "true");
     }
 
     const res = await fetch(url.toString(), {

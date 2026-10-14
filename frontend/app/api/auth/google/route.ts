@@ -4,8 +4,8 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     
-    // Proxy request to backend port 5000 server-side (bypasses browser CORS & port blocking)
-    const backendUrl = process.env.BACKEND_INTERNAL_URL || "http://localhost:5000/api/auth/google";
+    // Proxy request to backend port 5001 server-side (bypasses browser CORS & port blocking)
+    const backendUrl = process.env.BACKEND_INTERNAL_URL || "http://localhost:5001/api/auth/google";
     const res = await fetch(backendUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

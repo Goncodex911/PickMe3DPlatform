@@ -3,7 +3,7 @@ import TemplateDetailClient from "./TemplateDetailClient";
 
 export async function generateStaticParams() {
   try {
-    const res = await fetch("http://localhost:5000/api/templates", {
+    const res = await fetch("http://localhost:5001/api/templates", {
       next: { revalidate: 60 },
     });
     if (res.ok) {
