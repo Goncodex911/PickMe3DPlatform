@@ -57,24 +57,29 @@ export default function EditorPage() {
     return () => clearTimeout(id);
   }, [phase]);
 
-  if (!isAuth) {
-    return <Boot done={false} />;
-  }
-
   return (
-    <div className="relative w-full h-full">
-      {/* Return to Landing Page Floating Pill */}
-      <Link
-        href="/"
-        className="fixed top-3 left-16 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#111726]/85 border border-white/20 hover:border-red-500/60 text-xs text-slate-300 hover:text-white backdrop-blur-md shadow-lg transition-all"
-        title="Quay lại Trang Chủ"
-      >
-        <span className="material-symbols-rounded text-sm text-red-400">arrow_back</span>
-        <span className="font-medium text-[11px]">Trang chủ</span>
-      </Link>
+    <div className="relative w-full h-full" suppressHydrationWarning>
+      {isAuth ? (
+        <>
+          {/* Return to Landing Page Floating Pill */}
+          <Link
+            href="/"
+            className="fixed top-3 left-16 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#111726]/85 border border-white/20 hover:border-red-500/60 text-xs text-slate-300 hover:text-white backdrop-blur-md shadow-lg transition-all"
+            title="Quay lại Trang Chủ"
+          >
+            <span className="material-symbols-rounded text-sm text-red-400">arrow_back</span>
+            <span className="font-medium text-[11px]">Trang chủ</span>
+          </Link>
 
-      {lang && <Editor initialLang={lang} onReady={() => setPhase((p) => (p === "loading" ? "fading" : p))} />}
-      {phase !== "done" && <Boot done={phase === "fading"} />}
+          {lang && <Editor initialLang={lang} onReady={() => setPhase((p) => (p === "loading" ? "fading" : p))} />}
+        </>
+      ) : null}
+
+      {(!isAuth || phase !== "done") && (
+        <div style={{ pointerEvents: phase === "fading" ? "none" : "auto" }}>
+          <Boot done={Boolean(isAuth && phase === "fading")} />
+        </div>
+      )}
     </div>
   );
 }

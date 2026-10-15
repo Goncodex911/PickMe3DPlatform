@@ -18,6 +18,7 @@ const {
 const { protect } = require('../middlewares/authMiddleware');
 
 router.route('/').get(getTemplates).post(protect, createTemplate);
+router.route('/public').get(getTemplates);
 router.route('/my-templates').get(protect, getUserTemplates);
 router.route('/:id').get(getTemplateById).put(protect, updateTemplate).delete(protect, deleteTemplate);
 router.route('/:id/like').post(protect, toggleLikeTemplate);
