@@ -59,6 +59,7 @@ export function Toolbar({
   editingDesignTitle,
   onSaveProject,
   onOpenProject,
+  onOpenAiDraft,
   onShare,
   shareState = "idle",
   onDraftKeep,
@@ -99,6 +100,8 @@ export function Toolbar({
   editingDesignTitle?: string | null;
   onSaveProject?: () => void;
   onOpenProject?: () => void;
+  /** opens the dedicated AI screen generator modal */
+  onOpenAiDraft?: () => void;
   /** opens the "ask an AI" dialog from the left end of the zoom row */
   onShare?: () => void;
   /** busy while a model drafts; review while the draft waits to be kept or undone */
@@ -135,7 +138,31 @@ export function Toolbar({
           )}
           <IconBtn icon="translate" p={p} onClick={onLangSheet} title={t("language", lang)} size={S} />
           <IconBtn icon="palette" p={p} onClick={onSettings} title={t("settings", lang)} size={S} />
-          <ProfileMenu p={p} size={S} />
+          {onOpenAiDraft && (
+            <button
+              onClick={onOpenAiDraft}
+              title="Sinh giao diện AI"
+              className="m3-press"
+              style={{
+                height: S,
+                padding: "0 12px 0 8px",
+                borderRadius: S / 2,
+                border: "none",
+                background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
+                color: "#ffffff",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+                whiteSpace: "nowrap",
+              }}
+            >
+              <Icon name="auto_awesome" size={18} fill />
+              AI
+            </button>
+          )}
           <button
             onClick={onPrompt}
             title={t("copyPrompt", lang)}
@@ -356,6 +383,35 @@ export function Toolbar({
             fill
           />
         </Pill>
+
+        {onOpenAiDraft && (
+          <Pill p={p}>
+            <button
+              onClick={onOpenAiDraft}
+              title="Nhập mô tả ý tưởng để AI sinh màn hình"
+              className="m3-press"
+              style={{
+                height: 38,
+                padding: "0 16px 0 12px",
+                borderRadius: 19,
+                border: "none",
+                background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
+                color: "#ffffff",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 7,
+                whiteSpace: "nowrap",
+                boxShadow: "0 2px 10px rgba(168, 85, 247, 0.4)",
+              }}
+            >
+              <Icon name="auto_awesome" size={18} fill />
+              <span>Sinh AI</span>
+            </button>
+          </Pill>
+        )}
 
         <Pill p={p}>
           <IconBtn
