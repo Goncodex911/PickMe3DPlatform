@@ -308,6 +308,7 @@ export function PromptPanel({
   palette: p,
   onDoc,
   onCover,
+  onOpenAiModal,
 }: {
   doc: Doc;
   widths: Record<string, number>;
@@ -315,6 +316,7 @@ export function PromptPanel({
   onDoc: (patch: Partial<Doc>) => void;
   /** told when the full-screen cover has opened, and when it starts to close */
   onCover?: (up: boolean) => void;
+  onOpenAiModal?: () => void;
 }) {
   const lang = useLang();
   const generated = useMemo(() => buildPrompt(doc, widths, undefined, lang), [doc, widths, lang]);
@@ -453,6 +455,34 @@ export function PromptPanel({
       {/* the target stands above the box, which starts under the panel's fade band */}
       <div ref={panel} style={{ display: "flex", flexDirection: "column", height: "100%", padding: `${PANEL_PAD_TOP}px 12px 12px`, gap: 10 }}>
         {platform}
+
+        {onOpenAiModal && (
+          <button
+            type="button"
+            onClick={onOpenAiModal}
+            className="m3-press"
+            style={{
+              width: "100%",
+              height: 40,
+              borderRadius: 20,
+              border: "none",
+              background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
+              color: "#ffffff",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              boxShadow: "0 2px 10px rgba(168, 85, 247, 0.35)",
+            }}
+          >
+            <Icon name="auto_awesome" size={18} fill />
+            <span>Sinh giao diện bằng AI (Modal)</span>
+          </button>
+        )}
+
         <PromptBox
           text={text}
           starts={starts}

@@ -129,6 +129,7 @@ import { hasShareHash, readShareHash } from "@/lib/share";
 import { LoadingIndicator } from "@/components/Loading";
 import { draftDesign } from "@/lib/ai";
 import { ShareDialog } from "@/components/ShareMenu";
+import AiGenerateModal from "@/components/AiGenerateModal";
 import SaveDesignModal from "@/components/SaveDesignModal";
 import { TemplateItem, fetchTemplateByIdApi } from "@/lib/templateService";
 import { ColorPanel } from "@/components/ColorPanel";
@@ -563,6 +564,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
   const [aiFrameId, setAiFrameId] = useState<string | null>(null);
   /** the "applied" confirmation beside the tidy button */
   const [aiNote, setAiNote] = useState<{ text: string; icon: string } | null>(null);
+  const [aiModalOpen, setAiModalOpen] = useState(false);
   const projectFileRef = useRef<HTMLInputElement>(null);
   const aiNoteTimer = useRef<number | null>(null);
   const aiAbortRef = useRef<AbortController | null>(null);
@@ -2652,6 +2654,27 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
       setDraftBusy(false);
     }
   };
+
+  const handleAiGenerate = async (promptText: string, screenCount: number) => {
+    setDraftBusy(true);
+    try {
+      if (guideRef.current === null) {
+        const res = await fetch(`${BASE_PATH}/agent.md`);
+        if (!res.ok) throw new Error("guide");
+        guideRef.current = await res.text();
+      }
+      const next = await draftDesign(aiSettings, guideRef.current, promptText, lang, screenCount);
+      arrive(next);
+      showToast("Đã sinh giao diện thành công!", 3000, "success");
+      setTimeout(() => fit(), 400);
+    } catch (e: any) {
+      const m = e instanceof Error ? e.message : "";
+      showToast(m || "Không thể sinh giao diện, vui lòng thử lại.", 3500, "error");
+      throw e;
+    } finally {
+      setDraftBusy(false);
+    }
+  };
   /** true after a kept draft until the author undoes something, so the header's undo also sits by the opener */
   const [quickUndo, setQuickUndo] = useState(false);
   const keepDraft = () => {
@@ -4062,7 +4085,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                 ) : leftTab === "motion" ? (
                   <MotionPanel p={p} theme={theme} onChange={patchTheme} />
                 ) : leftTab === "ai" ? (
-                  <AiPanel p={p} settings={aiSettings} onSettings={updateAiSettings} />
+                  <AiPanel p={p} settings={aiSettings} onSettings={updateAiSettings} onOpenAiModal={() => setAiModalOpen(true)} />
                 ) : (
                   <LayersPanel
                     p={p}
@@ -4469,6 +4492,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
             editingDesignTitle={editingDesign?.title}
             onSaveProject={() => saveProject(doc)}
             onOpenProject={() => projectFileRef.current?.click()}
+            onOpenAiDraft={() => setAiModalOpen(true)}
             onShare={!isMobile ? () => setShareOpen(true) : undefined}
             shareState={draftBusy ? "busy" : draftBefore ? "review" : "idle"}
             onDraftKeep={keepDraft}
@@ -4741,6 +4765,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                   widths={widths}
                   palette={p}
                   onCover={setPromptCoverUp}
+                  onOpenAiModal={() => setAiModalOpen(true)}
                   onDoc={(patch) => {
                     if (patch.title !== undefined) setTitle(patch.title);
                     if (patch.brief !== undefined) setBrief(patch.brief);
@@ -4790,6 +4815,19 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
           onDraft={(idea) => void startDraft(idea)}
           onSetupAi={() => {
             setShareOpen(false);
+            setLeftOpen(true);
+            setLeftTab("ai");
+          }}
+        />
+
+        <AiGenerateModal
+          open={aiModalOpen}
+          onClose={() => setAiModalOpen(false)}
+          onGenerate={handleAiGenerate}
+          p={p}
+          aiReady={aiReady}
+          onOpenSettings={() => {
+            setAiModalOpen(false);
             setLeftOpen(true);
             setLeftTab("ai");
           }}
