@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Palette } from "@/lib/tokens";
 import { t, useLang } from "@/lib/i18n";
 import { AiSettings, PROVIDERS, Provider, providerSpec } from "@/lib/ai";
@@ -161,25 +161,142 @@ function ProviderGroup({ value, onChange, p }: { value: Provider; onChange: (k: 
 }
 
 /** The AI tab of the left rail: the provider settings. The actions live with each screen on the right. */
-export function AiPanel({ p, settings, onSettings }: { p: Palette; settings: AiSettings; onSettings: (s: AiSettings) => void }) {
+export function AiPanel({
+  p,
+  settings,
+  onSettings,
+  onOpenAiModal,
+}: {
+  p: Palette;
+  settings: AiSettings;
+  onSettings: (s: AiSettings) => void;
+  onOpenAiModal?: () => void;
+}) {
   const lang = useLang();
   const spec = providerSpec(settings.provider);
+  const [testBusy, setTestBusy] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  const testConnection = async () => {
+    setTestBusy(true);
+    setTestResult(null);
+    try {
+      const res = await fetch("/api/ai/test", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          provider: settings.provider,
+          baseUrl: settings.baseUrl,
+          model: settings.model,
+          key: settings.key,
+        }),
+      });
+      const data = await res.json();
+      setTestResult(data);
+    } catch (e: any) {
+      setTestResult({ success: false, message: e?.message || "Lỗi kiểm tra kết nối" });
+    } finally {
+      setTestBusy(false);
+    }
+  };
+
   const pick = (k: Provider) => {
     const s = providerSpec(k);
+    setTestResult(null);
     onSettings({ ...settings, provider: k, baseUrl: s.baseUrl, model: s.model });
   };
+
   return (
     <div className="no-scrollbar" style={{ height: "100%", overflowY: "auto", padding: "12px 12px 20px" }}>
       <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 0.4, color: p.onSurfaceVariant, padding: "8px 6px 12px" }}>{t("aiSettings", lang)}</div>
+
+      {onOpenAiModal && (
+        <div
+          style={{
+            marginBottom: 16,
+            padding: 14,
+            borderRadius: 18,
+            background: "linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(168, 85, 247, 0.15) 100%)",
+            border: "1.5px solid rgba(168, 85, 247, 0.4)",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.06)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 700, color: p.onSurface, marginBottom: 4 }}>
+            <div style={{ width: 28, height: 28, borderRadius: 14, background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)", display: "grid", placeItems: "center", color: "#fff" }}>
+              <Icon name="auto_awesome" size={16} fill />
+            </div>
+            Tạo màn hình bằng AI
+          </div>
+          <div style={{ fontSize: 12, lineHeight: 1.45, color: p.onSurfaceVariant, marginBottom: 12 }}>
+            Nhập mô tả ý tưởng bất kỳ để AI dựng và bố cục giao diện hoàn chỉnh trực tiếp lên Canvas.
+          </div>
+          <button
+            type="button"
+            onClick={onOpenAiModal}
+            className="m3-press"
+            style={{
+              width: "100%",
+              height: 42,
+              borderRadius: 21,
+              border: "none",
+              background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
+              color: "#ffffff",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              boxShadow: "0 4px 12px rgba(168, 85, 247, 0.35)",
+            }}
+          >
+            <Icon name="palette" size={18} />
+            Nhập mô tả & Sinh màn hình
+          </button>
+        </div>
+      )}
+
       <div style={{ padding: "0 4px" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div>
             <Label p={p}>{t("aiProvider", lang)}</Label>
             <ProviderGroup value={settings.provider} onChange={pick} p={p} />
+            {spec.hint && (
+              <div style={{ fontSize: 11, color: p.primary, marginTop: 4, padding: "0 4px", fontWeight: 500 }}>
+                💡 {spec.hint}
+              </div>
+            )}
           </div>
           <div>
             <Label p={p}>{t("aiModel", lang)}</Label>
             <Input label={t("aiModel", lang)} value={settings.model} onChange={(model) => onSettings({ ...settings, model })} placeholder={spec.model || "model"} p={p} />
+            {spec.suggestedModels && spec.suggestedModels.length > 0 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+                {spec.suggestedModels.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => {
+                      setTestResult(null);
+                      onSettings({ ...settings, model: m });
+                    }}
+                    style={{
+                      padding: "3px 8px",
+                      borderRadius: 12,
+                      fontSize: 11,
+                      border: `1px solid ${settings.model === m ? p.primary : p.outlineVariant}`,
+                      background: settings.model === m ? p.primaryContainer : p.surfaceContainerHigh,
+                      color: settings.model === m ? p.onPrimaryContainer : p.onSurfaceVariant,
+                      cursor: "pointer",
+                      transition: "all 150ms",
+                    }}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div>
             <Label p={p}>{t("aiBaseUrl", lang)}</Label>
@@ -198,8 +315,100 @@ export function AiPanel({ p, settings, onSettings }: { p: Palette; settings: AiS
             >
               {t("aiKey", lang)}
             </Label>
-            <Input label={t("aiKey", lang)} value={settings.key} onChange={(key) => onSettings({ ...settings, key })} placeholder="sk-…" p={p} type="password" />
-            <div style={{ fontSize: 12, lineHeight: 1.5, color: p.onSurfaceVariant, marginTop: 8, padding: "0 4px" }}>{t("aiKeyHint", lang)}</div>
+            <Input label={t("aiKey", lang)} value={settings.key} onChange={(key) => { setTestResult(null); onSettings({ ...settings, key }); }} placeholder="sk-…" p={p} type="password" />
+            <div style={{ fontSize: 12, lineHeight: 1.5, color: p.onSurfaceVariant, marginTop: 8, padding: "0 4px" }}>
+              {settings.provider === "gemini" ? "Lấy khóa miễn phí nhanh tại Google AI Studio và dán vào đây để bắt đầu." : t("aiKeyHint", lang)}
+            </div>
+
+            {/* Test connection button */}
+            <div style={{ marginTop: 12 }}>
+              <button
+                type="button"
+                disabled={testBusy || (!settings.key.trim() && !settings.baseUrl.includes("localhost"))}
+                onClick={testConnection}
+                style={{
+                  width: "100%",
+                  height: 38,
+                  borderRadius: 19,
+                  border: `1px solid ${p.outlineVariant}`,
+                  background: p.surfaceContainerHigh,
+                  color: p.onSurface,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: testBusy ? "wait" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                  opacity: (!settings.key.trim() && !settings.baseUrl.includes("localhost")) ? 0.6 : 1,
+                }}
+              >
+                <Icon name={testBusy ? "progress_activity" : "bolt"} size={16} />
+                {testBusy ? "Đang kiểm tra kết nối..." : "Kiểm tra kết nối (Test Model)"}
+              </button>
+              {testResult && (
+                <div
+                  style={{
+                    marginTop: 8,
+                    padding: "8px 12px",
+                    borderRadius: 12,
+                    fontSize: 12,
+                    lineHeight: 1.4,
+                    background: testResult.success ? "rgba(34, 197, 94, 0.12)" : "rgba(239, 68, 68, 0.12)",
+                    color: testResult.success ? "#16a34a" : "#dc2626",
+                    border: `1px solid ${testResult.success ? "rgba(34, 197, 94, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
+                  }}
+                >
+                  {testResult.success ? "✓ " : "✕ "}
+                  {testResult.message}
+                </div>
+              )}
+            </div>
+
+            {onOpenAiModal && (
+              <div
+                style={{
+                  marginTop: 18,
+                  padding: 14,
+                  borderRadius: 18,
+                  background: p.surfaceContainerHighest,
+                  border: `1px solid ${p.outlineVariant}`,
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: p.onSurface, marginBottom: 4 }}>
+                  <Icon name="auto_awesome" size={18} color="#a855f7" />
+                  Tạo màn hình bằng AI
+                </div>
+                <div style={{ fontSize: 12, lineHeight: 1.45, color: p.onSurfaceVariant, marginBottom: 12 }}>
+                  Nhập mô tả ý tưởng bất kỳ để AI dựng và bố cục giao diện trực tiếp lên Canvas.
+                </div>
+                <button
+                  type="button"
+                  onClick={onOpenAiModal}
+                  className="m3-press"
+                  style={{
+                    width: "100%",
+                    height: 40,
+                    borderRadius: 20,
+                    border: "none",
+                    background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
+                    color: "#ffffff",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    boxShadow: "0 4px 12px rgba(168, 85, 247, 0.35)",
+                  }}
+                >
+                  <Icon name="palette" size={18} />
+                  Nhập mô tả & Sinh màn hình
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
