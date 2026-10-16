@@ -158,6 +158,8 @@ export function FrameInspector({
   onPreview,
   prompt,
   onSaveImage,
+  onExportCode,
+  onExportImage,
   tidy,
   onTidy,
   onPlace,
@@ -173,6 +175,8 @@ export function FrameInspector({
   /** the prompt for this one screen, copied from the export row */
   prompt: string;
   onSaveImage: () => Promise<void>;
+  onExportCode?: () => void;
+  onExportImage?: () => void;
   /** what the tidy button offers: tidy the screen, undo the last tidy, or nothing (already tidy) */
   tidy: TidyState;
   onTidy: () => void;
@@ -326,22 +330,27 @@ export function FrameInspector({
           {actionBtn(
             copied ? "check" : "content_copy",
             copied ? t("copied", lang) : t("prompt", lang),
-            async () => {
-              try {
-                await navigator.clipboard.writeText(prompt);
-                setCopied(true);
-              } catch {}
+            () => {
+              if (onExportCode) {
+                onExportCode();
+              } else {
+                navigator.clipboard.writeText(prompt).then(() => setCopied(true)).catch(() => {});
+              }
             },
           )}
           {actionBtn(
             "image",
             saving ? t("saving", lang) : t("saveImage", lang),
             async () => {
-              setSaving(true);
-              try {
-                await onSaveImage();
-              } finally {
-                setSaving(false);
+              if (onExportImage) {
+                onExportImage();
+              } else {
+                setSaving(true);
+                try {
+                  await onSaveImage();
+                } finally {
+                  setSaving(false);
+                }
               }
             },
             saving,

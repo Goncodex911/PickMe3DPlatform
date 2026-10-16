@@ -9,7 +9,20 @@ import {
   useState,
 } from "react";
 import { AnimatePresence, motion, useReducedMotion, useSpring } from "motion/react";
-import { toPng } from "html-to-image";
+import { toPng, toJpeg } from "html-to-image";
+import { ExportDialog } from "@/components/ExportDialog";
+import {
+  ExportFormat,
+  download,
+  safeName,
+  screenMarkup,
+  screenCode,
+  imagePdf,
+  createHtmlFolderZip,
+  createReactFolderZip,
+  createAngularFolderZip,
+  createAllFrameworksZip,
+} from "@/lib/screenExport";
 import { buildPrompt, effectivePrompt } from "@/lib/prompt";
 import {
   Action,
@@ -494,6 +507,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
   const [confirmClear, setConfirmClear] = useState(false);
   /** frame being rendered offscreen for the PNG export */
   const [exportFrame, setExportFrame] = useState<Frame | null>(null);
+  const [exportModalTab, setExportModalTab] = useState<"code" | "image" | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [brief, setBrief] = useState("");
@@ -3089,6 +3103,83 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     }
   };
 
+  /** Handles exporting the active screen to various web frameworks, zip folder packages, PDF, and images */
+  const handleExportScreen = async (
+    format: ExportFormat,
+    w: number,
+    h: number,
+    mode: "folder" | "code" = "folder"
+  ): Promise<string | void> => {
+    const f = selectedFrame ?? frames[0];
+    if (!f) throw new Error("Vui lòng chọn hoặc tạo ít nhất một màn hình để xuất.");
+
+    setExportFrame(f);
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(null))));
+    try {
+      await document.fonts?.ready;
+      const el = document.querySelector<HTMLElement>(`[data-export="${f.id}"]`);
+      if (!el) throw new Error("Không thể trích xuất giao diện màn hình.");
+      const name = f.name || "screen";
+
+      if (format === "png") {
+        const url = await toPng(el, { pixelRatio: 2, cacheBust: true, width: w, height: h });
+        const res = await fetch(url);
+        const blob = await res.blob();
+        download(blob, `${safeName(name)}.png`);
+        return;
+      }
+
+      if (format === "jpeg") {
+        const url = await toJpeg(el, { pixelRatio: 2, cacheBust: true, width: w, height: h, quality: 0.95 });
+        const res = await fetch(url);
+        const blob = await res.blob();
+        download(blob, `${safeName(name)}.jpg`);
+        return;
+      }
+
+      if (format === "pdf") {
+        const url = await toJpeg(el, { pixelRatio: 2, cacheBust: true, width: w, height: h, quality: 0.95 });
+        const blob = imagePdf(url, w, h);
+        download(blob, `${safeName(name)}.pdf`);
+        return;
+      }
+
+      const markup = await screenMarkup(el, w, h);
+
+      if (mode === "code" || format === "html" || format === "react" || format === "angular") {
+        const codeFormat = (format === "html-folder" ? "html" : format === "react-folder" ? "react" : format === "angular-folder" ? "angular" : format) as "html" | "react" | "angular";
+        const code = screenCode(codeFormat, markup, w, h);
+        return code;
+      }
+
+      if (format === "html-folder") {
+        const blob = await createHtmlFolderZip(name, markup, w, h);
+        download(blob, `${safeName(name)}-html.zip`);
+        return;
+      }
+
+      if (format === "react-folder") {
+        const blob = await createReactFolderZip(name, markup, w, h);
+        download(blob, `${safeName(name)}-react.zip`);
+        return;
+      }
+
+      if (format === "angular-folder") {
+        const blob = await createAngularFolderZip(name, markup, w, h);
+        download(blob, `${safeName(name)}-angular.zip`);
+        return;
+      }
+
+      if (format === "all-folder") {
+        const blob = await createAllFrameworksZip(name, markup, w, h);
+        download(blob, `${safeName(name)}-all-frameworks.zip`);
+        return;
+      }
+    } finally {
+      setExportFrame(null);
+    }
+  };
+
   /** the runs of one screen drawn with plain divs: the export layer */
   const renderExport = (f: Frame) => {
     const gs = groups.filter((g) => frameOfGroup(g, frames, widths)?.id === f.id);
@@ -4720,6 +4811,8 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                   onPreview={() => openPreview(selectedFrame.id)}
                   prompt={buildPrompt(doc, widths, selectedFrame.id, lang)}
                   onSaveImage={() => saveFrameImage(selectedFrame)}
+                  onExportCode={() => setExportModalTab("code")}
+                  onExportImage={() => setExportModalTab("image")}
                   tidy={tidyState ?? "done"}
                   onTidy={() => tidy(selectedFrame)}
                   onPlace={(pl) => setPlace(selectedFrame, pl)}
@@ -4871,6 +4964,19 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
           />
         )}
       </AnimatePresence>
+
+      {exportModalTab !== null && (
+        <ExportDialog
+          palette={p}
+          initialTab={exportModalTab}
+          prompt={buildPrompt(doc, widths, (selectedFrame ?? frames[0])?.id || "", lang)}
+          frameName={(selectedFrame ?? frames[0])?.name || "Screen"}
+          width={(selectedFrame ?? frames[0]) ? frameSizeOf(selectedFrame ?? frames[0]).w : 390}
+          height={(selectedFrame ?? frames[0]) ? frameSizeOf(selectedFrame ?? frames[0]).h : 844}
+          onClose={() => setExportModalTab(null)}
+          onExport={handleExportScreen}
+        />
+      )}
 
       {editAccess === "readonly" && (
         <div

@@ -7,21 +7,24 @@ import { ShareButton } from "./ShareMenu";
 import { Icon } from "./M3Node";
 import { Popover, ProfileMenu } from "./Menus";
 import { t, useLang } from "@/lib/i18n";
+import styles from "./Toolbar.module.css";
 
 export type Mode = "select" | "hand";
 
 function Pill({ p, children }: { p: Palette; children: React.ReactNode }) {
   return (
     <div
+      className={styles.group}
       style={{
         display: "flex",
         alignItems: "center",
         gap: 4,
         padding: 6,
-        borderRadius: 28,
+        borderRadius: 12,
         userSelect: "none",
-        background: p.surfaceContainerLow,
-        boxShadow: "0 2px 10px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.04)",
+        background: p.surface,
+        border: `1px solid ${p.outlineVariant}`,
+        boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
         pointerEvents: "auto",
       }}
     >
@@ -31,7 +34,7 @@ function Pill({ p, children }: { p: Palette; children: React.ReactNode }) {
 }
 
 export function Toolbar({
-  p,
+  p: palette,
   mode,
   onMode,
   frame,
@@ -114,6 +117,7 @@ export function Toolbar({
   quickUndo?: boolean;
 }) {
   const lang = useLang();
+  const p = { ...palette, primary: palette.surfaceContainerHigh, onPrimary: palette.onSurface, secondaryContainer: palette.surfaceContainerHigh, onSecondaryContainer: palette.onSurface };
   if (mobile) {
     const S = 42;
     return (
@@ -148,10 +152,10 @@ export function Toolbar({
                 padding: "0 12px 0 8px",
                 borderRadius: S / 2,
                 border: "none",
-                background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
-                color: "#ffffff",
+                background: p.surfaceContainerHigh,
+                color: p.onSurface,
                 fontSize: 13,
-                fontWeight: 700,
+                fontWeight: 500,
                 cursor: "pointer",
                 display: "inline-flex",
                 alignItems: "center",
@@ -175,7 +179,7 @@ export function Toolbar({
               background: p.primary,
               color: p.onPrimary,
               fontSize: 14,
-              fontWeight: 700,
+              fontWeight: 500,
               cursor: "pointer",
               display: "inline-flex",
               alignItems: "center",
@@ -395,16 +399,16 @@ export function Toolbar({
                 padding: "0 16px 0 12px",
                 borderRadius: 19,
                 border: "none",
-                background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
-                color: "#ffffff",
+                background: p.surfaceContainerHigh,
+                color: p.onSurface,
                 fontSize: 13,
-                fontWeight: 700,
+                fontWeight: 500,
                 cursor: "pointer",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 7,
                 whiteSpace: "nowrap",
-                boxShadow: "0 2px 10px rgba(168, 85, 247, 0.4)",
+                boxShadow: "none",
               }}
             >
               <Icon name="auto_awesome" size={18} fill />
@@ -447,16 +451,16 @@ export function Toolbar({
                 padding: "0 14px 0 10px",
                 borderRadius: 19,
                 border: "none",
-                background: editingDesignTitle ? "#0284c7" : "linear-gradient(135deg, #ef4444 0%, #e11d48 100%)",
-                color: "#ffffff",
+                background: p.surfaceContainerHigh,
+                color: p.onSurface,
                 fontSize: 13,
-                fontWeight: 700,
+                fontWeight: 500,
                 cursor: "pointer",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 6,
                 whiteSpace: "nowrap",
-                boxShadow: editingDesignTitle ? "0 2px 8px rgba(2, 132, 199, 0.35)" : "0 2px 8px rgba(225, 29, 72, 0.35)",
+                boxShadow: "none",
               }}
             >
               <Icon name={editingDesignTitle ? "edit_note" : "cloud_upload"} size={18} />

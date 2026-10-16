@@ -8,7 +8,7 @@ export default function GoogleAuthProvider({ children }: { children: React.React
     "532936713942-qmhidnnhkrvhv62rindb0nsq946cavia.apps.googleusercontent.com";
   
   return (
-    <GoogleOAuthProvider clientId={clientId}>
+    <GoogleOAuthProvider clientId={clientId} locale="en">
       {children}
     </GoogleOAuthProvider>
   );
