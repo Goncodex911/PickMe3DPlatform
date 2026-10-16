@@ -19,9 +19,9 @@ const DEFAULT_TAGS = [
 ];
 
 const DATE_OPTIONS = [
-  { value: "all" as const, label: "Tất cả", icon: "schedule" },
-  { value: "week" as const, label: "Tuần này", icon: "date_range" },
-  { value: "month" as const, label: "Tháng này", icon: "calendar_month" },
+  { value: "all" as const, label: "All time", icon: "schedule" },
+  { value: "week" as const, label: "This week", icon: "date_range" },
+  { value: "month" as const, label: "This month", icon: "calendar_month" },
 ];
 
 export default function AdvancedSearchFilters({
@@ -69,7 +69,7 @@ export default function AdvancedSearchFilters({
         }`}
       >
         <span className="material-symbols-rounded text-sm">tune</span>
-        <span>Bộ lọc nâng cao</span>
+        <span>Advanced filters</span>
         {activeFilterCount > 0 && (
           <span className="ml-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-blue-500 text-white text-[10px] font-bold">
             {activeFilterCount}
@@ -93,7 +93,7 @@ export default function AdvancedSearchFilters({
               <span className="text-xs font-semibold text-slate-300">Hashtags</span>
               {selectedTags.length > 0 && (
                 <span className="text-[10px] text-slate-500">
-                  ({selectedTags.length} đã chọn)
+                  ({selectedTags.length} selected)
                 </span>
               )}
             </div>
@@ -124,7 +124,7 @@ export default function AdvancedSearchFilters({
               <span className="material-symbols-rounded text-sm text-slate-400">
                 calendar_today
               </span>
-              <span className="text-xs font-semibold text-slate-300">Khoảng thời gian</span>
+              <span className="text-xs font-semibold text-slate-300">Date range</span>
             </div>
             <div className="flex gap-2">
               {DATE_OPTIONS.map((opt) => (
@@ -152,7 +152,7 @@ export default function AdvancedSearchFilters({
                 content_copy
               </span>
               <span className="text-xs font-semibold text-slate-300">
-                Chỉ hiện thiết kế đã fork được
+                Only show reusable designs
               </span>
             </div>
             <button
@@ -179,7 +179,7 @@ export default function AdvancedSearchFilters({
                 className="flex items-center gap-1 text-[11px] text-red-400 hover:text-red-300 transition-colors font-medium"
               >
                 <span className="material-symbols-rounded text-xs">close</span>
-                Xóa tất cả bộ lọc
+                Clear all filters
               </button>
             </div>
           )}
