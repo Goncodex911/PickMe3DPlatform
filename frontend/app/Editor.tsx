@@ -78,6 +78,7 @@ import {
   frameRadius,
   frameRect,
   frameSizeOf,
+  isPhoneFrame,
   carryItemSize,
   matchRunSize,
   runSizePatch,
@@ -154,6 +155,11 @@ import { ThemeContext, ensureFontLoaded, ensureLangFontLoaded } from "@/lib/them
 import { BottomSheet, MobileActionBar, MobileInspector, MobileLang, MobileSettings } from "@/components/Mobile";
 import { ConfirmDialog, IconBtn, Segmented } from "@/components/ui";
 import { Lang, LangContext, SEED_TEXT, getLang, setGlobalLang, t, translateDefaultFrameName, translateDefaultText } from "@/lib/i18n";
+import DeviceSelector from "@/components/DeviceSelector";
+import ImportTemplateModal from "@/components/ImportTemplateModal";
+import EmbedModal from "@/components/EmbedModal";
+import { DeviceConfig, findDeviceById } from "@/constants/devices";
+import { TemplateFile } from "@/types/template-file";
 
 /** the screens while a model drafts: primary, tertiary and primary container, drifting */
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
@@ -233,23 +239,23 @@ type DragState = {
 type Gesture =
   | { kind: "pan"; sx: number; sy: number; vx: number; vy: number }
   | {
-      kind: "marquee";
-      x0: number;
-      y0: number;
-      x1: number;
-      y1: number;
-      moved: boolean;
-    }
+    kind: "marquee";
+    x0: number;
+    y0: number;
+    x1: number;
+    y1: number;
+    moved: boolean;
+  }
   | {
-      kind: "frame";
-      id: string;
-      sx: number;
-      sy: number;
-      fx: number;
-      fy: number;
-      groups: { id: string; x: number; y: number }[];
-      moved: boolean;
-    }
+    kind: "frame";
+    id: string;
+    sx: number;
+    sy: number;
+    fx: number;
+    fy: number;
+    groups: { id: string; x: number; y: number }[];
+    moved: boolean;
+  }
   | { kind: "group"; id: string; sx: number; sy: number; gx: number; gy: number; moved: boolean; overBin: boolean; guide?: Guide | null };
 
 /** everything in a document apart from its screens and parts */
@@ -587,6 +593,226 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
   const aiNoteTimer = useRef<number | null>(null);
   const aiAbortRef = useRef<AbortController | null>(null);
 
+  /* ---------- NEW FEATURES: Device Preset, Import, Embed ---------- */
+  /** Active device preset — null means no preset (free canvas) */
+  const [activeDeviceId, setActiveDeviceId] = useState<string | null>(null);
+  const [activeDevice, setActiveDevice] = useState<DeviceConfig | null>(null);
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [embedModalOpen, setEmbedModalOpen] = useState(false);
+
+  /** Handle device selection from DeviceSelector */
+  const handleDeviceSelect = (device: DeviceConfig | null) => {
+    setActiveDevice(device);
+    setActiveDeviceId(device?.id ?? null);
+    if (device) {
+      // 1. Switch to phone frame mode if currently in blank mode
+      if (frameRef.current !== "phone") {
+        setFrame("phone");
+        frameRef.current = "phone";
+      }
+
+      const existing = framesRef.current;
+      const targetId = selectedFrameId ?? existing[0]?.id;
+
+      if (targetId) {
+        // 2a. Resize existing frame to device dimensions
+        snapshot();
+        const updated = (framesRef.current.length ? framesRef.current : [{ ...SEED_FRAMES[0], name: device.name }]).map((f) =>
+          f.id === targetId ? { ...f, name: device.name, w: device.width, h: device.height } : f
+        );
+        framesRef.current = updated;
+        setFrames(updated);
+      } else {
+        // 2b. No frames at all — create a new one with device dimensions
+        snapshot();
+        const newFrame: Frame = {
+          id: uid(),
+          name: device.name,
+          x: 0,
+          y: 0,
+          w: device.width,
+          h: device.height,
+        };
+        framesRef.current = [newFrame];
+        setFrames([newFrame]);
+        setSelectedFrameId(newFrame.id);
+      }
+
+      // 3. After state settles, fit view to the frame
+      setTimeout(() => fitRef.current?.(), 80);
+    }
+  };
+
+  /** Handle successful template file import — apply docData if present, or extract layers into UI */
+  const handleImportSuccess = (file: TemplateFile) => {
+    // 1. Activate device preset if specified in file
+    const preset = file.devicePresetId ? findDeviceById(file.devicePresetId) : null;
+    if (preset) {
+      setActiveDevice(preset);
+      setActiveDeviceId(preset.id);
+      if (frameRef.current !== "phone") {
+        setFrame("phone");
+        frameRef.current = "phone";
+      }
+    }
+
+    const targetW = preset?.width ?? 440;
+    const targetH = preset?.height ?? 956;
+    const fallbackFrameId = "imported-frame-" + uid();
+    const fallbackFrame: Frame = {
+      id: fallbackFrameId,
+      name: file.metadata?.title || (preset ? preset.name : "Screen 1"),
+      x: 0,
+      y: 0,
+      w: targetW,
+      h: targetH,
+    };
+
+    if (file.docData && typeof file.docData === "object") {
+      try {
+        const docPartial = file.docData as Partial<Doc>;
+        snapshot(true);
+        if (!docPartial.frames || docPartial.frames.length === 0) {
+          docPartial.frames = [fallbackFrame];
+        }
+        applyDoc(docPartial, false);
+        framesRef.current = docPartial.frames;
+        setSelectedFrameId(docPartial.frames[0]?.id ?? fallbackFrameId);
+        showToast(`Đã nhập "${file.metadata?.title ?? "Mẫu"}"`, 2200, "check");
+        setTimeout(() => fitRef.current?.(), 100);
+        return;
+      } catch (err) {
+        console.error("Error applying docData from file:", err);
+      }
+    }
+
+    // 2. Fallback: Automatically extract 3D layers and metadata into editable Canvas UI components!
+    try {
+      snapshot(true);
+      const sid = () => `imp_${uid()}`;
+      const margin = 20;
+      const groups: Group[] = [];
+
+      // Top app bar
+      groups.push({
+        id: sid(),
+        x: 0,
+        y: 0,
+        axis: "x",
+        items: [{
+          ...makeItem("topAppBar"),
+          id: sid(),
+          label: file.metadata?.title ?? "Mẫu 3D SmartWatch Pro",
+          icon: "arrow_back",
+        }],
+      });
+
+      // 3D Showcase Card
+      groups.push({
+        id: sid(),
+        x: margin,
+        y: 80,
+        axis: "x",
+        items: [{
+          ...makeItem("card"),
+          id: sid(),
+          label: "Mô hình 3D - " + (file.metadata?.title ?? "SmartWatch"),
+          supporting: file.metadata?.description ?? "Khung Titanium 3D & Kính Sapphire cao cấp",
+          icon: "view_in_ar",
+          size: targetW - margin * 2,
+        }],
+      });
+
+      // Tag chips
+      const tags = file.metadata?.tags && file.metadata.tags.length > 0
+        ? file.metadata.tags
+        : ["Khung Titanium", "Kính Sapphire", "Chống nước 50M"];
+      groups.push({
+        id: sid(),
+        x: margin,
+        y: 270,
+        axis: "x",
+        items: tags.map((t) => ({
+          ...makeItem("chip"),
+          id: sid(),
+          label: t,
+          icon: "verified",
+        })),
+      });
+
+      // Extracted layer items from file.layers
+      const rawLayers = file.layers && file.layers.length > 0 ? file.layers : [
+        { name: "Khung Titanium 3D", type: "mesh" },
+        { name: "Mặt Kính Sapphire & UI", type: "mesh" },
+        { name: "Dây đeo Silicon Thể thao", type: "mesh" },
+      ];
+      const layerItems = rawLayers.map((lay, idx) => ({
+        ...makeItem("listItem"),
+        id: sid(),
+        label: lay.name,
+        supporting: lay.type === "mesh" ? `Layer 3D Mesh | Tùy biến vật liệu` : `Layer ${lay.type}`,
+        icon: idx === 0 ? "layers" : idx === 1 ? "diamond" : "watch",
+      }));
+      groups.push({
+        id: sid(),
+        x: margin,
+        y: 330,
+        axis: "y",
+        items: layerItems,
+      });
+
+      // Action buttons
+      groups.push({
+        id: sid(),
+        x: margin,
+        y: 550,
+        axis: "x",
+        items: [
+          {
+            ...makeItem("button"),
+            id: sid(),
+            label: "Xoay 3D 360°",
+            icon: "3d_rotation",
+            variant: "tonal",
+          },
+          {
+            ...makeItem("button"),
+            id: sid(),
+            label: "Tùy biến vật liệu",
+            icon: "palette",
+            variant: "filled",
+          },
+        ],
+      });
+
+      // Bottom Nav
+      groups.push({
+        id: sid(),
+        x: 0,
+        y: targetH - KIND_SPEC.bottomNav.h,
+        axis: "x",
+        items: [{
+          ...makeItem("bottomNav"),
+          id: sid(),
+          label: "Điều hướng",
+        }],
+      });
+
+      // Commit frame and groups to canvas
+      framesRef.current = [fallbackFrame];
+      setFrames([fallbackFrame]);
+      setSelectedFrameId(fallbackFrame.id);
+      setGroups(groups);
+      groupsRef.current = groups;
+
+      showToast(`Đã bóc tách "${file.metadata?.title ?? "Mẫu"}" lên Canvas!`, 2500, "check");
+      setTimeout(() => fitRef.current?.(), 100);
+    } catch (err) {
+      console.error("Error generating canvas UI from layers:", err);
+      showToast("Không thể nạp dữ liệu lên canvas.", 3000, "error");
+    }
+  };
+
   const p = useMemo(() => paletteOf(paletteKey, customPalette, theme), [paletteKey, customPalette, theme]);
   /* corner helpers read the shape scale outside React; keep it current before anything renders */
   setGlobalShape(theme.shape);
@@ -800,7 +1026,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
               if ((parsed._id || parsed.id) === editIdParam) {
                 setEditingDesign(parsed);
               }
-            } catch {}
+            } catch { }
           } else {
             fetchTemplateByIdApi(editIdParam).then((res) => {
               if (res) {
@@ -842,7 +1068,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
         setGroups(seed(initialLang));
         setFrames([{ ...SEED_FRAMES[0], name: t("home", initialLang) }]);
       }
-    } catch {}
+    } catch { }
     setAiSettings(loadAiSettings());
     loadedRef.current = true;
     /* the document is in state; one frame later it is on screen and the boot overlay may go.
@@ -936,7 +1162,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
         DOC_KEY,
         JSON.stringify({ groups, frames, paletteKey, frame, title, brief, promptEdit, promptOptions, platform: platform ?? undefined, customPalette: customPalette ?? undefined, dynamicColor, theme }),
       );
-    } catch {}
+    } catch { }
   }, [editAccess, groups, frames, paletteKey, frame, title, brief, promptEdit, promptOptions, platform, customPalette, dynamicColor, theme]);
 
   useEffect(() => {
@@ -957,7 +1183,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
           boot: { surface: p.surface, container: p.surfaceContainer, low: p.surfaceContainerLow, high: p.surfaceContainerHigh, primary: p.primary, canvas: frame === "phone" ? p.surfaceContainerLow : "#ffffff" },
         }),
       );
-    } catch {}
+    } catch { }
   }, [
     view,
     leftOpen,
@@ -1620,9 +1846,9 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
           gr.id !== d.gid
             ? gr
             : {
-                ...gr,
-                items: gr.items.map((it) => (it.id !== d.id ? it : { ...it, ...sizePatch(it, d, v) })),
-              },
+              ...gr,
+              items: gr.items.map((it) => (it.id !== d.id ? it : { ...it, ...sizePatch(it, d, v) })),
+            },
         ),
       );
 
@@ -2043,10 +2269,10 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
         const placed = loose
           ? moved
           : {
-              ...moved,
-              x: guide?.x !== undefined ? Math.round(moved.x + guide.x - b.l) : onGrid(moved.x, f?.x ?? 0),
-              y: guide?.y !== undefined ? Math.round(moved.y + guide.y - b.t) : onGrid(moved.y, f?.y ?? 0),
-            };
+            ...moved,
+            x: guide?.x !== undefined ? Math.round(moved.x + guide.x - b.l) : onGrid(moved.x, f?.x ?? 0),
+            y: guide?.y !== undefined ? Math.round(moved.y + guide.y - b.t) : onGrid(moved.y, f?.y ?? 0),
+          };
         setGroups((gs) => gs.map((x) => (x.id === g.id ? placed : x)));
         return;
       }
@@ -2570,7 +2796,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     setQuickUndo(false);
     try {
       localStorage.removeItem(BEFORE_KEY);
-    } catch {}
+    } catch { }
     snapshot();
     setGroups([]);
     setFrames([]);
@@ -2589,7 +2815,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     setQuickUndo(false);
     try {
       localStorage.removeItem(BEFORE_KEY);
-    } catch {}
+    } catch { }
     applyDoc(next, true);
     if (!mobileRef.current) {
       const nextFrame = next.frame === "blank" ? "blank" : "phone";
@@ -2651,7 +2877,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     setDraftBefore(before);
     try {
       localStorage.setItem(BEFORE_KEY, JSON.stringify(before));
-    } catch {}
+    } catch { }
   };
 
   const appendGeneratedDoc = (next: Doc) => {
@@ -2780,7 +3006,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     setQuickUndo(true);
     try {
       localStorage.removeItem(BEFORE_KEY);
-    } catch {}
+    } catch { }
   };
   const undoDraft = () => {
     if (draftBefore) {
@@ -2864,7 +3090,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     setFrames([f]);
   };
 
-  const ensureFrameRef = useRef(() => {});
+  const ensureFrameRef = useRef(() => { });
   ensureFrameRef.current = ensureFrame;
 
   /** phone UI: the plus button drops a new button where the view is looking,
@@ -3378,50 +3604,50 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
         {gs.map((g) =>
           g.free ? (
             ((corners) =>
-            layoutOf(g, widths).map((pl) => (
-              <div key={pl.item.id} style={{ position: "absolute", left: pl.x - f.x, top: pl.y - f.y, zIndex: modalRailOf(g) ? 2 : undefined }}>
-                <M3Static
-                  item={pl.item}
-                  palette={p}
-                  radii={corners.get(pl.item.id)}
-                  style={MEASURED.includes(pl.item.kind) ? undefined : { width: pl.w, height: pl.h }}
-                />
-              </div>
-            )))(freeRadii(g, widths))
+              layoutOf(g, widths).map((pl) => (
+                <div key={pl.item.id} style={{ position: "absolute", left: pl.x - f.x, top: pl.y - f.y, zIndex: modalRailOf(g) ? 2 : undefined }}>
+                  <M3Static
+                    item={pl.item}
+                    palette={p}
+                    radii={corners.get(pl.item.id)}
+                    style={MEASURED.includes(pl.item.kind) ? undefined : { width: pl.w, height: pl.h }}
+                  />
+                </div>
+              )))(freeRadii(g, widths))
           ) : (
-          <div
-            key={g.id}
-            style={{
-              position: "absolute",
-              left: g.x - f.x,
-              top: g.y - f.y,
-              zIndex: modalRailOf(g) ? 2 : undefined,
-              display: "flex",
-              flexDirection: g.axis === "x" ? "row" : "column",
-              alignItems: g.axis === "x" ? "center" : "stretch",
-              gap: GAP,
-            }}
-          >
-            {g.items.map((it, i) => {
-              const conn = connectSpecOf(it);
-              const n = g.items.length;
-              const radii =
-                conn && n > 1
-                  ? runRadii(g.axis, i === 0, i === n - 1, false, false, 0, conn.outer, conn.inner)
-                  : conn
-                    ? uniformRadii(conn.outer)
-                    : baseRadii(it);
-              return (
-                <M3Static
-                  key={it.id}
-                  item={it}
-                  palette={p}
-                  radii={radii}
-                  style={MEASURED.includes(it.kind) ? undefined : { width: sizeOf(it, widths).w, height: sizeOf(it, widths).h }}
-                />
-              );
-            })}
-          </div>
+            <div
+              key={g.id}
+              style={{
+                position: "absolute",
+                left: g.x - f.x,
+                top: g.y - f.y,
+                zIndex: modalRailOf(g) ? 2 : undefined,
+                display: "flex",
+                flexDirection: g.axis === "x" ? "row" : "column",
+                alignItems: g.axis === "x" ? "center" : "stretch",
+                gap: GAP,
+              }}
+            >
+              {g.items.map((it, i) => {
+                const conn = connectSpecOf(it);
+                const n = g.items.length;
+                const radii =
+                  conn && n > 1
+                    ? runRadii(g.axis, i === 0, i === n - 1, false, false, 0, conn.outer, conn.inner)
+                    : conn
+                      ? uniformRadii(conn.outer)
+                      : baseRadii(it);
+                return (
+                  <M3Static
+                    key={it.id}
+                    item={it}
+                    palette={p}
+                    radii={radii}
+                    style={MEASURED.includes(it.kind) ? undefined : { width: sizeOf(it, widths).w, height: sizeOf(it, widths).h }}
+                  />
+                );
+              })}
+            </div>
           ),
         )}
         {gs.some((g) => modalRailOf(g)) && (
@@ -3714,33 +3940,33 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     for (const g of groups) {
       for (const it of g.items) {
         for (const { slot, action } of actionsOf(it)) {
-        if (action.to === BACK_TARGET) continue;
-        const f = frames.find((x) => x.id === action.to);
-        const r = rects.find((x) => x.id === it.id);
-        if (!f || !r) continue;
-        const fr = frameRect(f);
-        const rightward = (fr.l + fr.r) / 2 >= (r.l + r.r) / 2;
-        const sx = rightward ? r.r : r.l;
-        const sy = (r.t + r.b) / 2;
-        const tx = rightward ? fr.l - BEZEL : fr.r + BEZEL;
-        const ty = clamp(sy, fr.t + 40, fr.b - 40);
-        const dx = Math.max(60, Math.abs(tx - sx) * 0.5);
-        const c1x = sx + (rightward ? dx : -dx);
-        const c2x = tx + (rightward ? -dx : dx);
-        const d = `M${sx} ${sy} C${c1x} ${sy} ${c2x} ${ty} ${tx} ${ty}`;
-        // midpoint of the cubic at t = 0.5
-        const mx = 0.125 * sx + 0.375 * c1x + 0.375 * c2x + 0.125 * tx;
-        const my = 0.125 * sy + 0.375 * sy + 0.375 * ty + 0.125 * ty;
-        out.push({
-          id: `${it.id}|${slot}`,
-          d,
-          mx,
-          my,
-          tx,
-          ty,
-          ang: rightward ? 0 : 180,
-          t: action.transition,
-        });
+          if (action.to === BACK_TARGET) continue;
+          const f = frames.find((x) => x.id === action.to);
+          const r = rects.find((x) => x.id === it.id);
+          if (!f || !r) continue;
+          const fr = frameRect(f);
+          const rightward = (fr.l + fr.r) / 2 >= (r.l + r.r) / 2;
+          const sx = rightward ? r.r : r.l;
+          const sy = (r.t + r.b) / 2;
+          const tx = rightward ? fr.l - BEZEL : fr.r + BEZEL;
+          const ty = clamp(sy, fr.t + 40, fr.b - 40);
+          const dx = Math.max(60, Math.abs(tx - sx) * 0.5);
+          const c1x = sx + (rightward ? dx : -dx);
+          const c2x = tx + (rightward ? -dx : dx);
+          const d = `M${sx} ${sy} C${c1x} ${sy} ${c2x} ${ty} ${tx} ${ty}`;
+          // midpoint of the cubic at t = 0.5
+          const mx = 0.125 * sx + 0.375 * c1x + 0.375 * c2x + 0.125 * tx;
+          const my = 0.125 * sy + 0.375 * sy + 0.375 * ty + 0.125 * ty;
+          out.push({
+            id: `${it.id}|${slot}`,
+            d,
+            mx,
+            my,
+            tx,
+            ty,
+            ang: rightward ? 0 : 180,
+            t: action.transition,
+          });
         }
       }
     }
@@ -4037,15 +4263,15 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
           const radii =
             conn && ic
               ? runRadii(
-                  g.axis,
-                  r === 0,
-                  r === m - 1,
-                  r > 0 && cells[r - 1].ph,
-                  r < m - 1 && cells[r + 1].ph,
-                  pull,
-                  ic.outer,
-                  ic.inner,
-                )
+                g.axis,
+                r === 0,
+                r === m - 1,
+                r > 0 && cells[r - 1].ph,
+                r < m - 1 && cells[r + 1].ph,
+                pull,
+                ic.outer,
+                ic.inner,
+              )
               : baseRadii(c.item);
           return (
             <M3Node
@@ -4099,1075 +4325,1289 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
 
   return (
     <LangContext.Provider value={lang}>
-    <ThemeContext.Provider value={theme}>
-      <div
-        className={`app-root${revealing ? " m3e-reveal" : ""}${widthDragId || sizeEditId ? " m3-size-now" : ""}`}
-        /* the preview sits outside this tree and owns the keyboard while it is up */
-        inert={editAccess !== "editable" || previewId !== null}
-        aria-hidden={editAccess !== "editable" || previewId !== null}
-        style={{
-          /* the settle time and curve the stylesheet eases with, from the one place they are set */
-          ...(SETTLE_CSS_VARS as React.CSSProperties),
-          display: "flex",
-          overflow: "hidden",
-          background: p.surfaceContainer,
-          cursor: resizing ? "col-resize" : undefined,
-          userSelect: resizing ? "none" : undefined,
-          ["--sb" as string]: p.outlineVariant,
-        }}
-      >
-        {/* hidden measuring layer for text-sized kinds */}
+      <ThemeContext.Provider value={theme}>
         <div
-          aria-hidden
-          className="m3-measure"
+          className={`app-root${revealing ? " m3e-reveal" : ""}${widthDragId || sizeEditId ? " m3-size-now" : ""}`}
+          /* the preview sits outside this tree and owns the keyboard while it is up */
+          inert={editAccess !== "editable" || previewId !== null}
+          aria-hidden={editAccess !== "editable" || previewId !== null}
           style={{
-            position: "fixed",
-            left: -99999,
-            top: 0,
-            visibility: "hidden",
-            pointerEvents: "none",
-            fontFamily: fontFamilyOf(theme.font, lang),
+            /* the settle time and curve the stylesheet eases with, from the one place they are set */
+            ...(SETTLE_CSS_VARS as React.CSSProperties),
+            display: "flex",
+            overflow: "hidden",
+            background: p.surfaceContainer,
+            cursor: resizing ? "col-resize" : undefined,
+            userSelect: resizing ? "none" : undefined,
+            ["--sb" as string]: p.outlineVariant,
           }}
         >
-          {allItems
-            .map(onLook)
-            .filter((it) => isMeasured(it))
-            .map((it) => (
+          {/* hidden measuring layer for text-sized kinds */}
+          <div
+            aria-hidden
+            className="m3-measure"
+            style={{
+              position: "fixed",
+              left: -99999,
+              top: 0,
+              visibility: "hidden",
+              pointerEvents: "none",
+              fontFamily: fontFamilyOf(theme.font, lang),
+            }}
+          >
+            {allItems
+              .map(onLook)
+              .filter((it) => isMeasured(it))
+              .map((it) => (
+                <div
+                  key={it.id}
+                  ref={(el) => {
+                    if (el) measureEls.current.set(it.id, el);
+                    else measureEls.current.delete(it.id);
+                  }}
+                  style={{
+                    display: "inline-flex",
+                    boxSizing: "border-box",
+                    border:
+                      it.variant === "outlined" &&
+                        (it.kind === "button" ||
+                          it.kind === "chip" ||
+                          it.kind === "extendedFab")
+                        ? "1px solid transparent"
+                        : "none",
+                  }}
+                >
+                  <MeasuredContent item={it} p={p} />
+                </div>
+              ))}
+          </div>
+
+          {(isExporting || exportFrame !== null || exportModalTab !== null) && (
+            <div aria-hidden style={{ position: "fixed", left: -99999, top: 0, fontFamily: fontFamilyOf(theme.font, lang) }}>
+              {frames.map((f) => renderExport(f))}
+            </div>
+          )}
+
+
+          {/* the part in flight rides above every panel so it stays visible while crossing them */}
+          {drag?.active && (() => {
+            const r = canvasRect();
+            return (
+              <div aria-hidden style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 60, overflow: "hidden" }}>
+                <div
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    top: 0,
+                    transform: `translate(${(r?.left ?? 0) + view.x}px, ${(r?.top ?? 0) + view.y}px) scale(${view.z})`,
+                    transformOrigin: "0 0",
+                    fontFamily: fontFamilyOf(theme.font, lang),
+                  }}
+                >
+                  {/* the part in flight */}
+                  {drag?.active && (
+                    <motion.div
+                      style={{
+                        position: "absolute",
+                        left: 0,
+                        top: 0,
+                        x: sx,
+                        y: sy,
+                        pointerEvents: "none",
+                        zIndex: 50,
+                      }}
+                      animate={{
+                        opacity: drag.vanishing ? 0 : drag.overBin ? 0.4 : 1,
+                        scale: drag.vanishing ? 0.6 : drag.overBin ? 0.84 : 1,
+                      }}
+                      transition={
+                        drag.vanishing
+                          ? VANISH
+                          : {
+                            type: "spring",
+                            stiffness: 520,
+                            damping: 34,
+                            mass: 0.6,
+                          }
+                      }
+                    >
+                      <M3Node
+                        item={drag.item}
+                        palette={p}
+                        widths={widths}
+                        lit={dragLit}
+                        dragging
+                        radii={(() => {
+                          const conn = connectSpecOf(drag.item);
+                          if (!conn || !drag.snap) return baseRadii(drag.item);
+                          const g = groupsRef.current.find(
+                            (x) => x.id === drag.snap!.groupId,
+                          );
+                          const mm = (g?.items.length ?? 0) + 1;
+                          const k = drag.snap.index;
+                          return runRadii(
+                            conn.axis,
+                            k === 0,
+                            k === mm - 1,
+                            k > 0,
+                            k < mm - 1,
+                            drag.snap.pull,
+                            conn.outer,
+                            conn.inner,
+                          );
+                        })()}
+                      />
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* ---- left: rail + parts / layers ---- */}
+          {!isMobile && (
+            <aside style={{ ...panelStyle, width: leftOpen ? leftW : RAIL_W, flexDirection: "row", transition: "width 200ms cubic-bezier(0.2, 0, 0, 1)" }}>
+              {/* dropping a canvas part anywhere on this side deletes it, whichever tab is open */}
+              {overBin && (
+                <div style={{ position: "absolute", inset: 0, zIndex: 5, background: "rgba(179,38,30,0.10)", display: "grid", placeItems: "center", pointerEvents: "none", color: p.error }}>
+                  <div style={{ width: 72, height: 72, borderRadius: 36, background: p.errorContainer, color: p.onErrorContainer, display: "grid", placeItems: "center", boxShadow: "0 4px 14px rgba(0,0,0,0.14)" }}>
+                    <Icon name="delete" size={34} />
+                  </div>
+                </div>
+              )}
               <div
-                key={it.id}
-                ref={(el) => {
-                  if (el) measureEls.current.set(it.id, el);
-                  else measureEls.current.delete(it.id);
+                onPointerEnter={() => setRailHover(true)}
+                onPointerLeave={() => setRailHover(false)}
+                onClick={(e) => {
+                  // a click on the rail's empty background opens the panel
+                  if (!leftOpen && e.target === e.currentTarget) setLeftOpen(true);
                 }}
                 style={{
-                  display: "inline-flex",
-                  boxSizing: "border-box",
-                  border:
-                    it.variant === "outlined" &&
-                    (it.kind === "button" ||
-                      it.kind === "chip" ||
-                      it.kind === "extendedFab")
-                      ? "1px solid transparent"
-                      : "none",
+                  width: RAIL_W,
+                  flex: "0 0 auto",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "10px 0",
+                  background: p.surfaceContainerLow,
+                  cursor: leftOpen ? undefined : "pointer",
                 }}
               >
-                <MeasuredContent item={it} p={p} />
+                {!leftOpen && railHover ? (
+                  <IconBtn icon="left_panel_open" p={p} on onClick={() => setLeftOpen(true)} title={t("openPanel", lang)} size={40} />
+                ) : (
+                  <div
+                    onClick={() => !leftOpen && setLeftOpen(true)}
+                    style={{ width: 40, height: 40, display: "grid", placeItems: "center", cursor: leftOpen ? "default" : "pointer" }}
+                  >
+                    <Logo size={32} color={p.primary} glyph={p.onPrimary} />
+                  </div>
+                )}
+                <div style={{ height: 6 }} />
+                {LEFT_TABS.map((tab, i) => (
+                  <div key={tab.key} style={{ marginTop: i === 2 || i === 6 ? 10 : 0 }}>
+                    <IconBtn
+                      icon={tab.icon}
+                      p={p}
+                      on={leftOpen && leftTab === tab.key}
+                      onClick={() => {
+                        setLeftTab(tab.key);
+                        setLeftOpen(true);
+                      }}
+                      title={t(tab.title, lang)}
+                      size={44}
+                    />
+                  </div>
+                ))}
+                <div style={{ flex: 1 }} onClick={() => !leftOpen && setLeftOpen(true)} />
+                <LangMenu p={p} onLang={changeLanguage} side="right" size={44} />
+                <ProfileMenu p={p} size={44} side="right" />
               </div>
-            ))}
-        </div>
+              {leftOpen && (
+                <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "10px 10px 0 14px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontWeight: 700,
+                        fontSize: 14,
+                        color: p.onSurface,
+                        flex: 1,
+                      }}
+                    >
+                      {t(LEFT_TABS.find((x) => x.key === leftTab)?.title ?? "parts", lang)}
+                    </span>
+                    <IconBtn
+                      icon="left_panel_close"
+                      p={p}
+                      onClick={() => setLeftOpen(false)}
+                      title={t("closePanel", lang)}
+                    />
+                  </div>
+                  <div style={{ flex: 1, minHeight: 0 }}>
+                    {leftTab === "parts" ? (
+                      <PartsPalette
+                        palette={p}
+                        favorites={favorites}
+                        onToggleFavorite={(k) =>
+                          setFavorites((f) =>
+                            f.includes(k) ? f.filter((x) => x !== k) : [...f, k],
+                          )
+                        }
+                        onPartPointerDown={onPartPointerDown}
+                      />
+                    ) : leftTab === "color" ? (
+                      <ColorPanel
+                        p={p}
+                        paletteKey={paletteKey}
+                        onPalette={setPaletteKey}
+                        custom={customPalette}
+                        onCustom={setCustomPalette}
+                        dynamic={dynamicColor}
+                        onDynamic={setDynamicColor}
+                        theme={theme}
+                        onTheme={patchTheme}
+                      />
+                    ) : leftTab === "shape" ? (
+                      <ShapePanel p={p} theme={theme} onChange={patchTheme} />
+                    ) : leftTab === "type" ? (
+                      <TypePanel p={p} theme={theme} onChange={patchTheme} />
+                    ) : leftTab === "motion" ? (
+                      <MotionPanel p={p} theme={theme} onChange={patchTheme} />
+                    ) : leftTab === "ai" ? (
+                      <AiPanel p={p} settings={aiSettings} onSettings={updateAiSettings} onOpenAiModal={() => setAiModalOpen(true)} />
+                    ) : (
+                      <LayersPanel
+                        p={p}
+                        frames={frames}
+                        frameId={layersFrame?.id ?? null}
+                        onFrame={(id) => {
+                          setLayersFrameId(id);
+                          setSelectedIds([]);
+                          setSelectedFrameId(id);
+                          const f = framesRef.current.find((x) => x.id === id);
+                          if (f) glideToFrame(f);
+                        }}
+                        groups={layerGroups}
+                        widths={widths}
+                        selectedIds={selectedIds}
+                        onSelect={(ids, add) => {
+                          setSelectedIds((cur) => (add ? [...cur.filter((x) => !ids.includes(x)), ...ids] : ids));
+                          setSelectedFrameId(null);
+                          setSelectedLinkId(null);
+                          setRightTab("edit");
+                        }}
+                        onReorder={reorderLayers}
+                        onToggleLock={toggleGroupLock}
+                        onReorderItems={reorderGroupItems}
+                        onDragging={onLayerDragging}
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
+              {leftOpen && (
+                <div
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    setResizing("left");
+                  }}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    bottom: 0,
+                    right: -3,
+                    width: 6,
+                    cursor: "col-resize",
+                    zIndex: 5,
+                  }}
+                />
+              )}
+            </aside>
+          )}
 
-        {(isExporting || exportFrame !== null || exportModalTab !== null) && (
-          <div aria-hidden style={{ position: "fixed", left: -99999, top: 0, fontFamily: fontFamilyOf(theme.font, lang) }}>
-            {frames.map((f) => renderExport(f))}
-          </div>
-        )}
-
-
-        {/* the part in flight rides above every panel so it stays visible while crossing them */}
-        {drag?.active && (() => {
-          const r = canvasRect();
-          return (
-            <div aria-hidden style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 60, overflow: "hidden" }}>
+          {/* ---- canvas ---- */}
+          <main
+            style={{
+              flex: 1,
+              position: "relative",
+              minWidth: 0,
+              padding: isMobile ? 6 : 8,
+            }}
+          >
+            <div
+              ref={canvasRef}
+              onPointerDown={onCanvasPointerDown}
+              onPointerDownCapture={onTouchCapture}
+              style={{
+                position: "absolute",
+                inset: isMobile ? 6 : 8,
+                overflow: "hidden",
+                borderRadius: 24,
+                background: canvasBg,
+                cursor: panning ? "grabbing" : handMode ? "grab" : "default",
+                touchAction: "none",
+              }}
+            >
               <div
                 style={{
                   position: "absolute",
                   left: 0,
                   top: 0,
-                  transform: `translate(${(r?.left ?? 0) + view.x}px, ${(r?.top ?? 0) + view.y}px) scale(${view.z})`,
+                  transform: `translate(${view.x}px, ${view.y}px) scale(${view.z})`,
                   transformOrigin: "0 0",
+                  transition: cameraEasing ? `transform ${SETTLE_MS}ms cubic-bezier(0.2, 0, 0, 1)` : undefined,
+                  willChange: "transform",
+                  visibility: viewReady ? "visible" : "hidden",
                   fontFamily: fontFamilyOf(theme.font, lang),
                 }}
               >
-      {/* the part in flight */}
-      {drag?.active && (
-        <motion.div
-          style={{
-            position: "absolute",
-            left: 0,
-            top: 0,
-            x: sx,
-            y: sy,
-            pointerEvents: "none",
-            zIndex: 50,
-          }}
-          animate={{
-            opacity: drag.vanishing ? 0 : drag.overBin ? 0.4 : 1,
-            scale: drag.vanishing ? 0.6 : drag.overBin ? 0.84 : 1,
-          }}
-          transition={
-            drag.vanishing
-              ? VANISH
-              : {
-                  type: "spring",
-                  stiffness: 520,
-                  damping: 34,
-                  mass: 0.6,
-                }
-          }
-        >
-          <M3Node
-            item={drag.item}
-            palette={p}
-            widths={widths}
-            lit={dragLit}
-            dragging
-            radii={(() => {
-              const conn = connectSpecOf(drag.item);
-              if (!conn || !drag.snap) return baseRadii(drag.item);
-              const g = groupsRef.current.find(
-                (x) => x.id === drag.snap!.groupId,
-              );
-              const mm = (g?.items.length ?? 0) + 1;
-              const k = drag.snap.index;
-              return runRadii(
-                conn.axis,
-                k === 0,
-                k === mm - 1,
-                k > 0,
-                k < mm - 1,
-                drag.snap.pull,
-                conn.outer,
-                conn.inner,
-              );
-            })()}
-          />
-        </motion.div>
-      )}
+                {frame === "phone" &&
+                  frames.map((f) => {
+                    const on = f.id === selectedFrameId;
+                    const bg = p[f.bg ?? "surface"];
+                    const { w, h } = frameSizeOf(f);
+                    const radius = frameRadius(f);
+                    return (
+                      <div
+                        key={f.id}
+                        data-frame={f.id}
+                        style={{ position: "absolute", left: f.x, top: f.y, transition: easing ? `left ${SETTLE_MS}ms cubic-bezier(0.2, 0, 0, 1)` : undefined }}
+                      >
+                        <div
+                          onPointerDown={(e) => onFramePointerDown(e, f)}
+                          style={{
+                            position: "absolute",
+                            left: -BEZEL,
+                            top: -BEZEL - FRAME_LABEL_H,
+                            height: FRAME_LABEL_H,
+                            /* follows the zoom, softened: a little larger when zoomed out, a little smaller when zoomed in */
+                            transform: `scale(${clamp(1 / view.z, 0.7, 1.4)})`,
+                            transformOrigin: "left bottom",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                            padding: "0 8px",
+                            fontSize: 20,
+                            fontWeight: 600,
+                            color: on ? p.primary : p.onSurfaceVariant,
+                            transition: "color 160ms",
+                            cursor: handMode ? "grab" : "move",
+                            userSelect: "none",
+                            whiteSpace: "nowrap",
+                            fontFamily: uiFontFamily(lang),
+                          }}
+                        >
+                          <div onPointerDown={(e) => e.stopPropagation()}>
+                            <FrameSizePicker frame={f} onChange={(preset) => setFramePreset(f.id, preset)} palette={p} compact />
+                          </div>
+                          {f.name || t("screen", lang)}
+                          {activeDevice && (f.id === selectedFrameId || frames.length === 1) && (
+                            <span
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 500,
+                                padding: "2px 8px",
+                                borderRadius: 10,
+                                background: p.secondaryContainer,
+                                color: p.onSecondaryContainer,
+                                letterSpacing: "0.02em",
+                              }}
+                            >
+                              {activeDevice.name} ({activeDevice.width} × {activeDevice.height})
+                            </span>
+                          )}
+                        </div>
+                        <div
+                          onPointerDown={(e) => onFramePointerDown(e, f)}
+                          style={{
+                            position: "absolute",
+                            left: -BEZEL,
+                            top: -BEZEL,
+                            overflow: "hidden",
+                            width: w + BEZEL * 2,
+                            height: h + BEZEL * 2,
+                            borderRadius: radius + BEZEL,
+                            /* the chosen screen's bezel is painted in the theme's primary; the others stay dark */
+                            backgroundColor: on ? p.primary : p.inverseSurface,
+                            backgroundImage: draftBusy ? draftGradient(p) : undefined,
+                            backgroundSize: draftBusy ? "300% 300%" : undefined,
+                            animation: draftBusy ? "m3e-drift 3s ease-in-out infinite" : undefined,
+                            boxShadow: on ? "0 18px 50px rgba(0,0,0,0.16)" : "0 18px 50px rgba(0,0,0,0.14)",
+                            cursor: handMode ? "grab" : "move",
+                            transition: `background-color 160ms, box-shadow 120ms, ${SIZE_TRANSITION}`,
+                          }}
+                        >
+                          <AnimatePresence>{aiFrameId === f.id && <ThinkingRing key="ring" p={p} frame={f} />}</AnimatePresence>
+                          <div
+                            data-screen={f.id}
+                            style={{
+                              position: "absolute",
+                              left: BEZEL,
+                              top: BEZEL,
+                              width: w,
+                              height: h,
+                              borderRadius: radius,
+                              background: bg,
+                              overflow: "hidden",
+                              transition: SIZE_TRANSITION,
+                            }}
+                          >
+                            {/* Device Cutout (Dynamic Island / Notch / Punch Hole) */}
+                            {activeDevice?.type === "mobile" && (f.id === selectedFrameId || frames.length === 1) && (() => {
+                              const devId = activeDevice.id.toLowerCase();
+                              const isApple = activeDevice.brand.toLowerCase() === "apple";
+                              const isNotch = isApple && (devId.includes("11") || devId.includes("12") || devId.includes("13") || devId === "iphone-14-13");
+                              const isIsland = isApple && !isNotch;
+
+                              if (isIsland) {
+                                return (
+                                  <div
+                                    aria-hidden
+                                    style={{
+                                      position: "absolute",
+                                      top: 11,
+                                      left: "50%",
+                                      transform: "translateX(-50%)",
+                                      width: 112,
+                                      height: 30,
+                                      borderRadius: 20,
+                                      backgroundColor: "#000000",
+                                      zIndex: 85,
+                                      pointerEvents: "none",
+                                      boxShadow: "0 0 0 1px rgba(255,255,255,0.08), 0 3px 8px rgba(0,0,0,0.4)",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "space-between",
+                                      padding: "0 10px",
+                                    }}
+                                  >
+                                    <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#0c0d14", border: "1.5px solid #1c1d29" }} />
+                                    <div style={{ width: 9, height: 9, borderRadius: "50%", background: "#08080f", border: "1px solid #191a26" }} />
+                                  </div>
+                                );
+                              }
+
+                              if (isNotch) {
+                                return (
+                                  <div
+                                    aria-hidden
+                                    style={{
+                                      position: "absolute",
+                                      top: 0,
+                                      left: "50%",
+                                      transform: "translateX(-50%)",
+                                      width: 146,
+                                      height: 28,
+                                      borderBottomLeftRadius: 18,
+                                      borderBottomRightRadius: 18,
+                                      backgroundColor: "#000000",
+                                      zIndex: 85,
+                                      pointerEvents: "none",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      paddingBottom: 4,
+                                    }}
+                                  >
+                                    <div style={{ width: 44, height: 4, borderRadius: 2, background: "#1c1c1e" }} />
+                                  </div>
+                                );
+                              }
+
+                              // Android punch hole camera
+                              return (
+                                <div
+                                  aria-hidden
+                                  style={{
+                                    position: "absolute",
+                                    top: 10,
+                                    left: "50%",
+                                    transform: "translateX(-50%)",
+                                    width: 12,
+                                    height: 12,
+                                    borderRadius: "50%",
+                                    backgroundColor: "#000000",
+                                    border: "1.5px solid #222",
+                                    boxShadow: "0 0 2px rgba(0,0,0,0.5)",
+                                    zIndex: 85,
+                                    pointerEvents: "none",
+                                  }}
+                                />
+                              );
+                            })()}
+
+                            {/* Home Indicator bar for mobile frames */}
+                            {isPhoneFrame(f) && (
+                              <div
+                                aria-hidden
+                                style={{
+                                  position: "absolute",
+                                  bottom: 8,
+                                  left: "50%",
+                                  transform: "translateX(-50%)",
+                                  width: Math.min(134, Math.round(w * 0.36)),
+                                  height: 4,
+                                  borderRadius: 2,
+                                  backgroundColor: "rgba(128,128,128,0.38)",
+                                  zIndex: 85,
+                                  pointerEvents: "none",
+                                }}
+                              />
+                            )}
+                            {groups
+                              .filter((g) => frameOf.get(g.id) === f.id)
+                              .map((g) => renderGroup(g, f.x, f.y))}
+                            {groups.some((g) => frameOf.get(g.id) === f.id && modalRailOf(g)) && (
+                              <div aria-hidden style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.32)", pointerEvents: "none", zIndex: 1 }} />
+                            )}
+                            {draftBusy && (
+                              <div style={{ position: "absolute", inset: 0, zIndex: 90, background: canvasBg, display: "grid", placeItems: "center" }}>
+                                <LoadingIndicator size={96} color="url(#m3e-drafting)" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                {groups
+                  .filter((g) => !frameOf.has(g.id))
+                  .map((g) => renderGroup(g, 0, 0))}
+
+                {/* a lone button shows a handle on each of its four edges, and a lone icon button
+                  four points around its circle: dragging one changes the part's size in place,
+                  and whatever sits opposite stays where it is */}
+                {/* a FAB showing its menu is being edited as a menu, not sized as a button */}
+                {!handMode && !drag && selectedIds.length === 1 && selected && selected.id !== menuId && HANDLED.has(selected.kind) && (() => {
+                  const g = groups.find((x) => x.items.length === 1 && !x.free && !x.locked && x.items[0].id === selected.id);
+                  if (!g) return null;
+                  const b = groupBounds(g, widths);
+                  /* the same offset the group is drawn with while its left or top edge is being dragged */
+                  const sx = widthShift?.gid === g.id ? widthShift.dx : 0;
+                  const sy = widthShift?.gid === g.id ? widthShift.dy : 0;
+                  return (
+                    <SizeHandles
+                      /* the handles belong to this one part: another part picked gets its own, in
+                       * place, rather than these flying across the canvas to it */
+                      key={selected.id}
+                      /* one measure, so the part is held by the points around it rather than by
+                       * its edges: a circle's diameter, a label's height */
+                      round={ROUND.has(selected.kind)}
+                      /* a bar and a slider have a width and nothing else: they are held by their two
+                       * ends; a carousel is the other way about and is held by its top and bottom */
+                      sides={WIDE.has(selected.kind) ? BAR_SIDES : TALL.has(selected.kind) ? TALL_SIDES : undefined}
+                      /* a part with a height of its own is held by all four edges; one whose height follows its kind by its two ends */
+                      box={{ l: b.l + sx, t: b.t + sy, r: b.r + sx, b: b.b + sy }}
+                      z={view.z}
+                      instant={widthDragId === selected.id || sizeEditId === selected.id}
+                      p={p}
+                      onDown={(e, side) => onWidthHandleDown(e, g, selected, side)}
+                      onNudge={(side, dir) => nudgeSize(g, selected, side, dir)}
+                    />
+                  );
+                })()}
+
+
+                {links.length > 0 && (
+                  <svg
+                    style={{
+                      position: "absolute",
+                      left: 0,
+                      top: 0,
+                      overflow: "visible",
+                      pointerEvents: "none",
+                    }}
+                    width={1}
+                    height={1}
+                  >
+                    <defs>
+                      <marker
+                        id="m3e-arrow"
+                        viewBox="0 0 10 10"
+                        refX="9"
+                        refY="5"
+                        markerWidth="8"
+                        markerHeight="8"
+                        orient="auto"
+                      >
+                        <path d="M0 0 L10 5 L0 10 z" fill={p.primary} />
+                      </marker>
+                    </defs>
+                    {!draftBusy && links.map((l) => {
+                      const on = l.id === selectedLinkId;
+                      return (
+                        <g key={l.id}>
+                          <path
+                            d={l.d}
+                            fill="none"
+                            stroke="transparent"
+                            strokeWidth={18 / view.z}
+                            style={{ pointerEvents: "stroke", cursor: "pointer" }}
+                            onPointerDown={(e) => {
+                              e.stopPropagation();
+                              setSelectedLinkId(l.id);
+                              setSelectedIds([]);
+                              setSelectedFrameId(null);
+                            }}
+                          />
+                          <path
+                            d={l.d}
+                            fill="none"
+                            stroke={p.primary}
+                            strokeWidth={on ? 3 : 2}
+                            strokeDasharray={on ? undefined : "6 6"}
+                            strokeLinecap="round"
+                            markerEnd="url(#m3e-arrow)"
+                            opacity={on ? 1 : 0.7}
+                          />
+                        </g>
+                      );
+                    })}
+                  </svg>
+                )}
+
+                {links
+                  .filter((l) => l.id === selectedLinkId)
+                  .map((l) => (
+                    <div
+                      key={l.id}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      style={{
+                        position: "absolute",
+                        left: l.mx,
+                        top: l.my,
+                        transform: `translate(-50%, 14px) scale(${1 / view.z})`,
+                        transformOrigin: "50% 0",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                        padding: 6,
+                        borderRadius: 26,
+                        background: p.surfaceContainerLow,
+                        boxShadow: "0 4px 16px rgba(0,0,0,0.16)",
+                        zIndex: 60,
+                      }}
+                    >
+                      <Segmented<Transition>
+                        options={TRANSITIONS.map((t) => ({
+                          key: t.key,
+                          icon: t.icon,
+                          title: t.label,
+                        }))}
+                        value={l.t}
+                        onChange={(t) => setLinkTransition(l.id, t)}
+                        p={p}
+                        height={36}
+                        grow={false}
+                      />
+                      <IconBtn
+                        icon="link_off"
+                        p={p}
+                        danger
+                        onClick={() => removeLink(l.id)}
+                        title={t("removeLink", lang)}
+                        size={36}
+                      />
+                    </div>
+                  ))}
+
+                {guide?.gx !== undefined && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: guide.gx,
+                      top: visibleWorld.t,
+                      width: 1.5 / view.z,
+                      height: visibleWorld.h,
+                      background: p.primary,
+                      pointerEvents: "none",
+                    }}
+                  />
+                )}
+                {guide?.gy !== undefined && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: guide.gy,
+                      left: visibleWorld.l,
+                      height: 1.5 / view.z,
+                      width: visibleWorld.w,
+                      background: p.primary,
+                      pointerEvents: "none",
+                    }}
+                  />
+                )}
+
+                {marquee && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: Math.min(marquee.x0, marquee.x1),
+                      top: Math.min(marquee.y0, marquee.y1),
+                      width: Math.abs(marquee.x1 - marquee.x0),
+                      height: Math.abs(marquee.y1 - marquee.y0),
+                      border: `${1 / view.z}px solid ${p.primary}`,
+                      background: `${p.primary}14`,
+                      borderRadius: 4 / view.z,
+                      pointerEvents: "none",
+                    }}
+                  />
+                )}
               </div>
             </div>
-          );
-        })()}
 
-        {/* ---- left: rail + parts / layers ---- */}
-        {!isMobile && (
-          <aside style={{ ...panelStyle, width: leftOpen ? leftW : RAIL_W, flexDirection: "row", transition: "width 200ms cubic-bezier(0.2, 0, 0, 1)" }}>
-            {/* dropping a canvas part anywhere on this side deletes it, whichever tab is open */}
-            {overBin && (
-              <div style={{ position: "absolute", inset: 0, zIndex: 5, background: "rgba(179,38,30,0.10)", display: "grid", placeItems: "center", pointerEvents: "none", color: p.error }}>
-                <div style={{ width: 72, height: 72, borderRadius: 36, background: p.errorContainer, color: p.onErrorContainer, display: "grid", placeItems: "center", boxShadow: "0 4px 14px rgba(0,0,0,0.14)" }}>
-                  <Icon name="delete" size={34} />
-                </div>
+            {draftBusy && (
+              <div style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }} aria-hidden>
+                <svg width={0} height={0} style={{ position: "absolute" }} aria-hidden>
+                  <defs>
+                    <linearGradient id="m3e-drafting" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor={p.primary} />
+                      <stop offset="50%" stopColor={p.tertiaryContainer} />
+                      <stop offset="100%" stopColor={p.primaryContainer} />
+                      <animateTransform attributeName="gradientTransform" type="rotate" from="0 0.5 0.5" to="360 0.5 0.5" dur="3s" repeatCount="indefinite" />
+                    </linearGradient>
+                  </defs>
+                </svg>
               </div>
             )}
-            <div
-              onPointerEnter={() => setRailHover(true)}
-              onPointerLeave={() => setRailHover(false)}
-              onClick={(e) => {
-                // a click on the rail's empty background opens the panel
-                if (!leftOpen && e.target === e.currentTarget) setLeftOpen(true);
+            <Toolbar
+              p={p}
+              mode={mode}
+              onMode={setMode}
+              frame={frame}
+              onFrame={changeFrame}
+              zoom={view.z}
+              onZoom={(z) => setZoomAt(z)}
+              onFit={fit}
+              canUndo={pastRef.current.length > 0}
+              canRedo={futureRef.current.length > 0}
+              onUndo={undo}
+              onRedo={redo}
+              onClear={() => {
+                if (groupsRef.current.length || framesRef.current.length) setConfirmClear(true);
               }}
-              style={{
-                width: RAIL_W,
-                flex: "0 0 auto",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 6,
-                padding: "10px 0",
-                background: p.surfaceContainerLow,
-                cursor: leftOpen ? undefined : "pointer",
+              onAddFrame={addFrame}
+              onPreview={() => openPreview()}
+              tidy={selectedIds.length > 1 ? undefined : tidyState ?? undefined}
+              onTidy={tidyTarget ? () => tidy(tidyTarget) : undefined}
+              place={tidyTarget?.place}
+              onPlace={tidyTarget ? (pl) => setPlace(tidyTarget, pl) : undefined}
+              note={aiNote}
+              onSaveDesign={() => setSaveDesignOpen(true)}
+              editingDesignTitle={editingDesign?.title}
+              onExport={() => setExportModalTab("code")}
+              onSaveProject={() => saveProject(doc)}
+              onOpenProject={() => projectFileRef.current?.click()}
+              onOpenAiDraft={() => setAiModalOpen(true)}
+              onShare={!isMobile ? () => setShareOpen(true) : undefined}
+              shareState={draftBusy ? "busy" : draftBefore ? "review" : "idle"}
+              onDraftKeep={keepDraft}
+              onDraftUndo={undoDraft}
+              onDraftSave={() => saveProject(doc)}
+              quickUndo={quickUndo}
+              rightInset={showRight ? rightW : 0}
+              mobile={isMobile}
+              onSettings={() => setSheet(sheet === "settings" ? null : "settings")}
+              onLangSheet={() => setSheet(sheet === "lang" ? null : "lang")}
+              onPrompt={async () => {
+                try {
+                  await navigator.clipboard.writeText(effectivePrompt(doc, widths, lang));
+                  showToast(t("copied", lang), 1400, "check");
+                } catch { }
               }}
-            >
-              {!leftOpen && railHover ? (
-                <IconBtn icon="left_panel_open" p={p} on onClick={() => setLeftOpen(true)} title={t("openPanel", lang)} size={40} />
-              ) : (
-                <div
-                  onClick={() => !leftOpen && setLeftOpen(true)}
-                  style={{ width: 40, height: 40, display: "grid", placeItems: "center", cursor: leftOpen ? "default" : "pointer" }}
+            />
+
+            {/* ── New Feature Controls: Device Preset · Import · Embed ── */}
+            {!isMobile && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: 22,
+                  bottom: 82,
+                  zIndex: 50,
+                  display: "flex",
+                  gap: 6,
+                  alignItems: "center",
+                  padding: "4px 8px",
+                  borderRadius: 24,
+                  background: p.surfaceContainerLow,
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.08)",
+                  pointerEvents: "auto",
+                }}
+              >
+                {/* Device Preset Selector */}
+                <DeviceSelector
+                  activeDeviceId={activeDeviceId}
+                  onSelect={handleDeviceSelect}
+                  surfaceColor={p.surface}
+                  surfaceContainerColor={p.surfaceContainerHigh}
+                  onSurfaceColor={p.onSurface}
+                  onSurfaceVariantColor={p.onSurfaceVariant}
+                  primaryColor={p.primary}
+                  onPrimaryColor={p.onPrimary}
+                />
+
+                <div style={{ width: 1, height: 22, background: p.outlineVariant, opacity: 0.5 }} />
+
+                {/* Import template file button */}
+                <button
+                  onClick={() => setImportModalOpen(true)}
+                  title="Nhập file template (.json / .pickme3d)"
+                  className="m3-press"
+                  style={{
+                    height: 36,
+                    padding: "0 12px",
+                    borderRadius: 18,
+                    border: "none",
+                    background: p.surfaceContainerHigh,
+                    color: p.onSurface,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    whiteSpace: "nowrap",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                  }}
                 >
-                  <Logo size={32} color={p.primary} glyph={p.onPrimary} />
-                </div>
-              )}
-              <div style={{ height: 6 }} />
-              {LEFT_TABS.map((tab, i) => (
-                <div key={tab.key} style={{ marginTop: i === 2 || i === 6 ? 10 : 0 }}>
-                  <IconBtn
-                    icon={tab.icon}
-                    p={p}
-                    on={leftOpen && leftTab === tab.key}
-                    onClick={() => {
-                      setLeftTab(tab.key);
-                      setLeftOpen(true);
+                  <span style={{ fontFamily: "Material Symbols Rounded", fontSize: 18, lineHeight: 1 }}>
+                    file_open
+                  </span>
+                  Nhập file
+                </button>
+
+                {/* Embed code button (always accessible) */}
+                <button
+                  onClick={() => setEmbedModalOpen(true)}
+                  title="Lấy mã nhúng iframe"
+                  className="m3-press"
+                  style={{
+                    height: 36,
+                    padding: "0 12px",
+                    borderRadius: 18,
+                    border: "none",
+                    background: p.surfaceContainerHigh,
+                    color: p.onSurface,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    whiteSpace: "nowrap",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                  }}
+                >
+                  <span style={{ fontFamily: "Material Symbols Rounded", fontSize: 18, lineHeight: 1 }}>
+                    code
+                  </span>
+                  Nhúng
+                </button>
+              </div>
+            )}
+
+            {isMobile && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  top: 80,
+                  textAlign: "center",
+                  fontSize: 11,
+                  lineHeight: 1.4,
+                  color: p.onSurfaceVariant,
+                  pointerEvents: "none",
+                  zIndex: 40,
+                }}
+              >
+                {t("mobileNote", lang)}
+              </div>
+            )}
+
+            {isMobile && sheet === null && (
+              <button
+                onClick={addButton}
+                title={t("addButton", lang)}
+                aria-label={t("addButton", lang)}
+                className="m3-press"
+                style={{
+                  position: "absolute",
+                  right: 16,
+                  bottom: "calc(16px + var(--bottom-ui, 0px) + env(safe-area-inset-bottom))",
+                  width: 64,
+                  height: 64,
+                  borderRadius: 20,
+                  border: "none",
+                  background: p.primary,
+                  color: p.onPrimary,
+                  cursor: "pointer",
+                  display: "grid",
+                  placeItems: "center",
+                  zIndex: 46,
+                  boxShadow: "0 6px 18px rgba(0,0,0,0.18)",
+                }}
+              >
+                <Icon name="add" size={32} />
+              </button>
+            )}
+
+            {isMobile && selected && sheet === null && (
+              <MobileActionBar
+                p={p}
+                onEdit={() => setSheet("edit")}
+                onDuplicate={duplicateSelected}
+                onDelete={deleteSelected}
+              />
+            )}
+
+            <AnimatePresence>
+              {isMobile && sheet === "edit" && selected && (
+                <BottomSheet key="edit" p={p} onClose={() => setSheet(null)}>
+                  <MobileInspector
+                    item={selected}
+                    palette={p}
+                    onChange={patchSelected}
+                    onDelete={() => {
+                      deleteSelected();
+                      setSheet(null);
                     }}
-                    title={t(tab.title, lang)}
-                    size={44}
+                    onDuplicate={duplicateSelected}
+                    onClose={() => setSheet(null)}
                   />
-                </div>
-              ))}
-              <div style={{ flex: 1 }} onClick={() => !leftOpen && setLeftOpen(true)} />
-              <LangMenu p={p} onLang={changeLanguage} side="right" size={44} />
-              <ProfileMenu p={p} size={44} side="right" />
-            </div>
-            {leftOpen && (
-            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+                </BottomSheet>
+              )}
+              {isMobile && sheet === "settings" && (
+                <BottomSheet key="settings" p={p} onClose={() => setSheet(null)}>
+                  <MobileSettings palette={p} paletteKey={paletteKey} onPalette={setPaletteKey} theme={theme} onTheme={patchTheme} />
+                </BottomSheet>
+              )}
+              {isMobile && sheet === "lang" && (
+                <BottomSheet key="lang" p={p} onClose={() => setSheet(null)}>
+                  <MobileLang
+                    palette={p}
+                    lang={lang}
+                    onLang={(l) => {
+                      changeLanguage(l);
+                      setSheet(null);
+                    }}
+                  />
+                </BottomSheet>
+              )}
+            </AnimatePresence>
+
+            {toast && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: "50%",
+                  bottom: 96,
+                  transform: "translateX(-50%)",
+                  padding: "10px 18px",
+                  borderRadius: 20,
+                  background: p.inverseSurface,
+                  color: p.inverseOnSurface,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  zIndex: 47,
+                  pointerEvents: "none",
+                }}
+              >
+                {toast}
+              </div>
+            )}
+
+            {!rightOpen && !isMobile && (
+              <div
+                style={{ position: "absolute", right: 20, top: 20, zIndex: 45 }}
+              >
+                <IconBtn
+                  icon="right_panel_open"
+                  p={p}
+                  on
+                  onClick={() => setRightOpen(true)}
+                  title={t("edit", lang)}
+                  size={44}
+                />
+              </div>
+            )}
+          </main>
+
+          {/* ---- right: inspector / prompt ---- */}
+          {showRight && (
+            <aside style={{ ...panelStyle, width: rightW }}>
+              <div
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  setResizing("right");
+                }}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  bottom: 0,
+                  left: -3,
+                  width: 6,
+                  cursor: "col-resize",
+                  zIndex: 5,
+                }}
+              />
               <div
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: 8,
-                  padding: "10px 10px 0 14px",
+                  /* the close button lands exactly where the button that reopens the panel sits */
+                  padding: "20px 20px 8px 16px",
+                  /* the band is the panel's own colour; the strip below it carries the fade */
+                  background: p.surface,
+                  /* while the prompt stands full screen the band has nothing to do: it fades out as the cover opens and back in as it closes */
+                  opacity: promptCoverUp ? 0 : 1,
+                  pointerEvents: promptCoverUp ? "none" : undefined,
+                  transition: "opacity 220ms ease",
                 }}
+                inert={promptCoverUp || undefined}
               >
-                <span
-                  style={{
-                    fontWeight: 700,
-                    fontSize: 14,
-                    color: p.onSurface,
-                    flex: 1,
-                  }}
-                >
-                  {t(LEFT_TABS.find((x) => x.key === leftTab)?.title ?? "parts", lang)}
-                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <Segmented<"edit" | "prompt">
+                    options={[
+                      { key: "edit", icon: "tune", title: t("edit", lang), grow: false, wide: true },
+                      { key: "prompt", icon: "auto_awesome", label: t("prompt", lang), title: t("prompt", lang), grow: true },
+                    ]}
+                    value={rightTab}
+                    onChange={setRightTab}
+                    p={p}
+                    height={40}
+                  />
+                </div>
+                {/* the same button in the same spot as the one that reopens the panel, but plain:
+                * the filled look belongs to the one that has to be found over the canvas */}
                 <IconBtn
-                  icon="left_panel_close"
+                  icon="right_panel_close"
                   p={p}
-                  onClick={() => setLeftOpen(false)}
+                  size={44}
+                  onClick={() => setRightOpen(false)}
                   title={t("closePanel", lang)}
                 />
               </div>
-              <div style={{ flex: 1, minHeight: 0 }}>
-                {leftTab === "parts" ? (
-                  <PartsPalette
+              <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
+                {/* what scrolls past the top of the panel dissolves into the band instead of being cut */}
+                <div
+                  aria-hidden
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: PANEL_FADE_H,
+                    zIndex: 3,
+                    background: `linear-gradient(to bottom, ${p.surface}, ${p.surface}00)`,
+                    pointerEvents: "none",
+                  }}
+                />
+                {rightTab === "edit" && selectedFrame && !selected ? (
+                  <FrameInspector
+                    frame={selectedFrame}
                     palette={p}
-                    favorites={favorites}
-                    onToggleFavorite={(k) =>
-                      setFavorites((f) =>
-                        f.includes(k) ? f.filter((x) => x !== k) : [...f, k],
-                      )
-                    }
-                    onPartPointerDown={onPartPointerDown}
+                    onSize={(preset) => setFramePreset(selectedFrame.id, preset)}
+                    onChange={(patch) => patchFrame(selectedFrame.id, patch)}
+                    onDelete={() => deleteFrame(selectedFrame.id)}
+                    onDuplicate={() => duplicateFrame(selectedFrame.id)}
+                    onPreview={() => openPreview(selectedFrame.id)}
+                    prompt={buildPrompt(doc, widths, selectedFrame.id, lang)}
+                    onSaveImage={() => saveFrameImage(selectedFrame)}
+                    onExportCode={() => setExportModalTab("code")}
+                    onExportImage={() => setExportModalTab("image")}
+                    tidy={tidyState ?? "done"}
+                    onTidy={() => tidy(selectedFrame)}
+                    onPlace={(pl) => setPlace(selectedFrame, pl)}
+                    ai={{ ready: aiReady, reason: aiReason, busy: aiBusy && aiFrameId === selectedFrame.id, onRun: () => runAi("describe", selectedFrame), onCancel: cancelAi }}
                   />
-                ) : leftTab === "color" ? (
-                  <ColorPanel
-                    p={p}
-                    paletteKey={paletteKey}
-                    onPalette={setPaletteKey}
-                    custom={customPalette}
-                    onCustom={setCustomPalette}
-                    dynamic={dynamicColor}
-                    onDynamic={setDynamicColor}
-                    theme={theme}
-                    onTheme={patchTheme}
-                  />
-                ) : leftTab === "shape" ? (
-                  <ShapePanel p={p} theme={theme} onChange={patchTheme} />
-                ) : leftTab === "type" ? (
-                  <TypePanel p={p} theme={theme} onChange={patchTheme} />
-                ) : leftTab === "motion" ? (
-                  <MotionPanel p={p} theme={theme} onChange={patchTheme} />
-                ) : leftTab === "ai" ? (
-                  <AiPanel p={p} settings={aiSettings} onSettings={updateAiSettings} onOpenAiModal={() => setAiModalOpen(true)} />
-                ) : (
-                  <LayersPanel
-                    p={p}
-                    frames={frames}
-                    frameId={layersFrame?.id ?? null}
-                    onFrame={(id) => {
-                      setLayersFrameId(id);
-                      setSelectedIds([]);
-                      setSelectedFrameId(id);
-                      const f = framesRef.current.find((x) => x.id === id);
-                      if (f) glideToFrame(f);
+                ) : rightTab === "edit" ? (
+                  <Inspector
+                    ai={{
+                      ready: aiReady && !!tidyTarget,
+                      reason: aiReason,
+                      busy: aiBusy,
+                      onRun: () => {
+                        if (tidyTarget && selected) runAi("behavior", tidyTarget, selected.id);
+                      },
+                      onCancel: cancelAi,
                     }}
-                    groups={layerGroups}
+                    item={selectedIds.length > 1 ? null : selected}
+                    railStandalone={groups.some((g) => g.items.length === 1 && g.items[0].id === selected?.id)}
+                    frame={selectedPartFrame}
+                    palette={p}
+                    frames={frame === "phone" ? frames : []}
+                    onChange={patchSelected}
+                    onDelete={deleteSelected}
+                    onDuplicate={duplicateSelected}
+                    locked={selectedLocked}
+                    onToggleLock={toggleLockSelected}
+                    onPlace={selectionPlaceable ? placeSelected : undefined}
                     widths={widths}
-                    selectedIds={selectedIds}
-                    onSelect={(ids, add) => {
-                      setSelectedIds((cur) => (add ? [...cur.filter((x) => !ids.includes(x)), ...ids] : ids));
-                      setSelectedFrameId(null);
-                      setSelectedLinkId(null);
-                      setRightTab("edit");
+                    selfRect={selectedRect}
+                    allFrames={frames}
+                    onShowOn={onShowOn}
+                    onShowMenu={onShowMenu}
+                    multi={selectedIds.length}
+                    grouped={!!selectedGroup}
+                    selectionWhole={selectionWhole}
+                    selectionKey={selectedIds.join(" ")}
+                    onGroup={groupSelected}
+                    onUngroup={ungroupSelected}
+                  />
+                ) : (
+                  <PromptPanel
+                    doc={doc}
+                    widths={widths}
+                    palette={p}
+                    onCover={setPromptCoverUp}
+                    onOpenAiModal={() => setAiModalOpen(true)}
+                    onDoc={(patch) => {
+                      if (patch.title !== undefined) setTitle(patch.title);
+                      if (patch.brief !== undefined) setBrief(patch.brief);
+                      if ("promptEdit" in patch) setPromptEdit(patch.promptEdit);
+                      if ("promptOptions" in patch) setPromptOptions(patch.promptOptions);
+                      if ("platform" in patch) setPlatform(isPlatform(patch.platform) ? patch.platform : null);
                     }}
-                    onReorder={reorderLayers}
-                    onToggleLock={toggleGroupLock}
-                    onReorderItems={reorderGroupItems}
-                    onDragging={onLayerDragging}
                   />
                 )}
               </div>
-            </div>
-            )}
-            {leftOpen && (
-            <div
-              onPointerDown={(e) => {
-                e.preventDefault();
-                setResizing("left");
-              }}
-              style={{
-                position: "absolute",
-                top: 0,
-                bottom: 0,
-                right: -3,
-                width: 6,
-                cursor: "col-resize",
-                zIndex: 5,
-              }}
+            </aside>
+          )}
+
+          <input
+            ref={projectFileRef}
+            type="file"
+            accept="application/json,.json"
+            hidden
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (file) void readProject(file).then((next) => (next ? setPendingImport(next) : showToast(t("invalidProject", lang), 3000, "error")));
+            }}
+          />
+
+          <ConfirmDialog
+            open={pendingImport !== null}
+            icon="file_open"
+            title={t("replaceProjectTitle", lang)}
+            body={t("replaceProject", lang)}
+            p={p}
+            onCancel={() => setPendingImport(null)}
+            onConfirm={() => {
+              if (pendingImport) importDoc(pendingImport);
+              setPendingImport(null);
+            }}
+          />
+
+          <ShareDialog
+            p={p}
+            doc={doc}
+            aiReady={aiReady}
+            idea={ideaText}
+            onIdea={setIdeaText}
+            open={shareOpen}
+            onClose={() => setShareOpen(false)}
+            onDraft={(idea) => void startDraft(idea)}
+            onSetupAi={() => {
+              setShareOpen(false);
+              setLeftOpen(true);
+              setLeftTab("ai");
+            }}
+          />
+
+          <AiGenerateModal
+            open={aiModalOpen}
+            onClose={() => setAiModalOpen(false)}
+            onGenerate={handleAiGenerate}
+            p={p}
+            aiReady={aiReady}
+            onOpenSettings={() => {
+              setAiModalOpen(false);
+              setLeftOpen(true);
+              setLeftTab("ai");
+            }}
+          />
+
+
+          <ConfirmDialog
+            open={confirmClear}
+            title={t("clearAllTitle", lang)}
+            body={t("clearAllBody", lang)}
+            p={p}
+            onCancel={() => setConfirmClear(false)}
+            onConfirm={clearAll}
+          />
+
+          <SaveDesignModal
+            open={saveDesignOpen}
+            onClose={() => setSaveDesignOpen(false)}
+            docData={doc}
+            editingDesign={editingDesign}
+            onSaved={(savedItem) => {
+              if (savedItem) {
+                setEditingDesign(savedItem);
+                try {
+                  localStorage.setItem("pickme3d_edit_item", JSON.stringify(savedItem));
+                } catch { }
+              }
+            }}
+          />
+        </div>
+
+        <AnimatePresence>
+          {previewId !== null && frames.length > 0 && (
+            <Preview
+              key="preview"
+              doc={doc}
+              widths={widths}
+              palette={p}
+              startId={previewId}
+              onClose={closePreview}
             />
-            )}
-          </aside>
+          )}
+        </AnimatePresence>
+
+        {exportModalTab !== null && (
+          <ExportDialog
+            palette={p}
+            initialTab={exportModalTab}
+            screenCount={frames.length}
+            prompt={buildPrompt(doc, widths, (selectedFrame ?? frames[0])?.id || "", lang)}
+            frameName={(selectedFrame ?? frames[0])?.name || "Screen"}
+            width={(selectedFrame ?? frames[0]) ? frameSizeOf(selectedFrame ?? frames[0]).w : 390}
+            height={(selectedFrame ?? frames[0]) ? frameSizeOf(selectedFrame ?? frames[0]).h : 844}
+            onClose={() => setExportModalTab(null)}
+            onExport={handleExportScreen}
+          />
         )}
 
-        {/* ---- canvas ---- */}
-        <main
-          style={{
-            flex: 1,
-            position: "relative",
-            minWidth: 0,
-            padding: isMobile ? 6 : 8,
-          }}
-        >
+        {editAccess === "readonly" && (
           <div
-            ref={canvasRef}
-            onPointerDown={onCanvasPointerDown}
-            onPointerDownCapture={onTouchCapture}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-access-title"
             style={{
-              position: "absolute",
-              inset: isMobile ? 6 : 8,
-              overflow: "hidden",
-              borderRadius: 24,
-              background: canvasBg,
-              cursor: panning ? "grabbing" : handMode ? "grab" : "default",
-              touchAction: "none",
+              position: "fixed",
+              inset: 0,
+              zIndex: 100,
+              display: "grid",
+              placeItems: "center",
+              padding: 24,
+              background: "rgba(0,0,0,0.32)",
             }}
           >
-            <div
-              style={{
-                position: "absolute",
-                left: 0,
-                top: 0,
-                transform: `translate(${view.x}px, ${view.y}px) scale(${view.z})`,
-                transformOrigin: "0 0",
-                transition: cameraEasing ? `transform ${SETTLE_MS}ms cubic-bezier(0.2, 0, 0, 1)` : undefined,
-                willChange: "transform",
-                visibility: viewReady ? "visible" : "hidden",
-                fontFamily: fontFamilyOf(theme.font, lang),
-              }}
-            >
-              {frame === "phone" &&
-                frames.map((f) => {
-                  const on = f.id === selectedFrameId;
-                  const bg = p[f.bg ?? "surface"];
-                  const { w, h } = frameSizeOf(f);
-                  const radius = frameRadius(f);
-                  return (
-                    <div
-                      key={f.id}
-                      data-frame={f.id}
-                      style={{ position: "absolute", left: f.x, top: f.y, transition: easing ? `left ${SETTLE_MS}ms cubic-bezier(0.2, 0, 0, 1)` : undefined }}
-                    >
-                      <div
-                        onPointerDown={(e) => onFramePointerDown(e, f)}
-                        style={{
-                          position: "absolute",
-                          left: -BEZEL,
-                          top: -BEZEL - FRAME_LABEL_H,
-                          height: FRAME_LABEL_H,
-                          /* follows the zoom, softened: a little larger when zoomed out, a little smaller when zoomed in */
-                          transform: `scale(${clamp(1 / view.z, 0.7, 1.4)})`,
-                          transformOrigin: "left bottom",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 10,
-                          padding: "0 8px",
-                          fontSize: 20,
-                          fontWeight: 600,
-                          color: on ? p.primary : p.onSurfaceVariant,
-                          transition: "color 160ms",
-                          cursor: handMode ? "grab" : "move",
-                          userSelect: "none",
-                          whiteSpace: "nowrap",
-                          fontFamily: uiFontFamily(lang),
-                        }}
-                      >
-                        <div onPointerDown={(e) => e.stopPropagation()}>
-                          <FrameSizePicker frame={f} onChange={(preset) => setFramePreset(f.id, preset)} palette={p} compact />
-                        </div>
-                        {f.name || t("screen", lang)}
-                      </div>
-                      <div
-                        onPointerDown={(e) => onFramePointerDown(e, f)}
-                        style={{
-                          position: "absolute",
-                          left: -BEZEL,
-                          top: -BEZEL,
-                          overflow: "hidden",
-                          width: w + BEZEL * 2,
-                          height: h + BEZEL * 2,
-                          borderRadius: radius + BEZEL,
-                          /* the chosen screen's bezel is painted in the theme's primary; the others stay dark */
-                          backgroundColor: on ? p.primary : p.inverseSurface,
-                          backgroundImage: draftBusy ? draftGradient(p) : undefined,
-                          backgroundSize: draftBusy ? "300% 300%" : undefined,
-                          animation: draftBusy ? "m3e-drift 3s ease-in-out infinite" : undefined,
-                          boxShadow: on ? "0 18px 50px rgba(0,0,0,0.16)" : "0 18px 50px rgba(0,0,0,0.14)",
-                          cursor: handMode ? "grab" : "move",
-                          transition: `background-color 160ms, box-shadow 120ms, ${SIZE_TRANSITION}`,
-                        }}
-                      >
-                        <AnimatePresence>{aiFrameId === f.id && <ThinkingRing key="ring" p={p} frame={f} />}</AnimatePresence>
-                        <div
-                          data-screen={f.id}
-                          style={{
-                            position: "absolute",
-                            left: BEZEL,
-                            top: BEZEL,
-                            width: w,
-                            height: h,
-                            borderRadius: radius,
-                            background: bg,
-                            overflow: "hidden",
-                            transition: SIZE_TRANSITION,
-                          }}
-                        >
-                          {groups
-                            .filter((g) => frameOf.get(g.id) === f.id)
-                            .map((g) => renderGroup(g, f.x, f.y))}
-                          {groups.some((g) => frameOf.get(g.id) === f.id && modalRailOf(g)) && (
-                            <div aria-hidden style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.32)", pointerEvents: "none", zIndex: 1 }} />
-                          )}
-                          {draftBusy && (
-                            <div style={{ position: "absolute", inset: 0, zIndex: 90, background: canvasBg, display: "grid", placeItems: "center" }}>
-                              <LoadingIndicator size={96} color="url(#m3e-drafting)" />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-
-              {groups
-                .filter((g) => !frameOf.has(g.id))
-                .map((g) => renderGroup(g, 0, 0))}
-
-              {/* a lone button shows a handle on each of its four edges, and a lone icon button
-                  four points around its circle: dragging one changes the part's size in place,
-                  and whatever sits opposite stays where it is */}
-              {/* a FAB showing its menu is being edited as a menu, not sized as a button */}
-              {!handMode && !drag && selectedIds.length === 1 && selected && selected.id !== menuId && HANDLED.has(selected.kind) && (() => {
-                const g = groups.find((x) => x.items.length === 1 && !x.free && !x.locked && x.items[0].id === selected.id);
-                if (!g) return null;
-                const b = groupBounds(g, widths);
-                /* the same offset the group is drawn with while its left or top edge is being dragged */
-                const sx = widthShift?.gid === g.id ? widthShift.dx : 0;
-                const sy = widthShift?.gid === g.id ? widthShift.dy : 0;
-                return (
-                  <SizeHandles
-                    /* the handles belong to this one part: another part picked gets its own, in
-                     * place, rather than these flying across the canvas to it */
-                    key={selected.id}
-                    /* one measure, so the part is held by the points around it rather than by
-                     * its edges: a circle's diameter, a label's height */
-                    round={ROUND.has(selected.kind)}
-                    /* a bar and a slider have a width and nothing else: they are held by their two
-                     * ends; a carousel is the other way about and is held by its top and bottom */
-                    sides={WIDE.has(selected.kind) ? BAR_SIDES : TALL.has(selected.kind) ? TALL_SIDES : undefined}
-                    /* a part with a height of its own is held by all four edges; one whose height follows its kind by its two ends */
-                    box={{ l: b.l + sx, t: b.t + sy, r: b.r + sx, b: b.b + sy }}
-                    z={view.z}
-                    instant={widthDragId === selected.id || sizeEditId === selected.id}
-                    p={p}
-                    onDown={(e, side) => onWidthHandleDown(e, g, selected, side)}
-                    onNudge={(side, dir) => nudgeSize(g, selected, side, dir)}
-                  />
-                );
-              })()}
-
-
-              {links.length > 0 && (
-                <svg
-                  style={{
-                    position: "absolute",
-                    left: 0,
-                    top: 0,
-                    overflow: "visible",
-                    pointerEvents: "none",
-                  }}
-                  width={1}
-                  height={1}
-                >
-                  <defs>
-                    <marker
-                      id="m3e-arrow"
-                      viewBox="0 0 10 10"
-                      refX="9"
-                      refY="5"
-                      markerWidth="8"
-                      markerHeight="8"
-                      orient="auto"
-                    >
-                      <path d="M0 0 L10 5 L0 10 z" fill={p.primary} />
-                    </marker>
-                  </defs>
-                  {!draftBusy && links.map((l) => {
-                    const on = l.id === selectedLinkId;
-                    return (
-                      <g key={l.id}>
-                        <path
-                          d={l.d}
-                          fill="none"
-                          stroke="transparent"
-                          strokeWidth={18 / view.z}
-                          style={{ pointerEvents: "stroke", cursor: "pointer" }}
-                          onPointerDown={(e) => {
-                            e.stopPropagation();
-                            setSelectedLinkId(l.id);
-                            setSelectedIds([]);
-                            setSelectedFrameId(null);
-                          }}
-                        />
-                        <path
-                          d={l.d}
-                          fill="none"
-                          stroke={p.primary}
-                          strokeWidth={on ? 3 : 2}
-                          strokeDasharray={on ? undefined : "6 6"}
-                          strokeLinecap="round"
-                          markerEnd="url(#m3e-arrow)"
-                          opacity={on ? 1 : 0.7}
-                        />
-                      </g>
-                    );
-                  })}
-                </svg>
-              )}
-
-              {links
-                .filter((l) => l.id === selectedLinkId)
-                .map((l) => (
-                  <div
-                    key={l.id}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    style={{
-                      position: "absolute",
-                      left: l.mx,
-                      top: l.my,
-                      transform: `translate(-50%, 14px) scale(${1 / view.z})`,
-                      transformOrigin: "50% 0",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                      padding: 6,
-                      borderRadius: 26,
-                      background: p.surfaceContainerLow,
-                      boxShadow: "0 4px 16px rgba(0,0,0,0.16)",
-                      zIndex: 60,
-                    }}
-                  >
-                    <Segmented<Transition>
-                      options={TRANSITIONS.map((t) => ({
-                        key: t.key,
-                        icon: t.icon,
-                        title: t.label,
-                      }))}
-                      value={l.t}
-                      onChange={(t) => setLinkTransition(l.id, t)}
-                      p={p}
-                      height={36}
-                      grow={false}
-                    />
-                    <IconBtn
-                      icon="link_off"
-                      p={p}
-                      danger
-                      onClick={() => removeLink(l.id)}
-                      title={t("removeLink", lang)}
-                      size={36}
-                    />
-                  </div>
-                ))}
-
-              {guide?.gx !== undefined && (
-                <div
-                  style={{
-                    position: "absolute",
-                    left: guide.gx,
-                    top: visibleWorld.t,
-                    width: 1.5 / view.z,
-                    height: visibleWorld.h,
-                    background: p.primary,
-                    pointerEvents: "none",
-                  }}
-                />
-              )}
-              {guide?.gy !== undefined && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: guide.gy,
-                    left: visibleWorld.l,
-                    height: 1.5 / view.z,
-                    width: visibleWorld.w,
-                    background: p.primary,
-                    pointerEvents: "none",
-                  }}
-                />
-              )}
-
-              {marquee && (
-                <div
-                  style={{
-                    position: "absolute",
-                    left: Math.min(marquee.x0, marquee.x1),
-                    top: Math.min(marquee.y0, marquee.y1),
-                    width: Math.abs(marquee.x1 - marquee.x0),
-                    height: Math.abs(marquee.y1 - marquee.y0),
-                    border: `${1 / view.z}px solid ${p.primary}`,
-                    background: `${p.primary}14`,
-                    borderRadius: 4 / view.z,
-                    pointerEvents: "none",
-                  }}
-                />
-              )}
-            </div>
-          </div>
-
-          {draftBusy && (
-            <div style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }} aria-hidden>
-              <svg width={0} height={0} style={{ position: "absolute" }} aria-hidden>
-                <defs>
-                  <linearGradient id="m3e-drafting" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stopColor={p.primary} />
-                    <stop offset="50%" stopColor={p.tertiaryContainer} />
-                    <stop offset="100%" stopColor={p.primaryContainer} />
-                    <animateTransform attributeName="gradientTransform" type="rotate" from="0 0.5 0.5" to="360 0.5 0.5" dur="3s" repeatCount="indefinite" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-          )}
-          <Toolbar
-            p={p}
-            mode={mode}
-            onMode={setMode}
-            frame={frame}
-            onFrame={changeFrame}
-            zoom={view.z}
-            onZoom={(z) => setZoomAt(z)}
-            onFit={fit}
-            canUndo={pastRef.current.length > 0}
-            canRedo={futureRef.current.length > 0}
-            onUndo={undo}
-            onRedo={redo}
-            onClear={() => {
-              if (groupsRef.current.length || framesRef.current.length) setConfirmClear(true);
-            }}
-            onAddFrame={addFrame}
-            onPreview={() => openPreview()}
-            tidy={selectedIds.length > 1 ? undefined : tidyState ?? undefined}
-            onTidy={tidyTarget ? () => tidy(tidyTarget) : undefined}
-            place={tidyTarget?.place}
-            onPlace={tidyTarget ? (pl) => setPlace(tidyTarget, pl) : undefined}
-            note={aiNote}
-            onSaveDesign={() => setSaveDesignOpen(true)}
-            editingDesignTitle={editingDesign?.title}
-            onExport={() => setExportModalTab("code")}
-            onSaveProject={() => saveProject(doc)}
-            onOpenProject={() => projectFileRef.current?.click()}
-            onOpenAiDraft={() => setAiModalOpen(true)}
-            rightInset={showRight ? rightW : 0}
-            mobile={isMobile}
-            onSettings={() => setSheet(sheet === "settings" ? null : "settings")}
-            onLangSheet={() => setSheet(sheet === "lang" ? null : "lang")}
-            onPrompt={async () => {
-              try {
-                await navigator.clipboard.writeText(effectivePrompt(doc, widths, lang));
-                showToast(t("copied", lang), 1400, "check");
-              } catch {}
-            }}
-          />
-
-          {isMobile && (
-            <div
-              style={{
-                position: "absolute",
-                left: 0,
-                right: 0,
-                top: 80,
-                textAlign: "center",
-                fontSize: 11,
-                lineHeight: 1.4,
-                color: p.onSurfaceVariant,
-                pointerEvents: "none",
-                zIndex: 40,
-              }}
-            >
-              {t("mobileNote", lang)}
-            </div>
-          )}
-
-          {isMobile && sheet === null && (
-            <button
-              onClick={addButton}
-              title={t("addButton", lang)}
-              aria-label={t("addButton", lang)}
-              className="m3-press"
-              style={{
-                position: "absolute",
-                right: 16,
-                bottom: "calc(16px + var(--bottom-ui, 0px) + env(safe-area-inset-bottom))",
-                width: 64,
-                height: 64,
-                borderRadius: 20,
-                border: "none",
-                background: p.primary,
-                color: p.onPrimary,
-                cursor: "pointer",
-                display: "grid",
-                placeItems: "center",
-                zIndex: 46,
-                boxShadow: "0 6px 18px rgba(0,0,0,0.18)",
-              }}
-            >
-              <Icon name="add" size={32} />
-            </button>
-          )}
-
-          {isMobile && selected && sheet === null && (
-            <MobileActionBar
-              p={p}
-              onEdit={() => setSheet("edit")}
-              onDuplicate={duplicateSelected}
-              onDelete={deleteSelected}
-            />
-          )}
-
-          <AnimatePresence>
-            {isMobile && sheet === "edit" && selected && (
-              <BottomSheet key="edit" p={p} onClose={() => setSheet(null)}>
-                <MobileInspector
-                  item={selected}
-                  palette={p}
-                  onChange={patchSelected}
-                  onDelete={() => {
-                    deleteSelected();
-                    setSheet(null);
-                  }}
-                  onDuplicate={duplicateSelected}
-                  onClose={() => setSheet(null)}
-                />
-              </BottomSheet>
-            )}
-            {isMobile && sheet === "settings" && (
-              <BottomSheet key="settings" p={p} onClose={() => setSheet(null)}>
-                <MobileSettings palette={p} paletteKey={paletteKey} onPalette={setPaletteKey} theme={theme} onTheme={patchTheme} />
-              </BottomSheet>
-            )}
-            {isMobile && sheet === "lang" && (
-              <BottomSheet key="lang" p={p} onClose={() => setSheet(null)}>
-                <MobileLang
-                  palette={p}
-                  lang={lang}
-                  onLang={(l) => {
-                    changeLanguage(l);
-                    setSheet(null);
-                  }}
-                />
-              </BottomSheet>
-            )}
-          </AnimatePresence>
-
-          {toast && (
-            <div
-              style={{
-                position: "absolute",
-                left: "50%",
-                bottom: 96,
-                transform: "translateX(-50%)",
-                padding: "10px 18px",
-                borderRadius: 20,
-                background: p.inverseSurface,
-                color: p.inverseOnSurface,
-                fontSize: 13,
-                fontWeight: 600,
-                zIndex: 47,
-                pointerEvents: "none",
-              }}
-            >
-              {toast}
-            </div>
-          )}
-
-          {!rightOpen && !isMobile && (
-            <div
-              style={{ position: "absolute", right: 20, top: 20, zIndex: 45 }}
-            >
-              <IconBtn
-                icon="right_panel_open"
-                p={p}
-                on
-                onClick={() => setRightOpen(true)}
-                title={t("edit", lang)}
-                size={44}
-              />
-            </div>
-          )}
-        </main>
-
-        {/* ---- right: inspector / prompt ---- */}
-        {showRight && (
-          <aside style={{ ...panelStyle, width: rightW }}>
-            <div
-              onPointerDown={(e) => {
-                e.preventDefault();
-                setResizing("right");
-              }}
-              style={{
-                position: "absolute",
-                top: 0,
-                bottom: 0,
-                left: -3,
-                width: 6,
-                cursor: "col-resize",
-                zIndex: 5,
-              }}
-            />
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                /* the close button lands exactly where the button that reopens the panel sits */
-                padding: "20px 20px 8px 16px",
-                /* the band is the panel's own colour; the strip below it carries the fade */
-                background: p.surface,
-                /* while the prompt stands full screen the band has nothing to do: it fades out as the cover opens and back in as it closes */
-                opacity: promptCoverUp ? 0 : 1,
-                pointerEvents: promptCoverUp ? "none" : undefined,
-                transition: "opacity 220ms ease",
-              }}
-              inert={promptCoverUp || undefined}
-            >
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <Segmented<"edit" | "prompt">
-                  options={[
-                    { key: "edit", icon: "tune", title: t("edit", lang), grow: false, wide: true },
-                    { key: "prompt", icon: "auto_awesome", label: t("prompt", lang), title: t("prompt", lang), grow: true },
-                  ]}
-                  value={rightTab}
-                  onChange={setRightTab}
-                  p={p}
-                  height={40}
-                />
-              </div>
-              {/* the same button in the same spot as the one that reopens the panel, but plain:
-                * the filled look belongs to the one that has to be found over the canvas */}
-              <IconBtn
-                icon="right_panel_close"
-                p={p}
-                size={44}
-                onClick={() => setRightOpen(false)}
-                title={t("closePanel", lang)}
-              />
-            </div>
-            <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
-              {/* what scrolls past the top of the panel dissolves into the band instead of being cut */}
-              <div
-                aria-hidden
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: PANEL_FADE_H,
-                  zIndex: 3,
-                  background: `linear-gradient(to bottom, ${p.surface}, ${p.surface}00)`,
-                  pointerEvents: "none",
-                }}
-              />
-              {rightTab === "edit" && selectedFrame && !selected ? (
-                <FrameInspector
-                  frame={selectedFrame}
-                  palette={p}
-                  onSize={(preset) => setFramePreset(selectedFrame.id, preset)}
-                  onChange={(patch) => patchFrame(selectedFrame.id, patch)}
-                  onDelete={() => deleteFrame(selectedFrame.id)}
-                  onDuplicate={() => duplicateFrame(selectedFrame.id)}
-                  onPreview={() => openPreview(selectedFrame.id)}
-                  prompt={buildPrompt(doc, widths, selectedFrame.id, lang)}
-                  onSaveImage={() => saveFrameImage(selectedFrame)}
-                  onExportCode={() => setExportModalTab("code")}
-                  onExportImage={() => setExportModalTab("image")}
-                  tidy={tidyState ?? "done"}
-                  onTidy={() => tidy(selectedFrame)}
-                  onPlace={(pl) => setPlace(selectedFrame, pl)}
-                  ai={{ ready: aiReady, reason: aiReason, busy: aiBusy && aiFrameId === selectedFrame.id, onRun: () => runAi("describe", selectedFrame), onCancel: cancelAi }}
-                />
-              ) : rightTab === "edit" ? (
-                <Inspector
-                  ai={{
-                    ready: aiReady && !!tidyTarget,
-                    reason: aiReason,
-                    busy: aiBusy,
-                    onRun: () => {
-                      if (tidyTarget && selected) runAi("behavior", tidyTarget, selected.id);
-                    },
-                    onCancel: cancelAi,
-                  }}
-                  item={selectedIds.length > 1 ? null : selected}
-                  railStandalone={groups.some((g) => g.items.length === 1 && g.items[0].id === selected?.id)}
-                  frame={selectedPartFrame}
-                  palette={p}
-                  frames={frame === "phone" ? frames : []}
-                  onChange={patchSelected}
-                  onDelete={deleteSelected}
-                  onDuplicate={duplicateSelected}
-                  locked={selectedLocked}
-                  onToggleLock={toggleLockSelected}
-                  onPlace={selectionPlaceable ? placeSelected : undefined}
-                  widths={widths}
-                  selfRect={selectedRect}
-                  allFrames={frames}
-                  onShowOn={onShowOn}
-                  onShowMenu={onShowMenu}
-                  multi={selectedIds.length}
-                  grouped={!!selectedGroup}
-                  selectionWhole={selectionWhole}
-                  selectionKey={selectedIds.join(" ")}
-                  onGroup={groupSelected}
-                  onUngroup={ungroupSelected}
-                />
-              ) : (
-                <PromptPanel
-                  doc={doc}
-                  widths={widths}
-                  palette={p}
-                  onCover={setPromptCoverUp}
-                  onDoc={(patch) => {
-                    if (patch.title !== undefined) setTitle(patch.title);
-                    if (patch.brief !== undefined) setBrief(patch.brief);
-                    if ("promptEdit" in patch) setPromptEdit(patch.promptEdit);
-                    if ("promptOptions" in patch) setPromptOptions(patch.promptOptions);
-                    if ("platform" in patch) setPlatform(isPlatform(patch.platform) ? patch.platform : null);
-                  }}
-                />
-              )}
-            </div>
-          </aside>
-        )}
-
-        <input
-          ref={projectFileRef}
-          type="file"
-          accept="application/json,.json"
-          hidden
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            e.target.value = "";
-            if (file) void readProject(file).then((next) => (next ? setPendingImport(next) : showToast(t("invalidProject", lang), 3000, "error")));
-          }}
-        />
-
-        <ConfirmDialog
-          open={pendingImport !== null}
-          icon="file_open"
-          title={t("replaceProjectTitle", lang)}
-          body={t("replaceProject", lang)}
-          p={p}
-          onCancel={() => setPendingImport(null)}
-          onConfirm={() => {
-            if (pendingImport) importDoc(pendingImport);
-            setPendingImport(null);
-          }}
-        />
-
-        <ShareDialog
-          p={p}
-          doc={doc}
-          aiReady={aiReady}
-          idea={ideaText}
-          onIdea={setIdeaText}
-          open={shareOpen}
-          onClose={() => setShareOpen(false)}
-          onDraft={(idea) => void startDraft(idea)}
-          onSetupAi={() => {
-            setShareOpen(false);
-            setLeftOpen(true);
-            setLeftTab("ai");
-          }}
-        />
-
-        <AiGenerateModal
-          open={aiModalOpen}
-          onClose={() => setAiModalOpen(false)}
-          onGenerate={handleAiGenerate}
-          p={p}
-          aiReady={aiReady}
-          onOpenSettings={() => {
-            setAiModalOpen(false);
-            setLeftOpen(true);
-            setLeftTab("ai");
-          }}
-        />
-
-
-        <ConfirmDialog
-          open={confirmClear}
-          title={t("clearAllTitle", lang)}
-          body={t("clearAllBody", lang)}
-          p={p}
-          onCancel={() => setConfirmClear(false)}
-          onConfirm={clearAll}
-        />
-
-        <SaveDesignModal
-          open={saveDesignOpen}
-          onClose={() => setSaveDesignOpen(false)}
-          docData={doc}
-          editingDesign={editingDesign}
-          onSaved={(savedItem) => {
-            if (savedItem) {
-              setEditingDesign(savedItem);
-              try {
-                localStorage.setItem("pickme3d_edit_item", JSON.stringify(savedItem));
-              } catch {}
-            }
-          }}
-        />
-      </div>
-
-      <AnimatePresence>
-        {previewId !== null && frames.length > 0 && (
-          <Preview
-            key="preview"
-            doc={doc}
-            widths={widths}
-            palette={p}
-            startId={previewId}
-            onClose={closePreview}
-          />
-        )}
-      </AnimatePresence>
-
-      {exportModalTab !== null && (
-        <ExportDialog
-          palette={p}
-          initialTab={exportModalTab}
-          screenCount={frames.length}
-          prompt={buildPrompt(doc, widths, (selectedFrame ?? frames[0])?.id || "", lang)}
-          frameName={(selectedFrame ?? frames[0])?.name || "Screen"}
-          width={(selectedFrame ?? frames[0]) ? frameSizeOf(selectedFrame ?? frames[0]).w : 390}
-          height={(selectedFrame ?? frames[0]) ? frameSizeOf(selectedFrame ?? frames[0]).h : 844}
-          onClose={() => setExportModalTab(null)}
-          onExport={handleExportScreen}
-        />
-      )}
-
-      {editAccess === "readonly" && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="edit-access-title"
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 100,
-            display: "grid",
-            placeItems: "center",
-            padding: 24,
-            background: "rgba(0,0,0,0.32)",
-          }}
-        >
             <div
               style={{
                 width: "min(420px, 100%)",
@@ -5206,9 +5646,38 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                 </button>
               </div>
             </div>
-        </div>
-      )}
-    </ThemeContext.Provider>
+          </div>
+        )}
+
+        {/* ── Import Template Modal ── */}
+        <ImportTemplateModal
+          open={importModalOpen}
+          onClose={() => setImportModalOpen(false)}
+          onImportSuccess={handleImportSuccess}
+          surfaceContainerColor={p.surfaceContainerHigh}
+          onSurfaceColor={p.onSurface}
+          onSurfaceVariantColor={p.onSurfaceVariant}
+          primaryColor={p.primary}
+          onPrimaryColor={p.onPrimary}
+          errorColor="#ef4444"
+        />
+
+        {/* ── Embed Code Modal ── */}
+        <EmbedModal
+          open={embedModalOpen}
+          onClose={() => setEmbedModalOpen(false)}
+          templateId={editingDesign?._id ?? editingDesign?.id ?? "preview"}
+          activeDevice={activeDevice}
+          surfaceContainerColor={p.surfaceContainerHigh}
+          onSurfaceColor={p.onSurface}
+          onSurfaceVariantColor={p.onSurfaceVariant}
+          primaryColor={p.primary}
+          onPrimaryColor={p.onPrimary}
+          secondaryContainerColor={p.secondaryContainer}
+          onSecondaryContainerColor={p.onSecondaryContainer}
+        />
+
+      </ThemeContext.Provider>
     </LangContext.Provider>
   );
 }

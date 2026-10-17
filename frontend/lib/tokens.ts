@@ -2147,7 +2147,7 @@ export type FramePreset = "phone" | "desktop";
 export const frameSizeOf = (f: Frame) => ({ w: f.w ?? PHONE_W, h: f.h ?? PHONE_H });
 export const isPhoneFrame = (f: Frame) => {
   const { w, h } = frameSizeOf(f);
-  return w === PHONE_W && h === PHONE_H;
+  return (w === PHONE_W && h === PHONE_H) || (w <= 600 && h > w);
 };
 export const framePresetOf = (f: Frame): FramePreset => (isPhoneFrame(f) ? "phone" : "desktop");
 export const framePresetPatch = (preset: FramePreset): Pick<Frame, "w" | "h"> =>
