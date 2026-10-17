@@ -24,6 +24,21 @@ async function attachUser(req, res, next) {
   }
 }
 
+// Có token thì gắn người dùng, không có thì vẫn cho qua (trang xem công khai)
+async function optionalUser(req, res, next) {
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+  if (!token) return next();
+  try {
+    const decoded = jwt.verify(token, jwtSecret());
+    req.auth = decoded;
+    req.user = await billing.getAccount(decoded);
+  } catch {
+    req.user = null;
+  }
+  return next();
+}
+
 function requirePlan(minPlan) {
   return (req, res, next) => {
     const plan = req.user?.plan || 'free';
@@ -58,4 +73,4 @@ function checkQuota(kind) {
   };
 }
 
-module.exports = { attachUser, requirePlan, checkQuota };
+module.exports = { attachUser, optionalUser, requirePlan, checkQuota };

@@ -8,7 +8,7 @@ import s from "@/components/slides/studio.module.css";
 import { startDeckDownload, type DeckExportFormat } from "@/lib/deckExport";
 import { quotaText } from "@/lib/deckFormat";
 import { fetchAccount, type AccountPlan } from "@/lib/paymentService";
-import { createDeck, deleteDeck, generateDeck, listDecks, saveDeck, type Deck } from "@/lib/presentationService";
+import { createDeck, deleteDeck, generateDeck, listCommunityDecks, listDecks, saveDeck, type Deck } from "@/lib/presentationService";
 
 type Filter = "all" | "public" | "private" | "readonly";
 
@@ -30,6 +30,8 @@ export default function SlidesPage() {
   const [decks, setDecks] = useState<Deck[] | null>(null);
   const [topic, setTopic] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
+  const [scope, setScope] = useState<"mine" | "community">("mine");
+  const [community, setCommunity] = useState<Deck[] | null>(null);
   const [menu, setMenu] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -46,6 +48,12 @@ export default function SlidesPage() {
   }, []);
 
   useEffect(() => { load().catch((err) => { setError(err.message); setDecks([]); }); }, [load]);
+
+  // Tải deck cộng đồng lần đầu mở mục này
+  useEffect(() => {
+    if (scope !== "community" || community !== null) return;
+    listCommunityDecks().then(setCommunity).catch((err) => { setError(err.message); setCommunity([]); });
+  }, [scope, community]);
 
   useEffect(() => {
     const close = () => setMenu(null);
@@ -225,17 +233,45 @@ export default function SlidesPage() {
         {error && <p className={s.error}>{error}</p>}
 
         <div className={s.toolbar}>
-          <div className={s.chips} role="group" aria-label="Lọc deck">
-            {filters.map(([key, label]) => (
+          <div className={s.chips} role="group" aria-label="Xem deck">
+            <button type="button" className={`${s.chip} ${s.scope}`} aria-pressed={scope === "mine"} onClick={() => setScope("mine")}>Deck của tôi</button>
+            <button type="button" className={`${s.chip} ${s.scope}`} aria-pressed={scope === "community"} onClick={() => setScope("community")}>Cộng đồng</button>
+            {scope === "mine" && <span className={s.chipSep} aria-hidden="true" />}
+            {scope === "mine" && filters.map(([key, label]) => (
               <button key={key} type="button" className={s.chip} aria-pressed={filter === key} onClick={() => setFilter(key)}>
                 {label}<span className={s.n}>{counts[key]}</span>
               </button>
             ))}
           </div>
-          <span className={s.sort}>Sắp theo lần sửa gần nhất</span>
+          <span className={s.sort}>{scope === "mine" ? "Sắp theo lần sửa gần nhất" : "Deck công khai của mọi người · mới cập nhật trước"}</span>
         </div>
 
-        <div className={s.grid}>
+        {scope === "community" && (
+          <div className={s.grid}>
+            {community === null && Array.from({ length: 4 }, (_, i) => <div key={i} className={s.skeleton} />)}
+            {community !== null && community.length === 0 && (
+              <div className={s.empty}>
+                <strong>Chưa có deck công khai nào</strong>
+                Khi người dùng khác để deck ở chế độ công khai, deck sẽ hiện ở đây.
+              </div>
+            )}
+            {(community || []).map((deck) => (
+              <DeckCard
+                key={deck.id}
+                deck={deck}
+                community
+                canPrivate={false}
+                canExportPptx={false}
+                menuOpen={menu === deck.id}
+                confirming={false}
+                onMenu={setMenu}
+                onAction={onAction}
+              />
+            ))}
+          </div>
+        )}
+
+        <div className={s.grid} hidden={scope !== "mine"}>
           {decks === null && Array.from({ length: 4 }, (_, i) => <div key={i} className={s.skeleton} />)}
           {decks !== null && shown.length === 0 && (
             <div className={s.empty}>

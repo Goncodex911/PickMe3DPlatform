@@ -1,63 +1,120 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import SlideStudioFrame from "@/components/slides/SlideStudioFrame";
-import { commentDeck, getPublicDeck, likeDeck, type Deck } from "@/lib/presentationService";
-import { isPptistDeck } from "@/lib/slideBridge";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import SlideView from "@/components/slides/SlideView";
+import StudioShell, { Icon, useToast } from "@/components/slides/StudioShell";
+import s from "@/components/slides/studio.module.css";
+import { editedLabel } from "@/lib/deckFormat";
+import { commentDeck, getPublicDeck, likeDeck, recordDeckViewOnce, type Deck } from "@/lib/presentationService";
+import { toRenderSlides } from "@/lib/slideLegacy";
 
+// Trang xem công khai: ai có link đều xem được deck công khai, kể cả chưa đăng nhập
 export default function SlideViewPage() {
   const [deck, setDeck] = useState<Deck | null>(null);
   const [index, setIndex] = useState(0);
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
+  const [toast, showToast] = useToast();
 
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("id") || "";
-    if (!id) return;
-    getPublicDeck(id).then(setDeck).catch((err) => setError(err.message));
+    if (!id) { setError("Thiếu mã deck trong đường dẫn."); return; }
+    getPublicDeck(id)
+      .then((found) => {
+        setDeck(found);
+        recordDeckViewOnce(found.id).then((view) => {
+          if (view?.counted) setDeck((current) => (current ? { ...current, viewsCount: view.viewsCount } : current));
+        });
+      })
+      .catch((err) => setError(err.message || "Không mở được deck"));
   }, []);
 
-  if (error) return <main className="grid min-h-screen place-items-center bg-black text-white">{error}</main>;
-  if (!deck) return <main className="grid min-h-screen place-items-center bg-black text-white">Đang mở bài…</main>;
-  const slide = deck.slides[index] || deck.slides[0];
-  const studio = isPptistDeck(deck.slides);
+  const slides = useMemo(() => (deck ? toRenderSlides(deck.slides, deck.theme) : []), [deck]);
+  const last = Math.max(0, slides.length - 1);
+  const go = useCallback((step: number) => setIndex((value) => Math.max(0, Math.min(last, value + step))), [last]);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (/input|textarea/i.test((event.target as HTMLElement).tagName)) return;
+      if (event.key === "ArrowRight") go(1);
+      if (event.key === "ArrowLeft") go(-1);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [go]);
+
+  const toggleLike = async () => {
+    if (!deck) return;
+    try {
+      const result = await likeDeck(deck.id);
+      setDeck({ ...deck, likesCount: result.likesCount, liked: result.liked });
+    } catch {
+      showToast("Đăng nhập để thích deck này");
+    }
+  };
+
+  const send = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!deck || !note.trim()) return;
+    try {
+      const comments = await commentDeck(deck.id, note);
+      setDeck({ ...deck, comments });
+      setNote("");
+    } catch {
+      showToast("Đăng nhập để bình luận");
+    }
+  };
 
   return (
-    <main className="min-h-screen bg-black text-white">
-      <section className="mx-auto flex min-h-screen max-w-5xl flex-col justify-center px-6">
-        {studio ? (
+    <StudioShell active="slides">
+      <section className={`${s.deckPage} ${s.wrap}`} aria-labelledby="viewTitle">
+        {error && <p className={s.error}>{error}</p>}
+        {!deck && !error && <div className={s.skeleton} style={{ marginTop: 20, maxWidth: 960 }} />}
+        {deck && (
           <>
-            <p className="text-xs uppercase tracking-[0.22em] text-rose-300">{deck.authorName} · {deck.title}</p>
-            <div className="mt-4 aspect-video w-full overflow-hidden rounded-2xl border border-white/10">
-              <SlideStudioFrame deck={deck} plan="free" userName="" designs={[]} mode="view" />
+            <div className={s.dhead}>
+              <div>
+                <p className={s.sub}>
+                  <span className={s.vis}><Icon name="person" />{deck.authorName || "Người dùng PickMe3D"}</span>
+                  <span>·</span><span>{slides.length} slide</span>
+                  <span>·</span><span>{editedLabel(deck.updatedAt, deck.createdAt)}</span>
+                </p>
+                <h1 className={s.h1} id="viewTitle">{deck.title}</h1>
+              </div>
+              <div className={s.actions}>
+                <span className={s.btn} title="Lượt xem"><Icon name="visibility" />{deck.viewsCount || 0}</span>
+                <button type="button" className={`${s.btn} ${deck.liked ? s.liked : ""}`} onClick={toggleLike} aria-pressed={Boolean(deck.liked)} title={deck.liked ? "Bỏ thích" : "Thích"}>
+                  <Icon name="favorite" />{deck.likesCount || 0}
+                </button>
+              </div>
             </div>
-          </>
-        ) : (
-          <>
-            <p className="text-xs uppercase tracking-[0.22em] text-rose-300">{deck.authorName} · {index + 1}/{deck.slides.length}</p>
-            <h1 className="mt-3 text-5xl italic" style={{ fontFamily: "Instrument Serif, serif" }}>{slide?.title || deck.title}</h1>
-            <p className="mt-4 max-w-2xl text-lg text-slate-300">{slide?.body}</p>
-            {slide?.image && <img src={slide.image} alt="" className="mt-6 max-h-80 rounded-2xl object-cover" />}
+
+            <div className={s.viewer} style={{ marginTop: 28 }}>
+              <div className={s.stage} aria-label={`Slide ${index + 1} trên ${slides.length}`}>
+                <SlideView slide={slides[Math.min(index, last)]} className={s.stageSlide} />
+                <button type="button" className={`${s.navBtn} ${s.prev}`} onClick={() => go(-1)} disabled={index === 0} aria-label="Slide trước"><Icon name="chevron_left" /></button>
+                <button type="button" className={`${s.navBtn} ${s.next}`} onClick={() => go(1)} disabled={index >= last} aria-label="Slide sau"><Icon name="chevron_right" /></button>
+              </div>
+              <div className={s.pager}>
+                <span>Slide {Math.min(index, last) + 1} / {slides.length}</span>
+                <span>Dùng <kbd>←</kbd> <kbd>→</kbd> để chuyển slide</span>
+              </div>
+            </div>
+
+            <section className={s.box} style={{ maxWidth: 760, margin: "40px auto 0" }} aria-labelledby="commentsTitle">
+              <h2 id="commentsTitle">Bình luận · {deck.comments?.length || 0}</h2>
+              <form className={s.linkRow} onSubmit={send}>
+                <input value={note} onChange={(event) => setNote(event.target.value)} maxLength={500} placeholder="Viết bình luận" aria-label="Bình luận" />
+                <button className={s.btn} type="submit" disabled={!note.trim()}>Gửi</button>
+              </form>
+              {(deck.comments || []).map((comment) => (
+                <p key={comment.id} className={s.notes}><strong style={{ color: "var(--fg)" }}>{comment.userName}</strong> {comment.content}</p>
+              ))}
+            </section>
           </>
         )}
-        <div className="mt-8 flex gap-3 text-sm">
-          {!studio && <button type="button" onClick={() => setIndex((value) => Math.max(0, value - 1))} className="rounded-full border border-white/20 px-4 py-2">Trước</button>}
-          {!studio && <button type="button" onClick={() => setIndex((value) => Math.min(deck.slides.length - 1, value + 1))} className="rounded-full border border-white/20 px-4 py-2">Sau</button>}
-          <button type="button" onClick={async () => { const result = await likeDeck(deck.id); setDeck({ ...deck, likesCount: result.likesCount }); }} className="rounded-full bg-white px-4 py-2 text-black">{deck.likesCount} thích</button>
-        </div>
-        <form className="mt-8 flex gap-2" onSubmit={async (event) => {
-          event.preventDefault();
-          const comments = await commentDeck(deck.id, note);
-          setDeck({ ...deck, comments });
-          setNote("");
-        }}>
-          <input value={note} onChange={(event) => setNote(event.target.value)} placeholder="Bình luận" className="flex-1 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm" />
-          <button className="rounded-full bg-rose-600 px-4 text-sm" type="submit">Gửi</button>
-        </form>
-        <ul className="mt-4 space-y-2 text-sm text-slate-300">
-          {deck.comments.map((comment) => <li key={comment.id}><strong className="text-white">{comment.userName}</strong> {comment.content}</li>)}
-        </ul>
       </section>
-    </main>
+      {toast}
+    </StudioShell>
   );
 }
