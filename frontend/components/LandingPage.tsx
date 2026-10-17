@@ -305,7 +305,8 @@ export default function LandingPage({
             <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
           </Link>
           <a href="#features" className="hover:text-white transition-colors">Tính năng nổi bật</a>
-          <a href="#pricing" className="hover:text-white transition-colors">Bảng giá</a>
+          <Link href="/pricing" className="hover:text-white transition-colors">Bảng giá</Link>
+          <Link href="/slides" className="hover:text-white transition-colors">Slides</Link>
         </nav>
 
         <div className="flex items-center gap-3 pointer-events-auto">

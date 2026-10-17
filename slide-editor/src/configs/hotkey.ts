@@ -1,0 +1,150 @@
+export const enum KEYS {
+  C = 'C',
+  X = 'X',
+  Z = 'Z',
+  Y = 'Y',
+  A = 'A',
+  G = 'G',
+  L = 'L',
+  F = 'F',
+  D = 'D',
+  B = 'B',
+  P = 'P',
+  O = 'O',
+  R = 'R',
+  T = 'T',
+  MINUS = '-',
+  EQUAL = '=',
+  DIGIT_0 = '0',
+  DELETE = 'DELETE',
+  UP = 'ARROWUP',
+  DOWN = 'ARROWDOWN',
+  LEFT = 'ARROWLEFT',
+  RIGHT = 'ARROWRIGHT',
+  ENTER = 'ENTER',
+  SPACE = ' ',
+  TAB = 'TAB',
+  BACKSPACE = 'BACKSPACE',
+  ESC = 'ESCAPE',
+  PAGEUP = 'PAGEUP',
+  PAGEDOWN = 'PAGEDOWN',
+  F5 = 'F5',
+}
+
+interface HotkeyItem {
+  type: string
+  children: {
+    label: string
+    value?: string
+  }[] 
+}
+
+export const HOTKEY_DOC: HotkeyItem[] = [
+  {
+    type: 'Chung',
+    children: [
+      { label: 'Cắt', value: 'Ctrl + X' },
+      { label: 'Sao chép', value: 'Ctrl + C' },
+      { label: 'Dán', value: 'Ctrl + V' },
+      { label: 'Dán dạng văn bản thuần', value: 'Ctrl + Shift + V' },
+      { label: 'Nhân bản nhanh', value: 'Ctrl + D' },
+      { label: 'Chọn tất cả', value: 'Ctrl + A' },
+      { label: 'Hoàn tác', value: 'Ctrl + Z' },
+      { label: 'Làm lại', value: 'Ctrl + Y' },
+      { label: 'Xoá', value: 'Delete / Backspace' },
+      { label: 'Chọn nhiều', value: 'Giữ Ctrl hoặc Shift' },
+      { label: 'Mở tìm và thay thế', value: 'Ctrl + F' },
+      { label: 'In', value: 'Ctrl + P' },
+      { label: 'Đóng hộp thoại', value: 'ESC' },
+    ],
+  },
+  {
+    type: 'Trình chiếu',
+    children: [
+      { label: 'Trình chiếu từ đầu', value: 'F5' },
+      { label: 'Trình chiếu từ slide hiện tại', value: 'Shift + F5' },
+      { label: 'Về slide trước', value: '↑ / ← / PgUp' },
+      { label: 'Sang slide sau', value: '↓ / → / PgDown' },
+      { label: 'Sang slide sau', value: 'Enter / Space' },
+      { label: 'Thoát trình chiếu', value: 'ESC' },
+    ],
+  },
+  {
+    type: 'Sửa slide',
+    children: [
+      { label: 'Thêm slide mới', value: 'Enter' },
+      { label: 'Di chuyển khung vẽ', value: 'Space + kéo chuột' },
+      { label: 'Thu phóng khung vẽ', value: 'Ctrl + cuộn chuột' },
+      { label: 'Phóng to khung vẽ', value: 'Ctrl + =' },
+      { label: 'Thu nhỏ khung vẽ', value: 'Ctrl + -' },
+      { label: 'Vừa khung vẽ với màn hình', value: 'Ctrl + 0' },
+      { label: 'Slide trước (khi chưa chọn phần tử)', value: '↑' },
+      { label: 'Slide sau (khi chưa chọn phần tử)', value: '↓' },
+      { label: 'Slide trước', value: 'Cuộn chuột lên / PgUp' },
+      { label: 'Slide sau', value: 'Cuộn chuột xuống / PgDown' },
+      { label: 'Tạo nhanh văn bản', value: 'Bấm đúp vào chỗ trống / T' },
+      { label: 'Tạo nhanh hình chữ nhật', value: 'R' },
+      { label: 'Tạo nhanh hình tròn', value: 'O' },
+      { label: 'Tạo nhanh đường kẻ', value: 'L' },
+      { label: 'Thoát chế độ vẽ', value: 'Chuột phải' },
+    ],
+  },
+  {
+    type: 'Thao tác phần tử',
+    children: [
+      { label: 'Di chuyển', value: '↑ / ← / ↓ / →' },
+      { label: 'Khoá', value: 'Ctrl + L' },
+      { label: 'Nhóm', value: 'Ctrl + G' },
+      { label: 'Bỏ nhóm', value: 'Ctrl + Shift + G' },
+      { label: 'Lên trên cùng', value: 'Alt + F' },
+      { label: 'Xuống dưới cùng', value: 'Alt + B' },
+      { label: 'Khoá tỉ lệ khung', value: 'Giữ Ctrl hoặc Shift' },
+      { label: 'Nhân bản nhanh', value: 'Giữ Ctrl + kéo' },
+      { label: 'Tạo đường ngang / dọc', value: 'Giữ Ctrl hoặc Shift' },
+      { label: 'Chuyển phần tử đang chọn', value: 'Tab' },
+      { label: 'Xác nhận cắt ảnh', value: 'Enter' },
+      { label: 'Hoàn tất vẽ hình tự do', value: 'Enter' },
+    ],
+  },
+  {
+    type: 'Sửa bảng',
+    children: [
+      { label: 'Sang ô kế tiếp', value: 'Tab' },
+      { label: 'Di chuyển ô đang chọn', value: '↑ / ← / ↓ / →' },
+      { label: 'Chèn hàng phía trên', value: 'Ctrl + ↑' },
+      { label: 'Chèn hàng phía dưới', value: 'Ctrl + ↓' },
+      { label: 'Chèn cột bên trái', value: 'Ctrl + ←' },
+      { label: 'Chèn cột bên phải', value: 'Ctrl + →' },
+    ],
+  },
+  {
+    type: 'Sửa dữ liệu biểu đồ',
+    children: [
+      { label: 'Sang hàng kế tiếp', value: 'Enter' },
+    ],
+  },
+  {
+    type: 'Soạn chữ',
+    children: [
+      { label: 'In đậm', value: 'Ctrl + B' },
+      { label: 'In nghiêng', value: 'Ctrl + I' },
+      { label: 'Gạch chân', value: 'Ctrl + U' },
+      { label: 'Mã nội dòng', value: 'Ctrl + E' },
+      { label: 'Chỉ số trên', value: 'Ctrl + ;' },
+      { label: 'Chỉ số dưới', value: `Ctrl + '` },
+      { label: 'Chọn đoạn', value: `ESC` },
+    ],
+  },
+  {
+    type: 'Thao tác nhanh khác',
+    children: [
+      { label: 'Thêm ảnh - dán ảnh từ clipboard' },
+      { label: 'Thêm ảnh - kéo ảnh từ máy vào khung vẽ' },
+      { label: 'Thêm ảnh - dán mã SVG vào khung vẽ' },
+      { label: 'Thêm ảnh - dán link ảnh từ pexels' },
+      { label: 'Thêm chữ - dán chữ từ clipboard' },
+      { label: 'Thêm chữ - kéo chữ đã chọn từ nơi khác vào khung vẽ' },
+      { label: 'Soạn chữ - hỗ trợ cú pháp markdown để tạo danh sách và trích dẫn' },
+    ],
+  },
+]

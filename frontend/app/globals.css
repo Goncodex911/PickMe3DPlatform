@@ -409,3 +409,13 @@ input.m3-number {
   }
 }
 
+
+/* Chữ trong slide PPTist khi hiển thị ngoài studio (components/slides/SlideView) */
+.pm-rich { font-size: 16px; overflow-wrap: break-word; white-space: normal; }
+.pm-rich p, .pm-rich ul, .pm-rich ol, .pm-rich li { margin: 0; margin-top: var(--paragraphSpace, 5px); }
+.pm-rich p:first-child { margin-top: 0; }
+.pm-rich ul { list-style-type: disc; padding-inline-start: 1.25em; }
+.pm-rich ol { list-style-type: decimal; padding-inline-start: 1.25em; }
+.pm-rich sup { vertical-align: super; font-size: smaller; }
+.pm-rich sub { vertical-align: sub; font-size: smaller; }
+.pm-rich a { text-decoration: underline; }
