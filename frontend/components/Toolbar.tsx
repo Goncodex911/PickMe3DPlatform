@@ -62,6 +62,7 @@ export function Toolbar({
   editingDesignTitle,
   onSaveProject,
   onOpenProject,
+  onExport,
   onOpenAiDraft,
   onShare,
   shareState = "idle",
@@ -103,6 +104,8 @@ export function Toolbar({
   editingDesignTitle?: string | null;
   onSaveProject?: () => void;
   onOpenProject?: () => void;
+  /** opens the export dialog to download all screens with interactive transitions */
+  onExport?: () => void;
   /** opens the dedicated AI screen generator modal */
   onOpenAiDraft?: () => void;
   /** opens the "ask an AI" dialog from the left end of the zoom row */
@@ -139,6 +142,9 @@ export function Toolbar({
           <IconBtn icon="redo" p={p} onClick={onRedo} disabled={!canRedo} title={t("redo", lang)} size={S} />
           {onSaveDesign && (
             <IconBtn icon="cloud_upload" p={p} onClick={onSaveDesign} title="Lưu thiết kế" size={S} />
+          )}
+          {onExport && (
+            <IconBtn icon="download" p={p} onClick={onExport} title="Tải xuống tất cả màn hình" size={S} />
           )}
           <IconBtn icon="translate" p={p} onClick={onLangSheet} title={t("language", lang)} size={S} />
           <IconBtn icon="palette" p={p} onClick={onSettings} title={t("settings", lang)} size={S} />
@@ -187,7 +193,7 @@ export function Toolbar({
               whiteSpace: "nowrap",
             }}
           >
-            <Icon name="auto_awesome" size={22} />
+            <Icon name="content_copy" size={20} />
             {t("prompt", lang)}
           </button>
         </Pill>
@@ -267,8 +273,8 @@ export function Toolbar({
             size={40}
           />
           <button
-            onClick={onFit}
-            title={t("fit", lang)}
+            onClick={() => onZoom(1)}
+            title="100%"
             className="m3-press"
             style={{
               height: 40,
@@ -465,6 +471,32 @@ export function Toolbar({
             >
               <Icon name={editingDesignTitle ? "edit_note" : "cloud_upload"} size={18} />
               <span>{editingDesignTitle ? "Cập nhật" : "Lưu"}</span>
+            </button>
+          )}
+          {onExport && (
+            <button
+              onClick={onExport}
+              title="Tải xuống tất cả màn hình (HTML Prototype, React, ZIP, PDF)"
+              className="m3-press"
+              style={{
+                height: 38,
+                padding: "0 14px 0 10px",
+                borderRadius: 19,
+                border: "none",
+                background: palette.primary,
+                color: palette.onPrimary,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                whiteSpace: "nowrap",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+              }}
+            >
+              <Icon name="download" size={18} />
+              <span>Tải xuống</span>
             </button>
           )}
           {onSaveProject && onOpenProject && (
