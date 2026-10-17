@@ -4,7 +4,20 @@ const { generateDeck } = require('../services/slideAi');
 const { buildPptx } = require('../services/pptx');
 
 function owns(deck, user) {
-  return deck && String(deck.userId) === String(user.id);
+  return Boolean(deck && user && String(deck.userId) === String(user.id));
+}
+
+// Dữ liệu trả về cho người xem: bỏ danh sách id người thích/xem, thêm cờ đã thích và có phải chủ deck
+function forViewer(deck, user, { firstSlideOnly = false } = {}) {
+  const { likedBy = [], viewedBy = [], ...rest } = deck;
+  const viewerId = user ? String(user.id) : '';
+  return {
+    ...rest,
+    slides: firstSlideOnly ? (deck.slides || []).slice(0, 1) : deck.slides,
+    slideCount: (deck.slides || []).length,
+    liked: Boolean(viewerId && likedBy.includes(viewerId)),
+    isOwner: owns(deck, user),
+  };
 }
 
 async function flaggedDeck(user, id) {
@@ -14,7 +27,13 @@ async function flaggedDeck(user, id) {
 
 exports.list = async (req, res) => {
   const rows = billing.applyReadOnly(await billing.listDecks(req.user.id), req.user.plan);
-  res.json({ success: true, data: rows });
+  res.json({ success: true, data: rows.map((deck) => forViewer(deck, req.user)) });
+};
+
+// Deck công khai của các tài khoản khác
+exports.community = async (req, res) => {
+  const rows = await billing.listPublicDecks({ excludeUserId: req.user.id, limit: req.query.limit });
+  res.json({ success: true, data: rows.map((deck) => forViewer(deck, req.user, { firstSlideOnly: true })) });
 };
 
 exports.create = async (req, res) => {
@@ -54,16 +73,35 @@ exports.generate = async (req, res) => {
   res.status(201).json({ success: true, data: deck, source: generated.source });
 };
 
+// Chủ deck xem đầy đủ; tài khoản khác chỉ xem được deck công khai, ở chế độ chỉ xem
 exports.getOne = async (req, res) => {
-  const deck = await flaggedDeck(req.user, req.params.id);
-  if (!owns(deck, req.user)) return res.status(404).json({ success: false, message: 'Không thấy bài' });
-  res.json({ success: true, data: deck });
+  const mine = await flaggedDeck(req.user, req.params.id);
+  if (owns(mine, req.user)) return res.json({ success: true, data: forViewer(mine, req.user) });
+  const deck = await billing.getDeck(req.params.id);
+  if (!deck || !deck.isPublic) return res.status(404).json({ success: false, message: 'Không thấy bài' });
+  res.json({ success: true, data: { ...forViewer(deck, req.user), readOnly: true } });
 };
 
 exports.publicOne = async (req, res) => {
   const deck = await billing.getDeck(req.params.id);
-  if (!deck || !deck.isPublic) return res.status(404).json({ success: false, message: 'Không thấy bài' });
-  res.json({ success: true, data: deck });
+  if (!deck || (!deck.isPublic && !owns(deck, req.user))) return res.status(404).json({ success: false, message: 'Không thấy bài' });
+  res.json({ success: true, data: forViewer(deck, req.user) });
+};
+
+// Ghi một lượt xem. Chủ deck không tính; tài khoản khác tính một lần; không đăng nhập thì cộng mỗi lần mở
+exports.view = async (req, res) => {
+  const deck = await billing.getDeck(req.params.id);
+  if (!deck || (!deck.isPublic && !owns(deck, req.user))) return res.status(404).json({ success: false, message: 'Không thấy bài' });
+  if (owns(deck, req.user)) return res.json({ success: true, data: { viewsCount: deck.viewsCount, counted: false } });
+  if (req.user) {
+    const viewedBy = new Set(deck.viewedBy || []);
+    if (viewedBy.has(String(req.user.id))) return res.json({ success: true, data: { viewsCount: deck.viewsCount, counted: false } });
+    viewedBy.add(String(req.user.id));
+    const saved = await billing.updateDeck(deck.id, { viewedBy: [...viewedBy], viewsCount: (deck.viewsCount || 0) + 1 }, { touch: false });
+    return res.json({ success: true, data: { viewsCount: saved.viewsCount, counted: true } });
+  }
+  const saved = await billing.updateDeck(deck.id, { viewsCount: (deck.viewsCount || 0) + 1 }, { touch: false });
+  return res.json({ success: true, data: { viewsCount: saved.viewsCount, counted: true } });
 };
 
 exports.update = async (req, res) => {
@@ -106,7 +144,7 @@ exports.like = async (req, res) => {
   const likedBy = new Set(deck.likedBy || []);
   if (likedBy.has(req.user.id)) likedBy.delete(req.user.id);
   else likedBy.add(req.user.id);
-  const saved = await billing.updateDeck(deck.id, { likedBy: [...likedBy], likesCount: likedBy.size });
+  const saved = await billing.updateDeck(deck.id, { likedBy: [...likedBy], likesCount: likedBy.size }, { touch: false });
   res.json({ success: true, data: { likesCount: saved.likesCount, liked: likedBy.has(req.user.id) } });
 };
 
@@ -125,7 +163,7 @@ exports.comment = async (req, res) => {
       createdAt: new Date().toISOString(),
     },
   ];
-  const saved = await billing.updateDeck(deck.id, { comments });
+  const saved = await billing.updateDeck(deck.id, { comments }, { touch: false });
   res.status(201).json({ success: true, data: saved.comments });
 };
 

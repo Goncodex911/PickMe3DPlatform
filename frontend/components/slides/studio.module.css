@@ -102,7 +102,12 @@
 .chip .n { margin-left: 8px; font-size: 11px; letter-spacing: 1px; font-variant-numeric: tabular-nums; }
 .sort { color: var(--faint); font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; padding-bottom: 14px; }
 
+/* Chọn phạm vi deck: Của tôi / Cộng đồng */
+.scope { font-size: 15px; font-weight: 500; }
+.chipSep { width: 1px; align-self: stretch; margin: 8px 6px; background: var(--line); }
+
 /* Lưới deck: thẻ như "collection" ở trang chủ */
+.grid[hidden] { display: none; }
 .grid { margin-top: 28px; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 40px 24px; }
 .deck { display: flex; flex-direction: column; min-width: 0; position: relative; background: var(--ink-2); }
 .thumb { position: relative; display: block; aspect-ratio: 16 / 9; max-width: 100%; overflow: hidden; background: var(--ink-3); }
@@ -152,6 +157,10 @@
 .dhead .h1 { font-size: clamp(30px, 3.4vw, 54px); letter-spacing: -1.8px; }
 .sub { margin: 0 0 14px; display: flex; flex-wrap: wrap; gap: 4px 12px; color: var(--muted); font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; align-items: center; }
 .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.actions span.btn { cursor: default; gap: 10px; }
+.actions span.btn:hover { background: transparent; color: var(--fg); }
+.liked { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+.liked .ms { font-variation-settings: 'FILL' 1; }
 .dbody { margin-top: 28px; display: grid; grid-template-columns: 168px minmax(0, 1fr) 290px; gap: 28px; align-items: start; }
 .strip { position: sticky; top: 100px; max-height: calc(100vh - 120px); overflow-y: auto; display: grid; gap: 14px; align-content: start; padding-right: 6px; scrollbar-width: thin; }
 .strip button { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; align-items: start; padding: 0; border: 0; background: none; text-align: left; color: var(--faint); font-size: 11px; min-width: 0; }

@@ -7,7 +7,7 @@ import StudioShell, { Arrow, Icon, useToast } from "@/components/slides/StudioSh
 import s from "@/components/slides/studio.module.css";
 import { editedLabel } from "@/lib/deckFormat";
 import { fetchAccount, type AccountPlan } from "@/lib/paymentService";
-import { getDeck, saveDeck, type Deck } from "@/lib/presentationService";
+import { getDeck, likeDeck, recordDeckViewOnce, saveDeck, type Deck } from "@/lib/presentationService";
 import { buildInitMessage, STUDIO_URL } from "@/lib/slideBridge";
 import { slideHeadline, toRenderSlides } from "@/lib/slideLegacy";
 
@@ -28,7 +28,15 @@ export default function DeckPage() {
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("id") || "";
     if (!id) { setError("Thiếu mã deck trong đường dẫn."); return; }
-    getDeck(id).then(setDeck).catch((err) => setError(err.message || "Không mở được deck"));
+    getDeck(id)
+      .then((found) => {
+        setDeck(found);
+        // Chủ deck mở không tính lượt xem (backend tự bỏ qua)
+        recordDeckViewOnce(found.id).then((view) => {
+          if (view?.counted) setDeck((current) => (current ? { ...current, viewsCount: view.viewsCount } : current));
+        });
+      })
+      .catch((err) => setError(err.message || "Không mở được deck"));
     fetchAccount().then(setAccount).catch(() => setAccount(null));
   }, []);
 
@@ -118,8 +126,20 @@ export default function DeckPage() {
   };
 
   const features = account?.features;
-  const locked = Boolean(deck?.readOnly);
-  const visLabel = locked ? "Chỉ xem (vượt hạn mức)" : deck?.isPublic ? "Công khai" : "Riêng tư";
+  const isOwner = deck?.isOwner !== false;
+  // Người khác xem deck công khai cũng ở chế độ chỉ xem, nhưng không phải vì vượt hạn mức
+  const locked = Boolean(deck?.readOnly) && isOwner;
+
+  const toggleLike = async () => {
+    if (!deck) return;
+    try {
+      const result = await likeDeck(deck.id);
+      setDeck({ ...deck, likesCount: result.likesCount, liked: result.liked });
+    } catch (err) {
+      showToast((err as Error).message || "Không thích được deck này");
+    }
+  };
+  const visLabel = !isOwner ? "Công khai · chỉ xem" : locked ? "Chỉ xem (vượt hạn mức)" : deck?.isPublic ? "Công khai" : "Riêng tư";
   const notes = current?.remark ? plainText(String(current.remark)) : "";
 
   return (
@@ -133,6 +153,7 @@ export default function DeckPage() {
             <div className={s.dhead}>
               <div>
                 <p className={s.sub}>
+                  {!isOwner && <><span className={s.vis}><Icon name="person" />{deck.authorName || "Người dùng PickMe3D"}</span><span>·</span></>}
                   <span className={s.vis} data-ro={locked}><Icon name={locked ? "lock" : deck.isPublic ? "public" : "visibility_off"} />{visLabel}</span>
                   <span>·</span><span>{slides.length} slide</span>
                   <span>·</span><span>{editedLabel(deck.updatedAt, deck.createdAt)}</span>
@@ -140,8 +161,12 @@ export default function DeckPage() {
                 <h1 className={s.h1} id="deckTitle">{deck.title}</h1>
               </div>
               <div className={s.actions}>
+                <span className={s.btn} aria-label={`${deck.viewsCount || 0} lượt xem`} title="Lượt xem"><Icon name="visibility" />{deck.viewsCount || 0}</span>
+                <button type="button" className={`${s.btn} ${deck.liked ? s.liked : ""}`} onClick={toggleLike} aria-pressed={Boolean(deck.liked)} title={deck.liked ? "Bỏ thích" : "Thích"}>
+                  <Icon name="favorite" />{deck.likesCount || 0}
+                </button>
                 <button type="button" className={s.btn} onClick={present} disabled={!slides.length}>Trình chiếu <Icon name="slideshow" /></button>
-                {locked ? (
+                {!isOwner ? null : locked ? (
                   <a className={`${s.btn} ${s.primary}`} href="/pricing/">Nâng cấp để sửa <Arrow /></a>
                 ) : (
                   <a className={`${s.btn} ${s.primary}`} href={`/slides/edit/?id=${deck.id}`}>Mở trong studio <Arrow /></a>
@@ -179,11 +204,13 @@ export default function DeckPage() {
                   <h2>Thông tin</h2>
                   <div className={s.stats}>
                     <div><strong>{slides.length}</strong><span>slide</span></div>
-                    <div><strong>{deck.likesCount}</strong><span>lượt thích</span></div>
-                    <div><strong>{deck.comments?.length || 0}</strong><span>bình luận</span></div>
+                    <div><strong>{deck.viewsCount || 0}</strong><span>lượt xem</span></div>
+                    <div><strong>{deck.likesCount || 0}</strong><span>lượt thích</span></div>
                   </div>
                   <dl className={s.kv}>
+                    <dt>Tác giả</dt><dd>{isOwner ? "Bạn" : deck.authorName || "Người dùng PickMe3D"}</dd>
                     <dt>Trạng thái</dt><dd>{visLabel}</dd>
+                    <dt>Bình luận</dt><dd>{deck.comments?.length || 0}</dd>
                     <dt>Lần sửa cuối</dt><dd>{editedLabel(deck.updatedAt, deck.createdAt).replace(/^(Sửa|Tạo) /, "")}</dd>
                   </dl>
                 </section>
@@ -201,13 +228,13 @@ export default function DeckPage() {
                   ) : (
                     <p className={s.note}>Deck riêng tư chỉ bạn xem được.</p>
                   )}
-                  <button type="button" className={s.btn} onClick={toggleVisibility} disabled={locked}>
+                  {isOwner && <button type="button" className={s.btn} onClick={toggleVisibility} disabled={locked}>
                     <Icon name={deck.isPublic ? "visibility_off" : "public"} />
                     {deck.isPublic ? (features?.privateDeck ? "Chuyển sang riêng tư" : "Riêng tư (gói Pro)") : "Công khai deck"}
-                  </button>
+                  </button>}
                 </section>
 
-                <section className={s.box}>
+                {isOwner && <section className={s.box}>
                   <h2>Xuất file</h2>
                   <div className={s.exp}>
                     {([
@@ -225,7 +252,7 @@ export default function DeckPage() {
                     ))}
                   </div>
                   <p className={s.note}>{exporting ? "Đang dựng file, trình duyệt sẽ tải xuống ngay." : "Bấm định dạng để tải file về máy."}</p>
-                </section>
+                </section>}
 
                 <section className={s.box}>
                   <h2>Ghi chú slide {index + 1}</h2>

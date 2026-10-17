@@ -1,11 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const presentation = require('../controllers/presentationController');
-const { attachUser, requirePlan, checkQuota } = require('../middlewares/planMiddleware');
+const { attachUser, optionalUser, requirePlan, checkQuota } = require('../middlewares/planMiddleware');
 
-router.get('/public/:id', presentation.publicOne);
+router.get('/public/:id', optionalUser, presentation.publicOne);
+router.post('/:id/view', optionalUser, presentation.view);
 router.use(attachUser);
 router.get('/', presentation.list);
+router.get('/community', presentation.community);
 router.post('/', checkQuota('slides'), presentation.create);
 router.post('/generate', checkQuota('slides'), checkQuota('ai'), presentation.generate);
 router.get('/:id', presentation.getOne);

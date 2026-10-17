@@ -236,6 +236,8 @@ function plainDeck(deck) {
     isPublic: o.isPublic !== false,
     likesCount: o.likesCount || 0,
     likedBy: o.likedBy || [],
+    viewsCount: o.viewsCount || 0,
+    viewedBy: o.viewedBy || [],
     comments: o.comments || [],
     createdAt: o.createdAt,
     updatedAt: o.updatedAt,
@@ -270,6 +272,8 @@ async function createDeck(input) {
     id: crypto.randomUUID(),
     likesCount: 0,
     likedBy: [],
+    viewsCount: 0,
+    viewedBy: [],
     comments: [],
     isPublic: true,
     ...input,
@@ -291,6 +295,23 @@ async function listDecks(userId) {
     .map(plainDeck);
 }
 
+// Deck công khai của mọi người (trừ chính mình), mới sửa trước
+async function listPublicDecks({ excludeUserId, limit = 60 } = {}) {
+  const max = Math.min(200, Math.max(1, Number(limit) || 60));
+  if (dbOn()) {
+    const Presentation = require('../models/Presentation');
+    const query = { isPublic: { $ne: false } };
+    if (excludeUserId) query.userId = { $ne: String(excludeUserId) };
+    const rows = await Presentation.find(query).sort({ updatedAt: -1 }).limit(max);
+    return rows.map(plainDeck);
+  }
+  return [...memory.presentations.values()]
+    .filter((deck) => deck.isPublic !== false && (!excludeUserId || String(deck.userId) !== String(excludeUserId)))
+    .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
+    .slice(0, max)
+    .map(plainDeck);
+}
+
 async function getDeck(id) {
   if (dbOn() && mongoose.isValidObjectId(id)) {
     const Presentation = require('../models/Presentation');
@@ -301,15 +322,16 @@ async function getDeck(id) {
   return found ? plainDeck(found) : null;
 }
 
-async function updateDeck(id, patch) {
+// touch: false khi chỉ cộng lượt xem/thích/bình luận, để "sửa lần cuối" và thứ tự danh sách không đổi
+async function updateDeck(id, patch, { touch = true } = {}) {
   if (dbOn() && mongoose.isValidObjectId(id)) {
     const Presentation = require('../models/Presentation');
-    const found = await Presentation.findByIdAndUpdate(id, patch, { new: true });
+    const found = await Presentation.findByIdAndUpdate(id, patch, { new: true, timestamps: touch });
     return found ? plainDeck(found) : null;
   }
   const found = memory.presentations.get(String(id));
   if (!found) return null;
-  Object.assign(found, patch, { updatedAt: new Date().toISOString() });
+  Object.assign(found, patch, touch ? { updatedAt: new Date().toISOString() } : {});
   return plainDeck(found);
 }
 
@@ -334,6 +356,7 @@ module.exports = {
   countDecks,
   createDeck,
   listDecks,
+  listPublicDecks,
   getDeck,
   updateDeck,
   deleteDeck,

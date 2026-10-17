@@ -1,4 +1,4 @@
-import { apiFetch } from "./paymentService";
+import { apiFetch, authHeaders } from "./paymentService";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
@@ -30,7 +30,12 @@ export interface Deck {
   thumbnail: string;
   isPublic: boolean;
   likesCount: number;
-  likedBy: string[];
+  likedBy?: string[];
+  viewsCount?: number;
+  // Do backend tính theo người đang xem
+  liked?: boolean;
+  isOwner?: boolean;
+  slideCount?: number;
   comments: DeckComment[];
   readOnly?: boolean;
   createdAt?: string;
@@ -80,8 +85,32 @@ export async function getDeck(id: string) {
   return data.data as Deck;
 }
 
+// Deck công khai của các tài khoản khác (chỉ kèm slide đầu để làm ảnh bìa)
+export async function listCommunityDecks(): Promise<Deck[]> {
+  const res = await apiFetch(`${API_BASE}/presentations/community`);
+  const data = await read(res);
+  return data.data;
+}
+
+// Ghi một lượt xem; gửi kèm token nếu có để backend không tính lượt của chủ deck
+export async function recordDeckView(id: string) {
+  const res = await fetch(`${API_BASE}/presentations/${id}/view`, { method: "POST", headers: authHeaders(), cache: "no-store" });
+  const data = await read(res);
+  return data.data as { viewsCount: number; counted: boolean };
+}
+
+// Gọi một lần mỗi phiên trình duyệt cho mỗi deck, tránh tải lại trang là cộng thêm
+export async function recordDeckViewOnce(id: string) {
+  const key = `pickme3d_viewed_${id}`;
+  try {
+    if (sessionStorage.getItem(key)) return null;
+    sessionStorage.setItem(key, "1");
+  } catch { /* trình duyệt chặn sessionStorage thì vẫn ghi */ }
+  return recordDeckView(id).catch(() => null);
+}
+
 export async function getPublicDeck(id: string) {
-  const res = await fetch(`${API_BASE}/presentations/public/${id}`, { cache: "no-store" });
+  const res = await fetch(`${API_BASE}/presentations/public/${id}`, { headers: authHeaders(), cache: "no-store" });
   const data = await read(res);
   return data.data as Deck;
 }
