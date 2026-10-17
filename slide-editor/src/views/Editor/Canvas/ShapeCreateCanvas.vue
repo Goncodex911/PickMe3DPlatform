@@ -9,7 +9,7 @@
     <svg overflow="visible">
 			<path
         :d="path" 
-        stroke="#d14424" 
+        stroke="#6e56cf" 
         :fill="closed ? 'rgba(226, 83, 77, 0.15)' : 'none'" 
         stroke-width="2" 
       ></path>

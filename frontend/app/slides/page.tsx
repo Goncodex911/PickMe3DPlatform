@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import UpgradeModal from "@/components/UpgradeModal";
-import DeckCard from "@/components/slides/DeckCard";
-import StudioShell, { Icon, useToast } from "@/components/slides/StudioShell";
+import DeckCard, { type DeckMenuAction } from "@/components/slides/DeckCard";
+import StudioShell, { Arrow, Icon, useToast } from "@/components/slides/StudioShell";
 import s from "@/components/slides/studio.module.css";
+import { startDeckDownload, type DeckExportFormat } from "@/lib/deckExport";
 import { quotaText } from "@/lib/deckFormat";
 import { fetchAccount, type AccountPlan } from "@/lib/paymentService";
 import { createDeck, deleteDeck, generateDeck, listDecks, saveDeck, type Deck } from "@/lib/presentationService";
@@ -36,6 +37,7 @@ export default function SlidesPage() {
   const [hintError, setHintError] = useState("");
   const [upgrade, setUpgrade] = useState("");
   const [toast, showToast] = useToast();
+  const exporting = useRef(false);
 
   const load = useCallback(async () => {
     const [me, rows] = await Promise.all([fetchAccount(), listDecks()]);
@@ -110,9 +112,37 @@ export default function SlidesPage() {
     }
   };
 
-  const onAction = async (action: "studio" | "copy" | "toggle" | "delete" | "confirm-delete" | "cancel", deck: Deck) => {
+  const onExport = (format: DeckExportFormat, deck: Deck) => {
+    if (deck.readOnly) return;
+    if (format === "pptx" && !account?.features?.exportPptx) {
+      setUpgrade("export-pptx");
+      return;
+    }
+    if (exporting.current) {
+      showToast("Đang tải…");
+      return;
+    }
+    exporting.current = true;
+    showToast("Đang tải…");
+    startDeckDownload({
+      deck,
+      format,
+      account,
+      onFinish: (result) => {
+        exporting.current = false;
+        if (result.feature === "export-pptx") setUpgrade("export-pptx");
+        else showToast(result.ok ? "Đã tải file" : (result.message || "Không xuất được file"));
+      },
+    });
+  };
+
+  const onAction = async (action: DeckMenuAction, deck: Deck) => {
     setMenu(null);
     if (action === "studio") { window.location.href = `/slides/edit/?id=${deck.id}`; return; }
+    if (action === "pptx" || action === "pdf" || action === "png") {
+      onExport(action === "png" ? "image" : action, deck);
+      return;
+    }
     if (action === "delete") { setConfirming(deck.id); return; }
     if (action === "cancel") { setConfirming(null); return; }
     if (action === "copy") {
@@ -140,7 +170,7 @@ export default function SlidesPage() {
   const filters: [Filter, string][] = [["all", "Tất cả"], ["public", "Công khai"], ["private", "Riêng tư"]];
   if (readOnlyCount) filters.push(["readonly", "Chỉ xem"]);
 
-  let hint: React.ReactNode = `AI dựng deck 6 slide theo chủ đề rồi mở trong studio.${aiLimit == null ? "" : ` Còn ${aiLeft} lượt tháng này.`}`;
+  let hint: React.ReactNode = `AI viết deck 6–8 slide theo chủ đề (khoảng 15–40 giây) rồi mở trong studio.${aiLimit == null ? "" : ` Còn ${aiLeft} lượt tháng này.`}`;
   let hintWarn = false;
   if (hintError) { hint = hintError; hintWarn = true; }
   else if (deckFull) { hint = <>Đã đủ {deckLimit} deck của gói {planName}. Xóa bớt deck hoặc <a href="/pricing/">nâng cấp</a> để tạo thêm.</>; hintWarn = true; }
@@ -151,17 +181,22 @@ export default function SlidesPage() {
       <section className={`${s.page} ${s.wrap}`} aria-labelledby="slidesTitle">
         <div className={s.head}>
           <div>
-            <h1 className={s.h1} id="slidesTitle">Slide Studio</h1>
-            <p className={s.lede}>
+            <p className={s.eyebrow}>Slide Studio · Lookbook · Line sheet · Pitch</p>
+            <h1 className={`${s.h1} ${s.h1Mag}`} id="slidesTitle">Mỗi bộ sưu tập<br /><em>một câu chuyện.</em></h1>
+          </div>
+          <div className={s.headSide}>
+            <p className={`${s.lede} ${s.ledeMag}`}>
               {readOnlyCount
                 ? `${readOnlyCount} deck đang chỉ xem vì gói ${planName} lưu tối đa ${deckLimit} deck. Nâng cấp để sửa lại, không mất dữ liệu.`
-                : "Lookbook, line sheet và pitch cho từng bộ sưu tập, trình chiếu ngay hoặc xuất PPTX gửi đối tác."}
+                : "Dựng lookbook, line sheet và bài pitch từ chính thiết kế storefront của bạn. Trình chiếu ngay trên trình duyệt, hoặc xuất PPTX gửi nhà phân phối."}
             </p>
+            {readOnlyCount > 0 && <a className={`${s.btn} ${s.primary}`} href="/pricing/">Nâng cấp gói <Arrow /></a>}
           </div>
         </div>
 
         <form className={s.composer} onSubmit={onGenerate} autoComplete="off">
           <div className={s.cRow}>
+            <span className={s.cLabel}>Deck mới</span>
             <label htmlFor="topic">
               <Icon name="auto_awesome" />
               <input
@@ -173,17 +208,17 @@ export default function SlidesPage() {
               />
             </label>
             <button className={`${s.btn} ${s.primary}`} type="submit" disabled={busy || aiLeft === 0 || deckFull}>
-              <Icon name="auto_awesome" />{busy ? "Đang tạo…" : "AI tạo deck"}
+              {busy ? "AI đang viết…" : "AI tạo deck"} <Arrow />
             </button>
             <button className={s.btn} type="button" onClick={onBlank} disabled={busy || deckFull}>
-              <Icon name="add" />Deck trống
+              Deck trống <span className={s.arrow} aria-hidden="true">+</span>
             </button>
           </div>
           <div className={s.cFoot}>
             <p className={`${s.hint} ${hintWarn ? s.warn : ""}`}>{hint}</p>
             <div className={s.usage}>
               <Meter label="Deck" used={list.length} limit={deckLimit} />
-              <Meter label={`Lượt AI tháng ${month}`} used={aiUsed} limit={aiLimit} />
+              <Meter label={`AI tháng ${month}`} used={aiUsed} limit={aiLimit} />
             </div>
           </div>
         </form>
@@ -213,6 +248,7 @@ export default function SlidesPage() {
               key={deck.id}
               deck={deck}
               canPrivate={Boolean(account?.features?.privateDeck)}
+              canExportPptx={Boolean(account?.features?.exportPptx)}
               menuOpen={menu === deck.id}
               confirming={confirming === deck.id}
               onMenu={setMenu}

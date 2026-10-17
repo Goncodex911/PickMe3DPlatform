@@ -22,8 +22,8 @@ defineProps<{
 <style lang="scss" scoped>
 .mouse-selection {
   position: absolute;
-  background-color: rgba($themeColor, 0.1);
-  border: 1px solid $themeColor;
+  background-color: rgba($selectColor, 0.1);
+  border: 1px solid $selectColor;
   z-index: 200;
 
   &.quadrant-1 {

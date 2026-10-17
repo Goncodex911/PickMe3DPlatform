@@ -133,7 +133,7 @@ export default function SlideStudioFrame({
       src={mode === "view" ? `${STUDIO_URL}?mode=view` : STUDIO_URL}
       allow="fullscreen; clipboard-read; clipboard-write"
       allowFullScreen
-      className="h-full w-full border-0 bg-[#090d16]"
+      className="h-full w-full border-0 bg-[#131313]"
     />
   );
 }

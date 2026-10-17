@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import StudioShell, { Icon } from "@/components/slides/StudioShell";
+import StudioShell, { Arrow, Icon } from "@/components/slides/StudioShell";
 import s from "@/components/slides/studio.module.css";
 import { formatDate } from "@/lib/deckFormat";
 import { paymentCopy } from "@/lib/i18n.payment";
@@ -105,7 +105,7 @@ export default function PaymentResultPage() {
             <div className={s.payActions}>
               {view === "PAID" ? (
                 <>
-                  <a className={`${s.btn} ${s.primary}`} href="/slides/"><Icon name="slideshow" />{paymentCopy.openSlides}</a>
+                  <a className={`${s.btn} ${s.primary}`} href="/slides/">{paymentCopy.openSlides} <Arrow /></a>
                   <a className={s.btn} href="/pricing/">{paymentCopy.backPricing}</a>
                 </>
               ) : (

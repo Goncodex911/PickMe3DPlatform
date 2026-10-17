@@ -20,9 +20,12 @@ export function DeckCover({ deck }: { deck: Deck }) {
   return <span className={s.cover}><strong>{deck.title}</strong><span>Chưa có slide</span></span>;
 }
 
+export type DeckMenuAction = "studio" | "pptx" | "pdf" | "png" | "copy" | "toggle" | "delete" | "confirm-delete" | "cancel";
+
 export default function DeckCard({
   deck,
   canPrivate,
+  canExportPptx,
   menuOpen,
   confirming,
   onMenu,
@@ -30,10 +33,11 @@ export default function DeckCard({
 }: {
   deck: Deck;
   canPrivate: boolean;
+  canExportPptx: boolean;
   menuOpen: boolean;
   confirming: boolean;
   onMenu: (id: string | null) => void;
-  onAction: (action: "studio" | "copy" | "toggle" | "delete" | "confirm-delete" | "cancel", deck: Deck) => void;
+  onAction: (action: DeckMenuAction, deck: Deck) => void;
 }) {
   const locked = Boolean(deck.readOnly);
   const href = `/slides/deck/?id=${deck.id}`;
@@ -90,6 +94,16 @@ export default function DeckCard({
             <a role="menuitem" href={href}><Icon name="slideshow" />Xem deck</a>
           ) : (
             <button type="button" role="menuitem" onClick={() => onAction("studio", deck)}><Icon name="edit" />Mở trong studio</button>
+          )}
+          {!locked && (
+            <>
+              <button type="button" role="menuitem" onClick={() => onAction("pptx", deck)}>
+                <Icon name="present_to_all" />PPTX
+                {!canExportPptx && <small>Pro</small>}
+              </button>
+              <button type="button" role="menuitem" onClick={() => onAction("pdf", deck)}><Icon name="picture_as_pdf" />PDF</button>
+              <button type="button" role="menuitem" onClick={() => onAction("png", deck)}><Icon name="image" />PNG</button>
+            </>
           )}
           <a role="menuitem" href={`/slides/view/?id=${deck.id}`} target="_blank" rel="noreferrer" aria-disabled={!deck.isPublic} style={deck.isPublic ? undefined : { pointerEvents: "none", color: "var(--faint)" }}>
             <Icon name="open_in_new" />Trang xem công khai

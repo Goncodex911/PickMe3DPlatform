@@ -16,7 +16,7 @@
           <i-icon-park-solid:check-one style="font-size: 18px; color: #52c41a;" v-if="type === 'success'" />
           <i-icon-park-solid:close-one style="font-size: 18px; color: #ff4d4f;" v-if="type === 'error'" />
           <i-icon-park-solid:info style="font-size: 18px; color: #1677ff;" v-if="type === 'info'" />
-          <i-icon-park-outline:loading-four class="loading-icon" style="font-size: 18px; color: #d14424;" v-if="type === 'loading'" />
+          <i-icon-park-outline:loading-four class="loading-icon" style="font-size: 18px; color: #131313;" v-if="type === 'loading'" />
         </div>
         <div class="content">
           <div class="title" v-if="title">{{ title }}</div>

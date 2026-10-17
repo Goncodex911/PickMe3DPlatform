@@ -208,10 +208,9 @@ const openAIPPTDialog = () => {
     font-size: 17px;
   }
   .ai {
-    background: linear-gradient(270deg, #d897fd, #33bcfc);
-    background-clip: text;
-    color: transparent;
+    color: $themeColor;
     font-weight: 700;
+    letter-spacing: 1px;
   }
 
   &:hover {
@@ -237,7 +236,7 @@ const openAIPPTDialog = () => {
   width: 300px;
 }
 .ai-menu {
-  background: linear-gradient(270deg, #f8edff, #d4f1ff);
+  background: $lightGray;
   color: $themeColor;
   border-radius: $borderRadius;
   padding: 12px 16px;

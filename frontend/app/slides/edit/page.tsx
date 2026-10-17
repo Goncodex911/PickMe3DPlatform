@@ -93,21 +93,30 @@ export default function SlideEditPage() {
   };
 
   return (
-    <main className="flex h-screen flex-col bg-[#090d16] text-white">
-      <header className="relative flex items-center justify-between gap-3 px-4 py-3 text-sm">
-        <a href={id ? `/slides/deck/?id=${id}` : "/slides/"} onClick={leave}>← Về deck</a>
-        <span className="truncate">{deck?.title}{deck?.readOnly ? " · chỉ xem (vượt hạn mức gói)" : ""}</span>
-        <span className="flex items-center gap-3">
-          <span className={saved.startsWith("Lỗi") || saved.startsWith("AI") ? "text-rose-300" : "text-slate-400"}>{busy || saved}</span>
+    <main className="flex h-screen flex-col bg-[#131313] text-white" style={{ fontFamily: "var(--font-ui)" }}>
+      <header className="relative grid h-14 grid-cols-[1fr_auto_1fr] items-center gap-4 border-b border-[#2c2c2c] px-5 text-sm">
+        <span className="flex min-w-0 items-center gap-5">
+          <a href="/" aria-label="PickMe3D, về trang chủ" className="flex shrink-0 items-center gap-2 text-[17px] font-bold tracking-[-0.8px]">
+            <svg viewBox="0 0 40 44" className="h-6 w-[22px]" aria-hidden="true"><path d="M20 1 38 11.5 20 22 2 11.5 20 1ZM2 15l16 9.5V43L2 33V15ZM22 24.5 38 15v18L22 43V24.5Z" fill="currentColor" /></svg>
+            <span>PickMe<span className="font-normal">3D</span></span>
+          </a>
+          <a href={id ? `/slides/deck/?id=${id}` : "/slides/"} onClick={leave} className="truncate text-[#adadad] hover:text-white">← Về deck</a>
+        </span>
+        <span className="flex min-w-0 flex-col items-center leading-tight">
+          <span className="text-[10px] font-semibold uppercase tracking-[2px] text-[#7d7d7d]">{deck?.readOnly ? "Chỉ xem · vượt hạn mức gói" : "Slide Studio"}</span>
+          <span className="max-w-[40vw] truncate font-medium tracking-[-0.2px]">{deck?.title}</span>
+        </span>
+        <span className="flex items-center justify-end gap-4">
+          <span className={`text-[11px] uppercase tracking-[1.4px] ${saved.startsWith("Lỗi") || saved.startsWith("AI") ? "text-[#ff8f8f]" : "text-[#7d7d7d]"}`}>{busy || saved}</span>
           {deck && !deck.readOnly && (
-            <button type="button" onClick={() => setShowDesigns((value) => !value)} className="rounded-full border border-white/15 px-3 py-1">
-              Thiết kế của tôi
+            <button type="button" onClick={() => setShowDesigns((value) => !value)} aria-expanded={showDesigns} className="flex min-h-9 items-center gap-4 border border-[#8a8a8a] px-4 hover:bg-white hover:text-[#131313]">
+              Thiết kế của tôi <span aria-hidden="true">{showDesigns ? "−" : "+"}</span>
             </button>
           )}
         </span>
         {showDesigns && (
-          <div className="absolute right-4 top-12 z-10 max-h-[60vh] w-72 overflow-auto rounded-2xl border border-white/10 bg-[#151c2c] p-3 shadow-2xl">
-            {designs.length === 0 && <p className="text-slate-400">Chưa có thiết kế nào được lưu.</p>}
+          <div className="absolute right-5 top-[60px] z-10 max-h-[60vh] w-80 overflow-auto bg-white p-2 text-[#131313] shadow-2xl">
+            {designs.length === 0 && <p className="p-3 text-[#626262]">Chưa có thiết kế nào được lưu.</p>}
             {designs.map((design, index) => {
               const src = design.imageUrl || design.thumbnailUrl || "";
               return (
@@ -116,10 +125,10 @@ export default function SlideEditPage() {
                   type="button"
                   disabled={!src}
                   onClick={() => { studio.current?.insertDesign(src); setShowDesigns(false); }}
-                  className="mb-2 block w-full rounded-xl border border-white/10 p-2 text-left hover:border-rose-500 disabled:opacity-40"
+                  className="block w-full p-2 text-left hover:bg-[#ececec] disabled:opacity-40"
                 >
-                  {src && <img src={src} alt="" className="h-20 w-full rounded-lg object-cover" />}
-                  <span className="mt-1 block truncate">{design.title || "Thiết kế"}</span>
+                  {src && <img src={src} alt="" className="aspect-video w-full object-cover grayscale transition hover:grayscale-0" />}
+                  <span className="mt-2 block truncate text-sm">{design.title || "Thiết kế"}</span>
                 </button>
               );
             })}
@@ -127,7 +136,7 @@ export default function SlideEditPage() {
         )}
       </header>
       <div className="min-h-0 flex-1">
-        {error && <p className="grid h-full place-items-center text-rose-300">{error}</p>}
+        {error && <p className="grid h-full place-items-center text-[#ff8f8f]">{error}</p>}
         {deck && (
           <SlideStudioFrame
             ref={studio}
