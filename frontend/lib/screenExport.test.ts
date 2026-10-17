@@ -87,4 +87,48 @@ describe("screen export", () => {
     expect(zip.file("MobileApp-full-bundle/react/App.jsx")).not.toBeNull();
     expect(zip.file("MobileApp-full-bundle/angular/screen.component.html")).not.toBeNull();
   });
+
+  it("exports multi-screen interactive prototype with action transitions and navigation", async () => {
+    const payload = {
+      projectName: "ShoppingApp",
+      screens: [
+        {
+          id: "screen-home",
+          name: "Home",
+          markup: '<button data-action-to="screen-cart" data-action-transition="slide">Go to Cart</button>',
+          width: 390,
+          height: 844,
+          swipe: { left: "screen-cart" },
+        },
+        {
+          id: "screen-cart",
+          name: "Cart",
+          markup: '<button data-action-to="back">Back</button>',
+          width: 390,
+          height: 844,
+          swipe: { right: "screen-home" },
+        },
+      ],
+      initialScreenId: "screen-home",
+    };
+
+    const blob = await createHtmlFolderZip(payload);
+    expect(blob.size).toBeGreaterThan(0);
+    const zip = await JSZip.loadAsync(blob);
+    expect(zip.file("ShoppingApp-html/index.html")).not.toBeNull();
+    expect(zip.file("ShoppingApp-html/prototype.js")).not.toBeNull();
+    expect(zip.file("ShoppingApp-html/style.css")).not.toBeNull();
+    expect(zip.file("ShoppingApp-html/screens/01-Home.html")).not.toBeNull();
+    expect(zip.file("ShoppingApp-html/screens/02-Cart.html")).not.toBeNull();
+
+    const indexHtml = await zip.file("ShoppingApp-html/index.html")?.async("string");
+    expect(indexHtml).toContain("screen-home");
+    expect(indexHtml).toContain("screen-cart");
+    expect(indexHtml).toContain("data-action-to=\"screen-cart\"");
+    expect(indexHtml).toContain("data-swipe-left=\"screen-cart\"");
+
+    const script = await zip.file("ShoppingApp-html/prototype.js")?.async("string");
+    expect(script).toContain("data-action-to");
+    expect(script).toContain("setScreen");
+  });
 });

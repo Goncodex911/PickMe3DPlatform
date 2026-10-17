@@ -1508,9 +1508,13 @@ function Body({ item, p, tabScroll, menuShown }: { item: Item; p: Palette; tabSc
           {tabs.map((t, i) => {
             const on = i === Math.min(item.selected ?? 0, Math.max(0, tabs.length - 1));
             const withLabel = t.label.trim().length > 0;
+            const slotAction = item.actions?.[`tab:${i}`] || item.actions?.[t.label];
             return (
               <div
                 key={i}
+                data-action-to={slotAction?.to}
+                data-action-transition={slotAction?.transition}
+                data-action-url={slotAction?.url}
                 style={{
                   display: "flex",
                   flexDirection: "column",
@@ -1518,6 +1522,8 @@ function Body({ item, p, tabScroll, menuShown }: { item: Item; p: Palette; tabSc
                   gap: 4,
                   flex: 1,
                   minWidth: 0,
+                  cursor: slotAction ? "pointer" : undefined,
+                  pointerEvents: "auto",
                 }}
               >
                 <div
@@ -1616,9 +1622,13 @@ function Body({ item, p, tabScroll, menuShown }: { item: Item; p: Palette; tabSc
         <div style={{ display: "flex", alignItems: "stretch", height: "100%", position: "relative", overflow: "hidden" }}>
           {tabs.map((tab, i) => {
             const on = i === Math.min(item.selected ?? 0, Math.max(0, tabs.length - 1));
+            const slotAction = item.actions?.[`tab:${i}`] || item.actions?.[tab.label];
             return (
               <div
                 key={i}
+                data-action-to={slotAction?.to}
+                data-action-transition={slotAction?.transition}
+                data-action-url={slotAction?.url}
                 style={{
                   flex: scroll ? "none" : 1,
                   width: scroll ? SCROLL_TAB_W : undefined,
@@ -1630,6 +1640,8 @@ function Body({ item, p, tabScroll, menuShown }: { item: Item; p: Palette; tabSc
                   justifyContent: "flex-end",
                   position: "relative",
                   padding: "0 8px",
+                  cursor: slotAction ? "pointer" : undefined,
+                  pointerEvents: "auto",
                 }}
               >
                 <span
@@ -1953,6 +1965,10 @@ export function M3Static({
   const clips = !NO_BOX.includes(item.kind) && !menuOpen(item) && item.kind !== "textField" && item.kind !== "select";
   return (
     <div
+      data-action-to={item.action?.to}
+      data-action-transition={item.action?.transition}
+      data-action-url={item.action?.url}
+      data-item-id={item.id}
       style={{
         ...boxStyle(item, palette),
         width: measured ? undefined : size.w,
@@ -1967,6 +1983,8 @@ export function M3Static({
         borderBottomLeftRadius: r.bl,
         borderBottomRightRadius: r.br,
         flex: "0 0 auto",
+        cursor: item.action ? "pointer" : undefined,
+        pointerEvents: "auto",
         ...style,
       }}
     >

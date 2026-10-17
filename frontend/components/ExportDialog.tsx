@@ -11,6 +11,7 @@ type Props = {
   width: number;
   height: number;
   frameName?: string;
+  screenCount?: number;
   initialTab?: "code" | "image";
   prompt?: string;
   onClose: () => void;
@@ -33,69 +34,69 @@ type OptionItem = {
 const CODE_OPTIONS: OptionItem[] = [
   {
     id: "html-folder",
-    title: "HTML & CSS",
+    title: "HTML & CSS Interactive Prototype",
     badge: "FOLDER / WEB",
     category: "code",
-    desc: "A ready-to-use folder with HTML, CSS and setup instructions.",
+    desc: "Tải toàn bộ màn hình kèm prototype tương tác trực tiếp (chuyển hướng nút bấm, lịch sử quay lại, vuốt cảm ứng).",
   },
   {
     id: "react-folder",
-    title: "ReactJS",
+    title: "ReactJS (Vite App)",
     badge: "VITE + REACT",
     category: "code",
-    desc: "A React project with Vite, components and styles.",
+    desc: "Dự án React + Vite hoàn chỉnh với state điều hướng tương tác chuyển giữa tất cả màn hình.",
   },
   {
     id: "angular-folder",
-    title: "Angular",
+    title: "Angular Standalone",
     badge: "STANDALONE",
     category: "code",
-    desc: "A standalone Angular component with template and styles.",
+    desc: "Các component Angular Standalone cho toàn bộ màn hình dự án.",
   },
   {
     id: "all-folder",
     title: "All frameworks (.zip)",
     badge: "FULL BUNDLE",
     category: "code",
-    desc: "HTML, React and Angular projects in one ZIP file.",
+    desc: "Gói tất cả màn hình gồm HTML Prototype, React và Angular trong một file ZIP duy nhất.",
   },
   {
     id: "html",
-    title: "Copy source code",
+    title: "Sao chép mã nguồn (Active screen)",
     badge: "COPY CODE",
     category: "code",
-    desc: "Copy the generated markup and styles to your project.",
+    desc: "Sao chép markup và styles của màn hình đang chọn.",
   },
   {
     id: "prompt-copy",
     title: "AI coding prompt",
     badge: "PROMPT",
     category: "code",
-    desc: "Copy a design prompt for your AI coding tools.",
+    desc: "Sao chép prompt thiết kế cho các công cụ AI coding.",
   },
 ];
 
 const IMAGE_OPTIONS: OptionItem[] = [
   {
     id: "png",
-    title: "PNG image",
+    title: "PNG images",
     badge: "PNG",
     category: "image",
-    desc: "High-quality image with transparency.",
+    desc: "Xuất tất cả các màn hình chất lượng cao dạng PNG (nén ZIP nếu nhiều màn).",
   },
   {
     id: "jpeg",
-    title: "JPEG image",
+    title: "JPEG images",
     badge: "JPEG (COMPRESSED)",
     category: "image",
-    desc: "A smaller image optimized for the web.",
+    desc: "Xuất tất cả các màn hình tối ưu dung lượng (nén ZIP nếu nhiều màn).",
   },
   {
     id: "pdf",
-    title: "PDF document",
+    title: "PDF documents",
     badge: "DOCUMENT (PDF)",
     category: "image",
-    desc: "A single-page PDF at your selected dimensions.",
+    desc: "Xuất tất cả các màn hình thành tài liệu PDF (nén ZIP nếu nhiều màn).",
   },
 ];
 
@@ -113,6 +114,7 @@ export function ExportDialog({
   width: initialWidth,
   height: initialHeight,
   frameName = "Screen",
+  screenCount = 1,
   initialTab = "code",
   prompt = "",
   onClose,
@@ -251,10 +253,10 @@ export function ExportDialog({
     if (copySuccess) return "Copied to clipboard";
     if (selectedFormat === "prompt-copy") return "Copy AI prompt";
     if (selectedFormat === "html" || (["html-folder", "react-folder", "angular-folder"].includes(selectedFormat) && exportMode === "code")) return "Copy code";
-    if (selectedFormat === "pdf") return "Download PDF";
-    if (selectedFormat === "png") return "Download PNG";
-    if (selectedFormat === "jpeg") return "Download JPEG";
-    return "Download ZIP";
+    if (selectedFormat === "pdf") return screenCount > 1 ? "Download all PDFs (.zip)" : "Download PDF";
+    if (selectedFormat === "png") return screenCount > 1 ? "Download all PNGs (.zip)" : "Download PNG";
+    if (selectedFormat === "jpeg") return screenCount > 1 ? "Download all JPEGs (.zip)" : "Download JPEG";
+    return screenCount > 1 ? "Download prototype (.zip)" : "Download ZIP";
   };
 
   return (
@@ -262,7 +264,13 @@ export function ExportDialog({
       <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby="export-dialog-title" tabIndex={-1} className={styles.dialog}
         style={{ "--surface": palette.surface, "--container": palette.surfaceContainerLow, "--selected": palette.surfaceContainerHigh, "--text": palette.onSurface, "--muted": palette.onSurfaceVariant, "--border": palette.outlineVariant } as CSSProperties}>
         <header className={styles.header}>
-          <div><h2 id="export-dialog-title">Export</h2><p>{frameName} <span>· {initialWidth} × {initialHeight} px</span></p></div>
+          <div>
+            <h2 id="export-dialog-title">Export</h2>
+            <p>
+              {screenCount > 1 ? `${screenCount} screens (interactive transitions)` : frameName}{" "}
+              <span>· {initialWidth} × {initialHeight} px</span>
+            </p>
+          </div>
           <button className={styles.iconButton} onClick={onClose} disabled={busy} aria-label="Close export"><Icon name="close" size={20} /></button>
         </header>
         <div className={styles.tabs} role="tablist" aria-label="Export type">
