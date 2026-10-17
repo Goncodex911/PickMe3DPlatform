@@ -39,8 +39,7 @@ exports.create = async (req, res) => {
 exports.generate = async (req, res) => {
   const topic = String(req.body?.topic || '').trim();
   if (!topic) return res.status(400).json({ success: false, message: 'Nhập chủ đề' });
-  const generated = generateDeck(topic);
-  await billing.bumpAi(req.user.id);
+  const generated = await generateDeck(topic);
   const deck = await billing.createDeck({
     userId: req.user.id,
     authorName: req.user.name || '',
@@ -50,7 +49,9 @@ exports.generate = async (req, res) => {
     thumbnail: '',
     isPublic: true,
   });
-  res.status(201).json({ success: true, data: deck });
+  // Chỉ trừ lượt khi deck đã lưu và thật sự do AI viết (bộ mẫu dự phòng không tính)
+  if (generated.source === 'ai') await billing.bumpAi(req.user.id);
+  res.status(201).json({ success: true, data: deck, source: generated.source });
 };
 
 exports.getOne = async (req, res) => {

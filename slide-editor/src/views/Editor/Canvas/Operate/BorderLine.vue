@@ -15,7 +15,7 @@ withDefaults(defineProps<{
 
 <style lang="scss" scoped>
 .border-line {
-  border: 0 dashed $themeColor;
+  border: 0 dashed $selectColor;
   @include absolute-0();
 
   &.top {

@@ -36,7 +36,7 @@ const rotateClassName = computed(() => {
   left: 0;
   top: 0;
   margin: -5px 0 0 -5px;
-  border: 1px solid $themeColor;
+  border: 1px solid $selectColor;
   background-color: #fff;
   border-radius: 1px;
   cursor: pointer;

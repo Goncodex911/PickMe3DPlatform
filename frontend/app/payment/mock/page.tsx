@@ -104,7 +104,7 @@ export default function MockPaymentPage() {
             </ol>
             {error && <p className={s.error} style={{ margin: 0 }}>{error}</p>}
             <button type="button" className={`${s.btn} ${s.primary}`} onClick={pay} disabled={!orderCode || !amount || paying}>
-              <Icon name="check" />{paying ? "Đang xác nhận…" : "Tôi đã thanh toán"}
+              {paying ? "Đang xác nhận…" : "Tôi đã thanh toán"} <Icon name="check" />
             </button>
           </div>
         </div>

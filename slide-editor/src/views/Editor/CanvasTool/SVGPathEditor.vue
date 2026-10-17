@@ -27,7 +27,7 @@
           <path
             class="path-preview"
             :d="path"
-            :fill="closePath ? 'rgba(209, 68, 36, 0.05)' : 'none'"
+            :fill="closePath ? 'rgba(110, 86, 207, 0.08)' : 'none'"
           ></path>
 
           <g v-for="(point, index) in points" :key="index">

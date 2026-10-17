@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import UpgradeModal from "@/components/UpgradeModal";
 import SlideView from "@/components/slides/SlideView";
-import StudioShell, { Icon, useToast } from "@/components/slides/StudioShell";
+import StudioShell, { Arrow, Icon, useToast } from "@/components/slides/StudioShell";
 import s from "@/components/slides/studio.module.css";
 import { editedLabel } from "@/lib/deckFormat";
 import { fetchAccount, type AccountPlan } from "@/lib/paymentService";
 import { getDeck, saveDeck, type Deck } from "@/lib/presentationService";
+import { buildInitMessage, STUDIO_URL } from "@/lib/slideBridge";
 import { slideHeadline, toRenderSlides } from "@/lib/slideLegacy";
 
 function plainText(html: string) {
@@ -20,6 +21,7 @@ export default function DeckPage() {
   const [index, setIndex] = useState(0);
   const [error, setError] = useState("");
   const [upgrade, setUpgrade] = useState("");
+  const [exporting, setExporting] = useState("");
   const [toast, showToast] = useToast();
   const stageRef = useRef<HTMLDivElement>(null);
 
@@ -73,6 +75,48 @@ export default function DeckPage() {
     catch { (document.getElementById("shareLink") as HTMLInputElement | null)?.select(); }
   };
 
+  const downloadFile = (format: "pptx" | "pdf" | "image") => {
+    if (!deck || exporting) return;
+    setExporting(format);
+    const frame = document.createElement("iframe");
+    frame.title = "Xuất file";
+    const url = new URL(STUDIO_URL, window.location.href);
+    url.searchParams.set("job", "download");
+    frame.src = url.toString();
+    frame.style.cssText = "position:fixed;left:-12000px;top:0;width:1680px;height:1000px;border:0;pointer-events:none";
+    let settled = false;
+    const finish = (ok: boolean, message?: string) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timer);
+      window.removeEventListener("message", onMessage);
+      frame.remove();
+      setExporting("");
+      if (message === "export-pptx") setUpgrade("export-pptx");
+      else showToast(ok ? "Đã tải file" : (message || "Không xuất được file"));
+    };
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== url.origin || event.source !== frame.contentWindow) return;
+      const data = event.data as { type?: string; feature?: string; status?: string; message?: string };
+      if (!data || typeof data !== "object") return;
+      if (data.type === "PM_READY") {
+        frame.contentWindow?.postMessage(buildInitMessage({
+          deck,
+          plan: account?.plan || "free",
+          user: { name: account?.name || "" },
+          designs: [],
+          features: account?.features,
+        }), url.origin);
+        frame.contentWindow?.postMessage({ type: "PM_DOWNLOAD", format }, url.origin);
+      }
+      if (data.type === "PM_REQUEST_FEATURE" && data.feature === "export-pptx") finish(false, "export-pptx");
+      if (data.type === "PM_EXPORT_DONE") finish(data.status === "done", data.status === "done" ? undefined : (data.message || "Không xuất được file"));
+    };
+    const timer = window.setTimeout(() => finish(false, "Xuất file quá lâu, hãy thử lại"), 60000);
+    window.addEventListener("message", onMessage);
+    document.body.appendChild(frame);
+  };
+
   const features = account?.features;
   const locked = Boolean(deck?.readOnly);
   const visLabel = locked ? "Chỉ xem (vượt hạn mức)" : deck?.isPublic ? "Công khai" : "Riêng tư";
@@ -88,19 +132,19 @@ export default function DeckPage() {
           <>
             <div className={s.dhead}>
               <div>
-                <h1 className={s.h1} id="deckTitle">{deck.title}</h1>
                 <p className={s.sub}>
                   <span className={s.vis} data-ro={locked}><Icon name={locked ? "lock" : deck.isPublic ? "public" : "visibility_off"} />{visLabel}</span>
                   <span>·</span><span>{slides.length} slide</span>
                   <span>·</span><span>{editedLabel(deck.updatedAt, deck.createdAt)}</span>
                 </p>
+                <h1 className={s.h1} id="deckTitle">{deck.title}</h1>
               </div>
               <div className={s.actions}>
-                <button type="button" className={s.btn} onClick={present} disabled={!slides.length}><Icon name="slideshow" />Trình chiếu</button>
+                <button type="button" className={s.btn} onClick={present} disabled={!slides.length}>Trình chiếu <Icon name="slideshow" /></button>
                 {locked ? (
-                  <a className={`${s.btn} ${s.primary}`} href="/pricing/"><Icon name="lock_open" />Nâng cấp để sửa</a>
+                  <a className={`${s.btn} ${s.primary}`} href="/pricing/">Nâng cấp để sửa <Arrow /></a>
                 ) : (
-                  <a className={`${s.btn} ${s.primary}`} href={`/slides/edit/?id=${deck.id}`}><Icon name="edit" />Mở trong studio</a>
+                  <a className={`${s.btn} ${s.primary}`} href={`/slides/edit/?id=${deck.id}`}>Mở trong studio <Arrow /></a>
                 )}
               </div>
             </div>
@@ -172,13 +216,15 @@ export default function DeckPage() {
                       ["image", "PNG", "Từng slide", true],
                     ] as const).map(([format, label, small, allowed]) => (
                       allowed && !locked ? (
-                        <a key={format} className={s.btn} href={`/slides/edit/?id=${deck.id}&export=${format}`}>{label}<small>{small}</small></a>
+                        <button key={format} type="button" className={s.btn} disabled={Boolean(exporting)} onClick={() => downloadFile(format)}>
+                          {exporting === format ? "Đang tải…" : label}<small>{small}</small>
+                        </button>
                       ) : (
                         <button key={format} type="button" className={s.btn} onClick={() => setUpgrade(locked ? "Deck đang chỉ xem" : "export-pptx")}>{label}<small>{small}</small></button>
                       )
                     ))}
                   </div>
-                  <p className={s.note}>Xuất file mở studio với hộp xuất có sẵn.</p>
+                  <p className={s.note}>{exporting ? "Đang dựng file, trình duyệt sẽ tải xuống ngay." : "Bấm định dạng để tải file về máy."}</p>
                 </section>
 
                 <section className={s.box}>

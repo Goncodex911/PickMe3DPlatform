@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import StudioShell, { Icon } from "@/components/slides/StudioShell";
+import StudioShell, { Arrow, Icon } from "@/components/slides/StudioShell";
 import s from "@/components/slides/studio.module.css";
 import { formatDate } from "@/lib/deckFormat";
 import { paymentCopy } from "@/lib/i18n.payment";
@@ -61,7 +61,10 @@ export default function PricingPage() {
       <section className={`${s.page} ${s.wrap}`} aria-labelledby="pricingTitle">
         <div className={s.head}>
           <div>
-            <h1 className={s.h1} id="pricingTitle">{paymentCopy.pricing}</h1>
+            <p className={s.eyebrow}>{paymentCopy.pricing} · Free · Pro · Studio</p>
+            <h1 className={s.h1} id="pricingTitle">Một tài khoản.<br />Ba cách làm việc.</h1>
+          </div>
+          <div className={s.headSide}>
             <p className={s.lede}>Giá theo tháng, thanh toán bằng QR ngân hàng qua payOS. Mỗi lần thanh toán cộng thêm 30 ngày vào gói.</p>
           </div>
         </div>
@@ -105,7 +108,7 @@ export default function PricingPage() {
                         disabled={Boolean(buying)}
                         onClick={() => buy(plan.id as "pro" | "studio")}
                       >
-                        {buying === plan.id ? "Đang tạo đơn…" : `Nâng cấp lên ${plan.name}`}
+                        {buying === plan.id ? "Đang tạo đơn…" : `Nâng cấp lên ${plan.name}`} <Arrow />
                       </button>
                       <p>Thanh toán {formatVnd(plan.price)} qua QR payOS</p>
                     </>

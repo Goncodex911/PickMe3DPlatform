@@ -32,6 +32,8 @@ export const bridge = reactive({
   designs: [] as BridgeDesign[],
   features: null as { exportPptx?: boolean; watermark?: boolean } | null,
   aiDialog: false,
+  downloadJob: params.get('job') === 'download',
+  downloadFormat: '' as '' | 'pptx' | 'pdf' | 'image',
 })
 
 export const canExportPptx = () => bridge.features?.exportPptx ?? bridge.plan !== 'free'
@@ -58,6 +60,21 @@ async function thumbnail() {
 
 let saveTimer = 0
 let pendingExport: DialogForExportTypes | null = null
+let pendingDownload: 'pptx' | 'pdf' | 'image' | null = null
+
+function beginDownload(format: 'pptx' | 'pdf' | 'image') {
+  if (format === 'pptx' && !canExportPptx()) {
+    requestFeature('export-pptx')
+    post({ type: 'PM_EXPORT_DONE', status: 'blocked', message: 'Cần gói Pro để xuất PPTX' })
+    return
+  }
+  bridge.downloadFormat = format
+}
+
+function queueDownload(format: 'pptx' | 'pdf' | 'image') {
+  if (!bridge.ready) pendingDownload = format
+  else beginDownload(format)
+}
 
 function openExport(format: DialogForExportTypes) {
   if (!bridge.ready) {
@@ -129,15 +146,24 @@ async function applyInit(data: InitMessage) {
   slidesStore.updateSlideIndex(0)
   slidesStore.setSlides(slides, slideTheme)
 
-  if (bridge.readOnly || bridge.viewOnly) useScreenStore().setScreening(true)
+  if (bridge.downloadJob) {
+    // Trang deck chỉ cần dựng slide để tải file, không mở editor.
+  }
+  else if (bridge.readOnly || bridge.viewOnly) useScreenStore().setScreening(true)
   else await useSnapshotStore().initSnapshotDatabase()
 
   if (!bridge.ready) {
     bridge.ready = true
+    if (pendingDownload) {
+      const format = pendingDownload
+      pendingDownload = null
+      beginDownload(format)
+    }
     if (pendingExport && !bridge.readOnly && !bridge.viewOnly) {
       useMainStore().setDialogForExport(pendingExport)
       pendingExport = null
     }
+    if (bridge.downloadJob) return
     watch(
       () => [slidesStore.slides, slidesStore.title, slidesStore.theme, slidesStore.viewportRatio],
       scheduleSave,
@@ -157,6 +183,7 @@ export function startBridge() {
       bridge.features = data.features && typeof data.features === 'object' ? data.features : bridge.features
     }
     if (data.type === 'PM_OPEN_EXPORT' && ['pptx', 'pdf', 'image'].includes(data.format)) openExport(data.format)
+    if (data.type === 'PM_DOWNLOAD' && ['pptx', 'pdf', 'image'].includes(data.format)) queueDownload(data.format)
     if (data.type === 'PM_FLUSH') emitSave(typeof data.requestId === 'string' ? data.requestId : 'flush')
     if (data.type === 'PM_INSERT_DESIGN' && typeof data.imageUrl === 'string' && data.imageUrl && insertImage) {
       if (!bridge.readOnly && !bridge.viewOnly) insertImage(data.imageUrl)

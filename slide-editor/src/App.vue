@@ -1,6 +1,7 @@
 <template>
   <template v-if="slides.length">
-    <Screen v-if="screening || bridge.readOnly || bridge.viewOnly" />
+    <ExportRunner v-if="bridge.downloadJob" />
+    <Screen v-else-if="screening || bridge.readOnly || bridge.viewOnly" />
     <Editor v-else-if="_isPC" />
     <Mobile v-else />
   </template>
@@ -19,6 +20,7 @@ import api from '@/services'
 import { bridge, embedded, startBridge } from '@/bridge'
 
 import Editor from './views/Editor/index.vue'
+import ExportRunner from './bridge/ExportRunner.vue'
 import Screen from './views/Screen/index.vue'
 import Mobile from './views/Mobile/index.vue'
 import FullscreenSpin from '@/components/FullscreenSpin.vue'

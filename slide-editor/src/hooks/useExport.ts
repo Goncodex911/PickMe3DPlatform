@@ -998,12 +998,18 @@ export default () => {
       }
     }
 
-    setTimeout(() => {
-      pptx.writeFile({ fileName: `${title.value}.pptx` }).then(() => exporting.value = false).catch(() => {
-        exporting.value = false
-        message.error('Xuất file thất bại')
-      })
-    }, 200)
+    return new Promise<void>((resolve, reject) => {
+      setTimeout(() => {
+        pptx.writeFile({ fileName: `${title.value}.pptx` }).then(() => {
+          exporting.value = false
+          resolve()
+        }).catch(() => {
+          exporting.value = false
+          message.error('Xuất file thất bại')
+          reject(new Error('Xuất file thất bại'))
+        })
+      }, 200)
+    })
   }
 
   return {

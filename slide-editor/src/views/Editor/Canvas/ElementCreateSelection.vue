@@ -16,7 +16,7 @@
       >
 				<path
           :d="lineData.path" 
-          stroke="#d14424" 
+          stroke="#6e56cf" 
           fill="none" 
           stroke-width="2" 
         ></path>
@@ -225,7 +225,7 @@ const position = computed(() => {
   opacity: .8;
 
   &:not(.line) {
-    border: 1px solid $themeColor;
+    border: 1px solid $selectColor;
   }
 }
 </style>
