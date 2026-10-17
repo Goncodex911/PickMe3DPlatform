@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion, useSpring } from "motion/react";
 import { toPng, toJpeg } from "html-to-image";
 import JSZip from "jszip";
@@ -556,8 +557,6 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
   const [rightOpen, setRightOpen] = useState(true);
   const [leftW, setLeftW] = useState(RAIL_W + 268);
   const [leftTab, setLeftTab] = useState<LeftTab>("parts");
-  /** pointer over the collapsed rail: the logo becomes the open button */
-  const [railHover, setRailHover] = useState(false);
   /** the screen whose layers are listed when nothing on a screen is selected */
   const [layersFrameId, setLayersFrameId] = useState<string | null>(null);
   const [rightW, setRightW] = useState(320);
@@ -4250,8 +4249,6 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
               </div>
             )}
             <div
-              onPointerEnter={() => setRailHover(true)}
-              onPointerLeave={() => setRailHover(false)}
               onClick={(e) => {
                 // a click on the rail's empty background opens the panel
                 if (!leftOpen && e.target === e.currentTarget) setLeftOpen(true);
@@ -4268,16 +4265,11 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                 cursor: leftOpen ? undefined : "pointer",
               }}
             >
-              {!leftOpen && railHover ? (
-                <IconBtn icon="left_panel_open" p={p} on onClick={() => setLeftOpen(true)} title={t("openPanel", lang)} size={40} />
-              ) : (
-                <div
-                  onClick={() => !leftOpen && setLeftOpen(true)}
-                  style={{ width: 40, height: 40, display: "grid", placeItems: "center", cursor: leftOpen ? "default" : "pointer" }}
-                >
-                  <Logo size={32} color={p.primary} glyph={p.onPrimary} />
-                </div>
-              )}
+              <Link href="/" aria-label="PickMe3D — Home" title="Back to home"
+                style={{ width: 44, height: 44, display: "grid", placeItems: "center", borderRadius: 12 }}>
+                <Logo size={32} color={p.onSurface} />
+              </Link>
+              {!leftOpen && <IconBtn icon="left_panel_open" p={p} onClick={() => setLeftOpen(true)} title={t("openPanel", lang)} size={44} />}
               <div style={{ height: 6 }} />
               {LEFT_TABS.map((tab, i) => (
                 <div key={tab.key} style={{ marginTop: i === 2 || i === 6 ? 10 : 0 }}>
@@ -4946,7 +4938,13 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                   ]}
                   value={rightTab}
                   onChange={setRightTab}
-                  p={p}
+                  p={{
+                    ...p,
+                    primary: p.surfaceContainerHigh,
+                    onPrimary: p.onSurface,
+                    secondaryContainer: p.surfaceContainerHigh,
+                    onSecondaryContainer: p.onSurface,
+                  }}
                   height={40}
                 />
               </div>
