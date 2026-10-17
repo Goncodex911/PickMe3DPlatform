@@ -1,8 +1,20 @@
 @import "tailwindcss";
 
+:root { --font-ui: Roboto, system-ui, sans-serif; }
+
 html,
 body {
   min-height: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 /* in-app browsers (X, Instagram, LINE) may not know dvh; fall back to vh
    and let JS override with the measured visual viewport when available */
