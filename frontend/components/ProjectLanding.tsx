@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import styles from "@/app/landing/page.module.css";
+import { Logo } from "@/components/Logo";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const features = [
@@ -20,7 +21,7 @@ const collections = [
 ];
 
 function Brand() {
-  return <span className={styles.brand}><svg viewBox="0 0 40 44" fill="none" aria-hidden="true"><path d="M20 1 38 11.5 20 22 2 11.5 20 1ZM2 15l16 9.5V43L2 33V15ZM22 24.5 38 15v18L22 43V24.5Z" fill="currentColor"/></svg><span>PickMe<span className={styles.brandLight}>3D</span></span></span>;
+  return <span className={styles.brand}><Logo size={35} color="currentColor" /><span>PickMe<span className={styles.brandLight}>3D</span></span></span>;
 }
 function Arrow() { return <span aria-hidden="true">↗</span>; }
 
@@ -28,6 +29,20 @@ export default function ProjectLanding() {
   const [authenticated, setAuthenticated] = useState(false);
   const [name, setName] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("pickme3d_landing_theme");
+      setTheme(saved === "light" || saved === "dark" ? saved : window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+    } catch {}
+  }, []);
+
+  function toggleTheme() {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    try { localStorage.setItem("pickme3d_landing_theme", next); } catch {}
+  }
 
   useEffect(() => {
     function syncAuth() {
@@ -50,12 +65,18 @@ export default function ProjectLanding() {
   }
   const startHref = authenticated ? "/editor/" : "/login/";
 
-  return <main className={styles.page} lang="en" id="top" onKeyDown={(event) => { if (event.key === "Escape") setMenuOpen(false); }}>
+  return <main className={styles.page} data-theme={theme} lang="en" id="top" onKeyDown={(event) => { if (event.key === "Escape") setMenuOpen(false); }}>
     <section className={styles.hero} aria-labelledby="hero-title">
       <video className={styles.heroVideo} src={`${basePath}/landing/pickme3d-story.mp4`} poster={`${basePath}/hero/hero-portrait.png`} autoPlay muted loop playsInline preload="auto" aria-label="PickMe3D creative workspace demo" />
       <div className={styles.heroShade}/>
       <header className={styles.header}>
         <Link href="/" aria-label="PickMe3D — Home"><Brand/></Link>
+        <div className={styles.headerActions}>
+        <button className={styles.themeToggle} onClick={toggleTheme} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+            {theme === "dark" ? <><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></> : <path d="M20.5 14A8.5 8.5 0 0 1 10 3.5 8.5 8.5 0 1 0 20.5 14Z"/>}
+          </svg>
+        </button>
         <button className={styles.menuToggle} aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen} aria-controls="landing-nav" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? "Close −" : "Menu +"}</button>
         <nav id="landing-nav" className={`${styles.nav} ${menuOpen ? styles.navOpen : ""}`} aria-label="Main navigation">
           <a href="#about" onClick={() => setMenuOpen(false)}>About</a>
@@ -63,6 +84,7 @@ export default function ProjectLanding() {
           <Link href="/templates/">Template <Arrow/></Link>
           {authenticated ? <><Link href="/profile/" className={styles.account} title={name}>{name || "Account"}</Link><button onClick={logout} className={styles.logout}>Sign out</button></> : <Link className={styles.login} href="/login/">Sign in <Arrow/></Link>}
         </nav>
+        </div>
       </header>
       <div className={styles.heroContent}>
         <p className={styles.eyebrow}>YOUR IDEAS. YOUR CANVAS.</p>

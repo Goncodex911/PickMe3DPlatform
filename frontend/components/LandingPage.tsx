@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "motion/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import ScrollCanvas from "@/components/ScrollCanvas";
+import UserAvatar from "@/components/UserAvatar";
 
 // Ensure GSAP plugins are registered on client
 if (typeof window !== "undefined") {
@@ -318,13 +319,14 @@ export default function LandingPage({
                 className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 hover:border-red-500/50 backdrop-blur-md text-xs cursor-pointer transition-all group"
                 title="Xem trang Hồ sơ cá nhân & các mẫu đã thiết kế"
               >
-                {currentUser.picture ? (
-                  <img src={currentUser.picture} alt="" className="w-5 h-5 rounded-full object-cover group-hover:scale-105 transition-transform" />
-                ) : (
-                  <span className="w-5 h-5 rounded-full bg-red-600 flex items-center justify-center text-[10px] font-bold text-white group-hover:scale-105 transition-transform">
-                    {currentUser.name ? currentUser.name[0] : "U"}
-                  </span>
-                )}
+                <UserAvatar
+                  picture={currentUser.picture}
+                  googlePicture={currentUser.googlePicture}
+                  name={currentUser.name}
+                  email={currentUser.email}
+                  size={20}
+                  className="group-hover:scale-105 transition-transform"
+                />
                 <span className="text-slate-200 group-hover:text-white font-medium max-w-[120px] truncate">
                   {currentUser.name || "Creator"}
                 </span>
