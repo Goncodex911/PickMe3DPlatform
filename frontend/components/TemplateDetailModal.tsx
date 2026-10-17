@@ -107,7 +107,7 @@ export default function TemplateDetailModal({
       setAvgRating(res.data.avgRating);
       setRatingsCount(res.data.ratingsCount);
       setReviewsList(res.data.reviews || []);
-      setReviewMessage({ text: "Cảm ơn bạn đã gửi đánh giá!" });
+      setReviewMessage({ text: "Thanks for your review!" });
       setUserComment("");
 
       if (onTemplateUpdated) {
@@ -119,7 +119,7 @@ export default function TemplateDetailModal({
         });
       }
     } else {
-      setReviewMessage({ text: res.message || "Không thể gửi đánh giá", error: true });
+      setReviewMessage({ text: "Unable to submit your review. Please sign in and try again.", error: true });
     }
   };
 
@@ -139,7 +139,7 @@ export default function TemplateDetailModal({
         <button
           onClick={onClose}
           className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-black/60 hover:bg-white/20 text-slate-300 hover:text-white backdrop-blur-md flex items-center justify-center transition-all border border-white/10"
-          title="Đóng (ESC)"
+          title="Close (Esc)"
         >
           <span className="material-symbols-rounded text-lg">close</span>
         </button>
@@ -154,7 +154,7 @@ export default function TemplateDetailModal({
               className="w-full h-full object-cover transition-all"
             />
             <div className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-mono font-semibold uppercase bg-black/60 text-red-400 border border-red-500/30 backdrop-blur-md">
-              {template.category}
+              {template.category === "Dạ hội" ? "Eveningwear" : template.category}
             </div>
 
             {/* Rating badge on image */}
@@ -191,14 +191,14 @@ export default function TemplateDetailModal({
             <div className="flex items-center gap-1.5">
               <span className="material-symbols-rounded text-sm text-red-400">palette</span>
               <span>
-                Gam màu: <strong className="text-white capitalize">{template.docData?.paletteKey || "Material"}</strong>
+                Palette: <strong className="text-white capitalize">{template.docData?.paletteKey || "Material"}</strong>
               </span>
             </div>
             <div className="w-px h-4 bg-white/10" />
             <div className="flex items-center gap-1.5">
               <span className="material-symbols-rounded text-sm text-cyan-400">devices</span>
               <span>
-                Khung: <strong className="text-white capitalize">{template.docData?.frame || "Mobile"}</strong>
+                Frame: <strong className="text-white capitalize">{template.docData?.frame || "Mobile"}</strong>
               </span>
             </div>
           </div>
@@ -210,7 +210,7 @@ export default function TemplateDetailModal({
             {/* Title & Author */}
             <div>
               <div className="flex items-center gap-2 text-xs text-red-400 font-mono tracking-wider uppercase mb-1">
-                <span>Thiết kế cộng đồng</span>
+                <span>Community design</span>
                 {template.isFeatured && (
                   <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/40">
                     FEATURED
@@ -233,7 +233,7 @@ export default function TemplateDetailModal({
                   </div>
                 )}
                 <div>
-                  <span className="text-xs text-slate-400 block">Tác giả</span>
+                  <span className="text-xs text-slate-400 block">Creator</span>
                   <span className="text-sm font-semibold text-slate-200">{template.authorName}</span>
                 </div>
               </div>
@@ -241,16 +241,16 @@ export default function TemplateDetailModal({
 
             {/* Description */}
             <div>
-              <h4 className="text-xs font-mono uppercase tracking-wider text-slate-400 mb-1.5">Mô tả</h4>
+              <h4 className="text-xs font-mono uppercase tracking-wider text-slate-400 mb-1.5">Description</h4>
               <p className="text-sm text-slate-300 leading-relaxed bg-white/5 p-3 rounded-xl border border-white/5">
-                {template.description || "Chưa có mô tả chi tiết cho thiết kế này."}
+                {template.description || "No description has been added yet."}
               </p>
             </div>
 
             {/* Tags */}
             {template.tags && template.tags.length > 0 && (
               <div>
-                <h4 className="text-xs font-mono uppercase tracking-wider text-slate-400 mb-2">Thẻ phong cách</h4>
+                <h4 className="text-xs font-mono uppercase tracking-wider text-slate-400 mb-2">Style tags</h4>
                 <div className="flex flex-wrap gap-1.5">
                   {template.tags.map((tag, idx) => (
                     <span
@@ -268,15 +268,15 @@ export default function TemplateDetailModal({
             <div className="flex items-center gap-4 pt-1 text-xs text-slate-400">
               <span className="flex items-center gap-1.5">
                 <span className="material-symbols-rounded text-base text-rose-500">favorite</span>
-                <span className="font-semibold text-white">{likes}</span> thích
+                <span className="font-semibold text-white">{likes}</span> likes
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="material-symbols-rounded text-base text-slate-400">visibility</span>
-                <span className="font-semibold text-white">{template.viewsCount || 0}</span> xem
+                <span className="font-semibold text-white">{template.viewsCount || 0}</span> views
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="material-symbols-rounded text-base text-emerald-400">content_copy</span>
-                <span className="font-semibold text-white">{template.forksCount || 0}</span> lượt cover
+
+                <span className="font-semibold text-white">{template.forksCount || 0}</span> reuses
               </span>
             </div>
 
@@ -285,7 +285,7 @@ export default function TemplateDetailModal({
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-xs font-mono uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
                   <span className="material-symbols-rounded text-sm text-amber-400">star</span>
-                  <span>Đánh giá ({ratingsCount})</span>
+                  <span>Reviews ({ratingsCount})</span>
                 </h4>
                 {avgRating > 0 && (
                   <span className="text-xs font-bold text-amber-400 flex items-center gap-1">
@@ -297,7 +297,7 @@ export default function TemplateDetailModal({
               {/* Add Review Form */}
               <form onSubmit={handleSubmitReview} className="bg-white/5 p-3 rounded-2xl border border-white/10 space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-300 font-medium">Đánh giá của bạn:</span>
+                  <span className="text-xs text-slate-300 font-medium">Your rating:</span>
                   {/* Star Rating Buttons */}
                   <div className="flex items-center gap-1">
                     {[1, 2, 3, 4, 5].map((star) => {
@@ -327,7 +327,7 @@ export default function TemplateDetailModal({
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    placeholder="Viết nhận xét ngắn (tùy chọn)..."
+                    placeholder="Write a short review (optional)…"
                     value={userComment}
                     onChange={(e) => setUserComment(e.target.value)}
                     className="flex-1 px-3 py-1.5 rounded-xl bg-black/40 border border-white/10 text-xs text-white placeholder:text-slate-500 focus:border-red-500/60 outline-none"
@@ -337,7 +337,7 @@ export default function TemplateDetailModal({
                     disabled={submittingReview}
                     className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:opacity-95 text-xs font-bold text-white shrink-0 disabled:opacity-50 transition-all cursor-pointer"
                   >
-                    {submittingReview ? "Đang gửi..." : "Gửi"}
+                    {submittingReview ? "Sending…" : "Submit"}
                   </button>
                 </div>
 
@@ -390,7 +390,7 @@ export default function TemplateDetailModal({
               <span className="material-symbols-rounded text-lg group-hover:rotate-12 transition-transform">
                 content_copy
               </span>
-              <span>Cover mẫu này trong Canvas Editor</span>
+              <span>Use template in Canvas Editor</span>
             </Link>
 
             {/* Secondary Buttons Row */}
@@ -404,25 +404,25 @@ export default function TemplateDetailModal({
                 }`}
               >
                 <span className="material-symbols-rounded text-base">{isLiked ? "favorite" : "favorite_border"}</span>
-                <span>{isLiked ? "Đã thích" : "Thích"}</span>
+                <span>{isLiked ? "Liked" : "Like"}</span>
               </button>
 
               <button
                 onClick={handleCopyLink}
                 className="py-2 px-3 rounded-xl bg-white/5 border border-white/10 hover:border-white/25 text-xs text-slate-300 hover:text-white font-semibold flex items-center justify-center gap-1.5 transition-all"
-                title="Sao chép link cover"
+                title="Copy template link"
               >
                 <span className="material-symbols-rounded text-base">{copied ? "check" : "share"}</span>
-                <span>{copied ? "Đã chép" : "Chia sẻ"}</span>
+                <span>{copied ? "Copied" : "Share"}</span>
               </button>
 
               <button
                 onClick={handleDownloadJson}
                 className="py-2 px-3 rounded-xl bg-white/5 border border-white/10 hover:border-white/25 text-xs text-slate-300 hover:text-white font-semibold flex items-center justify-center gap-1.5 transition-all"
-                title="Tải cấu hình JSON"
+                title="Download JSON configuration"
               >
                 <span className="material-symbols-rounded text-base">download</span>
-                <span>Tải JSON</span>
+                <span>Download JSON</span>
               </button>
             </div>
           </div>

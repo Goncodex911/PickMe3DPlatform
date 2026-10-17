@@ -40,7 +40,7 @@ export default function EditorPage() {
   useEffect(() => {
     const token = localStorage.getItem("pickme3d_token");
     if (!token) {
-      router.push("/");
+      router.replace("/login/");
       return;
     }
     setIsAuth(true);
@@ -64,11 +64,12 @@ export default function EditorPage() {
           {/* Return to Landing Page Floating Pill */}
           <Link
             href="/"
-            className="fixed top-3 left-16 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#111726]/85 border border-white/20 hover:border-red-500/60 text-xs text-slate-300 hover:text-white backdrop-blur-md shadow-lg transition-all"
-            title="Quay lại Trang Chủ"
+            className="fixed top-3 left-16 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition-colors transition-all"
+            style={{ background: "#f8f8fa", color: "#44464e", borderColor: "#d5d5dc", fontFamily: "var(--font-ui)", minHeight: 36 }}
+            title="Back to home"
           >
-            <span className="material-symbols-rounded text-sm text-red-400">arrow_back</span>
-            <span className="font-medium text-[11px]">Trang chủ</span>
+            <span className="material-symbols-rounded text-sm">arrow_back</span>
+            <span className="font-medium text-[11px]">Home</span>
           </Link>
 
           {lang && <Editor initialLang={lang} onReady={() => setPhase((p) => (p === "loading" ? "fading" : p))} />}

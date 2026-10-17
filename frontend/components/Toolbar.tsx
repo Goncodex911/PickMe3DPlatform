@@ -7,21 +7,24 @@ import { ShareButton } from "./ShareMenu";
 import { Icon } from "./M3Node";
 import { Popover, ProfileMenu } from "./Menus";
 import { t, useLang } from "@/lib/i18n";
+import styles from "./Toolbar.module.css";
 
 export type Mode = "select" | "hand";
 
 function Pill({ p, children }: { p: Palette; children: React.ReactNode }) {
   return (
     <div
+      className={styles.group}
       style={{
         display: "flex",
         alignItems: "center",
         gap: 4,
         padding: 6,
-        borderRadius: 28,
+        borderRadius: 12,
         userSelect: "none",
-        background: p.surfaceContainerLow,
-        boxShadow: "0 2px 10px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.04)",
+        background: p.surface,
+        border: `1px solid ${p.outlineVariant}`,
+        boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
         pointerEvents: "auto",
       }}
     >
@@ -31,7 +34,7 @@ function Pill({ p, children }: { p: Palette; children: React.ReactNode }) {
 }
 
 export function Toolbar({
-  p,
+  p: palette,
   mode,
   onMode,
   frame,
@@ -59,6 +62,7 @@ export function Toolbar({
   editingDesignTitle,
   onSaveProject,
   onOpenProject,
+  onExport,
   onOpenAiDraft,
   onShare,
   shareState = "idle",
@@ -100,6 +104,8 @@ export function Toolbar({
   editingDesignTitle?: string | null;
   onSaveProject?: () => void;
   onOpenProject?: () => void;
+  /** opens the export dialog to download all screens with interactive transitions */
+  onExport?: () => void;
   /** opens the dedicated AI screen generator modal */
   onOpenAiDraft?: () => void;
   /** opens the "ask an AI" dialog from the left end of the zoom row */
@@ -114,6 +120,7 @@ export function Toolbar({
   quickUndo?: boolean;
 }) {
   const lang = useLang();
+  const p = { ...palette, primary: palette.surfaceContainerHigh, onPrimary: palette.onSurface, secondaryContainer: palette.surfaceContainerHigh, onSecondaryContainer: palette.onSurface };
   if (mobile) {
     const S = 42;
     return (
@@ -136,6 +143,9 @@ export function Toolbar({
           {onSaveDesign && (
             <IconBtn icon="cloud_upload" p={p} onClick={onSaveDesign} title="Lưu thiết kế" size={S} />
           )}
+          {onExport && (
+            <IconBtn icon="download" p={p} onClick={onExport} title="Tải xuống tất cả màn hình" size={S} />
+          )}
           <IconBtn icon="translate" p={p} onClick={onLangSheet} title={t("language", lang)} size={S} />
           <IconBtn icon="palette" p={p} onClick={onSettings} title={t("settings", lang)} size={S} />
           {onOpenAiDraft && (
@@ -148,10 +158,10 @@ export function Toolbar({
                 padding: "0 12px 0 8px",
                 borderRadius: S / 2,
                 border: "none",
-                background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
-                color: "#ffffff",
+                background: p.surfaceContainerHigh,
+                color: p.onSurface,
                 fontSize: 13,
-                fontWeight: 700,
+                fontWeight: 500,
                 cursor: "pointer",
                 display: "inline-flex",
                 alignItems: "center",
@@ -175,7 +185,7 @@ export function Toolbar({
               background: p.primary,
               color: p.onPrimary,
               fontSize: 14,
-              fontWeight: 700,
+              fontWeight: 500,
               cursor: "pointer",
               display: "inline-flex",
               alignItems: "center",
@@ -183,7 +193,7 @@ export function Toolbar({
               whiteSpace: "nowrap",
             }}
           >
-            <Icon name="auto_awesome" size={22} />
+            <Icon name="content_copy" size={20} />
             {t("prompt", lang)}
           </button>
         </Pill>
@@ -263,8 +273,8 @@ export function Toolbar({
             size={40}
           />
           <button
-            onClick={onFit}
-            title={t("fit", lang)}
+            onClick={() => onZoom(1)}
+            title="100%"
             className="m3-press"
             style={{
               height: 40,
@@ -395,16 +405,16 @@ export function Toolbar({
                 padding: "0 16px 0 12px",
                 borderRadius: 19,
                 border: "none",
-                background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
-                color: "#ffffff",
+                background: p.surfaceContainerHigh,
+                color: p.onSurface,
                 fontSize: 13,
-                fontWeight: 700,
+                fontWeight: 500,
                 cursor: "pointer",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 7,
                 whiteSpace: "nowrap",
-                boxShadow: "0 2px 10px rgba(168, 85, 247, 0.4)",
+                boxShadow: "none",
               }}
             >
               <Icon name="auto_awesome" size={18} fill />
@@ -447,20 +457,46 @@ export function Toolbar({
                 padding: "0 14px 0 10px",
                 borderRadius: 19,
                 border: "none",
-                background: editingDesignTitle ? "#0284c7" : "linear-gradient(135deg, #ef4444 0%, #e11d48 100%)",
-                color: "#ffffff",
+                background: p.surfaceContainerHigh,
+                color: p.onSurface,
                 fontSize: 13,
-                fontWeight: 700,
+                fontWeight: 500,
                 cursor: "pointer",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 6,
                 whiteSpace: "nowrap",
-                boxShadow: editingDesignTitle ? "0 2px 8px rgba(2, 132, 199, 0.35)" : "0 2px 8px rgba(225, 29, 72, 0.35)",
+                boxShadow: "none",
               }}
             >
               <Icon name={editingDesignTitle ? "edit_note" : "cloud_upload"} size={18} />
               <span>{editingDesignTitle ? "Cập nhật" : "Lưu"}</span>
+            </button>
+          )}
+          {onExport && (
+            <button
+              onClick={onExport}
+              title="Tải xuống tất cả màn hình (HTML Prototype, React, ZIP, PDF)"
+              className="m3-press"
+              style={{
+                height: 38,
+                padding: "0 14px 0 10px",
+                borderRadius: 19,
+                border: "none",
+                background: palette.primary,
+                color: palette.onPrimary,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                whiteSpace: "nowrap",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+              }}
+            >
+              <Icon name="download" size={18} />
+              <span>Tải xuống</span>
             </button>
           )}
           {onSaveProject && onOpenProject && (

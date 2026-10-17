@@ -29,14 +29,14 @@ function timeAgo(dateStr: string): string {
   const now = Date.now();
   const diff = now - new Date(dateStr).getTime();
   const seconds = Math.floor(diff / 1000);
-  if (seconds < 60) return "Vừa xong";
+  if (seconds < 60) return "Just now";
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes} phút trước`;
+  if (minutes < 60) return `${minutes} minutes ago`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} giờ trước`;
+  if (hours < 24) return `${hours} hours ago`;
   const days = Math.floor(hours / 24);
-  if (days < 7) return `${days} ngày trước`;
-  return new Date(dateStr).toLocaleDateString("vi-VN");
+  if (days < 7) return `${days} days ago`;
+  return new Date(dateStr).toLocaleDateString("en-US");
 }
 
 interface NotificationBellProps {
@@ -113,7 +113,7 @@ export default function NotificationBell({ className }: NotificationBellProps) {
         type="button"
         onClick={handleOpen}
         className="relative p-2 rounded-full hover:bg-white/10 transition-colors"
-        title="Thông báo"
+        title="Notifications"
       >
         <span className="material-symbols-rounded text-[22px] text-slate-300">
           notifications
@@ -135,14 +135,14 @@ export default function NotificationBell({ className }: NotificationBellProps) {
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
               <span className="material-symbols-rounded text-base">notifications</span>
-              Thông Báo
+              Notifications
             </h3>
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllRead}
                 className="text-[11px] text-blue-400 hover:text-blue-300 transition-colors font-medium"
               >
-                Đánh dấu tất cả đã đọc
+                Mark all as read
               </button>
             )}
           </div>
@@ -158,7 +158,7 @@ export default function NotificationBell({ className }: NotificationBellProps) {
                 <span className="material-symbols-rounded text-3xl text-slate-600 block mb-2">
                   notifications_off
                 </span>
-                <p className="text-xs text-slate-500">Chưa có thông báo nào</p>
+                <p className="text-xs text-slate-500">No notifications yet</p>
               </div>
             ) : (
               notifications.map((notif) => (

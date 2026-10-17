@@ -9,7 +9,23 @@ import {
   useState,
 } from "react";
 import { AnimatePresence, motion, useReducedMotion, useSpring } from "motion/react";
-import { toPng } from "html-to-image";
+import { toPng, toJpeg } from "html-to-image";
+import JSZip from "jszip";
+import { ExportDialog } from "@/components/ExportDialog";
+import {
+  ExportFormat,
+  ExportScreenData,
+  MultiScreenExportPayload,
+  download,
+  safeName,
+  screenMarkup,
+  screenCode,
+  imagePdf,
+  createHtmlFolderZip,
+  createReactFolderZip,
+  createAngularFolderZip,
+  createAllFrameworksZip,
+} from "@/lib/screenExport";
 import { buildPrompt, effectivePrompt } from "@/lib/prompt";
 import {
   Action,
@@ -494,6 +510,8 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
   const [confirmClear, setConfirmClear] = useState(false);
   /** frame being rendered offscreen for the PNG export */
   const [exportFrame, setExportFrame] = useState<Frame | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportModalTab, setExportModalTab] = useState<"code" | "image" | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [brief, setBrief] = useState("");
@@ -2636,6 +2654,86 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     } catch {}
   };
 
+  const appendGeneratedDoc = (next: Doc) => {
+    const hasExistingDesign = framesRef.current.length > 0 || groupsRef.current.length > 0;
+    if (!hasExistingDesign) {
+      arrive(next);
+      showToast("Đã sinh giao diện thành công!", 3000, "success");
+      return;
+    }
+
+    // Canvas already has designs: APPEND the new screens and elements instead of deleting
+    snapshot(true);
+    const startX = nextFrameX();
+    const base = framesRef.current[0];
+    const startY = base?.y ?? 80;
+
+    const minNewX = next.frames?.length ? Math.min(...next.frames.map((f) => f.x)) : 0;
+    const minNewY = next.frames?.length ? Math.min(...next.frames.map((f) => f.y)) : 0;
+    const dx = startX - minNewX;
+    const dy = startY - minNewY;
+
+    const existingCount = framesRef.current.length;
+    const frameIdMap = new Map<string, string>();
+
+    const newFrames: Frame[] = (next.frames || []).map((f, i) => {
+      const newId = uid();
+      frameIdMap.set(f.id, newId);
+      return {
+        ...f,
+        id: newId,
+        name: f.name || `${t("screenN", lang)} ${existingCount + i + 1}`,
+        x: Math.round(f.x + dx),
+        y: Math.round(f.y + dy),
+      };
+    });
+
+    // Remap swipe links if any
+    newFrames.forEach((f) => {
+      if (f.swipe) {
+        const remappedSwipe: any = {};
+        for (const [dir, targetId] of Object.entries(f.swipe)) {
+          if (targetId && frameIdMap.has(targetId)) {
+            remappedSwipe[dir] = frameIdMap.get(targetId);
+          }
+        }
+        f.swipe = remappedSwipe;
+      }
+    });
+
+    const newGroups: Group[] = (next.groups || []).map((g) => {
+      const newGroupId = uid();
+      const newItems: Item[] = g.items.map((it) => ({
+        ...it,
+        id: uid(),
+      }));
+      return {
+        ...g,
+        id: newGroupId,
+        x: Math.round(g.x + dx),
+        y: Math.round(g.y + dy),
+        items: newItems,
+      };
+    });
+
+    setFrames((fs) => [...fs, ...newFrames]);
+    setGroups((gs) => [...gs, ...newGroups]);
+    setSelectedFrameId(newFrames[0]?.id ?? null);
+    setSelectedIds([]);
+    setWidths({});
+
+    if (!title && next.title) setTitle(next.title);
+    if (!brief && next.brief) setBrief(next.brief);
+
+    showToast(
+      newFrames.length > 0
+        ? `Đã thêm ${newFrames.length} màn hình mới từ AI!`
+        : "Đã thêm giao diện mới từ AI!",
+      3000,
+      "success"
+    );
+  };
+
   const startDraft = async (idea: string) => {
     setShareOpen(false);
     setDraftBusy(true);
@@ -2646,7 +2744,8 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
         guideRef.current = await res.text();
       }
       const next = await draftDesign(aiSettings, guideRef.current, idea, lang);
-      arrive(next);
+      appendGeneratedDoc(next);
+      setTimeout(() => fit(), 400);
     } catch (e) {
       const m = e instanceof Error ? e.message : "";
       showToast(m === "json" ? t("aiErrorJson", lang) : m === "refusal" ? t("aiErrorRefusal", lang) : m === "long" ? t("aiErrorLong", lang) : t("aiError", lang), 3200, "error");
@@ -2664,8 +2763,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
         guideRef.current = await res.text();
       }
       const next = await draftDesign(aiSettings, guideRef.current, promptText, lang, screenCount);
-      arrive(next);
-      showToast("Đã sinh giao diện thành công!", 3000, "success");
+      appendGeneratedDoc(next);
       setTimeout(() => fit(), 400);
     } catch (e: any) {
       const m = e instanceof Error ? e.message : "";
@@ -3089,12 +3187,185 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     }
   };
 
+  /** Handles exporting all screens with interactive transitions to web frameworks, zip folder packages, PDF, and images */
+  const handleExportScreen = async (
+    format: ExportFormat,
+    w: number,
+    h: number,
+    mode: "folder" | "code" = "folder"
+  ): Promise<string | void> => {
+    const exportFrames = frames.length > 0 ? frames : (selectedFrame ? [selectedFrame] : []);
+    if (exportFrames.length === 0) throw new Error("Vui lòng chọn hoặc tạo ít nhất một màn hình để xuất.");
+
+    setIsExporting(true);
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(null))));
+    try {
+      await document.fonts?.ready;
+
+      const activeFrame = selectedFrame ?? exportFrames[0];
+      const projectName = title.trim() || activeFrame.name || "PickMe3D-Project";
+
+      // Collect markup and metadata for all screens
+      const screensData: ExportScreenData[] = [];
+      for (let idx = 0; idx < exportFrames.length; idx++) {
+        const f = exportFrames[idx];
+        const el = document.querySelector<HTMLElement>(`[data-export="${f.id}"]`) || document.querySelectorAll<HTMLElement>('[data-export]')[idx];
+        if (!el) continue;
+
+        const size = frameSizeOf(f);
+        // Use user-customized size for the active screen if exporting single scale, otherwise screen default size
+        const frameW = f.id === activeFrame.id ? w : size.w;
+        const frameH = f.id === activeFrame.id ? h : size.h;
+        const markup = await screenMarkup(el, frameW, frameH);
+
+        screensData.push({
+          id: f.id,
+          name: f.name || `Screen ${idx + 1}`,
+          width: frameW,
+          height: frameH,
+          markup,
+          swipe: f.swipe,
+        });
+      }
+
+      if (screensData.length === 0) {
+        throw new Error("Không thể trích xuất giao diện màn hình.");
+      }
+
+      const payload: MultiScreenExportPayload = {
+        projectName,
+        screens: screensData,
+        initialScreenId: activeFrame.id,
+      };
+
+      // Handle image/PDF formats
+      if (format === "png") {
+        if (exportFrames.length === 1) {
+          const el = document.querySelector<HTMLElement>(`[data-export="${exportFrames[0].id}"]`);
+          if (!el) throw new Error("Không thể trích xuất giao diện màn hình.");
+          const url = await toPng(el, { pixelRatio: 2, cacheBust: true, width: w, height: h });
+          const res = await fetch(url);
+          const blob = await res.blob();
+          download(blob, `${safeName(exportFrames[0].name || "screen")}.png`);
+          return;
+        }
+
+        const zip = new JSZip();
+        for (let idx = 0; idx < exportFrames.length; idx++) {
+          const f = exportFrames[idx];
+          const el = document.querySelector<HTMLElement>(`[data-export="${f.id}"]`);
+          if (!el) continue;
+          const size = frameSizeOf(f);
+          const url = await toPng(el, { pixelRatio: 2, cacheBust: true, width: size.w, height: size.h });
+          const res = await fetch(url);
+          const blob = await res.blob();
+          const baseName = `${idx + 1}-${safeName(f.name || `screen-${idx + 1}`)}.png`;
+          zip.file(baseName, blob);
+        }
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+        download(zipBlob, `${safeName(projectName)}-all-screens-png.zip`);
+        return;
+      }
+
+      if (format === "jpeg") {
+        if (exportFrames.length === 1) {
+          const el = document.querySelector<HTMLElement>(`[data-export="${exportFrames[0].id}"]`);
+          if (!el) throw new Error("Không thể trích xuất giao diện màn hình.");
+          const url = await toJpeg(el, { pixelRatio: 2, cacheBust: true, width: w, height: h, quality: 0.95 });
+          const res = await fetch(url);
+          const blob = await res.blob();
+          download(blob, `${safeName(exportFrames[0].name || "screen")}.jpg`);
+          return;
+        }
+
+        const zip = new JSZip();
+        for (let idx = 0; idx < exportFrames.length; idx++) {
+          const f = exportFrames[idx];
+          const el = document.querySelector<HTMLElement>(`[data-export="${f.id}"]`);
+          if (!el) continue;
+          const size = frameSizeOf(f);
+          const url = await toJpeg(el, { pixelRatio: 2, cacheBust: true, width: size.w, height: size.h, quality: 0.95 });
+          const res = await fetch(url);
+          const blob = await res.blob();
+          const baseName = `${idx + 1}-${safeName(f.name || `screen-${idx + 1}`)}.jpg`;
+          zip.file(baseName, blob);
+        }
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+        download(zipBlob, `${safeName(projectName)}-all-screens-jpeg.zip`);
+        return;
+      }
+
+      if (format === "pdf") {
+        if (exportFrames.length === 1) {
+          const el = document.querySelector<HTMLElement>(`[data-export="${exportFrames[0].id}"]`);
+          if (!el) throw new Error("Không thể trích xuất giao diện màn hình.");
+          const url = await toJpeg(el, { pixelRatio: 2, cacheBust: true, width: w, height: h, quality: 0.95 });
+          const blob = imagePdf(url, w, h);
+          download(blob, `${safeName(exportFrames[0].name || "screen")}.pdf`);
+          return;
+        }
+
+        const zip = new JSZip();
+        for (let idx = 0; idx < exportFrames.length; idx++) {
+          const f = exportFrames[idx];
+          const el = document.querySelector<HTMLElement>(`[data-export="${f.id}"]`);
+          if (!el) continue;
+          const size = frameSizeOf(f);
+          const url = await toJpeg(el, { pixelRatio: 2, cacheBust: true, width: size.w, height: size.h, quality: 0.95 });
+          const blob = imagePdf(url, size.w, size.h);
+          const baseName = `${idx + 1}-${safeName(f.name || `screen-${idx + 1}`)}.pdf`;
+          zip.file(baseName, blob);
+        }
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+        download(zipBlob, `${safeName(projectName)}-all-screens-pdf.zip`);
+        return;
+      }
+
+      // If user is copying code from dialog
+      if (mode === "code" || format === "html" || format === "react" || format === "angular") {
+        const activeScreen = screensData.find((s) => s.id === activeFrame.id) || screensData[0];
+        const codeFormat = (format === "html-folder" ? "html" : format === "react-folder" ? "react" : format === "angular-folder" ? "angular" : format) as "html" | "react" | "angular";
+        const code = screenCode(codeFormat, activeScreen.markup, activeScreen.width, activeScreen.height);
+        return code;
+      }
+
+      // Framework project downloads with full multi-screen interactive prototype
+      if (format === "html-folder") {
+        const blob = await createHtmlFolderZip(payload, screensData[0].markup, w, h);
+        download(blob, `${safeName(projectName)}-html.zip`);
+        return;
+      }
+
+      if (format === "react-folder") {
+        const blob = await createReactFolderZip(payload, screensData[0].markup, w, h);
+        download(blob, `${safeName(projectName)}-react.zip`);
+        return;
+      }
+
+      if (format === "angular-folder") {
+        const blob = await createAngularFolderZip(payload, screensData[0].markup, w, h);
+        download(blob, `${safeName(projectName)}-angular.zip`);
+        return;
+      }
+
+      if (format === "all-folder") {
+        const blob = await createAllFrameworksZip(payload, screensData[0].markup, w, h);
+        download(blob, `${safeName(projectName)}-all-frameworks.zip`);
+        return;
+      }
+    } finally {
+      setIsExporting(false);
+      setExportFrame(null);
+    }
+  };
+
   /** the runs of one screen drawn with plain divs: the export layer */
   const renderExport = (f: Frame) => {
     const gs = groups.filter((g) => frameOfGroup(g, frames, widths)?.id === f.id);
     const { w, h } = frameSizeOf(f);
     return (
       <div
+        key={f.id}
         data-export={f.id}
         style={{
           position: "relative",
@@ -3885,9 +4156,9 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
             ))}
         </div>
 
-        {exportFrame && (
-          <div aria-hidden style={{ position: "fixed", left: -99999, top: 0, pointerEvents: "none", fontFamily: fontFamilyOf(theme.font, lang) }}>
-            {renderExport(exportFrame)}
+        {(isExporting || exportFrame !== null || exportModalTab !== null) && (
+          <div aria-hidden style={{ position: "fixed", left: -99999, top: 0, fontFamily: fontFamilyOf(theme.font, lang) }}>
+            {frames.map((f) => renderExport(f))}
           </div>
         )}
 
@@ -4490,15 +4761,10 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
             note={aiNote}
             onSaveDesign={() => setSaveDesignOpen(true)}
             editingDesignTitle={editingDesign?.title}
+            onExport={() => setExportModalTab("code")}
             onSaveProject={() => saveProject(doc)}
             onOpenProject={() => projectFileRef.current?.click()}
             onOpenAiDraft={() => setAiModalOpen(true)}
-            onShare={!isMobile ? () => setShareOpen(true) : undefined}
-            shareState={draftBusy ? "busy" : draftBefore ? "review" : "idle"}
-            onDraftKeep={keepDraft}
-            onDraftUndo={undoDraft}
-            onDraftSave={() => saveProject(doc)}
-            quickUndo={quickUndo}
             rightInset={showRight ? rightW : 0}
             mobile={isMobile}
             onSettings={() => setSheet(sheet === "settings" ? null : "settings")}
@@ -4720,6 +4986,8 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                   onPreview={() => openPreview(selectedFrame.id)}
                   prompt={buildPrompt(doc, widths, selectedFrame.id, lang)}
                   onSaveImage={() => saveFrameImage(selectedFrame)}
+                  onExportCode={() => setExportModalTab("code")}
+                  onExportImage={() => setExportModalTab("image")}
                   tidy={tidyState ?? "done"}
                   onTidy={() => tidy(selectedFrame)}
                   onPlace={(pl) => setPlace(selectedFrame, pl)}
@@ -4765,7 +5033,6 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                   widths={widths}
                   palette={p}
                   onCover={setPromptCoverUp}
-                  onOpenAiModal={() => setAiModalOpen(true)}
                   onDoc={(patch) => {
                     if (patch.title !== undefined) setTitle(patch.title);
                     if (patch.brief !== undefined) setBrief(patch.brief);
@@ -4871,6 +5138,20 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
           />
         )}
       </AnimatePresence>
+
+      {exportModalTab !== null && (
+        <ExportDialog
+          palette={p}
+          initialTab={exportModalTab}
+          screenCount={frames.length}
+          prompt={buildPrompt(doc, widths, (selectedFrame ?? frames[0])?.id || "", lang)}
+          frameName={(selectedFrame ?? frames[0])?.name || "Screen"}
+          width={(selectedFrame ?? frames[0]) ? frameSizeOf(selectedFrame ?? frames[0]).w : 390}
+          height={(selectedFrame ?? frames[0]) ? frameSizeOf(selectedFrame ?? frames[0]).h : 844}
+          onClose={() => setExportModalTab(null)}
+          onExport={handleExportScreen}
+        />
+      )}
 
       {editAccess === "readonly" && (
         <div

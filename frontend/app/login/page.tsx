@@ -9,7 +9,7 @@ export default function LoginRoute() {
   const handleLoginSuccess = (token: string, user: any) => {
     localStorage.setItem("pickme3d_token", token);
     localStorage.setItem("pickme3d_user", JSON.stringify(user));
-    router.push("/");
+    router.push("/editor/");
   };
 
   return <LoginPage onLoginSuccess={handleLoginSuccess} />;
