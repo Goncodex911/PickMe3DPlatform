@@ -54,6 +54,23 @@ npm install
 npm run dev             # Chạy tại http://localhost:3000
 ```
 
+### 3. Slide Studio (PPTist)
+Trình soạn slide nằm ở `slide-editor/` (PPTist, AGPL-3.0, xem `slide-editor/PICKME.md`). Bản build được chép vào `frontend/public/slide-studio/` và chạy cùng origin với frontend, không cần server riêng.
+```bash
+cd slide-editor
+npm install --ignore-scripts   # lần đầu
+cd ../frontend
+npm run studio          # build lại studio sau mỗi lần sửa slide-editor (npm run build tự chạy bước này)
+```
+
+Dữ liệu mẫu cho Slide Studio (8 deck theo các bộ sưu tập của PickMe3D):
+```bash
+cd backend
+npm run seed:demo -- email@cua-tai-khoan
+```
+
+Thanh toán dùng payOS. Khi chưa có `PAYOS_CLIENT_ID`, `PAYOS_API_KEY` và `PAYOS_CHECKSUM_KEY` trong `backend/.env`, checkout chạy giả lập tại `/payment/mock`. Webhook giả lập chỉ được nhận trong chế độ này. Gói thật chỉ nâng sau webhook đã kiểm tra chữ ký. Trang giá: http://localhost:3000/pricing/ — danh sách slide: http://localhost:3000/slides/
+
 ---
 
 ## Git Repository

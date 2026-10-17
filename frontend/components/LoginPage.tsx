@@ -148,6 +148,7 @@ export default function LoginPage({
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [guestName, setGuestName] = useState("Designer");
   const [menuOpen, setMenuOpen] = useState(true);
   const [activeProject, setActiveProject] = useState<ProjectDetail | null>(null);
 
@@ -429,6 +430,29 @@ export default function LoginPage({
       document.removeEventListener("pointerleave", onPointerLeave);
     };
   }, []);
+
+  const handleGuest = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/auth/guest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: guestName.trim() || "Designer" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        onLoginSuccess(data.token, data.user);
+      } else {
+        setError("Không tạo được nick: " + (data.message || "Máy chủ từ chối"));
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Đã xảy ra lỗi khi kết nối với máy chủ.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSuccess = async (credentialResponse: any) => {
     setLoading(true);
@@ -870,6 +894,24 @@ export default function LoginPage({
                   </div>
                 </div>
               )}
+
+              <div className="mt-6 w-full flex flex-col items-center gap-3">
+                <span className="text-[11px] uppercase tracking-[0.22em] text-slate-500">hoặc</span>
+                <input
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  maxLength={30}
+                  placeholder="Tên nick"
+                  className="w-full max-w-[300px] rounded-full border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-red-500/60"
+                />
+                <button
+                  type="button"
+                  onClick={handleGuest}
+                  className="w-full max-w-[300px] rounded-full bg-red-600 py-2.5 text-xs font-semibold uppercase tracking-wider text-white transition-colors hover:bg-red-500 cursor-pointer border-none"
+                >
+                  Vào trang với nick này
+                </button>
+              </div>
 
               {/* Footer Trust Badge */}
               <div className="mt-8 pt-5 border-t border-white/10 w-full flex items-center justify-center gap-1.5 text-[11px] text-slate-400 font-sans">
