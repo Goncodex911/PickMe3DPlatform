@@ -99,14 +99,27 @@ export async function recordDeckView(id: string) {
   return data.data as { viewsCount: number; counted: boolean };
 }
 
-// Gọi một lần mỗi phiên trình duyệt cho mỗi deck, tránh tải lại trang là cộng thêm
+function viewerKey() {
+  try {
+    const user = JSON.parse(localStorage.getItem("pickme3d_user") || "null");
+    return String(user?.id || user?.email || "anon");
+  } catch {
+    return "anon";
+  }
+}
+
+// Gọi một lần mỗi phiên cho mỗi cặp deck + người xem, tránh tải lại trang là cộng thêm.
+// Khoá gồm cả người xem: đổi nick trong cùng tab vẫn ghi lượt xem mới. Chỉ đánh dấu khi backend đã trả lời.
 export async function recordDeckViewOnce(id: string) {
-  const key = `pickme3d_viewed_${id}`;
+  const key = `pickme3d_viewed_${id}_${viewerKey()}`;
   try {
     if (sessionStorage.getItem(key)) return null;
-    sessionStorage.setItem(key, "1");
   } catch { /* trình duyệt chặn sessionStorage thì vẫn ghi */ }
-  return recordDeckView(id).catch(() => null);
+  const result = await recordDeckView(id).catch(() => null);
+  if (result) {
+    try { sessionStorage.setItem(key, "1"); } catch { /* bỏ qua */ }
+  }
+  return result;
 }
 
 export async function getPublicDeck(id: string) {
