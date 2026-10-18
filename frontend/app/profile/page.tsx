@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -18,6 +18,7 @@ import {
   deleteCollectionApi,
 } from "@/lib/collectionService";
 import { updateMyProfileApi } from "@/lib/userService";
+import styles from "./page.module.css";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -266,181 +267,147 @@ export default function ProfilePage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[#070b14] text-white flex flex-col selection:bg-red-500 selection:text-white">
+    <div className={styles.page} lang="en">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 text-white text-xs font-semibold shadow-[0_4px_25px_rgba(229,43,43,0.5)] border border-white/20 flex items-center gap-2 animate-bounce">
-          <span className="material-symbols-rounded text-sm">notifications</span>
+        <div className={styles.toast} role="status">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10" />
+            <path d="m9 12 2 2 4-4" />
+          </svg>
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Navigation Header */}
-      <header className="sticky top-0 z-40 bg-[#090d16]/85 backdrop-blur-xl border-b border-white/10 px-4 sm:px-8 py-3.5 flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <span className="w-8 h-8 rounded-lg bg-gradient-to-tr from-red-600 via-rose-500 to-amber-500 flex items-center justify-center shadow-[0_0_15px_rgba(229,43,43,0.5)] group-hover:scale-105 transition-transform">
-              <span className="material-symbols-rounded text-lg text-white">view_in_ar</span>
-            </span>
-            <div className="flex flex-col leading-none">
-              <span className="text-sm font-extrabold tracking-wider bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
-                PICK ME 3D
-              </span>
-              <span className="text-[9px] font-mono tracking-widest text-red-400 uppercase">
-                Creator Profile
-              </span>
-            </div>
+      {/* Header */}
+      <header className={styles.header}>
+        <Link href="/" className={styles.brand} aria-label="PickMe3D — Home">
+          <svg viewBox="0 0 40 44" fill="currentColor" aria-hidden="true">
+            <path d="M20 1 38 11.5 20 22 2 11.5 20 1ZM2 15l16 9.5V43L2 33V15ZM22 24.5 38 15v18L22 43V24.5Z" />
+          </svg>
+          <span>PickMe3D</span>
+        </Link>
+        <nav className={styles.nav} aria-label="Main navigation">
+          <Link href="/">Home</Link>
+          <Link href="/templates/">Template</Link>
+          <div className={styles.shared}>
+            <NotificationBell />
+          </div>
+          <Link href="/profile/" aria-current="page" className={`${styles.activeNav} ${styles.profileName}`}>
+            {user.name || "Profile"}
           </Link>
-
-          <nav className="hidden md:flex items-center gap-5 text-xs font-medium text-slate-300">
-            <Link href="/" className="hover:text-white transition-colors">
-              Trang chủ
-            </Link>
-            <Link href="/templates" className="hover:text-white transition-colors flex items-center gap-1">
-              <span>Bộ sưu tập mẫu</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-            </Link>
-
-          </nav>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <NotificationBell />
-          <Link
-            href="/editor"
-            className="px-4 py-1.5 rounded-full bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 hover:opacity-95 text-xs font-bold text-white shadow-[0_0_20px_rgba(229,43,43,0.4)] transition-all flex items-center gap-1.5"
-          >
-            <span className="material-symbols-rounded text-sm">draw</span>
-            <span>Vào Canvas Editor</span>
-          </Link>
-
-          <button
-            onClick={handleLogout}
-            className="px-3 py-1.5 rounded-full border border-white/15 hover:border-red-500/50 bg-white/5 hover:bg-red-500/10 text-xs text-slate-300 hover:text-white transition-all flex items-center gap-1"
-            title="Đăng xuất"
-          >
-            <span className="material-symbols-rounded text-sm">logout</span>
-            <span className="hidden sm:inline">Đăng xuất</span>
+          <button onClick={handleLogout} className={styles.logoutBtn} title="Sign out">
+            Sign out
           </button>
-        </div>
+          <Link href="/editor/" className={styles.primary}>
+            Open Canvas <span aria-hidden="true">↗</span>
+          </Link>
+        </nav>
       </header>
 
       {/* Main Container */}
-      <main className="max-w-7xl w-full mx-auto px-4 sm:px-8 py-8 flex-1 space-y-8">
-        {/* User Profile Banner & Info */}
-        <section className="relative rounded-3xl bg-[#0f1626]/90 border border-white/15 p-6 sm:p-8 backdrop-blur-xl shadow-2xl overflow-hidden">
-          {/* Background Glows */}
-          <div className="absolute -top-16 -right-16 w-80 h-80 bg-red-600/15 rounded-full blur-[100px] pointer-events-none" />
-          <div className="absolute -bottom-16 -left-16 w-80 h-80 bg-rose-500/10 rounded-full blur-[90px] pointer-events-none" />
+      <main className={styles.main}>
+        {/* User Profile Hero */}
+        <section className={styles.hero} aria-labelledby="creator-title">
+          <div className={styles.heroLeft}>
+            <div className={styles.avatarWrap}>
+              {user.picture ? (
+                <img src={user.picture} alt={user.name} className={styles.avatarImg} />
+              ) : (
+                <div className={styles.avatarFallback}>{user.name ? user.name[0] : "P"}</div>
+              )}
+              <span className={styles.onlineBadge} title="Online" />
+            </div>
 
-          <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            {/* Avatar & Details */}
-            <div className="flex items-center gap-5">
-              <div className="relative group">
-                {user.picture ? (
-                  <img
-                    src={user.picture}
-                    alt={user.name}
-                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-2 border-red-500/80 shadow-[0_0_25px_rgba(229,43,43,0.4)]"
-                  />
-                ) : (
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-tr from-red-600 to-rose-500 flex items-center justify-center text-3xl font-bold text-white shadow-lg border-2 border-white/20">
-                    {user.name ? user.name[0] : "U"}
+            <div className={styles.heroDetails}>
+              <p className={styles.eyebrow}>YOUR CREATIVE WORKSPACE</p>
+
+              <div className={styles.nameRow}>
+                {isEditingName ? (
+                  <div className={styles.inlineForm}>
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className={styles.textInput}
+                      autoFocus
+                    />
+                    <button
+                      onClick={handleSaveProfileName}
+                      disabled={savingProfile}
+                      className={styles.smallPrimaryBtn}
+                    >
+                      {savingProfile ? "Saving…" : "Save"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditName(user.name);
+                        setIsEditingName(false);
+                      }}
+                      className={styles.smallGhostBtn}
+                    >
+                      Cancel
+                    </button>
                   </div>
+                ) : (
+                  <>
+                    <h1 id="creator-title" className={styles.userName}>
+                      {user.name}
+                    </h1>
+                    <button
+                      onClick={() => setIsEditingName(true)}
+                      className={styles.editNameBtn}
+                      title="Edit name"
+                      aria-label="Edit name"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                      </svg>
+                    </button>
+                  </>
                 )}
-                <div className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-emerald-500 border-2 border-[#0f1626] flex items-center justify-center" title="Trực tuyến">
-                  <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                </div>
+                <span className={styles.roleBadge}>
+                  {user.role === "admin" ? "ADMIN CREATOR" : user.jobRole || "FASHION CREATOR"}
+                </span>
               </div>
 
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-3">
-                  {isEditingName ? (
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="px-3 py-1 bg-black/40 border border-red-500/60 rounded-lg text-white text-base font-bold focus:outline-none focus:ring-1 focus:ring-red-500"
-                        autoFocus
-                      />
-                      <button
-                        onClick={handleSaveProfileName}
-                        disabled={savingProfile}
-                        className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-xs font-semibold text-white"
-                      >
-                        {savingProfile ? "Lưu..." : "Lưu"}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setEditName(user.name);
-                          setIsEditingName(false);
-                        }}
-                        className="px-2.5 py-1 rounded-lg bg-white/10 text-xs text-slate-300"
-                      >
-                        Hủy
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
-                        {user.name}
-                      </h1>
-                      <button
-                        onClick={() => setIsEditingName(true)}
-                        className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
-                        title="Chỉnh sửa tên"
-                      >
-                        <span className="material-symbols-rounded text-sm">edit</span>
-                      </button>
-                    </>
-                  )}
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase bg-red-500/20 text-red-400 border border-red-500/30">
-                    {user.role === "admin" ? "ADMIN CREATOR" : "FASHION CREATOR"}
-                  </span>
-                </div>
+              <p className={styles.userEmail}>{user.email}</p>
 
-                <p className="text-xs text-slate-400 flex items-center gap-1.5 font-mono">
-                  <span className="material-symbols-rounded text-xs text-slate-500">mail</span>
-                  {user.email}
-                </p>
-
-                <p className="text-xs text-slate-400">
-                  {user.jobRole || "Nhà thiết kế trang phục 3D & Thời trang số"}
-                </p>
-
-                {/* Bio */}
+              {/* Bio & Username */}
+              <div className={styles.userBioWrap}>
                 {isEditingBio ? (
-                  <div className="mt-2 space-y-2 max-w-md">
-                    <div>
-                      <label className="text-[10px] text-slate-500 uppercase font-mono">Username</label>
+                  <div className={styles.bioForm}>
+                    <label>
+                      Username
                       <input
                         type="text"
                         value={editUsername}
-                        onChange={(e) => setEditUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
-                        placeholder="vd: fashionista_99"
-                        className="w-full mt-0.5 px-3 py-1.5 rounded-lg bg-black/40 border border-white/15 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-red-500/50"
+                        onChange={(e) =>
+                          setEditUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))
+                        }
+                        placeholder="e.g. fashionista_99"
+                        className={styles.textInput}
                         maxLength={30}
                       />
-                    </div>
-                    <div>
-                      <label className="text-[10px] text-slate-500 uppercase font-mono">Giới thiệu</label>
+                    </label>
+                    <label>
+                      Bio & Introduction
                       <textarea
                         value={editBio}
                         onChange={(e) => setEditBio(e.target.value)}
-                        placeholder="Viết một vài dòng giới thiệu về bạn..."
-                        className="w-full mt-0.5 px-3 py-2 rounded-lg bg-black/40 border border-white/15 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-red-500/50 resize-none"
+                        placeholder="Share a few words about your creative style..."
+                        className={styles.bioTextarea}
                         rows={3}
                         maxLength={500}
                       />
-                    </div>
-                    <div className="flex items-center gap-2">
+                    </label>
+                    <div className={styles.bioBtnRow}>
                       <button
                         onClick={handleSaveBio}
                         disabled={savingBio}
-                        className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-xs font-semibold text-white disabled:opacity-50"
+                        className={styles.smallPrimaryBtn}
                       >
-                        {savingBio ? "Đang lưu..." : "Lưu hồ sơ"}
+                        {savingBio ? "Saving…" : "Save profile"}
                       </button>
                       <button
                         onClick={() => {
@@ -448,430 +415,370 @@ export default function ProfilePage() {
                           setEditUsername(user.username || "");
                           setIsEditingBio(false);
                         }}
-                        className="px-3 py-1.5 rounded-lg bg-white/10 text-xs text-slate-300"
+                        className={styles.smallGhostBtn}
                       >
-                        Hủy
+                        Cancel
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="mt-2">
-                    {user.username && (
-                      <p className="text-xs text-red-400 font-medium mb-0.5">@{user.username}</p>
+                  <>
+                    {user.username && <p className={styles.userHandle}>@{user.username}</p>}
+                    {user.bio ? (
+                      <p className={styles.bioText}>{user.bio}</p>
+                    ) : (
+                      <p className={styles.bioText} style={{ color: "#777", fontStyle: "italic" }}>
+                        Chưa có phần giới thiệu. Thêm thông tin cá nhân để cộng đồng biết thêm về bạn.
+                      </p>
                     )}
-                    {user.bio && (
-                      <p className="text-xs text-slate-300 leading-relaxed max-w-md whitespace-pre-line">{user.bio}</p>
-                    )}
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <button
-                        onClick={() => setIsEditingBio(true)}
-                        className="text-[11px] text-slate-500 hover:text-white flex items-center gap-0.5 transition-colors"
-                      >
-                        <span className="material-symbols-rounded text-xs">edit</span>
-                        <span>{user.bio ? "Chỉnh sửa hồ sơ" : "Thêm bio & username"}</span>
+                    <div className={styles.bioActions}>
+                      <button onClick={() => setIsEditingBio(true)} className={styles.editBioBtn}>
+                        {user.bio ? "Chỉnh sửa bio & username" : "Thêm bio & username"}
                       </button>
                       {user.username && (
-                        <Link
-                          href={`/creator/${user.username}`}
-                          className="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-0.5 transition-colors"
-                        >
-                          <span className="material-symbols-rounded text-xs">open_in_new</span>
+                        <Link href={`/creator/${user.username}`} className={styles.publicProfileLink}>
                           <span>Xem hồ sơ công khai</span>
+                          <span aria-hidden="true">↗</span>
                         </Link>
                       )}
                     </div>
-                  </div>
+                  </>
                 )}
               </div>
             </div>
+          </div>
 
-            {/* Quick Stats Pill Cards */}
-            <div className="grid grid-cols-3 gap-3 w-full md:w-auto">
-              <div className="px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-center">
-                <span className="block text-xl font-bold text-white">{designs.length}</span>
-                <span className="text-[11px] text-slate-400 uppercase font-mono">Tác phẩm</span>
-              </div>
-              <div className="px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-center">
-                <span className="block text-xl font-bold text-emerald-400">{publicCount}</span>
-                <span className="text-[11px] text-slate-400 uppercase font-mono">Công khai</span>
-              </div>
-              <div className="px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-center">
-                <span className="block text-xl font-bold text-amber-400">{collections.length}</span>
-                <span className="text-[11px] text-slate-400 uppercase font-mono">BST</span>
-              </div>
+          {/* Quick Stats Group */}
+          <div className={styles.statsGroup}>
+            <div className={styles.statCard}>
+              <span className={styles.statNumber}>{designs.length}</span>
+              <span className={styles.statLabel}>Thiết kế</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statNumber} style={{ color: "#34d399" }}>
+                {publicCount}
+              </span>
+              <span className={styles.statLabel}>Công khai</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statNumber} style={{ color: "#fbbf24" }}>
+                {collections.length}
+              </span>
+              <span className={styles.statLabel}>Bộ sưu tập</span>
             </div>
           </div>
         </section>
 
         {/* Tab Switcher: Designs | Collections */}
-        <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10 w-fit">
+        <div className={styles.tabRow} role="tablist">
           <button
+            role="tab"
+            aria-selected={profileTab === "designs"}
             onClick={() => setProfileTab("designs")}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-              profileTab === "designs"
-                ? "bg-red-600 text-white shadow-sm"
-                : "text-slate-400 hover:text-white"
-            }`}
+            className={styles.tabBtn}
           >
-            <span className="material-symbols-rounded text-sm">palette</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
+              <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
+              <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
+              <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
+              <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2Z" />
+            </svg>
             <span>Thiết kế ({designs.length})</span>
           </button>
           <button
+            role="tab"
+            aria-selected={profileTab === "collections"}
             onClick={() => setProfileTab("collections")}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-              profileTab === "collections"
-                ? "bg-amber-600 text-white shadow-sm"
-                : "text-slate-400 hover:text-white"
-            }`}
+            className={styles.tabBtn}
           >
-            <span className="material-symbols-rounded text-sm">collections_bookmark</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+            </svg>
             <span>Bộ sưu tập ({collections.length})</span>
           </button>
         </div>
 
-        {/* Section: My Designs (visible when designs tab active) */}
+        {/* Section: Designs */}
         {profileTab === "designs" && (
-        <section className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-white/10">
-            <div>
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <span className="material-symbols-rounded text-red-400">inventory_2</span>
-                <span>Các mẫu đã chỉnh sửa ({designs.length})</span>
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Quản lý quyền công khai/riêng tư và gắn hashtag cho từng thiết kế của bạn.
-              </p>
-            </div>
-
-            {/* Filters & Search */}
-            <div className="flex flex-wrap items-center gap-2.5">
-              {/* Filter tabs */}
-              <div className="flex items-center bg-white/5 rounded-xl p-1 border border-white/10 text-xs">
-                <button
-                  onClick={() => setFilterMode("all")}
-                  className={`px-3 py-1.5 rounded-lg transition-all ${
-                    filterMode === "all"
-                      ? "bg-red-600 text-white font-semibold shadow-sm"
-                      : "text-slate-400 hover:text-white"
-                  }`}
-                >
-                  Tất cả ({designs.length})
-                </button>
-                <button
-                  onClick={() => setFilterMode("public")}
-                  className={`px-3 py-1.5 rounded-lg transition-all ${
-                    filterMode === "public"
-                      ? "bg-emerald-600 text-white font-semibold shadow-sm"
-                      : "text-slate-400 hover:text-white"
-                  }`}
-                >
-                  Công khai ({publicCount})
-                </button>
-                <button
-                  onClick={() => setFilterMode("private")}
-                  className={`px-3 py-1.5 rounded-lg transition-all ${
-                    filterMode === "private"
-                      ? "bg-amber-600 text-white font-semibold shadow-sm"
-                      : "text-slate-400 hover:text-white"
-                  }`}
-                >
-                  Riêng tư ({privateCount})
-                </button>
-              </div>
-
-              {/* Tag / Title search input */}
-              <div className="relative">
-                <span className="material-symbols-rounded absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-slate-500">
-                  search
-                </span>
-                <input
-                  type="text"
-                  placeholder="Lọc theo hashtag/tên..."
-                  value={searchTag}
-                  onChange={(e) => setSearchTag(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500/60 w-44 sm:w-56"
-                />
-              </div>
-
-              {/* Create new design button */}
-              <Link
-                href="/editor"
-                className="px-3.5 py-1.5 rounded-xl bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/40 text-xs font-semibold transition-all flex items-center gap-1.5"
-              >
-                <span className="material-symbols-rounded text-sm">add</span>
-                <span>Tạo mới</span>
-              </Link>
-            </div>
-          </div>
-
-          {/* Design Cards Grid */}
-          {loading ? (
-            <div className="py-20 text-center space-y-3">
-              <div className="w-8 h-8 rounded-full border-2 border-red-500 border-t-transparent animate-spin mx-auto" />
-              <p className="text-xs text-slate-400">Đang tải danh sách thiết kế của bạn...</p>
-            </div>
-          ) : filteredDesigns.length === 0 ? (
-            <div className="py-16 px-4 rounded-3xl bg-[#0f1626]/40 border border-white/10 text-center max-w-lg mx-auto space-y-4">
-              <span className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-3xl text-slate-400 mx-auto">
-                🎨
-              </span>
-              <div className="space-y-1">
-                <h3 className="text-base font-bold text-white">Chưa có thiết kế nào phù hợp</h3>
-                <p className="text-xs text-slate-400">
-                  {searchTag
-                    ? "Không tìm thấy thiết kế với từ khóa này. Hãy thử tìm hashtag khác."
-                    : "Bạn chưa có tác phẩm nào đã lưu. Hãy vào Canvas Editor và bấm 'Lưu thiết kế'!"}
+          <section aria-labelledby="designs-heading">
+            <div className={styles.sectionHeader}>
+              <div>
+                <h2 id="designs-heading" className={styles.sectionTitle}>
+                  Các mẫu đã chỉnh sửa ({designs.length})
+                </h2>
+                <p className={styles.sectionDesc}>
+                  Quản lý quyền công khai/riêng tư và gắn hashtag cho từng thiết kế của bạn.
                 </p>
               </div>
-              <Link
-                href="/editor"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-red-600 to-rose-600 text-white text-xs font-bold shadow-lg hover:opacity-95 transition-all"
-              >
-                <span className="material-symbols-rounded text-sm">draw</span>
-                <span>Vào Canvas Editor ngay</span>
-              </Link>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredDesigns.map((design) => {
-                const designId = (design._id || design.id)!;
 
-                return (
-                  <div
-                    key={designId}
-                    className="flex flex-col rounded-2xl bg-[#0f1626]/80 border border-white/10 hover:border-white/25 transition-all overflow-hidden backdrop-blur-md shadow-lg group"
+              {/* Filters & Actions */}
+              <div className={styles.controlsRow}>
+                <div className={styles.filtersGroup} role="group" aria-label="Lọc trạng thái">
+                  <button
+                    aria-pressed={filterMode === "all"}
+                    onClick={() => setFilterMode("all")}
+                    className={styles.filterBtn}
                   >
-                    {/* Thumbnail & Privacy Header */}
-                    <div className="relative w-full aspect-[16/10] bg-slate-900 overflow-hidden">
-                      <img
-                        src={design.thumbnailUrl || "/hero/card-couture.png"}
-                        alt={design.title}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#0f1626] via-transparent to-black/40" />
+                    Tất cả ({designs.length})
+                  </button>
+                  <button
+                    aria-pressed={filterMode === "public"}
+                    onClick={() => setFilterMode("public")}
+                    className={styles.filterBtn}
+                  >
+                    Công khai ({publicCount})
+                  </button>
+                  <button
+                    aria-pressed={filterMode === "private"}
+                    onClick={() => setFilterMode("private")}
+                    className={styles.filterBtn}
+                  >
+                    Riêng tư ({privateCount})
+                  </button>
+                </div>
 
-                      {/* Public / Private Badge & Toggle Button */}
-                      <div className="absolute top-3 left-3 z-10 flex items-center gap-2">
+                <div className={styles.searchBox}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.3-4.3" />
+                  </svg>
+                  <input
+                    type="search"
+                    placeholder="Lọc theo hashtag/tên..."
+                    value={searchTag}
+                    onChange={(e) => setSearchTag(e.target.value)}
+                  />
+                  {searchTag && (
+                    <button onClick={() => setSearchTag("")} aria-label="Xóa tìm kiếm">
+                      ×
+                    </button>
+                  )}
+                </div>
+
+                <Link href="/editor/" className={styles.newDesignBtn}>
+                  <span>+ Tạo mới</span>
+                </Link>
+              </div>
+            </div>
+
+            {/* Grid */}
+            {loading ? (
+              <div className={styles.loadingState}>
+                <span className={styles.spinner} />
+                <p style={{ color: "#aaa", fontSize: 13 }}>Đang tải danh sách thiết kế của bạn…</p>
+              </div>
+            ) : filteredDesigns.length === 0 ? (
+              <div className={styles.emptyState}>
+                <p className={styles.eyebrow}>YOUR CANVAS IS READY</p>
+                <h3>{searchTag ? "Không tìm thấy thiết kế phù hợp." : "Chưa có thiết kế nào được lưu."}</h3>
+                <p>
+                  {searchTag
+                    ? "Hãy thử tìm với từ khóa hoặc hashtag khác."
+                    : "Mở Canvas Editor để tạo tác phẩm đầu tiên và lưu vào thư viện cá nhân của bạn."}
+                </p>
+                <Link href="/editor/" className={styles.primary}>
+                  Bắt đầu thiết kế <span aria-hidden="true">↗</span>
+                </Link>
+              </div>
+            ) : (
+              <div className={styles.grid}>
+                {filteredDesigns.map((design) => {
+                  const designId = (design._id || design.id)!;
+
+                  return (
+                    <article key={designId} className={styles.card}>
+                      {/* Preview Image */}
+                      <div className={styles.cardPreview}>
+                        <img
+                          src={design.thumbnailUrl || "/hero/card-couture.png"}
+                          alt={design.title}
+                          loading="lazy"
+                        />
+
+                        {/* Public / Private toggle badge */}
                         <button
+                          type="button"
                           onClick={() => handleTogglePrivacy(design)}
-                          className={`px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 backdrop-blur-md transition-all shadow-md ${
-                            design.isPublic
-                              ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 hover:bg-emerald-500/30"
-                              : "bg-amber-500/20 text-amber-300 border border-amber-500/50 hover:bg-amber-500/30"
-                          }`}
+                          className={styles.privacyBadge}
+                          data-public={design.isPublic ? "true" : "false"}
                           title={
                             design.isPublic
-                              ? "Click để chuyển sang Riêng tư (Private)"
-                              : "Click để Công khai lên Bộ sưu tập mẫu (Public)"
+                              ? "Nhấn để chuyển sang Riêng tư (Private)"
+                              : "Nhấn để Công khai lên Thư viện mẫu (Public)"
                           }
                         >
-                          <span className="material-symbols-rounded text-xs">
-                            {design.isPublic ? "public" : "lock"}
-                          </span>
-                          <span>{design.isPublic ? "Công khai" : "Riêng tư"}</span>
-                          <span className="material-symbols-rounded text-xs opacity-70">
-                            sync_alt
-                          </span>
+                          <span>{design.isPublic ? "🌐 Công khai" : "🔒 Riêng tư"}</span>
+                          <span aria-hidden="true" style={{ opacity: 0.7 }}>⇄</span>
                         </button>
-                      </div>
 
-                      {/* Category Badge */}
-                      <div className="absolute top-3 right-3 z-10">
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase bg-black/60 text-slate-300 border border-white/10 backdrop-blur-md">
+                        {/* Category badge */}
+                        <span className={styles.categoryBadge}>
                           {design.category || "Outfit"}
                         </span>
                       </div>
-                    </div>
 
-                    {/* Card Body */}
-                    <div className="p-5 flex flex-col flex-1 justify-between gap-4">
-                      <div className="space-y-2">
-                        <div className="flex items-start justify-between gap-2">
-                          <h3
-                            className="text-base font-bold text-white line-clamp-1 group-hover:text-red-400 transition-colors"
-                            title={design.title}
-                          >
-                            {design.title}
-                          </h3>
-                        </div>
-
-                        <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                      {/* Card Body */}
+                      <div className={styles.cardBody}>
+                        <h3 className={styles.cardTitle} title={design.title}>
+                          {design.title}
+                        </h3>
+                        <p className={styles.cardDesc}>
                           {design.description || "Bản thiết kế thời trang từ PickMe3D Canvas Editor."}
                         </p>
-                      </div>
 
-                      {/* Hashtags Section */}
-                      <div className="space-y-1.5 pt-2 border-t border-white/5">
-                        <div className="flex items-center justify-between text-[11px] text-slate-400">
-                          <span className="font-mono uppercase text-[10px] flex items-center gap-1">
-                            <span className="material-symbols-rounded text-xs text-red-400">tag</span>
-                            <span>Hashtags:</span>
-                          </span>
-                          {editingTagId !== designId && (
-                            <button
-                              onClick={() => {
-                                setEditingTagId(designId);
-                                setNewTagInput("");
-                              }}
-                              className="text-red-400 hover:text-red-300 flex items-center gap-0.5"
-                            >
-                              <span className="material-symbols-rounded text-xs">add</span>
-                              <span>Thêm tag</span>
-                            </button>
-                          )}
-                        </div>
-
-                        {/* List of tags */}
-                        <div className="flex flex-wrap items-center gap-1.5 min-h-[28px]">
-                          {design.tags && design.tags.length > 0 ? (
-                            design.tags.map((tag, idx) => (
-                              <span
-                                key={idx}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[11px] text-slate-300 group/tag"
+                        {/* Hashtags */}
+                        <div className={styles.tagsSection}>
+                          <div className={styles.tagsHeader}>
+                            <span># HASHTAGS</span>
+                            {editingTagId !== designId && (
+                              <button
+                                onClick={() => {
+                                  setEditingTagId(designId);
+                                  setNewTagInput("");
+                                }}
+                                className={styles.addTagTrigger}
                               >
-                                <span>#{tag}</span>
-                                <button
-                                  onClick={() => handleRemoveTag(designId, tag)}
-                                  className="text-slate-500 hover:text-red-400 transition-colors leading-none"
-                                  title={`Xóa #${tag}`}
-                                >
-                                  ×
-                                </button>
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-[11px] text-slate-500 italic">Chưa gắn hashtag</span>
-                          )}
+                                + Thêm tag
+                              </button>
+                            )}
+                          </div>
 
-                          {/* Tag Input Form if editing */}
+                          <div className={styles.tagPills}>
+                            {design.tags && design.tags.length > 0 ? (
+                              design.tags.map((tag, idx) => (
+                                <span key={idx} className={styles.tagPill}>
+                                  <span>#{tag}</span>
+                                  <button
+                                    onClick={() => handleRemoveTag(designId, tag)}
+                                    className={styles.tagRemoveBtn}
+                                    title={`Xóa #${tag}`}
+                                    aria-label={`Xóa #${tag}`}
+                                  >
+                                    ×
+                                  </button>
+                                </span>
+                              ))
+                            ) : (
+                              <span className={styles.emptyTags}>Chưa gắn hashtag</span>
+                            )}
+                          </div>
+
                           {editingTagId === designId && (
-                            <div className="flex items-center gap-1 mt-1 w-full">
+                            <div className={styles.inlineTagInput}>
                               <input
                                 type="text"
-                                placeholder="Nhập tag (VD: summer)..."
+                                placeholder="Nhập tag (VD: couture)..."
                                 value={newTagInput}
                                 onChange={(e) => setNewTagInput(e.target.value)}
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter") handleAddTag(designId);
                                   if (e.key === "Escape") setEditingTagId(null);
                                 }}
-                                className="px-2 py-0.5 rounded-md bg-black/50 border border-red-500/60 text-xs text-white focus:outline-none flex-1"
                                 autoFocus
                               />
+                              <button onClick={() => handleAddTag(designId)}>Thêm</button>
+                              <button onClick={() => setEditingTagId(null)}>Hủy</button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Bottom Actions */}
+                        <div className={styles.cardActions}>
+                          <button
+                            type="button"
+                            onClick={() => handleEditDesign(design)}
+                            className={styles.editActionBtn}
+                            title="Tải thiết kế vào Canvas Editor để chỉnh sửa"
+                          >
+                            <span>Chỉnh sửa tiếp</span>
+                            <span aria-hidden="true">↗</span>
+                          </button>
+
+                          {design.isPublic && (
+                            <Link
+                              href={`/templates/${designId}`}
+                              className={styles.iconActionBtn}
+                              title="Xem trang chi tiết công khai"
+                              aria-label="Xem chi tiết"
+                            >
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                <circle cx="12" cy="12" r="3" />
+                              </svg>
+                            </Link>
+                          )}
+
+                          {deleteConfirmId === designId ? (
+                            <div className={styles.deleteConfirmGroup}>
                               <button
-                                onClick={() => handleAddTag(designId)}
-                                className="px-2 py-0.5 rounded-md bg-red-600 text-white text-[11px] font-semibold"
+                                onClick={() => handleDeleteDesign(designId)}
+                                className={styles.confirmDeleteBtn}
+                                title="Xác nhận xóa"
                               >
-                                Thêm
+                                Xóa?
                               </button>
                               <button
-                                onClick={() => setEditingTagId(null)}
-                                className="px-1.5 py-0.5 rounded-md bg-white/10 text-slate-400 text-[11px]"
+                                onClick={() => setDeleteConfirmId(null)}
+                                className={styles.cancelDeleteBtn}
                               >
                                 Hủy
                               </button>
                             </div>
+                          ) : (
+                            <button
+                              onClick={() => setDeleteConfirmId(designId)}
+                              className={styles.iconActionBtn}
+                              title="Xóa thiết kế này"
+                              aria-label="Xóa thiết kế"
+                            >
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M3 6h18" />
+                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                              </svg>
+                            </button>
                           )}
                         </div>
                       </div>
-
-                      {/* Action Buttons Row */}
-                      <div className="pt-3 border-t border-white/5 flex items-center justify-between gap-2">
-                        {/* Open in Canvas Editor */}
-                        <button
-                          type="button"
-                          onClick={() => handleEditDesign(design)}
-                          className="px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-md flex-1 justify-center transition-colors cursor-pointer"
-                          title="Tải thiết kế này vào Canvas Editor để chỉnh sửa và lưu ghi đè"
-                        >
-                          <span className="material-symbols-rounded text-sm">draw</span>
-                          <span>Chỉnh sửa tiếp</span>
-                        </button>
-
-                        {/* View in collection if public */}
-                        {design.isPublic && (
-                          <Link
-                            href={`/templates/${designId}`}
-                            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition-all"
-                            title="Xem trang chi tiết công khai"
-                          >
-                            <span className="material-symbols-rounded text-sm">visibility</span>
-                          </Link>
-                        )}
-
-                        {/* Delete design button */}
-                        {deleteConfirmId === designId ? (
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => handleDeleteDesign(designId)}
-                              className="px-2.5 py-1.5 rounded-xl bg-red-600 text-white text-xs font-bold"
-                              title="Xác nhận xóa"
-                            >
-                              Xóa?
-                            </button>
-                            <button
-                              onClick={() => setDeleteConfirmId(null)}
-                              className="px-2 py-1.5 rounded-xl bg-white/10 text-slate-400 text-xs"
-                            >
-                              Hủy
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => setDeleteConfirmId(designId)}
-                            className="p-2 rounded-xl bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/40 text-slate-400 hover:text-red-400 transition-all"
-                            title="Xóa thiết kế này"
-                          >
-                            <span className="material-symbols-rounded text-sm">delete</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
         )}
 
-        {/* Section: My Collections (visible when collections tab active) */}
+        {/* Section: Collections */}
         {profileTab === "collections" && (
-          <section className="space-y-6">
-            <div className="flex items-center justify-between pb-2 border-b border-white/10">
+          <section aria-labelledby="collections-heading">
+            <div className={styles.sectionHeader}>
               <div>
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <span className="material-symbols-rounded text-amber-400">collections_bookmark</span>
-                  <span>Bộ Sưu Tập Của Tôi ({collections.length})</span>
+                <h2 id="collections-heading" className={styles.sectionTitle}>
+                  Bộ Sưu Tập Của Tôi ({collections.length})
                 </h2>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Quản lý các bộ sưu tập thiết kế đã ghim của bạn.
+                <p className={styles.sectionDesc}>
+                  Quản lý các bộ sưu tập thiết kế và thư mục mẫu đã ghim của bạn.
                 </p>
               </div>
             </div>
 
             {loadingCollections ? (
-              <div className="py-12 flex items-center justify-center">
-                <div className="w-6 h-6 border-2 border-slate-600 border-t-amber-400 rounded-full animate-spin" />
+              <div className={styles.loadingState}>
+                <span className={styles.spinner} />
+                <p style={{ color: "#aaa", fontSize: 13 }}>Đang tải bộ sưu tập…</p>
               </div>
             ) : collections.length === 0 ? (
-              <div className="py-16 text-center">
-                <span className="material-symbols-rounded text-3xl text-slate-600 block mb-2">
-                  collections_bookmark
-                </span>
-                <p className="text-xs text-slate-500 mb-3">
-                  Bạn chưa tạo bộ sưu tập nào. Hãy lưu các mẫu yêu thích từ trang chi tiết thiết kế.
-                </p>
-                <Link
-                  href="/templates"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-amber-500/20 text-amber-400 text-xs font-semibold hover:bg-amber-500/30 transition-colors"
-                >
-                  <span className="material-symbols-rounded text-sm">explore</span>
-                  <span>Khám phá mẫu thiết kế</span>
+              <div className={styles.emptyState}>
+                <p className={styles.eyebrow}>CURATE YOUR FAVORITES</p>
+                <h3>Bạn chưa tạo bộ sưu tập nào.</h3>
+                <p>Khám phá các thiết kế mẫu từ cộng đồng và lưu vào bộ sưu tập cá nhân của bạn.</p>
+                <Link href="/templates/" className={styles.primary}>
+                  Khám phá mẫu thiết kế <span aria-hidden="true">↗</span>
                 </Link>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div className={styles.grid}>
                 {collections.map((col) => (
                   <CollectionCard
                     key={col._id}
@@ -885,6 +792,14 @@ export default function ProfilePage() {
           </section>
         )}
       </main>
+
+      {/* Footer */}
+      <footer className={styles.footer}>
+        <Link href="/">PickMe3D</Link>
+        <p>A space for original ideas.</p>
+        <Link href="/editor/">Start designing ↗</Link>
+        <span>© {new Date().getFullYear()} PickMe3D</span>
+      </footer>
     </div>
   );
 }
