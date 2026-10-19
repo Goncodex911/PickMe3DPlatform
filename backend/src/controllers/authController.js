@@ -3,6 +3,40 @@ const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const User = require('../models/User');
 
+exports.guestLogin = async (req, res) => {
+  const rawName = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
+  const name = (rawName || 'Designer').slice(0, 30);
+  const username = name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '')
+    .slice(0, 30) || 'designer';
+
+  const userObj = {
+    id: `guest-${username}`,
+    name,
+    email: `${username}@pickme3d.local`,
+    picture: '',
+    role: 'designer',
+    jobRole: 'Fashion Designer',
+    username,
+  };
+
+  const jwtSecret = process.env.JWT_SECRET || 'super_secret_pickme3d_jwt_key_2024';
+  const jwtToken = jwt.sign(
+    { id: userObj.id, email: userObj.email, role: userObj.role, name: userObj.name },
+    jwtSecret,
+    { expiresIn: '7d' }
+  );
+
+  return res.status(200).json({
+    success: true,
+    token: jwtToken,
+    user: userObj,
+  });
+};
+
 exports.googleLogin = async (req, res, next) => {
   try {
     const { token } = req.body;
