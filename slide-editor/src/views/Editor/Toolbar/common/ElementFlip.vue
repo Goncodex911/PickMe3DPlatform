@@ -5,12 +5,12 @@
         style="flex: 1;"
         :checked="flipV"
         @click="updateFlip({ flipV: !flipV })"
-      ><i-icon-park-outline:flip-vertically /> Lật dọc</CheckboxButton>
+      ><i-icon-park-outline:flip-vertically /> Flip vertical</CheckboxButton>
       <CheckboxButton 
         style="flex: 1;"
         :checked="flipH"
         @click="updateFlip({ flipH: !flipH })"
-      ><i-icon-park-outline:flip-horizontally /> Lật ngang</CheckboxButton>
+      ><i-icon-park-outline:flip-horizontally /> Flip horizontal</CheckboxButton>
     </ButtonGroup>
   </div>
 </template>

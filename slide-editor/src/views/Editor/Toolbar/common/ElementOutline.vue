@@ -1,7 +1,7 @@
 <template>
   <div class="element-outline">
     <div class="row" v-if="!fixed">
-      <div style="width: 40%;">Bật viền:</div>
+      <div style="width: 40%;">Border:</div>
       <div class="switch-wrapper" style="width: 60%;">
         <Switch 
           :value="hasOutline" 
@@ -11,7 +11,7 @@
     </div>
     <template v-if="hasOutline && outline">
       <div class="row">
-        <div style="width: 40%;">Kiểu viền:</div>
+        <div style="width: 40%;">Border style:</div>
         <SelectCustom style="width: 60%;">
           <template #options>
             <div class="option" v-for="item in lineStyleOptions" :key="item" @click="updateOutline({ style: item })">
@@ -24,7 +24,7 @@
         </SelectCustom>
       </div>
       <div class="row">
-        <div style="width: 40%;">Màu viền:</div>
+        <div style="width: 40%;">Border color:</div>
         <Popover trigger="click" style="width: 60%;">
           <template #content>
             <ColorPicker
@@ -36,7 +36,7 @@
         </Popover>
       </div>
       <div class="row">
-        <div style="width: 40%;">Độ dày viền:</div>
+        <div style="width: 40%;">Border width:</div>
         <NumberInput 
           :value="outline.width || 0" 
           @update:value="value => updateOutline({ width: value })" 

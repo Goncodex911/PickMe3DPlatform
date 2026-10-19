@@ -13,7 +13,7 @@
     </div>
     <div class="configs">
       <div class="row">
-        <div class="title">Định dạng:</div>
+        <div class="title">Format:</div>
         <RadioGroup
           class="config-item"
           v-model:value="format"
@@ -23,18 +23,18 @@
         </RadioGroup>
       </div>
       <div class="row">
-        <div class="title">Phạm vi xuất:</div>
+        <div class="title">Range:</div>
         <RadioGroup
           class="config-item"
           v-model:value="rangeType"
         >
-          <RadioButton style="width: 33.33%;" value="all">Tất cả</RadioButton>
-          <RadioButton style="width: 33.33%;" value="current">Slide hiện tại</RadioButton>
-          <RadioButton style="width: 33.33%;" value="custom">Tuỳ chỉnh</RadioButton>
+          <RadioButton style="width: 33.33%;" value="all">All</RadioButton>
+          <RadioButton style="width: 33.33%;" value="current">Current slide</RadioButton>
+          <RadioButton style="width: 33.33%;" value="custom">Custom</RadioButton>
         </RadioGroup>
       </div>
       <div class="row" style="margin-bottom: 32px" v-if="rangeType === 'custom'">
-        <div class="title" :data-range="`(${range[0]} ~ ${range[1]})`">Phạm vi tuỳ chọn:</div>
+        <div class="title" :data-range="`(${range[0]} ~ ${range[1]})`">Custom range:</div>
         <Slider
           class="config-item"
           range
@@ -46,7 +46,7 @@
       </div>
 
       <div class="row">
-        <div class="title">Chất lượng ảnh:</div>
+        <div class="title">Image quality:</div>
         <Slider
           class="config-item"
           :min="0"
@@ -57,19 +57,19 @@
       </div>
 
       <div class="row">
-        <div class="title">Bỏ qua font trực tuyến:</div>
+        <div class="title">Skip web fonts:</div>
         <div class="config-item">
-          <Switch v-model:value="ignoreWebfont" v-tooltip="'Mặc định khi xuất sẽ bỏ qua font trực tuyến. Nếu slide dùng font trực tuyến và bạn muốn giữ kiểu chữ sau khi xuất, hãy tắt tuỳ chọn “Bỏ qua font trực tuyến”, nhưng việc xuất sẽ lâu hơn.'" />
+          <Switch v-model:value="ignoreWebfont" v-tooltip="'Web fonts are skipped by default. If your slides use web fonts and you want to keep them, turn off “Skip web fonts”, but the export will take longer.'" />
         </div>
       </div>
     </div>
 
     <div class="btns">
-      <Button class="btn export" type="primary" @click="expImage()"><i-icon-park-outline:download /> Xuất ảnh</Button>
-      <Button class="btn close" @click="emit('close')">Đóng</Button>
+      <Button class="btn export" type="primary" @click="expImage()"><i-icon-park-outline:download /> Export images</Button>
+      <Button class="btn close" @click="emit('close')">Close</Button>
     </div>
 
-    <FullscreenSpin :loading="exporting" tip="Đang xuất..." />
+    <FullscreenSpin :loading="exporting" tip="Exporting..." />
   </div>
 </template>
 

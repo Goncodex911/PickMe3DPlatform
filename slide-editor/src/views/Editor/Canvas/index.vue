@@ -279,7 +279,7 @@ const toggleRuler = () => {
 // 开关浮动菜单
 const toggleBubbleMenu = () => {
   mainStore.setBubbleMenuState(!showBubbleMenu.value)
-  message.success(`Đã ${showBubbleMenu.value ? 'bật' : 'tắt'} menu nổi của phần tử`)
+  message.success(`Element bubble menu ${showBubbleMenu.value ? 'enabled' : 'disabled'}`)
 }
 
 // 在鼠标绘制的范围插入元素
@@ -307,58 +307,58 @@ const insertCustomShape = (data: CreateCustomShapeData) => {
 const contextmenus = (): ContextmenuItem[] => {
   return [
     {
-      text: 'Dán',
+      text: 'Paste',
       subText: 'Ctrl + V',
       handler: pasteElement,
     },
     {
-      text: 'Chọn tất cả',
+      text: 'Select all',
       subText: 'Ctrl + A',
       handler: selectAllElements,
     },
     {
-      text: 'Thước kẻ',
+      text: 'Rulers',
       subText: showRuler.value ? '√' : '',
       handler: toggleRuler,
     },
     {
-      text: 'Lưới',
+      text: 'Grid',
       handler: () => mainStore.setGridLineSize(gridLineSize.value ? 0 : 50),
       children: [
         {
-          text: 'Không',
+          text: 'None',
           subText: gridLineSize.value === 0 ? '√' : '',
           handler: () => mainStore.setGridLineSize(0),
         },
         {
-          text: 'Nhỏ',
+          text: 'Small',
           subText: gridLineSize.value === 25 ? '√' : '',
           handler: () => mainStore.setGridLineSize(25),
         },
         {
-          text: 'Vừa',
+          text: 'Medium',
           subText: gridLineSize.value === 50 ? '√' : '',
           handler: () => mainStore.setGridLineSize(50),
         },
         {
-          text: 'Lớn',
+          text: 'Large',
           subText: gridLineSize.value === 100 ? '√' : '',
           handler: () => mainStore.setGridLineSize(100),
         },
       ],
     },
     {
-      text: 'Xoá trắng slide này',
+      text: 'Clear this slide',
       handler: deleteAllElements,
     },
     {
-      text: 'Menu nổi',
+      text: 'Bubble menu',
       subText: showBubbleMenu.value ? '√' : '',
       handler: toggleBubbleMenu,
     },
     { divider: true },
     {
-      text: 'Trình chiếu',
+      text: 'Slideshow',
       subText: 'F5',
       handler: enterScreeningFromStart,
     },

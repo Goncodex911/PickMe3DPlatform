@@ -780,11 +780,11 @@ const execTableCommand = (payload: TableCommand) => {
   const { canDeleteRow, canDeleteCol } = checkCanDeleteRowOrCol()
 
   if (payload.command === 'delete-row') {
-    if (!canDeleteRow) return message.warning('Bảng phải còn ít nhất một hàng')
+    if (!canDeleteRow) return message.warning('A table needs at least one row')
     return deleteRow(targetCell ? targetCell.rowIndex : tableCells.value.length - 1)
   }
   if (payload.command === 'delete-col') {
-    if (!canDeleteCol) return message.warning('Bảng phải còn ít nhất một cột')
+    if (!canDeleteCol) return message.warning('A table needs at least one column')
     const colCount = tableCells.value[0]?.length || 1
     return deleteCol(targetCell ? targetCell.colIndex : colCount - 1)
   }
@@ -825,51 +825,51 @@ const contextmenus = (el: HTMLElement): ContextmenuItem[] => {
 
   return [
     {
-      text: 'Chèn cột',
+      text: 'Insert column',
       children: [
-        { text: 'Bên trái', handler: () => insertCol(colIndex) },
-        { text: 'Bên phải', handler: () => insertCol(colIndex + 1) },
+        { text: 'Left', handler: () => insertCol(colIndex) },
+        { text: 'Right', handler: () => insertCol(colIndex + 1) },
       ],
     },
     {
-      text: 'Chèn hàng',
+      text: 'Insert row',
       children: [
-        { text: 'Phía trên', handler: () => insertRow(rowIndex) },
-        { text: 'Phía dưới', handler: () => insertRow(rowIndex + 1) },
+        { text: 'Above', handler: () => insertRow(rowIndex) },
+        { text: 'Below', handler: () => insertRow(rowIndex + 1) },
       ],
     },
     {
-      text: 'Xoá cột',
+      text: 'Delete column',
       disable: !canDeleteCol,
       handler: () => deleteCol(colIndex),
     },
     {
-      text: 'Xoá hàng',
+      text: 'Delete row',
       disable: !canDeleteRow,
       handler: () => deleteRow(rowIndex),
     },
     { divider: true },
     {
-      text: 'Gộp ô',
+      text: 'Merge cells',
       disable: !canMerge,
       handler: mergeCells,
     },
     {
-      text: 'Bỏ gộp ô',
+      text: 'Unmerge cells',
       disable: !canSplit,
       handler: () => splitCells(rowIndex, colIndex),
     },
     { divider: true },
     {
-      text: 'Chọn cột này',
+      text: 'Select column',
       handler: () => selectCol(colIndex),
     },
     {
-      text: 'Chọn hàng này',
+      text: 'Select row',
       handler: () => selectRow(rowIndex),
     },
     {
-      text: 'Chọn tất cả ô',
+      text: 'Select all cells',
       handler: selectAll,
     },
   ]

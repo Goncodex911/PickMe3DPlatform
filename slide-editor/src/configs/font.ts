@@ -1,5 +1,5 @@
 export const FONTS = [
-  { label: 'Mặc định', value: '' },
+  { label: 'Default', value: '' },
   { label: 'Instrument Serif', value: 'Instrument Serif' },
   { label: 'Playfair Display', value: 'Playfair Display' },
   { label: 'Plus Jakarta Sans', value: 'Plus Jakarta Sans' },

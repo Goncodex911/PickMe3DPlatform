@@ -5,8 +5,8 @@
     </div>
 
     <div class="btns">
-      <Button class="btn export" type="primary" @click="exportJSON()"><i-icon-park-outline:download /> Xuất JSON</Button>
-      <Button class="btn close" @click="emit('close')">Đóng</Button>
+      <Button class="btn export" type="primary" @click="exportJSON()"><i-icon-park-outline:download /> Export JSON</Button>
+      <Button class="btn close" @click="emit('close')">Close</Button>
     </div>
   </div>
 </template>

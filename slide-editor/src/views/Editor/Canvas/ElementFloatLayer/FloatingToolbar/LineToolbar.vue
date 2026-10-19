@@ -19,7 +19,7 @@
       </template>
       <button class="toolbar-btn">
         <i-icon-park-outline:connection class="icon" />
-        <span>Kiểu</span>
+        <span>Style</span>
       </button>
     </Popover>
     <Popover trigger="click">
@@ -28,7 +28,7 @@
       </template>
       <button class="toolbar-btn">
         <i-icon-park-outline:platte class="icon" />
-        <span>Màu</span>
+        <span>Color</span>
       </button>
     </Popover>
     <div class="width-slider">

@@ -1,14 +1,14 @@
 <template>
   <div class="element-shadow">
     <div class="row">
-      <div style="width: 40%;">Bật đổ bóng:</div>
+      <div style="width: 40%;">Shadow:</div>
       <div class="switch-wrapper" style="width: 60%;">
         <Switch :value="hasShadow" @update:value="value => toggleShadow(value)" />
       </div>
     </div>
     <template v-if="hasShadow && shadow">
       <div class="row">
-        <div style="width: 40%;">Bóng ngang:</div>
+        <div style="width: 40%;">Shadow X:</div>
         <Slider 
           style="width: 60%;"
           :min="-20" 
@@ -19,7 +19,7 @@
         />
       </div>
       <div class="row">
-        <div style="width: 40%;">Bóng dọc:</div>
+        <div style="width: 40%;">Shadow Y:</div>
         <Slider
           style="width: 60%;"
           :min="-20"
@@ -30,7 +30,7 @@
         />
       </div>
       <div class="row">
-        <div style="width: 40%;">Độ nhoè:</div>
+        <div style="width: 40%;">Blur:</div>
         <Slider
           style="width: 60%;"
           :min="1"
@@ -41,7 +41,7 @@
         />
       </div>
       <div class="row">
-        <div style="width: 40%;">Màu bóng:</div>
+        <div style="width: 40%;">Shadow color:</div>
         <Popover trigger="click" style="width: 60%;">
           <template #content>
             <ColorPicker

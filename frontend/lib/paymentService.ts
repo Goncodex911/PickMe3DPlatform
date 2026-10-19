@@ -27,7 +27,7 @@ export interface AccountPlan {
 }
 
 export function formatVnd(amount: number) {
-  return `${new Intl.NumberFormat("vi-VN").format(amount)}đ`;
+  return `${new Intl.NumberFormat("en-US").format(amount)} VND`;
 }
 
 export function planAllows(plan: PlanId, feature: "export-pptx" | "private" | "brand" | "ai-slide") {
@@ -93,7 +93,7 @@ export async function apiFetch(url: string, init: RequestInit = {}) {
 async function readJson(res: Response) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok || data.success === false) {
-    const error = new Error(res.status === 401 ? "Phiên đăng nhập đã hết hạn. Hãy vào lại từ trang chủ." : (data.message || paymentCopy.quota)) as Error & { code?: string };
+    const error = new Error(res.status === 401 ? "Your session has expired. Please sign in again from the home page." : (data.message || paymentCopy.quota)) as Error & { code?: string };
     error.code = data.code;
     throw error;
   }

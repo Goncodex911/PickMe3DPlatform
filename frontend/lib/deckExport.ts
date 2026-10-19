@@ -23,7 +23,7 @@ export function startDeckDownload({
   onFinish: (result: DeckExportResult) => void;
 }) {
   const frame = document.createElement("iframe");
-  frame.title = "Xuất file";
+  frame.title = "Export";
   const url = new URL(STUDIO_URL, window.location.href);
   url.searchParams.set("job", "download");
   frame.src = url.toString();
@@ -54,10 +54,10 @@ export function startDeckDownload({
     if (data.type === "PM_REQUEST_FEATURE" && data.feature === "export-pptx") finish({ ok: false, feature: "export-pptx" });
     if (data.type === "PM_EXPORT_DONE") {
       if (data.status === "blocked" && format === "pptx") finish({ ok: false, feature: "export-pptx" });
-      else finish({ ok: data.status === "done", message: data.status === "done" ? undefined : (data.message || "Không xuất được file") });
+      else finish({ ok: data.status === "done", message: data.status === "done" ? undefined : (data.message || "Could not export the file") });
     }
   };
-  const timer = window.setTimeout(() => finish({ ok: false, message: "Xuất file quá lâu, hãy thử lại" }), 60000);
+  const timer = window.setTimeout(() => finish({ ok: false, message: "Export took too long. Please try again." }), 60000);
   window.addEventListener("message", onMessage);
   document.body.appendChild(frame);
 }

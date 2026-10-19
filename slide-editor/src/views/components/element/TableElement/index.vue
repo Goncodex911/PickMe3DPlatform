@@ -41,7 +41,7 @@
           @mousedown="$event => handleSelectElement($event)"
           @touchstart="$event => handleSelectElement($event)"
         >
-          <div class="mask-tip" v-if="handleElementId === elementInfo.id" :style="{ transform: `scale(${ 1 / canvasScale })` }">Bấm đúp để sửa</div>
+          <div class="mask-tip" v-if="handleElementId === elementInfo.id" :style="{ transform: `scale(${ 1 / canvasScale })` }">Double-click to edit</div>
         </div>
       </div>
     </div>

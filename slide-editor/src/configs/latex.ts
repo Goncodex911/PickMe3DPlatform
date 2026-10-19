@@ -1,74 +1,74 @@
 export const FORMULA_LIST = [
   {
-    label: 'Công thức Gauss',
+    label: 'Gauss formula',
     latex: `\\int\\int\\int _ { \\Omega } \\left( \\frac { \\partial {P} } { \\partial {x} } + \\frac { \\partial {Q} } { \\partial {y} } + \\frac { \\partial {R} }{ \\partial {z} } \\right) \\mathrm { d } V = \\oint _ { \\partial \\Omega } ( P \\cos \\alpha + Q \\cos \\beta + R \\cos \\gamma ) \\mathrm{ d} S`
   },
   {
-    label: 'Chuỗi Fourier',
+    label: 'Fourier series',
     latex: `f(x) = \\frac {a_0} 2 + \\sum_{n = 1}^\\infty {({a_n}\\cos {nx} + {b_n}\\sin {nx})}`,
   },
   {
-    label: 'Khai triển Taylor',
+    label: 'Taylor expansion',
     latex: `e ^ { x } = 1 + \\frac { x } { 1 ! } + \\frac { x ^ { 2 } } { 2 ! } + \\frac { x ^ { 3 } } { 3 ! } + ... , \\quad - \\infty < x < \\infty`,
   },
   {
-    label: 'Tích phân xác định',
+    label: 'Definite integral',
     latex: `\\lim_ { n \\rightarrow + \\infty } \\sum _ { i = 1 } ^ { n } f \\left[ a + \\frac { i } { n } ( b - a ) \\right] \\frac { b - a } { n } = \\int _ { a } ^ { b } f ( x ) dx`,
   },
   {
-    label: 'Đẳng thức lượng giác 1',
+    label: 'Trigonometric identity 1',
     latex: `\\sin \\alpha \\pm \\sin \\beta = 2 \\sin \\frac { 1 } { 2 } ( \\alpha \\pm \\beta ) \\cos \\frac { 1 } { 2 } ( \\alpha \\mp \\beta )`,
   },
   {
-    label: 'Đẳng thức lượng giác 2',
+    label: 'Trigonometric identity 2',
     latex: `\\cos \\alpha + \\cos \\beta = 2 \\cos \\frac { 1 } { 2 } ( \\alpha + \\beta ) \\cos \\frac { 1 } { 2 } ( \\alpha - \\beta )`,
   },
   {
-    label: 'Khai triển nhị thức',
+    label: 'Binomial expansion',
     latex: `( 1 + x ) ^ { n } = 1 + \\frac { n x } { 1 ! } + \\frac { n ( n - 1 ) x ^ { 2 } } { 2 ! } + ...`,
   },
   {
-    label: 'Công thức Euler',
+    label: 'Euler formula',
     latex: ` e^{ix} = \\cos {x} + i\\sin {x}`,
   },
   {
-    label: 'Phương trình Bernoulli',
+    label: 'Bernoulli equation',
     latex: `\\frac {dy} {dx} + P(x)y = Q(x) y^n ({n} \\not= {0,1})`,
   },
   {
-    label: 'Phương trình vi phân toàn phần',
+    label: 'Exact differential equation',
     latex: `du(x,y) = P(x,y)dx + Q(x,y)dy = 0`,
   },
   {
-    label: 'Phương trình không thuần nhất',
+    label: 'Non-homogeneous equation',
     latex: `y = (\\int Q(x) e^{\\int {P(x)dx}}dx + C)e^{-\\int {P(x)dx}}`,
   },
   {
-    label: 'Định lý giá trị trung bình Cauchy',
+    label: 'Cauchy mean value theorem',
     latex: `\\frac{{f(b) - f(a)}}{{F(b) - F(a)}} = \\frac{{f'(\\xi )}}{{F'(\\xi )}}`,
   },
   {
-    label: 'Định lý giá trị trung bình Lagrange',
+    label: 'Lagrange mean value theorem',
     latex: `f(b) - f(a) = f'(\\xi )(b - a)`,
   },
   {
-    label: 'Công thức đạo hàm',
+    label: 'Derivative formulas',
     latex: `(\\arcsin x)' = \\frac{1}{{\\sqrt {1 - x^2} }}`,
   },
   {
-    label: 'Tích phân hàm lượng giác',
+    label: 'Trigonometric integrals',
     latex: `\\int {tgxdx = - \\ln \\left| {\\cos x} \\right| + C}`,
   },
   {
-    label: 'Mặt bậc hai',
+    label: 'Quadric surface',
     latex: `\\frac{{{x^2}}}{{{a^2}}} + \\frac{{{y^2}}}{{{b^2}}} - \\frac{{{z^2}}}{{{c^2}}} = 1`,
   },
   {
-    label: 'Vi phân cấp hai',
+    label: 'Second-order differential',
     latex: `\\frac {{d^2}y} {dx^2} + P(x) \\frac {dy} {dx} + Q(x)y = f(x)`,
   },
   {
-    label: 'Đạo hàm theo hướng',
+    label: 'Directional derivative',
     latex: `\\frac{{\\partial f}}{{\\partial l}} = \\frac{{\\partial f}}{{\\partial x}}\\cos \\phi + \\frac{{\\partial f}}{{\\partial y}}\\sin \\phi`,
   },
 ]
@@ -76,7 +76,7 @@ export const FORMULA_LIST = [
 export const SYMBOL_LIST = [
   {
     type: 'operators',
-    label: 'Toán học',
+    label: 'Math',
     children: [
       { latex: '\\cdot' },
       { latex: '\\pm' },
@@ -152,7 +152,7 @@ export const SYMBOL_LIST = [
   },
   {
     type: 'group',
-    label: 'Nhóm',
+    label: 'Group',
     children: [
       { latex: '\\frac{a}{b}' },
       { latex: '\\frac{dx}{dx}' },
@@ -186,7 +186,7 @@ export const SYMBOL_LIST = [
   },
   {
     type: 'verbatim',
-    label: 'Hàm số',
+    label: 'Functions',
     children: [
       { latex: '\\log' },
       { latex: '\\ln' },
@@ -215,7 +215,7 @@ export const SYMBOL_LIST = [
   },
   {
     type: 'greek',
-    label: 'Chữ Hy Lạp',
+    label: 'Greek letters',
     children: [
       { latex: '\\alpha' },
       { latex: '\\beta' },

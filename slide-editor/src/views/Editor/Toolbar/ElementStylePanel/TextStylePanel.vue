@@ -15,7 +15,7 @@
     <Divider />
 
     <div class="row">
-      <div style="width: 40%;">Giãn dòng:</div>
+      <div style="width: 40%;">Line spacing:</div>
       <Select style="width: 60%;"
         :value="lineHeight || 1"
         @update:value="value => updateText({ lineHeight: value as number })"
@@ -29,7 +29,7 @@
       </Select>
     </div>
     <div class="row">
-      <div style="width: 40%;">Giãn đoạn:</div>
+      <div style="width: 40%;">Paragraph spacing:</div>
       <Select style="width: 60%;"
         :value="paragraphSpace || 0"
         @update:value="value => updateText({ paragraphSpace: value as number })"
@@ -43,7 +43,7 @@
       </Select>
     </div>
     <div class="row">
-      <div style="width: 40%;">Giãn chữ:</div>
+      <div style="width: 40%;">Letter spacing:</div>
       <Select style="width: 60%;"
         :value="wordSpace || 0"
         @update:value="value => updateText({ wordSpace: value as number })"
@@ -57,7 +57,7 @@
       </Select>
     </div>
     <div class="row">
-      <div style="width: 40%;">Màu nền hộp chữ:</div>
+      <div style="width: 40%;">Text box fill:</div>
       <Popover trigger="click" style="width: 60%;">
         <template #content>
           <ColorPicker
@@ -79,7 +79,7 @@
         @update:value="value => updateInset(0, value)"
         style="width: 45%;"
       >
-        <template #prefix>Lề trên:</template>
+        <template #prefix>Top padding:</template>
       </NumberInput>
       <div style="width: 10%;"></div>
       <NumberInput
@@ -89,7 +89,7 @@
         @update:value="value => updateInset(2, value)"
         style="width: 45%;"
       >
-        <template #prefix>Lề dưới:</template>
+        <template #prefix>Bottom padding:</template>
       </NumberInput>
     </div>
     <div class="row">
@@ -100,7 +100,7 @@
         @update:value="value => updateInset(3, value)"
         style="width: 45%;"
       >
-        <template #prefix>Lề trái:</template>
+        <template #prefix>Left padding:</template>
       </NumberInput>
       <div style="width: 10%;"></div>
       <NumberInput
@@ -110,13 +110,13 @@
         @update:value="value => updateInset(1, value)"
         style="width: 45%;"
       >
-        <template #prefix>Lề phải:</template>
+        <template #prefix>Right padding:</template>
       </NumberInput>
     </div>
 
     <Divider />
     <div class="row">
-      <div style="width: 40%;">Cố định chiều cao:</div>
+      <div style="width: 40%;">Fixed height:</div>
       <div class="switch-wrapper" style="width: 60%;">
         <Switch
           :value="fixedHeight"
@@ -131,9 +131,9 @@
       @update:value="value => updateText({ vAlign: value as TextAlignVertical })"
       v-if="fixedHeight"
     >
-      <RadioButton value="top" v-tooltip="'Căn trên'" style="flex: 1;"><i-icon-park-outline:align-text-top-one /></RadioButton>
-      <RadioButton value="middle" v-tooltip="'Căn giữa dọc'" style="flex: 1;"><i-icon-park-outline:align-text-middle-one /></RadioButton>
-      <RadioButton value="bottom" v-tooltip="'Căn dưới'" style="flex: 1;"><i-icon-park-outline:align-text-bottom-one /></RadioButton>
+      <RadioButton value="top" v-tooltip="'Align top'" style="flex: 1;"><i-icon-park-outline:align-text-top-one /></RadioButton>
+      <RadioButton value="middle" v-tooltip="'Center vertically'" style="flex: 1;"><i-icon-park-outline:align-text-middle-one /></RadioButton>
+      <RadioButton value="bottom" v-tooltip="'Align bottom'" style="flex: 1;"><i-icon-park-outline:align-text-bottom-one /></RadioButton>
     </RadioGroup>
     <Divider />
     <ElementOutline />
@@ -170,7 +170,7 @@ import Popover from '@/components/Popover.vue'
 // 因此在执行预置样式命令时，将加粗命令放在尽可能靠前的位置，避免字号增大后再加粗
 const presetStyles = [
   {
-    label: 'Tiêu đề lớn',
+    label: 'Large title',
     style: {
       fontSize: '26px',
       fontWeight: 700,
@@ -183,7 +183,7 @@ const presetStyles = [
     ],
   },
   {
-    label: 'Tiêu đề nhỏ',
+    label: 'Small title',
     style: {
       fontSize: '22px',
       fontWeight: 700,
@@ -196,7 +196,7 @@ const presetStyles = [
     ],
   },
   {
-    label: 'Nội dung',
+    label: 'Body',
     style: {
       fontSize: '20px',
     },
@@ -206,7 +206,7 @@ const presetStyles = [
     ],
   },
   {
-    label: 'Nội dung[Nhỏ]',
+    label: 'Body[Small]',
     style: {
       fontSize: '18px',
     },
@@ -216,7 +216,7 @@ const presetStyles = [
     ],
   },
   {
-    label: 'Chú thích 1',
+    label: 'Notes 1',
     style: {
       fontSize: '16px',
       fontStyle: 'italic',
@@ -228,7 +228,7 @@ const presetStyles = [
     ],
   },
   {
-    label: 'Chú thích 2',
+    label: 'Notes 2',
     style: {
       fontSize: '16px',
       textDecoration: 'underline',

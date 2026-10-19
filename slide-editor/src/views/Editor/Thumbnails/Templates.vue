@@ -8,7 +8,7 @@
         @click="changeCatalog(item.id)"
       >{{ item.name }}</div>
     </div>
-    <div class="content" v-loading="{ state: loading, text: 'Đang tải...' }">
+    <div class="content" v-loading="{ state: loading, text: 'Loading...' }">
       <div class="header">
         <div class="types">
           <div class="type" 
@@ -18,7 +18,7 @@
             @click="activeType = item.value"
           >{{ item.label }}</div>
         </div>
-        <div class="insert-all" @click="insertTemplates({ slides, theme })">Chèn tất cả</div>
+        <div class="insert-all" @click="insertTemplates({ slides, theme })">Insert all</div>
       </div>
       <div class="list" ref="listRef">
         <template v-for="slide in slides" :key="slide.id">
@@ -29,7 +29,7 @@
             <ThumbnailSlide class="thumbnail" :slide="slide" :size="180" />
     
             <div class="btns">
-              <Button class="btn" type="primary" size="small" @click="insertTemplate(slide)">Chèn mẫu</Button>
+              <Button class="btn" type="primary" size="small" @click="insertTemplate(slide)">Insert template</Button>
             </div>
           </div>
         </template>
@@ -63,12 +63,12 @@ const types = ref<{
   label: string
   value: string
 }[]>([
-  { label: 'Tất cả', value: 'all' },
-  { label: 'Bìa', value: 'cover' },
-  { label: 'Mục lục', value: 'contents' },
-  { label: 'Chuyển tiếp', value: 'transition' },
-  { label: 'Nội dung', value: 'content' },
-  { label: 'Kết', value: 'end' },
+  { label: 'All', value: 'all' },
+  { label: 'Cover', value: 'cover' },
+  { label: 'Contents', value: 'contents' },
+  { label: 'Transition', value: 'transition' },
+  { label: 'Body', value: 'content' },
+  { label: 'Closing', value: 'end' },
 ])
 const activeType = ref('all')
 

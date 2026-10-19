@@ -8,11 +8,11 @@
     <ElementFlip />
 
     <ButtonGroup class="row" passive>
-      <Button first style="width: calc(100% - 32px);" @click="clipImage()"><i-icon-park-outline:tailoring /> Cắt ảnh</Button>
+      <Button first style="width: calc(100% - 32px);" @click="clipImage()"><i-icon-park-outline:tailoring /> Crop image</Button>
       <Popover trigger="click" v-model:value="clipPanelVisible" style="width: 32px;">
         <template #content>
           <div class="clip">
-            <div class="title">Theo hình:</div>
+            <div class="title">By shape:</div>
             <div class="shape-clip">
               <div 
                 class="shape-clip-item" 
@@ -25,7 +25,7 @@
             </div>
 
             <template v-for="typeItem in ratioClipOptions" :key="typeItem.label">
-              <div class="title" v-if="typeItem.label">Theo {{typeItem.label}}:</div>
+              <div class="title" v-if="typeItem.label">By {{typeItem.label}}:</div>
               <ButtonGroup class="row">
                 <Button 
                   style="flex: 1;"
@@ -42,7 +42,7 @@
     </ButtonGroup>
     
     <div class="row">
-      <div style="width: 40%;">Bán kính bo góc:</div>
+      <div style="width: 40%;">Corner radius:</div>
       <NumberInput 
         :value="handleImageElement.radius || 0" 
         @update:value="value => updateImage({ radius: value })" 
@@ -61,10 +61,10 @@
     <Divider />
     
     <FileInput @change="files => replaceImage(files)">
-      <Button class="full-width-btn"><i-icon-park-outline:transform /> Thay ảnh</Button>
+      <Button class="full-width-btn"><i-icon-park-outline:transform /> Replace image</Button>
     </FileInput>
-    <Button class="full-width-btn" @click="resetImage()"><i-icon-park-outline:undo /> Đặt lại kiểu</Button>
-    <Button class="full-width-btn" @click="setBackgroundImage()"><i-icon-park-outline:theme /> Đặt làm nền</Button>
+    <Button class="full-width-btn" @click="resetImage()"><i-icon-park-outline:undo /> Reset style</Button>
+    <Button class="full-width-btn" @click="setBackgroundImage()"><i-icon-park-outline:theme /> Set as background</Button>
   </div>
 </template>
 
@@ -92,13 +92,13 @@ import NumberInput from '@/components/NumberInput.vue'
 const shapeClipPathOptions = CLIPPATHS
 const ratioClipOptions = [
   {
-    label: 'Tỉ lệ khung (vuông)',
+    label: 'Aspect ratio (square)',
     children: [
       { key: '1:1', ratio: 1 / 1 },
     ],
   },
   {
-    label: 'Tỉ lệ khung (dọc)',
+    label: 'Aspect ratio (portrait)',
     children: [
       { key: '2:3', ratio: 3 / 2 },
       { key: '3:4', ratio: 4 / 3 },
@@ -107,7 +107,7 @@ const ratioClipOptions = [
     ],
   },
   {
-    label: 'Tỉ lệ khung (ngang)',
+    label: 'Aspect ratio (landscape)',
     children: [
       { key: '3:2', ratio: 2 / 3 },
       { key: '4:3', ratio: 3 / 4 },

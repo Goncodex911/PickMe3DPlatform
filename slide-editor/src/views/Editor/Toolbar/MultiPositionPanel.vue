@@ -1,25 +1,25 @@
 <template>
   <div class="multi-position-panel">
     <ButtonGroup class="row">
-      <Button style="flex: 1;" v-tooltip="'Căn trái'" @click="alignElement(ElementAlignCommands.LEFT)"><i-icon-park-outline:align-left /></Button>
-      <Button style="flex: 1;" v-tooltip="'Căn giữa ngang'" @click="alignElement(ElementAlignCommands.HORIZONTAL)"><i-icon-park-outline:align-horizontally /></Button>
-      <Button style="flex: 1;" v-tooltip="'Căn phải'" @click="alignElement(ElementAlignCommands.RIGHT)"><i-icon-park-outline:align-right /></Button>
+      <Button style="flex: 1;" v-tooltip="'Align left'" @click="alignElement(ElementAlignCommands.LEFT)"><i-icon-park-outline:align-left /></Button>
+      <Button style="flex: 1;" v-tooltip="'Center horizontally'" @click="alignElement(ElementAlignCommands.HORIZONTAL)"><i-icon-park-outline:align-horizontally /></Button>
+      <Button style="flex: 1;" v-tooltip="'Align right'" @click="alignElement(ElementAlignCommands.RIGHT)"><i-icon-park-outline:align-right /></Button>
     </ButtonGroup>
     <ButtonGroup class="row">
-      <Button style="flex: 1;" v-tooltip="'Căn trên'" @click="alignElement(ElementAlignCommands.TOP)"><i-icon-park-outline:align-top /></Button>
-      <Button style="flex: 1;" v-tooltip="'Căn giữa dọc'" @click="alignElement(ElementAlignCommands.VERTICAL)"><i-icon-park-outline:align-vertically /></Button>
-      <Button style="flex: 1;" v-tooltip="'Căn dưới'" @click="alignElement(ElementAlignCommands.BOTTOM)"><i-icon-park-outline:align-bottom /></Button>
+      <Button style="flex: 1;" v-tooltip="'Align top'" @click="alignElement(ElementAlignCommands.TOP)"><i-icon-park-outline:align-top /></Button>
+      <Button style="flex: 1;" v-tooltip="'Center vertically'" @click="alignElement(ElementAlignCommands.VERTICAL)"><i-icon-park-outline:align-vertically /></Button>
+      <Button style="flex: 1;" v-tooltip="'Align bottom'" @click="alignElement(ElementAlignCommands.BOTTOM)"><i-icon-park-outline:align-bottom /></Button>
     </ButtonGroup>
     <ButtonGroup class="row" v-if="displayItemCount > 2">
-      <Button style="flex: 1;" @click="uniformHorizontalDisplay()">Giãn đều theo chiều ngang</Button>
-      <Button style="flex: 1;" @click="uniformVerticalDisplay()">Giãn đều theo chiều dọc</Button>
+      <Button style="flex: 1;" @click="uniformHorizontalDisplay()">Distribute horizontally</Button>
+      <Button style="flex: 1;" @click="uniformVerticalDisplay()">Distribute vertically</Button>
     </ButtonGroup>
 
     <Divider />
 
     <ButtonGroup class="row">
-      <Button :disabled="!canCombine" @click="combineElements()" style="flex: 1;"><i-icon-park-outline:group style="margin-right: 3px;" />Nhóm</Button>
-      <Button :disabled="canCombine" @click="uncombineElements()" style="flex: 1;"><i-icon-park-outline:ungroup style="margin-right: 3px;" />Bỏ nhóm</Button>
+      <Button :disabled="!canCombine" @click="combineElements()" style="flex: 1;"><i-icon-park-outline:group style="margin-right: 3px;" />Group</Button>
+      <Button :disabled="canCombine" @click="uncombineElements()" style="flex: 1;"><i-icon-park-outline:ungroup style="margin-right: 3px;" />Ungroup</Button>
     </ButtonGroup>
   </div>
 </template>

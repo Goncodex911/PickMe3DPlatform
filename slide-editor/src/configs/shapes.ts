@@ -279,7 +279,7 @@ export const SHAPE_PATH_FORMULAS: Record<string, ShapePathFormula> = {
 
 export const SHAPE_LIST: ShapeListItem[] = [
   {
-    type: 'Hình chữ nhật',
+    type: 'Rectangle',
     children: [
       {
         viewBox: [200, 200],
@@ -338,7 +338,7 @@ export const SHAPE_LIST: ShapeListItem[] = [
   },
 
   {
-    type: 'Hình thường dùng',
+    type: 'Common shapes',
     children: [
       {
         viewBox: [200, 200],
@@ -638,7 +638,7 @@ export const SHAPE_LIST: ShapeListItem[] = [
   },
   
   {
-    type: 'Mũi tên',
+    type: 'Arrow',
     children: [
       {
         viewBox: [200, 200],
@@ -740,7 +740,7 @@ export const SHAPE_LIST: ShapeListItem[] = [
   },
 
   {
-    type: 'Hình khác',
+    type: 'Other shapes',
     children: [
       {
         viewBox: [1024, 1024],
@@ -890,7 +890,7 @@ export const SHAPE_LIST: ShapeListItem[] = [
   },
 
   {
-    type: 'Đường nét',
+    type: 'Line art',
     children: [
       {
         viewBox: [1024, 1024],

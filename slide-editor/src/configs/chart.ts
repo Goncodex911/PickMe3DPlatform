@@ -1,54 +1,54 @@
 import type { ChartData } from '@/types/slides'
 
 export const CHART_TYPE_MAP: Record<string, string> = {
-  'bar': 'Biểu đồ cột',
-  'column': 'Biểu đồ thanh',
-  'line': 'Biểu đồ đường',
-  'area': 'Biểu đồ vùng',
-  'scatter': 'Biểu đồ phân tán',
-  'pie': 'Biểu đồ tròn',
-  'ring': 'Biểu đồ vành khuyên',
-  'radar': 'Biểu đồ radar',
+  'bar': 'Column chart',
+  'column': 'Bar chart',
+  'line': 'Line chart',
+  'area': 'Area chart',
+  'scatter': 'Scatter chart',
+  'pie': 'Pie chart',
+  'ring': 'Donut chart',
+  'radar': 'Radar chart',
 }
 
 export const CHART_DEFAULT_DATA: Record<string, ChartData> = {
   'bar': {
-    labels: ['Hạng mục 1', 'Hạng mục 2', 'Hạng mục 3', 'Hạng mục 4', 'Hạng mục 5'],
-    legends: ['Chuỗi 1', 'Chuỗi 2'],
+    labels: ['Category 1', 'Category 2', 'Category 3', 'Category 4', 'Category 5'],
+    legends: ['Series 1', 'Series 2'],
     series: [[12, 19, 5, 2, 18], [7, 11, 13, 21, 9]],
   },
   'column': {
-    labels: ['Hạng mục 1', 'Hạng mục 2', 'Hạng mục 3', 'Hạng mục 4', 'Hạng mục 5'],
-    legends: ['Chuỗi 1', 'Chuỗi 2'],
+    labels: ['Category 1', 'Category 2', 'Category 3', 'Category 4', 'Category 5'],
+    legends: ['Series 1', 'Series 2'],
     series: [[12, 19, 5, 2, 18], [7, 11, 13, 21, 9]],
   },
   'line': {
-    labels: ['Hạng mục 1', 'Hạng mục 2', 'Hạng mục 3', 'Hạng mục 4', 'Hạng mục 5'],
-    legends: ['Chuỗi 1', 'Chuỗi 2'],
+    labels: ['Category 1', 'Category 2', 'Category 3', 'Category 4', 'Category 5'],
+    legends: ['Series 1', 'Series 2'],
     series: [[12, 19, 5, 2, 18], [7, 11, 13, 21, 9]],
   },
   'pie': {
-    labels: ['Hạng mục 1', 'Hạng mục 2', 'Hạng mục 3', 'Hạng mục 4', 'Hạng mục 5'],
-    legends: ['Giá trị'],
+    labels: ['Category 1', 'Category 2', 'Category 3', 'Category 4', 'Category 5'],
+    legends: ['Value'],
     series: [[12, 19, 5, 2, 18]],
   },
   'ring': {
-    labels: ['Hạng mục 1', 'Hạng mục 2', 'Hạng mục 3', 'Hạng mục 4', 'Hạng mục 5'],
-    legends: ['Giá trị'],
+    labels: ['Category 1', 'Category 2', 'Category 3', 'Category 4', 'Category 5'],
+    legends: ['Value'],
     series: [[12, 19, 5, 2, 18]],
   },
   'area': {
-    labels: ['Hạng mục 1', 'Hạng mục 2', 'Hạng mục 3', 'Hạng mục 4', 'Hạng mục 5'],
-    legends: ['Chuỗi 1', 'Chuỗi 2'],
+    labels: ['Category 1', 'Category 2', 'Category 3', 'Category 4', 'Category 5'],
+    legends: ['Series 1', 'Series 2'],
     series: [[12, 19, 5, 2, 18], [7, 11, 13, 21, 9]],
   },
   'radar': {
-    labels: ['Hạng mục 1', 'Hạng mục 2', 'Hạng mục 3', 'Hạng mục 4', 'Hạng mục 5'],
-    legends: ['Chuỗi 1', 'Chuỗi 2'],
+    labels: ['Category 1', 'Category 2', 'Category 3', 'Category 4', 'Category 5'],
+    legends: ['Series 1', 'Series 2'],
     series: [[12, 19, 5, 2, 18], [7, 11, 13, 21, 9]],
   },
   'scatter': {
-    labels: ['Điểm 1', 'Điểm 2', 'Điểm 3', 'Điểm 4', 'Điểm 5'],
+    labels: ['Point 1', 'Point 2', 'Point 3', 'Point 4', 'Point 5'],
     legends: ['X', 'Y'],
     series: [[12, 19, 5, 2, 18], [7, 11, 13, 21, 9]],
   },

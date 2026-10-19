@@ -3,7 +3,7 @@
     class="notes-panel" 
     :width="300" 
     :height="560" 
-    :title="`Ghi chú slide ${slideIndex + 1}`" 
+    :title="`Slide ${slideIndex + 1} notes`" 
     :left="-270" 
     :top="90"
     :minWidth="300"
@@ -25,8 +25,8 @@
               </div>
             </div>
             <div class="btns">
-              <div class="btn reply" @click="replyNoteId = note.id">Trả lời</div>
-              <div class="btn delete" @click.stop="deleteNote(note.id)">Xoá</div>
+              <div class="btn reply" @click="replyNoteId = note.id">Reply</div>
+              <div class="btn delete" @click.stop="deleteNote(note.id)">Delete</div>
             </div>
           </div>
           <div class="content">{{ note.content }}</div>
@@ -41,35 +41,35 @@
                   </div>
                 </div>
                 <div class="btns">
-                  <div class="btn delete" @click.stop="deleteReply(note.id, reply.id)">Xoá</div>
+                  <div class="btn delete" @click.stop="deleteReply(note.id, reply.id)">Delete</div>
                 </div>
               </div>
               <div class="content">{{ reply.content }}</div>
             </div>
           </div>
           <div class="note-reply" v-if="replyNoteId === note.id">
-            <TextArea :padding="6" v-model:value="replyContent" placeholder="Nhập câu trả lời" :rows="1" @enter.prevent="createNoteReply()" />
+            <TextArea :padding="6" v-model:value="replyContent" placeholder="Write a reply" :rows="1" @enter.prevent="createNoteReply()" />
             <div class="reply-btns">
-              <Button class="btn" size="small" @click="replyNoteId = ''">Huỷ</Button>
-              <Button class="btn" size="small" type="primary" @click="createNoteReply()">Trả lời</Button>
+              <Button class="btn" size="small" @click="replyNoteId = ''">Cancel</Button>
+              <Button class="btn" size="small" type="primary" @click="createNoteReply()">Reply</Button>
             </div>
           </div>
         </div>
-        <div class="empty" v-if="!notes.length">Slide này chưa có ghi chú</div>
+        <div class="empty" v-if="!notes.length">No notes on this slide yet</div>
       </div>
       <div class="send">
         <TextArea 
           ref="textAreaRef"
           v-model:value="content"
           :padding="6"
-          :placeholder="`Nhập ghi chú (cho ${handleElementId ? 'phần tử đang chọn' : 'slide hiện tại' })`"
+          :placeholder="`Add a note (for ${handleElementId ? 'the selected element' : 'this slide' })`"
           :rows="2"
           @focus="replyNoteId = ''; activeNoteId = ''"
           @enter.prevent="createNote()"
         />
         <div class="footer">
-          <i-icon-park-outline:delete class="btn icon" v-tooltip="'Xoá ghi chú của slide này'" style="flex: 1" @click="clear()" />
-          <Button type="primary" class="btn" style="flex: 12" @click="createNote()"><i-icon-park-outline:plus /> Thêm ghi chú</Button>
+          <i-icon-park-outline:delete class="btn icon" v-tooltip="'Clear notes on this slide'" style="flex: 1" @click="clear()" />
+          <Button type="primary" class="btn" style="flex: 12" @click="createNote()"><i-icon-park-outline:plus /> Add note</Button>
         </div>
       </div>
     </div>
@@ -121,7 +121,7 @@ const createNote = () => {
     id: nanoid(),
     content: content.value,
     time: new Date().getTime(),
-    user: 'Người dùng',
+    user: 'User',
   }
   if (handleElementId.value) newNote.elId = handleElementId.value
 
@@ -153,7 +153,7 @@ const createNoteReply = () => {
       id: nanoid(),
       content: replyContent.value,
       time: new Date().getTime(),
-      user: 'Người dùng',
+      user: 'User',
     },
   ]
   const newNote: Note = {

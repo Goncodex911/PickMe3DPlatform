@@ -54,7 +54,7 @@ const { createTextElement } = useCreateElement()
 
 const poolRef = useTemplateRef<HTMLElement>('poolRef')
 const selectedSymbolKey = ref(SYMBOL_LIST[0].key)
-const emojiTypeList = ref(['Cảm xúc', 'Hành động', 'Động thực vật', 'Đồ ăn', 'Du lịch', 'Hoạt động', 'Đồ vật', 'Ký hiệu'])
+const emojiTypeList = ref(['Smileys', 'Gestures', 'Animals & nature', 'Food', 'Travel', 'Activities', 'Objects', 'Symbols'])
 const selectedEmojiTypeIndex = ref(0)
 const symbolPool = computed(() => {
   const selectedSymbol = SYMBOL_LIST.find(item => item.key === selectedSymbolKey.value)

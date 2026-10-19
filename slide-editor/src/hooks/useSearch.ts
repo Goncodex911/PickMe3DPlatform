@@ -83,7 +83,7 @@ export default () => {
       highlightCurrentSlide()
     }
     else {
-      message.warning('Không tìm thấy kết quả')
+      message.warning('No matches found')
       clearMarks()
     }
   }
@@ -229,7 +229,7 @@ export default () => {
   }
   
   const searchNext = () => {
-    if (!searchWord.value) return message.warning('Hãy nhập nội dung cần tìm')
+    if (!searchWord.value) return message.warning('Please enter text to find')
     mainStore.setActiveElementIdList([])
     if (searchIndex.value === -1) search()
     else if (searchIndex.value < searchResults.value.length - 1) searchIndex.value += 1
@@ -238,7 +238,7 @@ export default () => {
   }
   
   const searchPrev = () => {
-    if (!searchWord.value) return message.warning('Hãy nhập nội dung cần tìm')
+    if (!searchWord.value) return message.warning('Please enter text to find')
     mainStore.setActiveElementIdList([])
     if (searchIndex.value === -1) search()
     else if (searchIndex.value > 0) searchIndex.value -= 1

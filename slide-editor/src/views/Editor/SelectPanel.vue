@@ -3,15 +3,15 @@
     class="select-panel" 
     :width="200" 
     :height="360" 
-    :title="`Chọn (${activeElementIdList.length}/${currentSlide.elements.length})`" 
+    :title="`Selection (${activeElementIdList.length}/${currentSlide.elements.length})`" 
     :left="-270" 
     :top="90"
     @close="close()"
   >
     <div class="handler" v-if="elements.length">
       <div class="btns">
-        <Button size="small" style="margin-right: 5px;" @click="showAllElements()">Hiện tất cả</Button>
-        <Button size="small" @click="hideAllElements()">Ẩn tất cả</Button>
+        <Button size="small" style="margin-right: 5px;" @click="showAllElements()">Show all</Button>
+        <Button size="small" @click="hideAllElements()">Hide all</Button>
       </div>
       <div class="icon-btns" v-if="handleElement">
         <span class="icon-btn" @click="orderElement(handleElement!, ElementOrderCommands.UP)"><i-icon-park-outline:down /></span>
@@ -21,7 +21,7 @@
     <div class="element-list" v-if="elements.length">
       <template v-for="item in elements" :key="item.id">
         <div class="group-els" v-if="item.type === 'group'">
-          <div class="group-title">Nhóm</div>
+          <div class="group-title">Group</div>
           <div 
             class="item" 
             :class="{
@@ -81,7 +81,7 @@
         </div>
       </template>
     </div>
-    <div class="empty" v-if="!elements.length">Slide này chưa có nội dung</div>
+    <div class="empty" v-if="!elements.length">This slide is empty</div>
   </MoveablePanel>
 </template>
 

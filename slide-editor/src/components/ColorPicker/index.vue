@@ -62,7 +62,7 @@
       ></div>
     </div>
 
-    <div class="recent-colors-title" v-if="recentColors.length">Dùng gần đây:</div>
+    <div class="recent-colors-title" v-if="recentColors.length">Recently used:</div>
     <div class="picker-presets">
       <div
         class="picker-presets-color alpha"
@@ -217,7 +217,7 @@ const openEyeDropper = () => {
 
 // 原生取色吸管
 const browserEyeDropper = () => {
-  message.success('Nhấn ESC để đóng ống hút màu', { duration: 0 })
+  message.success('Press ESC to close the eyedropper', { duration: 0 })
 
   // eslint-disable-next-line
   const eyeDropper = new (window as any).EyeDropper()
@@ -302,7 +302,7 @@ const customEyeDropper = () => {
     canvasRef.addEventListener('mouseleave', handleMouseleave)
     window.addEventListener('mousedown', handleMousedown)
   }).catch(() => {
-    message.error('Không khởi động được ống hút màu')
+    message.error('Could not start the eyedropper')
     document.body.removeChild(maskRef)
   })
 }

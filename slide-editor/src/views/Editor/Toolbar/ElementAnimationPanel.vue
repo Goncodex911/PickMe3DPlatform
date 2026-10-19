@@ -43,12 +43,12 @@
           </template>
         </template>
         <Button class="element-animation-btn" @click="handleAnimationId = ''">
-          <i-icon-park-outline:effects /> Thêm hiệu ứng
+          <i-icon-park-outline:effects /> Add animation
         </Button>
       </Popover>
     </div>
 
-    <div class="tip" v-else><i-icon-park-outline:click style="margin-right: 5px;" /> Chọn một phần tử trên khung vẽ để thêm hiệu ứng</div>
+    <div class="tip" v-else><i-icon-park-outline:click style="margin-right: 5px;" /> Select an element on the canvas to add an animation</div>
     
     <Divider />
 
@@ -68,8 +68,8 @@
             <div class="index">{{element.index}}</div>
             <div class="text">“{{element.elType}}” {{element.animationEffect}}</div>
             <div class="handler">
-              <i-icon-park-outline:play-one class="handler-btn" v-tooltip="'Xem trước'" @click.stop="runAnimation(element.elId, element.effect, element.duration)" />
-              <i-icon-park-outline:close-small class="handler-btn" v-tooltip="'Xoá'" @click.stop="deleteAnimation(element.id)" />
+              <i-icon-park-outline:play-one class="handler-btn" v-tooltip="'Preview'" @click.stop="runAnimation(element.elId, element.effect, element.duration)" />
+              <i-icon-park-outline:close-small class="handler-btn" v-tooltip="'Delete'" @click.stop="deleteAnimation(element.id)" />
             </div>
           </div>
 
@@ -77,7 +77,7 @@
             <Divider :margin="16" />
 
             <div class="config-item">
-              <div style="width: 35%;">Thời lượng:</div>
+              <div style="width: 35%;">Duration:</div>
               <NumberInput 
                 :min="500"
                 :max="3000"
@@ -88,20 +88,20 @@
               />
             </div>
             <div class="config-item">
-              <div style="width: 35%;">Kích hoạt:</div>
+              <div style="width: 35%;">Trigger:</div>
               <Select
                 :value="element.trigger"
                 @update:value="value => updateElementAnimationTrigger(element.id, value as AnimationTrigger)"
                 style="width: 65%;"
                 :options="[
-                  { label: 'Khi bấm', value: 'click' },
-                  { label: 'Cùng hiệu ứng trước', value: 'meantime' },
-                  { label: 'Sau hiệu ứng trước', value: 'auto' },
+                  { label: 'On click', value: 'click' },
+                  { label: 'With previous', value: 'meantime' },
+                  { label: 'After previous', value: 'auto' },
                 ]"
               />
             </div>
             <div class="config-item">
-              <Button style="width: 100%;" @click="openAnimationPool(element.id)"><i-icon-park-outline:switch /> Đổi hiệu ứng</Button>
+              <Button style="width: 100%;" @click="openAnimationPool(element.id)"><i-icon-park-outline:switch /> Change animation</Button>
             </div>
           </div>
         </div>
@@ -111,7 +111,7 @@
     <template v-if="animationSequence.length >= 2">
       <Divider />
       <Button @click="runAllAnimation()">
-        <i-icon-park-outline:pause v-if="animateIn" /><i-icon-park-outline:play-one v-else /> {{ animateIn ? 'Dừng xem trước' : 'Xem trước tất cả'}}
+        <i-icon-park-outline:pause v-if="animateIn" /><i-icon-park-outline:play-one v-else /> {{ animateIn ? 'Stop preview' : 'Preview all'}}
       </Button>
     </template>
   </div>
@@ -173,9 +173,9 @@ const { handleElement, handleElementId } = storeToRefs(useMainStore())
 const { currentSlide, formatedAnimations, currentSlideAnimations } = storeToRefs(slidesStore)
 
 const tabs: TabItem[] = [
-  { key: 'in', label: 'Xuất hiện', color: '#68a490' },
-  { key: 'out', label: 'Biến mất', color: '#d86344' },
-  { key: 'attention', label: 'Nhấn mạnh', color: '#e8b76a' },
+  { key: 'in', label: 'Entrance', color: '#68a490' },
+  { key: 'out', label: 'Exit', color: '#d86344' },
+  { key: 'attention', label: 'Emphasis', color: '#e8b76a' },
 ]
 const activeTab = ref('in')
 const animateIn = ref(false)

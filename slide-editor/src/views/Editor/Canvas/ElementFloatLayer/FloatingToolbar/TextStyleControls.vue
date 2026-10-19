@@ -3,7 +3,7 @@
     class="font-select"
     :value="richTextAttrs.fontname"
     search
-    searchLabel="Tìm font"
+    searchLabel="Search fonts"
     @update:value="value => emitRichTextCommand('fontname', value as string)"
     :options="FONTS"
   />
@@ -11,7 +11,7 @@
     class="fontsize-select"
     :value="richTextAttrs.fontsize"
     search
-    searchLabel="Tìm cỡ chữ"
+    searchLabel="Search sizes"
     @update:value="value => emitRichTextCommand('fontsize', value as string)"
     :options="fontSizeOptions.map(item => ({ label: item, value: item }))"
   />

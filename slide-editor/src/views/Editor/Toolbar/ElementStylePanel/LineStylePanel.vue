@@ -1,7 +1,7 @@
 <template>
   <div class="line-style-panel">
     <div class="title">
-      <span>Bấm để đổi loại đường</span>
+      <span>Click to change the line type</span>
       <i-icon-park-outline:down />
     </div>
     <div class="line-pool-wrapper">
@@ -49,7 +49,7 @@
     </div>
 
     <div class="row">
-      <div style="width: 40%;">Kiểu đường:</div>
+      <div style="width: 40%;">Line style:</div>
       <SelectCustom style="width: 60%;">
         <template #options>
           <div class="option" v-for="item in lineStyleOptions" :key="item" @click="updateLine({ style: item })">
@@ -62,7 +62,7 @@
       </SelectCustom>
     </div>
     <div class="row">
-      <div style="width: 40%;">Màu đường:</div>
+      <div style="width: 40%;">Line color:</div>
       <Popover trigger="click" style="width: 60%;">
         <template #content>
           <ColorPicker
@@ -74,7 +74,7 @@
       </Popover>
     </div>
     <div class="row">
-      <div style="width: 40%;">Độ dày đường:</div>
+      <div style="width: 40%;">Line width:</div>
       <NumberInput 
         :value="handleLineElement.width" 
         @update:value="value => updateLine({ width: value })" 
@@ -83,7 +83,7 @@
     </div>
     
     <div class="row">
-      <div style="width: 40%;">Kiểu điểm đầu:</div>
+      <div style="width: 40%;">Start style:</div>
       <SelectCustom style="width: 60%;">
         <template #options>
           <div class="option" v-for="item in lineMarkerOptions" :key="item" @click="updateLine({ points: [item, handleLineElement.points[1]] })">
@@ -96,7 +96,7 @@
       </SelectCustom>
     </div>
     <div class="row">
-      <div style="width: 40%;">Kiểu điểm cuối:</div>
+      <div style="width: 40%;">End style:</div>
       <SelectCustom style="width: 60%;">
         <template #options>
           <div class="option" v-for="item in lineMarkerOptions" :key="item" @click="updateLine({ points: [handleLineElement.points[0], item] })">
@@ -110,7 +110,7 @@
     </div>
 
     <div class="row" v-if="handleLineElement.broken2">
-      <div style="width: 40%;">Hướng đường:</div>
+      <div style="width: 40%;">Direction:</div>
       <Select 
         style="width: 60%;"
         :value="handleLineElement.broken2Direction || 'auto'"
@@ -122,7 +122,7 @@
     <Divider />
 
     <div class="row">
-      <Button style="flex: 1;" @click="updateLine({ start: handleLineElement.end, end: handleLineElement.start })"><i-icon-park-outline:switch /> Đảo hướng</Button>
+      <Button style="flex: 1;" @click="updateLine({ start: handleLineElement.end, end: handleLineElement.start })"><i-icon-park-outline:switch /> Swap direction</Button>
     </div>
 
     <Divider />
@@ -160,9 +160,9 @@ const lineStyleOptions = ref<LineStyleType[]>(['solid', 'dashed', 'dotted'])
 const lineMarkerOptions = ref<LinePoint[]>(['', 'arrow', 'dot'])
 
 const lineBroken2DirectionOptions = ref<{ label: string; value: Broken2LineDirection | 'auto' }[]>([
-  { label: 'Tự động', value: 'auto' },
-  { label: 'Ngang', value: 'horizontal' },
-  { label: 'Dọc', value: 'vertical' },
+  { label: 'Auto', value: 'auto' },
+  { label: 'Horizontal', value: 'horizontal' },
+  { label: 'Vertical', value: 'vertical' },
 ])
 interface LineTypeOption {
   key: string

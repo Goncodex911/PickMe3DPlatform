@@ -1,7 +1,7 @@
 <template>
   <div class="shape-style-panel">
     <div class="title">
-      <span>Bấm để đổi hình</span>
+      <span>Click to change the shape</span>
       <i-icon-park-outline:down />
     </div>
     <div class="shape-pool">
@@ -24,9 +24,9 @@
         :value="fillType" 
         @update:value="value => updateFillType(value as 'fill' | 'gradient' | 'pattern')"
         :options="[
-          { label: 'Tô màu đơn', value: 'fill' },
-          { label: 'Tô chuyển sắc', value: 'gradient' },
-          { label: 'Tô bằng ảnh', value: 'pattern' },
+          { label: 'Solid fill', value: 'fill' },
+          { label: 'Gradient fill', value: 'gradient' },
+          { label: 'Image fill', value: 'pattern' },
         ]"
       />
       <div style="width: 10px;" v-if="fillType !== 'pattern'"></div>
@@ -45,8 +45,8 @@
         @update:value="value => updateGradient({ type: value as GradientType })"
         v-else-if="fillType === 'gradient'"
         :options="[
-          { label: 'Chuyển sắc tuyến tính', value: 'linear' },
-          { label: 'Chuyển sắc toả tròn', value: 'radial' },
+          { label: 'Linear gradient', value: 'linear' },
+          { label: 'Radial gradient', value: 'radial' },
         ]"
       />
     </div>
@@ -61,7 +61,7 @@
         />
       </div>
       <div class="row">
-        <div style="width: 40%;">Điểm màu:</div>
+        <div style="width: 40%;">Color stop:</div>
         <Popover trigger="click" style="width: 60%;">
           <template #content>
             <ColorPicker
@@ -73,7 +73,7 @@
         </Popover>
       </div>
       <div class="row" v-if="gradient.type === 'linear'">
-        <div style="width: 40%;">Góc chuyển sắc:</div>
+        <div style="width: 40%;">Gradient angle:</div>
         <Slider
           style="width: 60%;"
           :min="0"
@@ -106,7 +106,7 @@
       <Divider />
 
       <div class="row">
-        <div style="width: 40%;">Giãn dòng:</div>
+        <div style="width: 40%;">Line spacing:</div>
         <Select style="width: 60%;"
           :value="lineHeight || 1"
           @update:value="value => updateTextProps({ lineHeight: value as number })"
@@ -120,7 +120,7 @@
         </Select>
       </div>
       <div class="row">
-        <div style="width: 40%;">Giãn đoạn:</div>
+        <div style="width: 40%;">Paragraph spacing:</div>
         <Select style="width: 60%;"
           :value="paragraphSpace || 0"
           @update:value="value => updateTextProps({ paragraphSpace: value as number })"
@@ -134,7 +134,7 @@
         </Select>
       </div>
       <div class="row">
-        <div style="width: 40%;">Giãn chữ:</div>
+        <div style="width: 40%;">Letter spacing:</div>
         <Select style="width: 60%;"
           :value="wordSpace || 0"
           @update:value="value => updateTextProps({ wordSpace: value as number })"
@@ -158,7 +158,7 @@
           @update:value="value => updateInset(0, value)"
           style="width: 45%;"
         >
-          <template #prefix>Lề trên:</template>
+          <template #prefix>Top padding:</template>
         </NumberInput>
         <div style="width: 10%;"></div>
         <NumberInput
@@ -168,7 +168,7 @@
           @update:value="value => updateInset(2, value)"
           style="width: 45%;"
         >
-          <template #prefix>Lề dưới:</template>
+          <template #prefix>Bottom padding:</template>
         </NumberInput>
       </div>
       <div class="row">
@@ -179,7 +179,7 @@
           @update:value="value => updateInset(3, value)"
           style="width: 45%;"
         >
-          <template #prefix>Lề trái:</template>
+          <template #prefix>Left padding:</template>
         </NumberInput>
         <div style="width: 10%;"></div>
         <NumberInput
@@ -189,7 +189,7 @@
           @update:value="value => updateInset(1, value)"
           style="width: 45%;"
         >
-          <template #prefix>Lề phải:</template>
+          <template #prefix>Right padding:</template>
         </NumberInput>
       </div>
 
@@ -201,9 +201,9 @@
         :value="textAlign"
         @update:value="value => updateTextProps({ align: value as 'top' | 'middle' | 'bottom' })"
       >
-        <RadioButton value="top" v-tooltip="'Căn trên'" style="flex: 1;"><i-icon-park-outline:align-text-top-one /></RadioButton>
-        <RadioButton value="middle" v-tooltip="'Căn giữa dọc'" style="flex: 1;"><i-icon-park-outline:align-text-middle-one /></RadioButton>
-        <RadioButton value="bottom" v-tooltip="'Căn dưới'" style="flex: 1;"><i-icon-park-outline:align-text-bottom-one /></RadioButton>
+        <RadioButton value="top" v-tooltip="'Align top'" style="flex: 1;"><i-icon-park-outline:align-text-top-one /></RadioButton>
+        <RadioButton value="middle" v-tooltip="'Center vertically'" style="flex: 1;"><i-icon-park-outline:align-text-middle-one /></RadioButton>
+        <RadioButton value="bottom" v-tooltip="'Align bottom'" style="flex: 1;"><i-icon-park-outline:align-text-bottom-one /></RadioButton>
       </RadioGroup>
 
       <Divider />
@@ -218,12 +218,12 @@
 
     <div class="row">
       <CheckboxButton
-        v-tooltip="'Bấm đúp để dùng liên tục'"
+        v-tooltip="'Double-click to keep using'"
         style="flex: 1;"
         :checked="!!shapeFormatPainter"
         @click="toggleShapeFormatPainter()"
         @dblclick="toggleShapeFormatPainter(true)"
-      ><i-icon-park-outline:format-brush /> Chổi định dạng hình</CheckboxButton>
+      ><i-icon-park-outline:format-brush /> Shape format painter</CheckboxButton>
     </div>
   </div>
 </template>

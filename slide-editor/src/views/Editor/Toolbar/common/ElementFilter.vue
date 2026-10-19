@@ -1,7 +1,7 @@
 <template>
   <div class="element-filter">
     <div class="row">
-      <div style="flex: 2;">Bật bộ lọc:</div>
+      <div style="flex: 2;">Filters:</div>
       <div class="switch-wrapper" style="flex: 3;">
         <Switch 
           :value="hasFilters" 
@@ -54,30 +54,30 @@ interface FilterOption {
 }
 
 const defaultFilters: FilterOption[] = [
-  { label: 'Làm mờ', key: 'blur', default: 0, value: 0, unit: 'px', max: 10, step: 1 },
-  { label: 'Độ sáng', key: 'brightness', default: 100, value: 100, unit: '%', max: 200, step: 5 },
-  { label: 'Độ tương phản', key: 'contrast', default: 100, value: 100, unit: '%', max: 200, step: 5 },
-  { label: 'Thang xám', key: 'grayscale', default: 0, value: 0, unit: '%', max: 100, step: 5 },
-  { label: 'Độ bão hoà', key: 'saturate', default: 100, value: 100, unit: '%', max: 200, step: 5 },
-  { label: 'Sắc độ', key: 'hue-rotate', default: 0, value: 0, unit: 'deg', max: 360, step: 10 },
-  { label: 'Nâu cổ điển', key: 'sepia', default: 0, value: 0, unit: '%', max: 100, step: 5 },
-  { label: 'Đảo màu', key: 'invert', default: 0, value: 0, unit: '%', max: 100, step: 5 },
-  { label: 'Độ đục', key: 'opacity', default: 100, value: 100, unit: '%', max: 100, step: 5 },
+  { label: 'Blur', key: 'blur', default: 0, value: 0, unit: 'px', max: 10, step: 1 },
+  { label: 'Brightness', key: 'brightness', default: 100, value: 100, unit: '%', max: 200, step: 5 },
+  { label: 'Contrast', key: 'contrast', default: 100, value: 100, unit: '%', max: 200, step: 5 },
+  { label: 'Grayscale', key: 'grayscale', default: 0, value: 0, unit: '%', max: 100, step: 5 },
+  { label: 'Saturation', key: 'saturate', default: 100, value: 100, unit: '%', max: 200, step: 5 },
+  { label: 'Hue', key: 'hue-rotate', default: 0, value: 0, unit: 'deg', max: 360, step: 10 },
+  { label: 'Sepia', key: 'sepia', default: 0, value: 0, unit: '%', max: 100, step: 5 },
+  { label: 'Invert', key: 'invert', default: 0, value: 0, unit: '%', max: 100, step: 5 },
+  { label: 'Opacity', key: 'opacity', default: 100, value: 100, unit: '%', max: 100, step: 5 },
 ]
 
 const presetFilters: {
   label: string
   values: ImageElementFilters
 }[] = [
-  { label: 'Đen trắng', values: { 'grayscale': '100%' } },
-  { label: 'Cổ điển', values: { 'sepia': '50%', 'contrast': '110%', 'brightness': '90%' } },
-  { label: 'Làm nét', values: { 'contrast': '150%' } },
-  { label: 'Dịu nhẹ', values: { 'brightness': '110%', 'contrast': '90%' } },
-  { label: 'Tông ấm', values: { 'sepia': '30%', 'saturate': '135%' } },
-  { label: 'Sáng sủa', values: { 'brightness': '110%', 'contrast': '110%' } },
-  { label: 'Rực rỡ', values: { 'saturate': '200%' } },
-  { label: 'Làm mờ', values: { 'blur': '2px' } },
-  { label: 'Đảo màu', values: { 'invert': '100%' } },
+  { label: 'Black & white', values: { 'grayscale': '100%' } },
+  { label: 'Vintage', values: { 'sepia': '50%', 'contrast': '110%', 'brightness': '90%' } },
+  { label: 'Sharpen', values: { 'contrast': '150%' } },
+  { label: 'Soft', values: { 'brightness': '110%', 'contrast': '90%' } },
+  { label: 'Warm', values: { 'sepia': '30%', 'saturate': '135%' } },
+  { label: 'Bright', values: { 'brightness': '110%', 'contrast': '110%' } },
+  { label: 'Vivid', values: { 'saturate': '200%' } },
+  { label: 'Blur', values: { 'blur': '2px' } },
+  { label: 'Invert', values: { 'invert': '100%' } },
 ]
 
 const slidesStore = useSlidesStore()

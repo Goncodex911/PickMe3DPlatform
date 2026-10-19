@@ -7,27 +7,27 @@
     />
 
     <template v-if="type === 'video'">
-      <Input v-model:value="videoSrc" placeholder="Nhập địa chỉ video,e.g. https://xxx.mp4"></Input>
+      <Input v-model:value="videoSrc" placeholder="Enter a video URL, e.g. https://xxx.mp4"></Input>
       <div class="btns">
         <FileInput accept="video/*" @change="files => uploadVideo(files)">
-          <Button><i-icon-park-outline:upload /> Tải video từ máy</Button>
+          <Button><i-icon-park-outline:upload /> Upload video</Button>
         </FileInput>
         <div class="group">
-          <Button @click="emit('close')" style="margin-right: 10px;">Huỷ</Button>
-          <Button type="primary" @click="insertVideo()">Xác nhận</Button>
+          <Button @click="emit('close')" style="margin-right: 10px;">Cancel</Button>
+          <Button type="primary" @click="insertVideo()">Confirm</Button>
         </div>
       </div>
     </template>
 
     <template v-if="type === 'audio'">
-      <Input v-model:value="audioSrc" placeholder="Nhập địa chỉ âm thanh,e.g. https://xxx.mp3"></Input>
+      <Input v-model:value="audioSrc" placeholder="Enter an audio URL, e.g. https://xxx.mp3"></Input>
       <div class="btns">
         <FileInput accept="audio/*" @change="files => uploadAudio(files)">
-          <Button><i-icon-park-outline:upload /> Tải âm thanh từ máy</Button>
+          <Button><i-icon-park-outline:upload /> Upload audio</Button>
         </FileInput>
         <div class="group">
-          <Button @click="emit('close')" style="margin-right: 10px;">Huỷ</Button>
-          <Button type="primary" @click="insertAudio()">Xác nhận</Button>
+          <Button @click="emit('close')" style="margin-right: 10px;">Cancel</Button>
+          <Button type="primary" @click="insertAudio()">Confirm</Button>
         </div>
       </div>
     </template>
@@ -62,16 +62,16 @@ const audioSrc = ref('https://freesound.org/data/previews/614/614107_11861866-lq
 
 const tabs: TabItem[] = [
   { key: 'video', label: 'Video' },
-  { key: 'audio', label: 'Âm thanh' },
+  { key: 'audio', label: 'Audio' },
 ]
 
 const insertVideo = () => {
-  if (!videoSrc.value) return message.error('Hãy nhập địa chỉ video hợp lệ')
+  if (!videoSrc.value) return message.error('Please enter a valid video URL')
   emit('insertVideo', { src: videoSrc.value })
 }
 
 const insertAudio = () => {
-  if (!audioSrc.value) return message.error('Hãy nhập địa chỉ âm thanh hợp lệ')
+  if (!audioSrc.value) return message.error('Please enter a valid audio URL')
   emit('insertAudio', { src: audioSrc.value })
 }
 

@@ -5,7 +5,7 @@
         style="width: 50%;"
         :value="textAttrs.fontname"
         search
-        searchLabel="Tìm font"
+        searchLabel="Search fonts"
         autofocus
         @update:value="value => updateTextAttrs({ fontname: value as string })"
         :options="FONTS"
@@ -18,7 +18,7 @@
         style="width: 50%;"
         :value="textAttrs.fontsize"
         search
-        searchLabel="Tìm cỡ chữ"
+        searchLabel="Search sizes"
         autofocus
         @update:value="value => updateTextAttrs({ fontsize: value as string })"
         :options="fontSizeOptions.map(item => ({
@@ -39,7 +39,7 @@
             @update:modelValue="value => updateTextAttrs({ color: value })"
           />
         </template>
-        <TextColorButton first v-tooltip="'Màu chữ'" :color="textAttrs.color">
+        <TextColorButton first v-tooltip="'Text color'" :color="textAttrs.color">
           <i-icon-park-outline:text />
         </TextColorButton>
       </Popover>
@@ -50,7 +50,7 @@
             @update:modelValue="value => updateTextAttrs({ backcolor: value })"
           />
         </template>
-        <TextColorButton last v-tooltip="'Màu nền ô'" :color="textAttrs.backcolor">
+        <TextColorButton last v-tooltip="'Cell fill'" :color="textAttrs.backcolor">
           <i-icon-park-outline:fill />
         </TextColorButton>
       </Popover>
@@ -60,25 +60,25 @@
       <CheckboxButton 
         style="flex: 1;"
         :checked="textAttrs.bold"
-        v-tooltip="'In đậm'"
+        v-tooltip="'Bold'"
         @click="updateTextAttrs({ bold: !textAttrs.bold })"
       ><i-icon-park-outline:text-bold /></CheckboxButton>
       <CheckboxButton 
         style="flex: 1;"
         :checked="textAttrs.em"
-        v-tooltip="'In nghiêng'"
+        v-tooltip="'Italic'"
         @click="updateTextAttrs({ em: !textAttrs.em })"
       ><i-icon-park-outline:text-italic /></CheckboxButton>
       <CheckboxButton 
         style="flex: 1;"
         :checked="textAttrs.underline"
-        v-tooltip="'Gạch chân'"
+        v-tooltip="'Underline'"
         @click="updateTextAttrs({ underline: !textAttrs.underline })"
       ><i-icon-park-outline:text-underline /></CheckboxButton>
       <CheckboxButton 
         style="flex: 1;"
         :checked="textAttrs.strikethrough"
-        v-tooltip="'Gạch ngang'"
+        v-tooltip="'Strikethrough'"
         @click="updateTextAttrs({ strikethrough: !textAttrs.strikethrough })"
       ><i-icon-park-outline:strikethrough /></CheckboxButton>
     </ButtonGroup>
@@ -89,10 +89,10 @@
       :value="textAttrs.align"
       @update:value="value => updateTextAttrs({ align: value as TextAlign })"
     >
-      <RadioButton value="left" v-tooltip="'Căn trái'" style="flex: 1;"><i-icon-park-outline:align-text-left /></RadioButton>
-      <RadioButton value="center" v-tooltip="'Căn giữa'" style="flex: 1;"><i-icon-park-outline:align-text-center /></RadioButton>
-      <RadioButton value="right" v-tooltip="'Căn phải'" style="flex: 1;"><i-icon-park-outline:align-text-right /></RadioButton>
-      <RadioButton value="justify" v-tooltip="'Căn đều hai bên'" style="flex: 1;"><i-icon-park-outline:align-text-both /></RadioButton>
+      <RadioButton value="left" v-tooltip="'Align left'" style="flex: 1;"><i-icon-park-outline:align-text-left /></RadioButton>
+      <RadioButton value="center" v-tooltip="'Center'" style="flex: 1;"><i-icon-park-outline:align-text-center /></RadioButton>
+      <RadioButton value="right" v-tooltip="'Align right'" style="flex: 1;"><i-icon-park-outline:align-text-right /></RadioButton>
+      <RadioButton value="justify" v-tooltip="'Justify'" style="flex: 1;"><i-icon-park-outline:align-text-both /></RadioButton>
     </RadioGroup>
 
     <RadioGroup 
@@ -101,9 +101,9 @@
       :value="textAttrs.vAlign"
       @update:value="value => updateTextAttrs({ vAlign: value as TextAlignVertical })"
     >
-      <RadioButton value="top" v-tooltip="'Căn trên'" style="flex: 1;"><i-icon-park-outline:align-text-top-one /></RadioButton>
-      <RadioButton value="middle" v-tooltip="'Căn giữa dọc'" style="flex: 1;"><i-icon-park-outline:align-text-middle-one /></RadioButton>
-      <RadioButton value="bottom" v-tooltip="'Căn dưới'" style="flex: 1;"><i-icon-park-outline:align-text-bottom-one /></RadioButton>
+      <RadioButton value="top" v-tooltip="'Align top'" style="flex: 1;"><i-icon-park-outline:align-text-top-one /></RadioButton>
+      <RadioButton value="middle" v-tooltip="'Center vertically'" style="flex: 1;"><i-icon-park-outline:align-text-middle-one /></RadioButton>
+      <RadioButton value="bottom" v-tooltip="'Align bottom'" style="flex: 1;"><i-icon-park-outline:align-text-bottom-one /></RadioButton>
     </RadioGroup>
 
     <Divider />
@@ -113,28 +113,28 @@
     <Divider />
 
     <div class="row">
-      <div style="width: 40%;">Hàng:</div>
+      <div style="width: 40%;">Rows:</div>
       <ButtonGroup style="width: 60%;" passive>
-        <Button first style="flex: 1;" @click="emitTableCommand('insert-row', 'after')">Thêm hàng</Button>
+        <Button first style="flex: 1;" @click="emitTableCommand('insert-row', 'after')">Add row</Button>
         <Popover trigger="click">
           <template #content>
-            <PopoverMenuItem center @click="emitTableCommand('insert-row', 'before')">Thêm phía trên</PopoverMenuItem>
-            <PopoverMenuItem center @click="emitTableCommand('insert-row', 'after')">Thêm phía dưới</PopoverMenuItem>
-            <PopoverMenuItem center @click="emitTableCommand('delete-row')">Xoá hàng</PopoverMenuItem>
+            <PopoverMenuItem center @click="emitTableCommand('insert-row', 'before')">Add above</PopoverMenuItem>
+            <PopoverMenuItem center @click="emitTableCommand('insert-row', 'after')">Add below</PopoverMenuItem>
+            <PopoverMenuItem center @click="emitTableCommand('delete-row')">Delete row</PopoverMenuItem>
           </template>
           <Button last class="popover-btn"><i-icon-park-outline:down /></Button>
         </Popover>
       </ButtonGroup>
     </div>
     <div class="row">
-      <div style="width: 40%;">Cột:</div>
+      <div style="width: 40%;">Columns:</div>
       <ButtonGroup style="width: 60%;" passive>
-        <Button first style="flex: 1;" @click="emitTableCommand('insert-col', 'after')">Thêm cột</Button>
+        <Button first style="flex: 1;" @click="emitTableCommand('insert-col', 'after')">Add column</Button>
         <Popover trigger="click">
           <template #content>
-            <PopoverMenuItem center @click="emitTableCommand('insert-col', 'before')">Thêm bên trái</PopoverMenuItem>
-            <PopoverMenuItem center @click="emitTableCommand('insert-col', 'after')">Thêm bên phải</PopoverMenuItem>
-            <PopoverMenuItem center @click="emitTableCommand('delete-col')">Xoá cột</PopoverMenuItem>
+            <PopoverMenuItem center @click="emitTableCommand('insert-col', 'before')">Add left</PopoverMenuItem>
+            <PopoverMenuItem center @click="emitTableCommand('insert-col', 'after')">Add right</PopoverMenuItem>
+            <PopoverMenuItem center @click="emitTableCommand('delete-col')">Delete column</PopoverMenuItem>
           </template>
           <Button last class="popover-btn"><i-icon-park-outline:down /></Button>
         </Popover>
@@ -144,7 +144,7 @@
     <Divider />
 
     <div class="row theme-switch">
-      <div style="width: 40%;">Dùng bảng theo chủ đề:</div>
+      <div style="width: 40%;">Themed table:</div>
       <div class="switch-wrapper" style="width: 60%;">
         <Switch 
           :value="hasTheme" 
@@ -159,27 +159,27 @@
           @update:value="value => updateTheme({ rowHeader: value })" 
           :value="theme.rowHeader" 
           style="flex: 1;"
-        >Hàng tiêu đề</Checkbox>
+        >Header row</Checkbox>
         <Checkbox 
           @update:value="value => updateTheme({ rowFooter: value })" 
           :value="theme.rowFooter" 
           style="flex: 1;"
-        >Hàng tổng</Checkbox>
+        >Total row</Checkbox>
       </div>
       <div class="row">
         <Checkbox 
           @update:value="value => updateTheme({ colHeader: value })" 
           :value="theme.colHeader" 
           style="flex: 1;"
-        >Cột đầu</Checkbox>
+        >First column</Checkbox>
         <Checkbox 
           @update:value="value => updateTheme({ colFooter: value })" 
           :value="theme.colFooter" 
           style="flex: 1;"
-        >Cột cuối</Checkbox>
+        >Last column</Checkbox>
       </div>
       <div class="row">
-        <div style="width: 40%;">Màu chủ đề:</div>
+        <div style="width: 40%;">Theme color:</div>
         <Popover trigger="click" style="width: 60%;">
           <template #content>
             <ColorPicker

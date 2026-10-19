@@ -2,18 +2,18 @@
   <div class="export-pptist-dialog">
     <div class="configs">
       <div class="row">
-        <div class="title">Phạm vi xuất:</div>
+        <div class="title">Range:</div>
         <RadioGroup
           class="config-item"
           v-model:value="rangeType"
         >
-          <RadioButton style="width: 33.33%;" value="all">Tất cả</RadioButton>
-          <RadioButton style="width: 33.33%;" value="current">Slide hiện tại</RadioButton>
-          <RadioButton style="width: 33.33%;" value="custom">Tuỳ chỉnh</RadioButton>
+          <RadioButton style="width: 33.33%;" value="all">All</RadioButton>
+          <RadioButton style="width: 33.33%;" value="current">Current slide</RadioButton>
+          <RadioButton style="width: 33.33%;" value="custom">Custom</RadioButton>
         </RadioGroup>
       </div>
       <div class="row" v-if="rangeType === 'custom'">
-        <div class="title" :data-range="`(${range[0]} ~ ${range[1]})`">Phạm vi tuỳ chọn:</div>
+        <div class="title" :data-range="`(${range[0]} ~ ${range[1]})`">Custom range:</div>
         <Slider
           class="config-item"
           range
@@ -24,12 +24,12 @@
         />
       </div>
       <div class="tip">
-        Lưu ý: .pptist là định dạng riêng của ứng dụng, có thể nhập lại vào ứng dụng.
+        Note: .pptist is this app's own format and can be imported back into the app.
       </div>
     </div>
     <div class="btns">
-      <Button class="btn export" type="primary" @click="exportSpecificFile(selectedSlides)"><i-icon-park-outline:download /> Xuất file PPTIST</Button>
-      <Button class="btn close" @click="emit('close')">Đóng</Button>
+      <Button class="btn export" type="primary" @click="exportSpecificFile(selectedSlides)"><i-icon-park-outline:download /> Export PPTIST file</Button>
+      <Button class="btn close" @click="emit('close')">Close</Button>
     </div>
   </div>
 </template>

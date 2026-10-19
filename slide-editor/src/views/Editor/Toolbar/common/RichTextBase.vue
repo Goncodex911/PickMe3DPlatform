@@ -5,7 +5,7 @@
         style="width: 60%;"
         :value="richTextAttrs.fontname"
         search
-        searchLabel="Tìm font"
+        searchLabel="Search fonts"
         autofocus
         @update:value="value => emitRichTextCommand('fontname', value as string)"
         :options="FONTS"
@@ -18,7 +18,7 @@
         style="width: 40%;"
         :value="richTextAttrs.fontsize"
         search
-        searchLabel="Tìm cỡ chữ"
+        searchLabel="Search sizes"
         autofocus
         @update:value="value => emitRichTextCommand('fontsize', value as string)"
         :options="fontSizeOptions.map(item => ({
@@ -39,7 +39,7 @@
             @update:modelValue="value => emitRichTextCommand('color', value)"
           />
         </template>
-        <TextColorButton first v-tooltip="'Màu chữ'" :color="richTextAttrs.color">
+        <TextColorButton first v-tooltip="'Text color'" :color="richTextAttrs.color">
           <i-icon-park-outline:text />
         </TextColorButton>
       </Popover>
@@ -50,21 +50,21 @@
             @update:modelValue="value => emitRichTextCommand('backcolor', value)"
           />
         </template>
-        <TextColorButton v-tooltip="'Tô sáng chữ'" :color="richTextAttrs.backcolor">
+        <TextColorButton v-tooltip="'Highlight'" :color="richTextAttrs.backcolor">
           <i-icon-park-outline:high-light />
         </TextColorButton>
       </Popover>
       <Button 
         class="font-size-btn"
         style="width: 20%;"
-        v-tooltip="'Tăng cỡ chữ'"
+        v-tooltip="'Increase font size'"
         @click="emitRichTextCommand('fontsize-add')"
       ><i-icon-park-outline:font-size />+</Button>
       <Button
         last
         class="font-size-btn"
         style="width: 20%;"
-        v-tooltip="'Giảm cỡ chữ'"
+        v-tooltip="'Decrease font size'"
         @click="emitRichTextCommand('fontsize-reduce')"
       ><i-icon-park-outline:font-size />-</Button>
     </ButtonGroup>
@@ -73,25 +73,25 @@
       <CheckboxButton 
         style="flex: 1;"
         :checked="richTextAttrs.bold"
-        v-tooltip="'In đậm'"
+        v-tooltip="'Bold'"
         @click="emitRichTextCommand('bold')"
       ><i-icon-park-outline:text-bold /></CheckboxButton>
       <CheckboxButton 
         style="flex: 1;"
         :checked="richTextAttrs.em"
-        v-tooltip="'In nghiêng'"
+        v-tooltip="'Italic'"
         @click="emitRichTextCommand('em')"
       ><i-icon-park-outline:text-italic /></CheckboxButton>
       <CheckboxButton 
         style="flex: 1;"
         :checked="richTextAttrs.underline"
-        v-tooltip="'Gạch chân'"
+        v-tooltip="'Underline'"
         @click="emitRichTextCommand('underline')"
       ><i-icon-park-outline:text-underline /></CheckboxButton>
       <CheckboxButton 
         style="flex: 1;"
         :checked="richTextAttrs.strikethrough"
-        v-tooltip="'Gạch ngang'"
+        v-tooltip="'Strikethrough'"
         @click="emitRichTextCommand('strikethrough')"
       ><i-icon-park-outline:strikethrough /></CheckboxButton>
     </ButtonGroup>
@@ -100,25 +100,25 @@
       <CheckboxButton
         style="flex: 1;"
         :checked="richTextAttrs.superscript"
-        v-tooltip="'Chỉ số trên'"
+        v-tooltip="'Superscript'"
         @click="emitRichTextCommand('superscript')"
       >A²</CheckboxButton>
       <CheckboxButton
         style="flex: 1;"
         :checked="richTextAttrs.subscript"
-        v-tooltip="'Chỉ số dưới'"
+        v-tooltip="'Subscript'"
         @click="emitRichTextCommand('subscript')"
       >A₂</CheckboxButton>
       <CheckboxButton
         style="flex: 1;"
         :checked="richTextAttrs.code"
-        v-tooltip="'Mã nội dòng'"
+        v-tooltip="'Inline code'"
         @click="emitRichTextCommand('code')"
       ><i-icon-park-outline:code /></CheckboxButton>
       <CheckboxButton
         style="flex: 1;"
         :checked="richTextAttrs.blockquote"
-        v-tooltip="'Trích dẫn'"
+        v-tooltip="'Quote'"
         @click="emitRichTextCommand('blockquote')"
       ><i-icon-park-outline:quote /></CheckboxButton>
     </ButtonGroup>
@@ -126,35 +126,35 @@
     <ButtonGroup class="row" passive>
       <Popover trigger="click" v-model:value="AIPopoverVisible" style="width: 25%;">
         <template #content>
-          <PopoverMenuItem center @click="execAI('Viết lại cho hay hơn')">Viết hay hơn</PopoverMenuItem>
-          <PopoverMenuItem center @click="execAI('Viết dài thêm')">Viết dài</PopoverMenuItem>
-          <PopoverMenuItem center @click="execAI('Rút gọn ý')">Rút gọn</PopoverMenuItem>
+          <PopoverMenuItem center @click="execAI('Rewrite to polish')">Polish</PopoverMenuItem>
+          <PopoverMenuItem center @click="execAI('Expand and enrich')">Expand</PopoverMenuItem>
+          <PopoverMenuItem center @click="execAI('Condense')">Shorten</PopoverMenuItem>
         </template>
         <CheckboxButton
           first
           style="width: 100%;"
-          v-tooltip="'AI hỗ trợ'"
+          v-tooltip="'AI assist'"
         ><span :class="{ 'ai-loading': isAIWriting }">{{ isAIWriting ? '' : 'AI' }}</span></CheckboxButton>
       </Popover>
       <CheckboxButton
         style="flex: 1;"
-        v-tooltip="'Xoá định dạng'"
+        v-tooltip="'Clear formatting'"
         @click="emitRichTextCommand('clear')"
       ><i-icon-park-outline:format /></CheckboxButton>
       <CheckboxButton
         style="flex: 1;"
         :checked="!!textFormatPainter"
-        v-tooltip="'Chổi định dạng (bấm đúp để dùng liên tục)'"
+        v-tooltip="'Format painter (double-click to keep using)'"
         @click="toggleTextFormatPainter()"
         @dblclick="toggleTextFormatPainter(true)"
       ><i-icon-park-outline:format-brush /></CheckboxButton>
       <Popover placement="bottom-end" trigger="click" v-model:value="linkPopoverVisible" style="width: 25%;">
         <template #content>
           <div class="link-popover">
-            <Input v-model:value="link" placeholder="Nhập liên kết" />
+            <Input v-model:value="link" placeholder="Enter a link" />
             <div class="btns">
-              <Button size="small" :disabled="!richTextAttrs.link" @click="removeLink()" style="margin-right: 5px;">Gỡ</Button>
-              <Button size="small" type="primary" @click="updateLink(link)">Xác nhận</Button>
+              <Button size="small" :disabled="!richTextAttrs.link" @click="removeLink()" style="margin-right: 5px;">Remove</Button>
+              <Button size="small" type="primary" @click="updateLink(link)">Confirm</Button>
             </div>
           </div>
         </template>
@@ -162,7 +162,7 @@
           last
           style="width: 100%;"
           :checked="!!richTextAttrs.link"
-          v-tooltip="'Liên kết'"
+          v-tooltip="'Link'"
           @click="openLinkPopover()"
         ><i-icon-park-outline:link-one /></CheckboxButton>
       </Popover>
@@ -175,10 +175,10 @@
       :value="richTextAttrs.align"
       @update:value="value => emitRichTextCommand('align', value)"
     >
-      <RadioButton value="left" v-tooltip="'Căn trái'" style="flex: 1;"><i-icon-park-outline:align-text-left /></RadioButton>
-      <RadioButton value="center" v-tooltip="'Căn giữa'" style="flex: 1;"><i-icon-park-outline:align-text-center /></RadioButton>
-      <RadioButton value="right" v-tooltip="'Căn phải'" style="flex: 1;"><i-icon-park-outline:align-text-right /></RadioButton>
-      <RadioButton value="justify" v-tooltip="'Căn đều hai bên'" style="flex: 1;"><i-icon-park-outline:align-text-both /></RadioButton>
+      <RadioButton value="left" v-tooltip="'Align left'" style="flex: 1;"><i-icon-park-outline:align-text-left /></RadioButton>
+      <RadioButton value="center" v-tooltip="'Center'" style="flex: 1;"><i-icon-park-outline:align-text-center /></RadioButton>
+      <RadioButton value="right" v-tooltip="'Align right'" style="flex: 1;"><i-icon-park-outline:align-text-right /></RadioButton>
+      <RadioButton value="justify" v-tooltip="'Justify'" style="flex: 1;"><i-icon-park-outline:align-text-both /></RadioButton>
     </RadioGroup>
 
     <div class="row" passive>
@@ -187,7 +187,7 @@
           first
           :type="richTextAttrs.bulletList ? 'primary' : 'default'"
           style="flex: 1;"
-          v-tooltip="'Gạch đầu dòng'"
+          v-tooltip="'Bullets'"
           @click="emitRichTextCommand('bulletList')"
         ><i-icon-park-outline:list /></Button>
         <Popover trigger="click" v-model:value="bulletListPanelVisible">
@@ -212,7 +212,7 @@
           first
           :type="richTextAttrs.orderedList ? 'primary' : 'default'"
           style="flex: 1;"
-          v-tooltip="'Đánh số'"
+          v-tooltip="'Numbering'"
           @click="emitRichTextCommand('orderedList')"
         ><i-icon-park-outline:ordered-list /></Button>
         <Popover trigger="click" v-model:value="orderedListPanelVisible">
@@ -235,20 +235,20 @@
 
     <div class="row">
       <ButtonGroup style="flex: 1;" passive>
-        <Button first style="flex: 1;" v-tooltip="'Giảm thụt lề đoạn'" @click="emitRichTextCommand('indent', '-1')"><i-icon-park-outline:indent-left /></Button>
+        <Button first style="flex: 1;" v-tooltip="'Decrease indent'" @click="emitRichTextCommand('indent', '-1')"><i-icon-park-outline:indent-left /></Button>
         <Popover trigger="click" v-model:value="indentLeftPanelVisible">
           <template #content>
-            <PopoverMenuItem center @click="emitRichTextCommand('textIndent', '-1')">Giảm thụt dòng đầu</PopoverMenuItem>
+            <PopoverMenuItem center @click="emitRichTextCommand('textIndent', '-1')">Decrease first-line indent</PopoverMenuItem>
           </template>
           <Button last class="popover-btn"><i-icon-park-outline:down /></Button>
         </Popover>
       </ButtonGroup>
       <div style="width: 10px;"></div>
       <ButtonGroup style="flex: 1;" passive>
-        <Button first style="flex: 1;" v-tooltip="'Tăng thụt lề đoạn'" @click="emitRichTextCommand('indent', '+1')"><i-icon-park-outline:indent-right /></Button>
+        <Button first style="flex: 1;" v-tooltip="'Increase indent'" @click="emitRichTextCommand('indent', '+1')"><i-icon-park-outline:indent-right /></Button>
         <Popover trigger="click" v-model:value="indentRightPanelVisible">
           <template #content>
-            <PopoverMenuItem center @click="emitRichTextCommand('textIndent', '+1')">Tăng thụt dòng đầu</PopoverMenuItem>
+            <PopoverMenuItem center @click="emitRichTextCommand('textIndent', '+1')">Increase first-line indent</PopoverMenuItem>
           </template>
           <Button last class="popover-btn"><i-icon-park-outline:down /></Button>
         </Popover>
@@ -319,7 +319,7 @@ const openLinkPopover = () => {
 }
 const updateLink = (link?: string) => {
   const linkRegExp = /^(https?):\/\/[\w\-]+(\.[\w\-]+)+([\w\-.,@?^=%&:\/~+#]*[\w\-@?^=%&\/~+#])?$/
-  if (!link || !linkRegExp.test(link)) return message.error('Không phải địa chỉ web hợp lệ')
+  if (!link || !linkRegExp.test(link)) return message.error('Not a valid web address')
 
   emitRichTextCommand('link', link)
   linkPopoverVisible.value = false
@@ -343,7 +343,7 @@ const execAI = async (command: string) => {
     content = handleElement.value.text.content
   }
 
-  if (!content) return message.error('Không có nội dung chữ để xử lý')
+  if (!content) return message.error('There is no text to process')
 
   let resultText = ''
 
@@ -352,7 +352,7 @@ const execAI = async (command: string) => {
     command,
   })
   if (typeof stream === 'object' && stream.state === -1) {
-    return message.error('Mô hình này đang quá tải, hãy chọn mô hình khác rồi thử lại')
+    return message.error('This model is overloaded. Pick another model and try again')
   }
 
   isAIWriting.value = true

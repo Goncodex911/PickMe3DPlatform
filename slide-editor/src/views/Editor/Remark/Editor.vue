@@ -177,7 +177,7 @@ onMounted(() => {
       input: handleInput,
     },
   }, {
-    placeholder: 'Bấm để nhập ghi chú cho người thuyết trình',
+    placeholder: 'Click to add speaker notes',
   })
 
   menuInstance.value = tippy(editorViewRef.value!, {

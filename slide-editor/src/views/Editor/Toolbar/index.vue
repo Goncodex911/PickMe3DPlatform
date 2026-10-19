@@ -31,18 +31,18 @@ const mainStore = useMainStore()
 const { activeElementIdList, activeElementList, activeGroupElementId, toolbarState } = storeToRefs(mainStore)
 
 const elementTabs = [
-  { label: 'Kiểu', key: ToolbarStates.EL_STYLE },
-  { label: 'Vị trí', key: ToolbarStates.EL_POSITION },
-  { label: 'Hiệu ứng', key: ToolbarStates.EL_ANIMATION },
+  { label: 'Style', key: ToolbarStates.EL_STYLE },
+  { label: 'Position', key: ToolbarStates.EL_POSITION },
+  { label: 'Animation', key: ToolbarStates.EL_ANIMATION },
 ]
 const slideTabs = [
-  { label: 'Thiết kế', key: ToolbarStates.SLIDE_DESIGN },
-  { label: 'Chuyển cảnh', key: ToolbarStates.SLIDE_ANIMATION },
-  { label: 'Hiệu ứng', key: ToolbarStates.EL_ANIMATION },
+  { label: 'Design', key: ToolbarStates.SLIDE_DESIGN },
+  { label: 'Transition', key: ToolbarStates.SLIDE_ANIMATION },
+  { label: 'Animation', key: ToolbarStates.EL_ANIMATION },
 ]
 const multiSelectTabs = [
-  { label: 'Kiểu (nhiều phần tử)', key: ToolbarStates.MULTI_STYLE },
-  { label: 'Vị trí (nhiều phần tử)', key: ToolbarStates.MULTI_POSITION },
+  { label: 'Style (multiple)', key: ToolbarStates.MULTI_STYLE },
+  { label: 'Position (multiple)', key: ToolbarStates.MULTI_POSITION },
 ]
 
 const setToolbarState = (value: ToolbarStates) => {

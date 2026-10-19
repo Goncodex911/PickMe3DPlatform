@@ -1,10 +1,10 @@
 <template>
   <div class="theme-colors-setting">
-    <div class="title">Bảng màu biểu đồ</div>
+    <div class="title">Chart palette</div>
 
     <div class="list">
       <div class="row" v-for="(item, index) in themeColors" :key="index">
-        <div class="label" style="width: 40%;">Màu chủ đề {{ index + 1 }}:</div>
+        <div class="label" style="width: 40%;">Theme color {{ index + 1 }}:</div>
         <Popover trigger="click" style="width: 60%;">
           <template #content>
             <ColorPicker
@@ -14,7 +14,7 @@
           </template>
           <div class="color-btn-wrap" style="width: 100%;">
             <ColorButton :color="item" />
-            <div class="delete-color-btn" v-tooltip="'Xoá'" @click.stop="deleteThemeColor(index)" v-if="index !== 0"><i-icon-park-outline:close-small /></div>
+            <div class="delete-color-btn" v-tooltip="'Delete'" @click.stop="deleteThemeColor(index)" v-if="index !== 0"><i-icon-park-outline:close-small /></div>
           </div>
         </Popover>
       </div>
@@ -23,11 +23,11 @@
         :disabled="themeColors.length >= 10"
         @click="addThemeColor()"
       >
-        <i-icon-park-outline:plus /> Thêm màu chủ đề
+        <i-icon-park-outline:plus /> Add theme color
       </Button>
     </div>
 
-    <Button class="btn" type="primary" @click="setThemeColors()">Xác nhận</Button>
+    <Button class="btn" type="primary" @click="setThemeColors()">Confirm</Button>
   </div>
 </template>
 

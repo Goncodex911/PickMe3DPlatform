@@ -30,7 +30,7 @@ export interface SlidesState {
 
 export const useSlidesStore = defineStore('slides', {
   state: (): SlidesState => ({
-    title: 'Bài trình bày chưa đặt tên', // 幻灯片标题
+    title: 'Untitled presentation', // 幻灯片标题
     theme: {
       themeColors: ['#5b9bd5', '#ed7d31', '#a5a5a5', '#ffc000', '#4472c4', '#70ad47'],
       fontColor: '#333',
@@ -53,14 +53,14 @@ export const useSlidesStore = defineStore('slides', {
     viewportSize: 1000, // 可视区域宽度基数
     viewportRatio: 0.5625, // 可视区域比例，默认16:9
     templates: [
-      { name: 'Sơn hà rực đỏ', id: 'template_1', cover: './imgs/template_1.webp', origin: 'PPTist' },
-      { name: 'Đô thị xanh lam', id: 'template_2', cover: './imgs/template_2.webp', origin: 'PPTist' },
-      { name: 'Hình học tinh tế', id: 'template_3', cover: './imgs/template_3.webp', origin: 'PPTist' },
-      { name: 'Morandi dịu nhẹ', id: 'template_4', cover: './imgs/template_4.webp', origin: 'PPTist' },
-      { name: 'Xanh lá tối giản', id: 'template_5', cover: './imgs/template_5.webp', origin: 'Cộng đồng đóng góp+PPTist hoàn thiện' },
-      { name: 'Cổ điển tông ấm', id: 'template_6', cover: './imgs/template_6.webp', origin: 'Cộng đồng đóng góp+PPTist hoàn thiện' },
-      { name: 'Trầm sâu', id: 'template_7', cover: './imgs/template_7.webp', origin: 'Cộng đồng đóng góp+PPTist hoàn thiện' },
-      { name: 'Xanh nhạt tươi mát', id: 'template_8', cover: './imgs/template_8.webp', origin: 'Cộng đồng đóng góp+PPTist hoàn thiện' },
+      { name: 'Crimson Landscape', id: 'template_1', cover: './imgs/template_1.webp', origin: 'PPTist' },
+      { name: 'Urban Blue', id: 'template_2', cover: './imgs/template_2.webp', origin: 'PPTist' },
+      { name: 'Smart Geometry', id: 'template_3', cover: './imgs/template_3.webp', origin: 'PPTist' },
+      { name: 'Soft Morandi', id: 'template_4', cover: './imgs/template_4.webp', origin: 'PPTist' },
+      { name: 'Minimal Green', id: 'template_5', cover: './imgs/template_5.webp', origin: 'Community+refined by PPTist' },
+      { name: 'Warm Retro', id: 'template_6', cover: './imgs/template_6.webp', origin: 'Community+refined by PPTist' },
+      { name: 'Deep Calm', id: 'template_7', cover: './imgs/template_7.webp', origin: 'Community+refined by PPTist' },
+      { name: 'Fresh Light Blue', id: 'template_8', cover: './imgs/template_8.webp', origin: 'Community+refined by PPTist' },
     ], // 模板
   }),
 
@@ -113,7 +113,7 @@ export const useSlidesStore = defineStore('slides', {
 
   actions: {
     setTitle(title: string) {
-      if (!title) this.title = 'Bài trình bày chưa đặt tên'
+      if (!title) this.title = 'Untitled presentation'
       else this.title = title
     },
 

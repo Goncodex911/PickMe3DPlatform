@@ -9,7 +9,7 @@ instance.interceptors.response.use(
       return Promise.resolve(response.data)
     }
 
-    message.error('Lỗi yêu cầu không xác định!')
+    message.error('Unknown request error!')
     return Promise.reject(response)
   },
   error => {
@@ -21,11 +21,11 @@ instance.interceptors.response.use(
         return Promise.reject(error.message)
       }
       
-      message.error('Máy chủ gặp lỗi không xác định!')
+      message.error('The server hit an unknown error!')
       return Promise.reject(error.message)
     }
 
-    message.error('Không kết nối được máy chủ hoặc máy chủ phản hồi quá lâu!')
+    message.error('Could not reach the server, or the server took too long to respond!')
     return Promise.reject(error)
   }
 )

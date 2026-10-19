@@ -8,13 +8,13 @@
               <div class="icon"><i-custom:click /></div>
               <div class="aippt-content">
                 <div class="aippt"><span>AIPPT</span></div>
-                <div class="aippt-subtitle">Nhập một câu, AI tạo bài trình bày</div>
+                <div class="aippt-subtitle">Describe it in one sentence and AI builds the deck</div>
               </div>
             </div>
           </div>
           <Divider :margin="10" />
           <div class="import-section">
-            <div class="import-label">Nhập file</div>
+            <div class="import-label">Import file</div>
             <div class="import-grid">
               <FileInput class="import-block" accept="application/vnd.openxmlformats-officedocument.presentationml.presentation" @change="files => {
                 importPPTXFile(files)
@@ -22,7 +22,7 @@
               }">
                 <span class="icon"><i-custom:file-ppt /></span>
                 <span class="label">PPTX</span>
-                <span class="sub-label">(thử nghiệm)</span>
+                <span class="sub-label">(beta)</span>
               </FileInput>
               <FileInput class="import-block" accept=".json" @change="files => {
                 importJSON(files)
@@ -30,7 +30,7 @@
               }">
                 <span class="icon"><i-custom:file-jpg /></span>
                 <span class="label">JSON</span>
-                <span class="sub-label">(thử nghiệm)</span>
+                <span class="sub-label">(beta)</span>
               </FileInput>
               <FileInput class="import-block" accept=".pptist" @change="files => {
                 importSpecificFile(files)
@@ -38,20 +38,20 @@
               }">
                 <span class="icon"><i-custom:file-pptist /></span>
                 <span class="label">PPTIST</span>
-                <span class="sub-label">(định dạng gốc)</span>
+                <span class="sub-label">(native format)</span>
               </FileInput>
             </div>
           </div>
           <Divider :margin="10" />
-          <PopoverMenuItem class="popover-menu-item" @click="setDialogForExport('pptx')"><i-icon-park-outline:download class="icon" /> Xuất file</PopoverMenuItem>
+          <PopoverMenuItem class="popover-menu-item" @click="setDialogForExport('pptx')"><i-icon-park-outline:download class="icon" /> Export file</PopoverMenuItem>
           <Divider :margin="10" />
-          <PopoverMenuItem class="popover-menu-item" @click="resetSlides(); mainMenuVisible = false"><i-icon-park-outline:refresh class="icon" /> Làm lại từ đầu</PopoverMenuItem>
-          <PopoverMenuItem class="popover-menu-item" @click="openMarkupPanel(); mainMenuVisible = false"><i-icon-park-outline:mark class="icon" /> Gắn loại slide</PopoverMenuItem>
-          <PopoverMenuItem class="popover-menu-item" @click="mainMenuVisible = false; hotkeyDrawerVisible = true"><i-icon-park-outline:command class="icon" /> Phím tắt</PopoverMenuItem>
-          <PopoverMenuItem class="popover-menu-item" @click="goLink('https://github.com/pipipi-pikachu/PPTist/issues')"><i-icon-park-outline:comment class="icon" /> Góp ý (PPTist)</PopoverMenuItem>
-          <PopoverMenuItem class="popover-menu-item" @click="goLink('https://github.com/pipipi-pikachu/PPTist/blob/master/doc/Q&A.md')"><i-icon-park-outline:helpcenter class="icon" /> Hỏi đáp (PPTist)</PopoverMenuItem>
+          <PopoverMenuItem class="popover-menu-item" @click="resetSlides(); mainMenuVisible = false"><i-icon-park-outline:refresh class="icon" /> Reset slides</PopoverMenuItem>
+          <PopoverMenuItem class="popover-menu-item" @click="openMarkupPanel(); mainMenuVisible = false"><i-icon-park-outline:mark class="icon" /> Slide type tags</PopoverMenuItem>
+          <PopoverMenuItem class="popover-menu-item" @click="mainMenuVisible = false; hotkeyDrawerVisible = true"><i-icon-park-outline:command class="icon" /> Keyboard shortcuts</PopoverMenuItem>
+          <PopoverMenuItem class="popover-menu-item" @click="goLink('https://github.com/pipipi-pikachu/PPTist/issues')"><i-icon-park-outline:comment class="icon" /> Feedback (PPTist)</PopoverMenuItem>
+          <PopoverMenuItem class="popover-menu-item" @click="goLink('https://github.com/pipipi-pikachu/PPTist/blob/master/doc/Q&A.md')"><i-icon-park-outline:helpcenter class="icon" /> FAQ (PPTist)</PopoverMenuItem>
           <Divider :margin="10" />
-          <div class="statement">Trình soạn thảo dựa trên PPTist (AGPL-3.0)</div>
+          <div class="statement">Editor based on PPTist (AGPL-3.0)</div>
         </template>
         <div class="menu-item"><i-icon-park-outline:hamburger-button class="icon" /></div>
       </Popover>
@@ -75,21 +75,21 @@
 
     <div class="right">
       <div class="group-menu-item">
-        <div class="menu-item" v-tooltip="'Trình chiếu (F5)'" @click="enterScreening()">
+        <div class="menu-item" v-tooltip="'Slideshow (F5)'" @click="enterScreening()">
           <i-icon-park-outline:ppt class="icon" />
         </div>
         <Popover trigger="click" center>
           <template #content>
-            <PopoverMenuItem class="popover-menu-item" @click="enterScreeningFromStart()"><i-icon-park-outline:slide-two class="icon" /> Từ đầu</PopoverMenuItem>
-            <PopoverMenuItem class="popover-menu-item" @click="enterScreening()"><i-icon-park-outline:ppt class="icon" /> Từ slide hiện tại</PopoverMenuItem>
+            <PopoverMenuItem class="popover-menu-item" @click="enterScreeningFromStart()"><i-icon-park-outline:slide-two class="icon" /> From the beginning</PopoverMenuItem>
+            <PopoverMenuItem class="popover-menu-item" @click="enterScreening()"><i-icon-park-outline:ppt class="icon" /> From the current slide</PopoverMenuItem>
           </template>
           <div class="arrow-btn"><i-icon-park-outline:down class="arrow" /></div>
         </Popover>
       </div>
-      <div class="menu-item" v-tooltip="'AI tạo slide'" @click="openAIPPTDialog(); mainMenuVisible = false">
+      <div class="menu-item" v-tooltip="'Generate slides with AI'" @click="openAIPPTDialog(); mainMenuVisible = false">
         <span class="text ai">AI</span>
       </div>
-      <div class="menu-item" v-tooltip="'Xuất file'" @click="setDialogForExport('pptx')">
+      <div class="menu-item" v-tooltip="'Export file'" @click="setDialogForExport('pptx')">
         <i-icon-park-outline:download class="icon" />
       </div>
       <a class="github-link" v-tooltip="'Copyright © 2020-PRESENT pipipi-pikachu'" href="https://github.com/pipipi-pikachu/PPTist" target="_blank">
@@ -103,10 +103,10 @@
       placement="right"
     >
       <HotkeyDoc />
-      <template v-slot:title>Phím tắt</template>
+      <template v-slot:title>Keyboard shortcuts</template>
     </Drawer>
 
-    <FullscreenSpin :loading="exporting" tip="Đang nhập..." />
+    <FullscreenSpin :loading="exporting" tip="Importing..." />
   </div>
 </template>
 

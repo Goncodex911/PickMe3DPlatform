@@ -27,7 +27,7 @@ export default function DeckPage() {
 
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("id") || "";
-    if (!id) { setError("Thiếu mã deck trong đường dẫn."); return; }
+    if (!id) { setError("The link is missing a deck id."); return; }
     getDeck(id)
       .then((found) => {
         setDeck(found);
@@ -36,7 +36,7 @@ export default function DeckPage() {
           if (view?.counted) setDeck((current) => (current ? { ...current, viewsCount: view.viewsCount } : current));
         });
       })
-      .catch((err) => setError(err.message || "Không mở được deck"));
+      .catch((err) => setError(err.message || "Could not open this deck"));
     fetchAccount().then(setAccount).catch(() => setAccount(null));
   }, []);
 
@@ -60,7 +60,7 @@ export default function DeckPage() {
     try {
       await stageRef.current?.requestFullscreen();
     } catch {
-      showToast("Trình duyệt không cho mở toàn màn hình");
+      showToast("Your browser blocked full screen");
     }
   };
 
@@ -69,7 +69,7 @@ export default function DeckPage() {
     try {
       const saved = await saveDeck(deck.id, { isPublic: !deck.isPublic });
       setDeck({ ...deck, isPublic: saved.isPublic });
-      showToast(saved.isPublic ? "Deck đã công khai" : "Deck đã chuyển sang riêng tư");
+      showToast(saved.isPublic ? "Deck is now public" : "Deck is now private");
     } catch (err) {
       const coded = err as Error & { code?: string };
       if (coded.code === "UPGRADE_REQUIRED" || coded.code === "READ_ONLY") setUpgrade(coded.message);
@@ -79,7 +79,7 @@ export default function DeckPage() {
 
   const shareUrl = deck && typeof window !== "undefined" ? `${window.location.origin}/slides/view/?id=${deck.id}` : "";
   const copy = async () => {
-    try { await navigator.clipboard.writeText(shareUrl); showToast("Đã sao chép link"); }
+    try { await navigator.clipboard.writeText(shareUrl); showToast("Link copied"); }
     catch { (document.getElementById("shareLink") as HTMLInputElement | null)?.select(); }
   };
 
@@ -87,7 +87,7 @@ export default function DeckPage() {
     if (!deck || exporting) return;
     setExporting(format);
     const frame = document.createElement("iframe");
-    frame.title = "Xuất file";
+    frame.title = "Export";
     const url = new URL(STUDIO_URL, window.location.href);
     url.searchParams.set("job", "download");
     frame.src = url.toString();
@@ -101,7 +101,7 @@ export default function DeckPage() {
       frame.remove();
       setExporting("");
       if (message === "export-pptx") setUpgrade("export-pptx");
-      else showToast(ok ? "Đã tải file" : (message || "Không xuất được file"));
+      else showToast(ok ? "File downloaded" : (message || "Could not export the file"));
     };
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== url.origin || event.source !== frame.contentWindow) return;
@@ -118,9 +118,9 @@ export default function DeckPage() {
         frame.contentWindow?.postMessage({ type: "PM_DOWNLOAD", format }, url.origin);
       }
       if (data.type === "PM_REQUEST_FEATURE" && data.feature === "export-pptx") finish(false, "export-pptx");
-      if (data.type === "PM_EXPORT_DONE") finish(data.status === "done", data.status === "done" ? undefined : (data.message || "Không xuất được file"));
+      if (data.type === "PM_EXPORT_DONE") finish(data.status === "done", data.status === "done" ? undefined : (data.message || "Could not export the file"));
     };
-    const timer = window.setTimeout(() => finish(false, "Xuất file quá lâu, hãy thử lại"), 60000);
+    const timer = window.setTimeout(() => finish(false, "Export took too long. Please try again."), 60000);
     window.addEventListener("message", onMessage);
     document.body.appendChild(frame);
   };
@@ -136,16 +136,16 @@ export default function DeckPage() {
       const result = await likeDeck(deck.id);
       setDeck({ ...deck, likesCount: result.likesCount, liked: result.liked });
     } catch (err) {
-      showToast((err as Error).message || "Không thích được deck này");
+      showToast((err as Error).message || "Could not like this deck");
     }
   };
-  const visLabel = !isOwner ? "Công khai · chỉ xem" : locked ? "Chỉ xem (vượt hạn mức)" : deck?.isPublic ? "Công khai" : "Riêng tư";
+  const visLabel = !isOwner ? "Public · view only" : locked ? "View only (over plan limit)" : deck?.isPublic ? "Public" : "Private";
   const notes = current?.remark ? plainText(String(current.remark)) : "";
 
   return (
     <StudioShell plan={account?.plan} active="slides">
       <section className={`${s.deckPage} ${s.wrap}`} aria-labelledby="deckTitle">
-        <a className={s.back} href="/slides/"><Icon name="arrow_back" />Tất cả deck</a>
+        <a className={s.back} href="/slides/"><Icon name="arrow_back" />All decks</a>
         {error && <p className={s.error}>{error}</p>}
         {!deck && !error && <div className={s.skeleton} style={{ marginTop: 20, maxWidth: 960 }} />}
         {deck && (
@@ -153,7 +153,7 @@ export default function DeckPage() {
             <div className={s.dhead}>
               <div>
                 <p className={s.sub}>
-                  {!isOwner && <><span className={s.vis}><Icon name="person" />{deck.authorName || "Người dùng PickMe3D"}</span><span>·</span></>}
+                  {!isOwner && <><span className={s.vis}><Icon name="person" />{deck.authorName || "PickMe3D user"}</span><span>·</span></>}
                   <span className={s.vis} data-ro={locked}><Icon name={locked ? "lock" : deck.isPublic ? "public" : "visibility_off"} />{visLabel}</span>
                   <span>·</span><span>{slides.length} slide</span>
                   <span>·</span><span>{editedLabel(deck.updatedAt, deck.createdAt)}</span>
@@ -161,102 +161,102 @@ export default function DeckPage() {
                 <h1 className={s.h1} id="deckTitle">{deck.title}</h1>
               </div>
               <div className={s.actions}>
-                <span className={s.btn} aria-label={`${deck.viewsCount || 0} lượt xem`} title="Lượt xem"><Icon name="visibility" />{deck.viewsCount || 0}</span>
-                <button type="button" className={`${s.btn} ${deck.liked ? s.liked : ""}`} onClick={toggleLike} aria-pressed={Boolean(deck.liked)} title={deck.liked ? "Bỏ thích" : "Thích"}>
+                <span className={s.btn} aria-label={`${deck.viewsCount || 0} views`} title="Views"><Icon name="visibility" />{deck.viewsCount || 0}</span>
+                <button type="button" className={`${s.btn} ${deck.liked ? s.liked : ""}`} onClick={toggleLike} aria-pressed={Boolean(deck.liked)} title={deck.liked ? "Unlike" : "Like"}>
                   <Icon name="favorite" />{deck.likesCount || 0}
                 </button>
-                <button type="button" className={s.btn} onClick={present} disabled={!slides.length}>Trình chiếu <Icon name="slideshow" /></button>
+                <button type="button" className={s.btn} onClick={present} disabled={!slides.length}>Present <Icon name="slideshow" /></button>
                 {!isOwner ? null : locked ? (
-                  <a className={`${s.btn} ${s.primary}`} href="/pricing/">Nâng cấp để sửa <Arrow /></a>
+                  <a className={`${s.btn} ${s.primary}`} href="/pricing/">Upgrade to edit <Arrow /></a>
                 ) : (
-                  <a className={`${s.btn} ${s.primary}`} href={`/slides/edit/?id=${deck.id}`}>Mở trong studio <Arrow /></a>
+                  <a className={`${s.btn} ${s.primary}`} href={`/slides/edit/?id=${deck.id}`}>Open in studio <Arrow /></a>
                 )}
               </div>
             </div>
 
             <div className={s.dbody}>
-              <nav className={s.strip} aria-label="Các slide trong deck">
+              <nav className={s.strip} aria-label="Slides in this deck">
                 {slides.map((slide, n) => (
                   <button key={slide.id || n} type="button" aria-current={n === index} onClick={() => setIndex(n)} aria-label={`Slide ${n + 1}`}>
                     <span className={s.n}>{n + 1}</span>
                     <span className={s.stripThumb}>
                       <SlideView slide={slide} className={s.mini} />
-                      <span>{slideHeadline(slide) || "Slide trống"}</span>
+                      <span>{slideHeadline(slide) || "Empty slide"}</span>
                     </span>
                   </button>
                 ))}
               </nav>
 
               <div className={s.viewer}>
-                <div ref={stageRef} className={s.stage} aria-label={`Slide ${index + 1} trên ${slides.length}`}>
+                <div ref={stageRef} className={s.stage} aria-label={`Slide ${index + 1} of ${slides.length}`}>
                   <SlideView slide={current} className={s.stageSlide} />
-                  <button type="button" className={`${s.navBtn} ${s.prev}`} onClick={() => go(-1)} disabled={index === 0} aria-label="Slide trước"><Icon name="chevron_left" /></button>
-                  <button type="button" className={`${s.navBtn} ${s.next}`} onClick={() => go(1)} disabled={index >= last} aria-label="Slide sau"><Icon name="chevron_right" /></button>
+                  <button type="button" className={`${s.navBtn} ${s.prev}`} onClick={() => go(-1)} disabled={index === 0} aria-label="Previous slide"><Icon name="chevron_left" /></button>
+                  <button type="button" className={`${s.navBtn} ${s.next}`} onClick={() => go(1)} disabled={index >= last} aria-label="Next slide"><Icon name="chevron_right" /></button>
                 </div>
                 <div className={s.pager}>
                   <span>Slide {Math.min(index, last) + 1} / {slides.length}</span>
-                  <span>Dùng <kbd>←</kbd> <kbd>→</kbd> để chuyển slide</span>
+                  <span>Use <kbd>←</kbd> <kbd>→</kbd> to change slides</span>
                 </div>
               </div>
 
               <aside className={s.side}>
                 <section className={s.box}>
-                  <h2>Thông tin</h2>
+                  <h2>Details</h2>
                   <div className={s.stats}>
                     <div><strong>{slides.length}</strong><span>slide</span></div>
-                    <div><strong>{deck.viewsCount || 0}</strong><span>lượt xem</span></div>
-                    <div><strong>{deck.likesCount || 0}</strong><span>lượt thích</span></div>
+                    <div><strong>{deck.viewsCount || 0}</strong><span>views</span></div>
+                    <div><strong>{deck.likesCount || 0}</strong><span>likes</span></div>
                   </div>
                   <dl className={s.kv}>
-                    <dt>Tác giả</dt><dd>{isOwner ? "Bạn" : deck.authorName || "Người dùng PickMe3D"}</dd>
-                    <dt>Trạng thái</dt><dd>{visLabel}</dd>
-                    <dt>Bình luận</dt><dd>{deck.comments?.length || 0}</dd>
-                    <dt>Lần sửa cuối</dt><dd>{editedLabel(deck.updatedAt, deck.createdAt).replace(/^(Sửa|Tạo) /, "")}</dd>
+                    <dt>Author</dt><dd>{isOwner ? "You" : deck.authorName || "PickMe3D user"}</dd>
+                    <dt>Status</dt><dd>{visLabel}</dd>
+                    <dt>Comments</dt><dd>{deck.comments?.length || 0}</dd>
+                    <dt>Last edited</dt><dd>{editedLabel(deck.updatedAt, deck.createdAt).replace(/^(Edited|Created) /, "")}</dd>
                   </dl>
                 </section>
 
                 <section className={s.box}>
-                  <h2>Chia sẻ</h2>
+                  <h2>Share</h2>
                   {deck.isPublic ? (
                     <>
                       <div className={s.linkRow}>
-                        <input id="shareLink" readOnly value={shareUrl} aria-label="Link xem công khai" onFocus={(event) => event.currentTarget.select()} />
-                        <button type="button" className={s.btn} onClick={copy}>Sao chép</button>
+                        <input id="shareLink" readOnly value={shareUrl} aria-label="Public link" onFocus={(event) => event.currentTarget.select()} />
+                        <button type="button" className={s.btn} onClick={copy}>Copy</button>
                       </div>
-                      <p className={s.note}>Ai có link đều xem được, thích và bình luận.</p>
+                      <p className={s.note}>Anyone with the link can view, like and comment.</p>
                     </>
                   ) : (
-                    <p className={s.note}>Deck riêng tư chỉ bạn xem được.</p>
+                    <p className={s.note}>Only you can see a private deck.</p>
                   )}
                   {isOwner && <button type="button" className={s.btn} onClick={toggleVisibility} disabled={locked}>
                     <Icon name={deck.isPublic ? "visibility_off" : "public"} />
-                    {deck.isPublic ? (features?.privateDeck ? "Chuyển sang riêng tư" : "Riêng tư (gói Pro)") : "Công khai deck"}
+                    {deck.isPublic ? (features?.privateDeck ? "Make private" : "Private (Pro plan)") : "Make public"}
                   </button>}
                 </section>
 
                 {isOwner && <section className={s.box}>
-                  <h2>Xuất file</h2>
+                  <h2>Export</h2>
                   <div className={s.exp}>
                     {([
-                      ["pptx", "PPTX", features?.exportPptx ? "PowerPoint" : "Gói Pro", Boolean(features?.exportPptx)],
-                      ["pdf", "PDF", "In ấn", true],
-                      ["image", "PNG", "Từng slide", true],
+                      ["pptx", "PPTX", features?.exportPptx ? "PowerPoint" : "Pro plan", Boolean(features?.exportPptx)],
+                      ["pdf", "PDF", "Print", true],
+                      ["image", "PNG", "Per slide", true],
                     ] as const).map(([format, label, small, allowed]) => (
                       allowed && !locked ? (
                         <button key={format} type="button" className={s.btn} disabled={Boolean(exporting)} onClick={() => downloadFile(format)}>
-                          {exporting === format ? "Đang tải…" : label}<small>{small}</small>
+                          {exporting === format ? "Downloading…" : label}<small>{small}</small>
                         </button>
                       ) : (
-                        <button key={format} type="button" className={s.btn} onClick={() => setUpgrade(locked ? "Deck đang chỉ xem" : "export-pptx")}>{label}<small>{small}</small></button>
+                        <button key={format} type="button" className={s.btn} onClick={() => setUpgrade(locked ? "This deck is view only" : "export-pptx")}>{label}<small>{small}</small></button>
                       )
                     ))}
                   </div>
-                  <p className={s.note}>{exporting ? "Đang dựng file, trình duyệt sẽ tải xuống ngay." : "Bấm định dạng để tải file về máy."}</p>
+                  <p className={s.note}>{exporting ? "Building the file. Your browser will download it shortly." : "Pick a format to download the file."}</p>
                 </section>}
 
                 <section className={s.box}>
-                  <h2>Ghi chú slide {index + 1}</h2>
-                  {notes ? <p className={s.notes}>{notes}</p> : <p className={s.note}>Slide này chưa có ghi chú. Thêm ghi chú cho người thuyết trình trong studio.</p>}
+                  <h2>Notes · slide {index + 1}</h2>
+                  {notes ? <p className={s.notes}>{notes}</p> : <p className={s.note}>No notes on this slide. Add speaker notes in the studio.</p>}
                 </section>
               </aside>
             </div>

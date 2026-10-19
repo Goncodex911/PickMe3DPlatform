@@ -65,7 +65,7 @@ async function createPaymentLink({ orderCode, amount, description, returnUrl, ca
 function verifyWebhook(body) {
   const data = body && body.data;
   if (!data || data.orderCode == null) {
-    return { ok: false, message: 'Thiếu dữ liệu webhook' };
+    return { ok: false, message: 'Missing webhook data' };
   }
 
   if (isMockMode() && body.mock === true) {
@@ -79,15 +79,15 @@ function verifyWebhook(body) {
   }
 
   if (!hasKeys()) {
-    return { ok: false, message: 'Chưa cấu hình payOS' };
+    return { ok: false, message: 'payOS is not configured' };
   }
 
   const expected = signData(data, process.env.PAYOS_CHECKSUM_KEY);
   if (!safeEqual(expected, body.signature)) {
-    return { ok: false, message: 'Chữ ký không hợp lệ' };
+    return { ok: false, message: 'Invalid signature' };
   }
   if (String(data.code || body.code) !== '00') {
-    return { ok: false, message: 'Giao dịch chưa thành công' };
+    return { ok: false, message: 'Transaction not successful' };
   }
   return {
     ok: true,

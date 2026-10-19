@@ -298,3 +298,40 @@
 @media (prefers-reduced-motion: reduce) {
   .root * { transition: none !important; animation: none !important; }
 }
+
+
+/* Bảng giá bản bo góc: thẻ tách rời, gói Pro nổi lên, nhãn và nút dạng viên thuốc. Chỉ áp trong .pricingPage */
+.pricingPage .head { margin-bottom: 8px; }
+.pricingPage .h1 { font-size: clamp(40px, 4.6vw, 76px); }
+.pricingPage .notice { border-radius: 14px; border-color: #4a4026; background: #1c1912; padding: 14px 20px; }
+.pricingPage .plans { margin-top: 56px; gap: 20px; border: 0; align-items: stretch; }
+.pricingPage .plan { border: 1px solid #2a2a2a; border-radius: 28px; padding: 34px 30px 30px; background: linear-gradient(180deg, #1c1c1c 0%, #151515 100%); transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease; }
+.pricingPage .plan:hover { transform: translateY(-4px); border-color: #3a3a3a; box-shadow: 0 24px 60px rgba(0, 0, 0, .45); }
+.pricingPage .plan[data-featured="true"] { background: #fff; border-color: #fff; transform: translateY(-14px); box-shadow: 0 40px 90px rgba(0, 0, 0, .55), 0 0 0 1px rgba(255, 255, 255, .6); }
+.pricingPage .plan[data-featured="true"]:hover { transform: translateY(-18px); }
+.pricingPage .plan h2 { font-size: clamp(28px, 2.2vw, 36px); font-weight: 600; letter-spacing: -1px; }
+.pricingPage .tag { top: 30px; right: 26px; display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: #262626; color: #e9e9e9; letter-spacing: 1.2px; }
+.pricingPage .plan[data-featured="true"] .tag { background: #131313; color: #fff; }
+.pricingPage .tag i { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px rgba(159, 217, 185, .25); }
+.pricingPage .price { padding: 18px 20px; border-radius: 18px; background: rgba(255, 255, 255, .04); }
+.pricingPage .plan[data-featured="true"] .price { background: #f3f3f3; }
+.pricingPage .price strong { font-size: clamp(32px, 2.8vw, 44px); }
+.pricingPage .feats { border-top: 0; gap: 4px; }
+.pricingPage .feats li { border-bottom: 0; padding: 9px 0; grid-template-columns: 26px minmax(0, 1fr) auto; }
+.pricingPage .feats li .ms { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 15px; background: rgba(159, 217, 185, .14); }
+.pricingPage .feats li[data-ok="false"] .ms { background: rgba(255, 255, 255, .06); color: #6d6d6d; }
+.pricingPage .plan[data-featured="true"] .feats li .ms { background: #131313; color: #fff; }
+.pricingPage .plan[data-featured="true"] .feats li[data-ok="false"] .ms { background: #ececec; color: #9a9a9a; }
+.pricingPage .cta .btn { border-radius: 999px; min-height: 52px; padding: 0 22px; }
+.pricingPage .state { border-radius: 999px; justify-content: center; min-height: 52px; background: rgba(255, 255, 255, .04); }
+.pricingPage .plan[data-featured="true"] .state { background: #f3f3f3; border-color: #e2e2e2; color: #131313; font-weight: 600; }
+.pricingPage .cta p { text-align: center; }
+.pricingPage .foot { margin-top: 72px; gap: 16px; }
+.pricingPage .foot div { padding: 22px 24px; border-radius: 20px; border: 1px solid #262626; background: #171717; grid-template-columns: 40px minmax(0, 1fr); }
+.pricingPage .foot .ms { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: #222; color: #e6e6e6; font-size: 20px; }
+@media (max-width: 1000px) {
+  .pricingPage .plan[data-featured="true"], .pricingPage .plan[data-featured="true"]:hover { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pricingPage .plan, .pricingPage .plan:hover, .pricingPage .plan[data-featured="true"]:hover { transition: none; transform: none; }
+}

@@ -39,10 +39,10 @@ export default function SlideEditPage() {
     } catch { setDesigns([]); }
     fetchAccount().then(setAccount).catch(() => setAccount(null));
     if (!deckId) {
-      setError("Thiếu mã bài trình bày");
+      setError("The link is missing a deck id");
       return;
     }
-    getDeck(deckId).then(setDeck).catch((err) => setError(err.message || "Không mở được bài"));
+    getDeck(deckId).then(setDeck).catch((err) => setError(err.message || "Could not open this deck"));
   }, []);
 
   const onSave = useCallback(async (message: Extract<StudioMessage, { type: "PM_SAVE" }>) => {
@@ -55,11 +55,11 @@ export default function SlideEditPage() {
         ...(message.thumbnail ? { thumbnail: message.thumbnail } : {}),
       });
       setDeck(next);
-      setSaved("Đã lưu");
+      setSaved("Saved");
     } catch (err) {
       const coded = err as Error & { code?: string };
       if (coded.code === "READ_ONLY" || coded.code === "UPGRADE_REQUIRED") setUpgrade(coded.message);
-      setSaved(`Lỗi lưu: ${coded.message}`);
+      setSaved(`Save failed: ${coded.message}`);
     }
   }, [id]);
 
@@ -70,7 +70,7 @@ export default function SlideEditPage() {
       return;
     }
     if (message.feature === "ai-slide" && message.topic) {
-      setBusy("Đang lưu và tạo bài mới…");
+      setBusy("Saving and creating a new deck…");
       await studio.current?.flush();
       try {
         const created = await generateDeck(message.topic);
@@ -79,7 +79,7 @@ export default function SlideEditPage() {
         const coded = err as Error & { code?: string };
         setBusy("");
         if (coded.code === "QUOTA" || coded.code === "UPGRADE_REQUIRED") setUpgrade(coded.message);
-        else setSaved(`AI lỗi: ${coded.message}`);
+        else setSaved(`AI error: ${coded.message}`);
       }
     }
   }, []);
@@ -87,7 +87,7 @@ export default function SlideEditPage() {
   const leave = async (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
     const href = event.currentTarget.href;
-    setBusy("Đang lưu…");
+    setBusy("Saving…");
     await studio.current?.flush();
     window.location.href = href;
   };
@@ -96,27 +96,27 @@ export default function SlideEditPage() {
     <main className="flex h-screen flex-col bg-[#131313] text-white" style={{ fontFamily: "var(--font-ui)" }}>
       <header className="relative grid h-14 grid-cols-[1fr_auto_1fr] items-center gap-4 border-b border-[#2c2c2c] px-5 text-sm">
         <span className="flex min-w-0 items-center gap-5">
-          <a href="/" aria-label="PickMe3D, về trang chủ" className="flex shrink-0 items-center gap-2 text-[17px] font-bold tracking-[-0.8px]">
+          <a href="/" aria-label="PickMe3D home" className="flex shrink-0 items-center gap-2 text-[17px] font-bold tracking-[-0.8px]">
             <svg viewBox="0 0 40 44" className="h-6 w-[22px]" aria-hidden="true"><path d="M20 1 38 11.5 20 22 2 11.5 20 1ZM2 15l16 9.5V43L2 33V15ZM22 24.5 38 15v18L22 43V24.5Z" fill="currentColor" /></svg>
             <span>PickMe<span className="font-normal">3D</span></span>
           </a>
-          <a href={id ? `/slides/deck/?id=${id}` : "/slides/"} onClick={leave} className="truncate text-[#adadad] hover:text-white">← Về deck</a>
+          <a href={id ? `/slides/deck/?id=${id}` : "/slides/"} onClick={leave} className="truncate text-[#adadad] hover:text-white">← Back to deck</a>
         </span>
         <span className="flex min-w-0 flex-col items-center leading-tight">
-          <span className="text-[10px] font-semibold uppercase tracking-[2px] text-[#7d7d7d]">{deck?.readOnly ? "Chỉ xem · vượt hạn mức gói" : "Slide Studio"}</span>
+          <span className="text-[10px] font-semibold uppercase tracking-[2px] text-[#7d7d7d]">{deck?.readOnly ? "View only · over plan limit" : "Slide Studio"}</span>
           <span className="max-w-[40vw] truncate font-medium tracking-[-0.2px]">{deck?.title}</span>
         </span>
         <span className="flex items-center justify-end gap-4">
-          <span className={`text-[11px] uppercase tracking-[1.4px] ${saved.startsWith("Lỗi") || saved.startsWith("AI") ? "text-[#ff8f8f]" : "text-[#7d7d7d]"}`}>{busy || saved}</span>
+          <span className={`text-[11px] uppercase tracking-[1.4px] ${saved.startsWith("Save failed") || saved.startsWith("AI error") ? "text-[#ff8f8f]" : "text-[#7d7d7d]"}`}>{busy || saved}</span>
           {deck && !deck.readOnly && (
             <button type="button" onClick={() => setShowDesigns((value) => !value)} aria-expanded={showDesigns} className="flex min-h-9 items-center gap-4 border border-[#8a8a8a] px-4 hover:bg-white hover:text-[#131313]">
-              Thiết kế của tôi <span aria-hidden="true">{showDesigns ? "−" : "+"}</span>
+              My designs <span aria-hidden="true">{showDesigns ? "−" : "+"}</span>
             </button>
           )}
         </span>
         {showDesigns && (
           <div className="absolute right-5 top-[60px] z-10 max-h-[60vh] w-80 overflow-auto bg-white p-2 text-[#131313] shadow-2xl">
-            {designs.length === 0 && <p className="p-3 text-[#626262]">Chưa có thiết kế nào được lưu.</p>}
+            {designs.length === 0 && <p className="p-3 text-[#626262]">No saved designs yet.</p>}
             {designs.map((design, index) => {
               const src = design.imageUrl || design.thumbnailUrl || "";
               return (
@@ -128,7 +128,7 @@ export default function SlideEditPage() {
                   className="block w-full p-2 text-left hover:bg-[#ececec] disabled:opacity-40"
                 >
                   {src && <img src={src} alt="" className="aspect-video w-full object-cover grayscale transition hover:grayscale-0" />}
-                  <span className="mt-2 block truncate text-sm">{design.title || "Thiết kế"}</span>
+                  <span className="mt-2 block truncate text-sm">{design.title || "Design"}</span>
                 </button>
               );
             })}
@@ -148,7 +148,7 @@ export default function SlideEditPage() {
             openExport={openExport}
             onSave={onSave}
             onFeature={onFeature}
-            onSaving={() => setSaved("Đang lưu…")}
+            onSaving={() => setSaved("Saving…")}
           />
         )}
       </div>

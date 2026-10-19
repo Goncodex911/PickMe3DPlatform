@@ -13,24 +13,24 @@
     />
 
     <div class="content" :class="type" @mousedown.stop>
-      <Input class="input" v-model:value="searchWord" placeholder="Nhập nội dung cần tìm" @enter="searchNext()" ref="searchInpRef">
+      <Input class="input" v-model:value="searchWord" placeholder="Find" @enter="searchNext()" ref="searchInpRef">
         <template #suffix>
           <span class="count">{{searchIndex + 1}}/{{searchResults.length}}</span>
           <Divider type="vertical" />
           <span class="ignore-case"
             :class="{ 'active': modifiers === 'g' }"
-            v-tooltip="'Không phân biệt hoa thường'"
+            v-tooltip="'Ignore case'"
             @click="toggleModifiers()"
           >Aa</span>
           <Divider type="vertical" />
-          <span class="next-btn left" @click="searchPrev()" v-tooltip="'Kết quả trước'"><i-icon-park-outline:left /></span>
-          <span class="next-btn right" @click="searchNext()" v-tooltip="'Kết quả sau'"><i-icon-park-outline:right /></span>
+          <span class="next-btn left" @click="searchPrev()" v-tooltip="'Previous match'"><i-icon-park-outline:left /></span>
+          <span class="next-btn right" @click="searchNext()" v-tooltip="'Next match'"><i-icon-park-outline:right /></span>
         </template>
       </Input>
-      <Input class="input" v-model:value="replaceWord" placeholder="Nhập nội dung thay thế" @enter="replace()" v-if="type === 'replace'"></Input>
+      <Input class="input" v-model:value="replaceWord" placeholder="Replace with" @enter="replace()" v-if="type === 'replace'"></Input>
       <div class="footer" v-if="type === 'replace'">
-        <Button :disabled="!searchWord" style="margin-left: 5px;" @click="replace()">Thay thế</Button>
-        <Button :disabled="!searchWord" type="primary" style="margin-left: 5px;" @click="replaceAll()">Thay tất cả</Button>
+        <Button :disabled="!searchWord" style="margin-left: 5px;" @click="replace()">Replace</Button>
+        <Button :disabled="!searchWord" type="primary" style="margin-left: 5px;" @click="replaceAll()">Replace all</Button>
       </div>
     </div>
   </MoveablePanel>
@@ -69,8 +69,8 @@ const {
 
 const type = ref<TypeKey>('search')
 const tabs: TabItem[] = [
-  { key: 'search', label: 'Tìm' },
-  { key: 'replace', label: 'Thay thế' },
+  { key: 'search', label: 'Find' },
+  { key: 'replace', label: 'Replace' },
 ]
 
 const close = () => {

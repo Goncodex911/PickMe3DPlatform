@@ -1,6 +1,6 @@
 <template>
   <div class="video-style-panel">
-    <div class="title">Ảnh bìa video</div>
+    <div class="title">Video poster</div>
     <div class="background-image-wrapper">
       <FileInput @change="files => setVideoPoster(files)">
         <div class="background-image">
@@ -11,16 +11,16 @@
       </FileInput>
     </div>
     <div class="row">
-      <Button style="flex: 1;" @click="setVideoPosterFromFirstFrame()"><i-icon-park-outline:screenshot-one /> Lấy khung hình đầu làm bìa</Button>
+      <Button style="flex: 1;" @click="setVideoPosterFromFirstFrame()"><i-icon-park-outline:screenshot-one /> Use first frame as poster</Button>
     </div>
     <div class="row" v-if="handleVideoElement.poster">
-      <Button style="flex: 1;" @click="updateVideo({ poster: '' })"><i-icon-park-outline:undo /> Đặt lại ảnh bìa</Button>
+      <Button style="flex: 1;" @click="updateVideo({ poster: '' })"><i-icon-park-outline:undo /> Reset poster</Button>
     </div>
 
     <Divider />
 
     <div class="row switch-row">
-      <div style="width: 40%;">Tự phát:</div>
+      <div style="width: 40%;">Autoplay:</div>
       <div class="switch-wrapper" style="width: 60%;">
         <Switch 
           :value="handleVideoElement.autoplay" 

@@ -32,11 +32,11 @@ export const readClipboard = (): Promise<string> => {
   return new Promise((resolve, reject) => {
     if (navigator.clipboard?.readText) {
       navigator.clipboard.readText().then(text => {
-        if (!text) reject('Clipboard trống hoặc không có chữ')
+        if (!text) reject('The clipboard is empty or has no text')
         return resolve(text)
       })
     }
-    else reject('Trình duyệt không hỗ trợ hoặc chặn truy cập clipboard, hãy dùng phím tắt Ctrl +V')
+    else reject('Your browser does not support or blocks clipboard access, please use the shortcut Ctrl +V')
   })
 }
 

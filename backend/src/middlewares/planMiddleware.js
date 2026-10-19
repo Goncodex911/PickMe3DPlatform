@@ -46,7 +46,7 @@ function requirePlan(minPlan) {
     return res.status(403).json({
       success: false,
       code: 'UPGRADE_REQUIRED',
-      message: 'Cần nâng cấp gói để dùng tính năng này',
+      message: 'Upgrade your plan to use this feature',
       plan,
     });
   };
@@ -64,7 +64,7 @@ function checkQuota(kind) {
       return res.status(403).json({
         success: false,
         code: 'QUOTA',
-        message: 'Đã hết hạn mức của gói hiện tại',
+        message: 'You have reached your plan limit',
         limit,
         used,
       });

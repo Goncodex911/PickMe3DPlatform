@@ -3,7 +3,7 @@ import { formatVnd, planAllows } from "./paymentService";
 
 describe("payment plans", () => {
   it("formats VND without trusting a client amount", () => {
-    expect(formatVnd(99000)).toMatch(/99\.000đ|99,000đ/);
+    expect(formatVnd(99000)).toBe("99,000 VND");
   });
 
   it("keeps PPTX and brand kit behind the paid plans", () => {

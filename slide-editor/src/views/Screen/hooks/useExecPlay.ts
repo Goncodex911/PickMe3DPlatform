@@ -190,7 +190,7 @@ export default () => {
     }
     else {
       if (loopPlay.value) turnSlideToIndex(slides.value.length - 1)
-      else throttleMassage('Đang ở slide đầu tiên')
+      else throttleMassage('This is the first slide')
     }
     inAnimation.value = false
   }
@@ -207,7 +207,7 @@ export default () => {
     else {
       if (loopPlay.value) turnSlideToIndex(0)
       else {
-        throttleMassage('Đang ở slide cuối cùng')
+        throttleMassage('This is the last slide')
         closeAutoPlay()
       }
       inAnimation.value = false
@@ -218,7 +218,7 @@ export default () => {
   const autoPlayInterval = ref(2500)
   const autoPlay = () => {
     closeAutoPlay()
-    message.success('Bắt đầu tự chạy slide')
+    message.success('Autoplay started')
     autoPlayTimer.value = setInterval(execNext, autoPlayInterval.value)
   }
 

@@ -22,17 +22,17 @@
     </div>
     <div class="configs">
       <div class="row">
-        <div class="title">Phạm vi xuất:</div>
+        <div class="title">Range:</div>
         <RadioGroup
           class="config-item"
           v-model:value="rangeType"
         >
-          <RadioButton style="width: 50%;" value="all">Tất cả</RadioButton>
-          <RadioButton style="width: 50%;" value="current">Slide hiện tại</RadioButton>
+          <RadioButton style="width: 50%;" value="all">All</RadioButton>
+          <RadioButton style="width: 50%;" value="current">Current slide</RadioButton>
         </RadioGroup>
       </div>
       <div class="row">
-        <div class="title">Số slide mỗi trang:</div>
+        <div class="title">Slides per page:</div>
         <Select 
           class="config-item"
           v-model:value="count"
@@ -44,19 +44,19 @@
         />
       </div>
       <div class="row">
-        <div class="title">Lề trắng:</div>
+        <div class="title">Margins:</div>
         <div class="config-item">
           <Switch v-model:value="padding" />
         </div>
       </div>
       <div class="tip">
-        Gợi ý: trong cửa sổ in, hãy bật tuỳ chọn “Đồ hoạ nền” và chọn lề “Mặc định”.
+        Tip: in the print dialog, turn on “Background graphics” and set margins to “Default”.
       </div>
     </div>
 
     <div class="btns">
-      <Button class="btn export" type="primary" @click="expPDF()"><i-icon-park-outline:download /> In / Xuất PDF</Button>
-      <Button class="btn close" @click="emit('close')">Đóng</Button>
+      <Button class="btn export" type="primary" @click="expPDF()"><i-icon-park-outline:download /> Print / Export PDF</Button>
+      <Button class="btn close" @click="emit('close')">Close</Button>
     </div>
   </div>
 </template>

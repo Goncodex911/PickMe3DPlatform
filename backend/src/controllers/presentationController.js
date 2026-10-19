@@ -37,11 +37,11 @@ exports.community = async (req, res) => {
 };
 
 exports.create = async (req, res) => {
-  const title = String(req.body?.title || 'Bài trình bày mới').trim().slice(0, 120) || 'Bài trình bày mới';
+  const title = String(req.body?.title || 'Untitled deck').trim().slice(0, 120) || 'Untitled deck';
   const plan = getPlan(req.user.plan) || getPlan('free');
   const isPublic = req.body?.isPublic === false ? false : true;
   if (!isPublic && !plan.privateDeck) {
-    return res.status(403).json({ success: false, code: 'UPGRADE_REQUIRED', message: 'Gói Free không tạo được deck riêng tư' });
+    return res.status(403).json({ success: false, code: 'UPGRADE_REQUIRED', message: 'The Free plan cannot create private decks' });
   }
   const deck = await billing.createDeck({
     userId: req.user.id,
@@ -57,7 +57,7 @@ exports.create = async (req, res) => {
 
 exports.generate = async (req, res) => {
   const topic = String(req.body?.topic || '').trim();
-  if (!topic) return res.status(400).json({ success: false, message: 'Nhập chủ đề' });
+  if (!topic) return res.status(400).json({ success: false, message: 'Enter a topic' });
   const generated = await generateDeck(topic);
   const deck = await billing.createDeck({
     userId: req.user.id,
@@ -78,20 +78,20 @@ exports.getOne = async (req, res) => {
   const mine = await flaggedDeck(req.user, req.params.id);
   if (owns(mine, req.user)) return res.json({ success: true, data: forViewer(mine, req.user) });
   const deck = await billing.getDeck(req.params.id);
-  if (!deck || !deck.isPublic) return res.status(404).json({ success: false, message: 'Không thấy bài' });
+  if (!deck || !deck.isPublic) return res.status(404).json({ success: false, message: 'Deck not found' });
   res.json({ success: true, data: { ...forViewer(deck, req.user), readOnly: true } });
 };
 
 exports.publicOne = async (req, res) => {
   const deck = await billing.getDeck(req.params.id);
-  if (!deck || (!deck.isPublic && !owns(deck, req.user))) return res.status(404).json({ success: false, message: 'Không thấy bài' });
+  if (!deck || (!deck.isPublic && !owns(deck, req.user))) return res.status(404).json({ success: false, message: 'Deck not found' });
   res.json({ success: true, data: forViewer(deck, req.user) });
 };
 
 // Ghi một lượt xem. Chủ deck không tính; tài khoản khác tính một lần; không đăng nhập thì cộng mỗi lần mở
 exports.view = async (req, res) => {
   const deck = await billing.getDeck(req.params.id);
-  if (!deck || (!deck.isPublic && !owns(deck, req.user))) return res.status(404).json({ success: false, message: 'Không thấy bài' });
+  if (!deck || (!deck.isPublic && !owns(deck, req.user))) return res.status(404).json({ success: false, message: 'Deck not found' });
   if (owns(deck, req.user)) return res.json({ success: true, data: { viewsCount: deck.viewsCount, counted: false } });
   if (req.user) {
     const viewedBy = new Set(deck.viewedBy || []);
@@ -106,9 +106,9 @@ exports.view = async (req, res) => {
 
 exports.update = async (req, res) => {
   const current = await flaggedDeck(req.user, req.params.id);
-  if (!owns(current, req.user)) return res.status(404).json({ success: false, message: 'Không thấy bài' });
+  if (!owns(current, req.user)) return res.status(404).json({ success: false, message: 'Deck not found' });
   if (current.readOnly) {
-    return res.status(403).json({ success: false, code: 'READ_ONLY', message: 'Deck vượt hạn mức, chỉ xem được' });
+    return res.status(403).json({ success: false, code: 'READ_ONLY', message: 'This deck is over your plan limit and is view only' });
   }
   const plan = getPlan(req.user.plan) || getPlan('free');
   const patch = {};
@@ -121,7 +121,7 @@ exports.update = async (req, res) => {
   if (typeof req.body?.thumbnail === 'string') patch.thumbnail = req.body.thumbnail.slice(0, 400000);
   if (typeof req.body?.isPublic === 'boolean') {
     if (req.body.isPublic === false && !plan.privateDeck) {
-      return res.status(403).json({ success: false, code: 'UPGRADE_REQUIRED', message: 'Cần gói Pro để để riêng tư' });
+      return res.status(403).json({ success: false, code: 'UPGRADE_REQUIRED', message: 'Private decks require the Pro plan' });
     }
     patch.isPublic = req.body.isPublic;
   }
@@ -131,7 +131,7 @@ exports.update = async (req, res) => {
 
 exports.remove = async (req, res) => {
   const current = await billing.getDeck(req.params.id);
-  if (!owns(current, req.user)) return res.status(404).json({ success: false, message: 'Không thấy bài' });
+  if (!owns(current, req.user)) return res.status(404).json({ success: false, message: 'Deck not found' });
   await billing.deleteDeck(current.id);
   res.json({ success: true });
 };
@@ -139,7 +139,7 @@ exports.remove = async (req, res) => {
 exports.like = async (req, res) => {
   const deck = await billing.getDeck(req.params.id);
   if (!deck || (!deck.isPublic && !owns(deck, req.user))) {
-    return res.status(404).json({ success: false, message: 'Không thấy bài' });
+    return res.status(404).json({ success: false, message: 'Deck not found' });
   }
   const likedBy = new Set(deck.likedBy || []);
   if (likedBy.has(req.user.id)) likedBy.delete(req.user.id);
@@ -150,9 +150,9 @@ exports.like = async (req, res) => {
 
 exports.comment = async (req, res) => {
   const deck = await billing.getDeck(req.params.id);
-  if (!deck || !deck.isPublic) return res.status(404).json({ success: false, message: 'Không thấy bài' });
+  if (!deck || !deck.isPublic) return res.status(404).json({ success: false, message: 'Deck not found' });
   const content = String(req.body?.content || '').trim().slice(0, 500);
-  if (!content) return res.status(400).json({ success: false, message: 'Nhập nội dung' });
+  if (!content) return res.status(400).json({ success: false, message: 'Enter a comment' });
   const comments = [
     ...(deck.comments || []),
     {
@@ -169,7 +169,7 @@ exports.comment = async (req, res) => {
 
 exports.exportPptx = async (req, res) => {
   const deck = await billing.getDeck(req.params.id);
-  if (!owns(deck, req.user)) return res.status(404).json({ success: false, message: 'Không thấy bài' });
+  if (!owns(deck, req.user)) return res.status(404).json({ success: false, message: 'Deck not found' });
   const file = buildPptx(deck);
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
   res.setHeader('Content-Disposition', `attachment; filename="pickme-${deck.id}.pptx"`);

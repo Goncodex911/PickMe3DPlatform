@@ -3,25 +3,25 @@
     <div class="remark">
       <textarea
         :value="remark"
-        placeholder="Bấm để nhập ghi chú cho người thuyết trình"
+        placeholder="Click to add speaker notes"
         @input="$event => handleInputMark($event)"
       ></textarea>
     </div>
     <div class="toolbar">
       <ButtonGroup class="row">
-        <Button style="flex: 1;" @click="createSlide()"><i-icon-park-outline:plus class="icon" /> Slide mới</Button>
-        <Button style="flex: 1;" @click="copyAndPasteSlide()"><i-icon-park-outline:copy class="icon" /> Sao chép</Button>
-        <Button style="flex: 1;" @click="deleteSlide()"><i-icon-park-outline:delete class="icon" /> Xoá</Button>
+        <Button style="flex: 1;" @click="createSlide()"><i-icon-park-outline:plus class="icon" /> New slide</Button>
+        <Button style="flex: 1;" @click="copyAndPasteSlide()"><i-icon-park-outline:copy class="icon" /> Copy</Button>
+        <Button style="flex: 1;" @click="deleteSlide()"><i-icon-park-outline:delete class="icon" /> Delete</Button>
       </ButtonGroup>
       <ButtonGroup class="row">
-        <Button style="flex: 1;" @click="insertTextElement()"><i-icon-park-outline:font-size class="icon" /> Chữ</Button>
+        <Button style="flex: 1;" @click="insertTextElement()"><i-icon-park-outline:font-size class="icon" /> Text</Button>
         <Button style="flex: 1;">
           <FileInput @change="files => insertImageElement(files)">
-            <i-icon-park-outline:picture class="icon" /> Hình ảnh
+            <i-icon-park-outline:picture class="icon" /> Image
           </FileInput>
         </Button>
-        <Button style="flex: 1;" @click="insertShapeElement('square')"><i-icon-park-outline:square class="icon" /> Hình chữ nhật</Button>
-        <Button style="flex: 1;" @click="insertShapeElement('round')"><i-icon-park-outline:round class="icon" /> Hình tròn</Button>
+        <Button style="flex: 1;" @click="insertShapeElement('square')"><i-icon-park-outline:square class="icon" /> Rectangle</Button>
+        <Button style="flex: 1;" @click="insertShapeElement('round')"><i-icon-park-outline:round class="icon" /> Circle</Button>
       </ButtonGroup>
     </div>
 
@@ -58,7 +58,7 @@ const insertTextElement = () => {
     top: (viewportSize.value * viewportRatio.value - height) / 2,
     width,
     height,
-  }, { content: '<p>Chữ mới</p>' })
+  }, { content: '<p>New text</p>' })
 }
 
 const insertImageElement = (files: FileList) => {

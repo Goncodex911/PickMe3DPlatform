@@ -22,7 +22,7 @@
         :elementIndex="index + 1"
       />
     </div>
-    <div class="placeholder" v-else>Đang tải ...</div>
+    <div class="placeholder" v-else>Loading ...</div>
   </div>
 </template>
 

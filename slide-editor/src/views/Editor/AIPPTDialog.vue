@@ -2,9 +2,9 @@
   <div class="aippt-dialog">
     <div class="header">
       <span class="title">AIPPT</span>
-      <span class="subtite" v-if="step === 'template'">Chọn một mẫu phù hợp bên dưới để tạo bài, hoặc<span class="local" v-tooltip="'Tải lên file mẫu định dạng .pptist'" @click="uploadLocalTemplate()">tạo từ mẫu trong máy</span></span>
-      <span class="subtite" v-else-if="step === 'outline'">Kiểm tra dàn ý bên dưới (bấm để sửa, chuột phải để thêm/xoá mục), rồi chọn mẫu</span>
-      <span class="subtite" v-else>Nhập chủ đề bài trình bày bên dưới, kèm thông tin như ngành, vị trí, môn học, mục đích</span>
+      <span class="subtite" v-if="step === 'template'">Pick a template below to generate the deck, or <span class="local" v-tooltip="'Upload a .pptist template file'" @click="uploadLocalTemplate()">generate from a local template</span></span>
+      <span class="subtite" v-else-if="step === 'outline'">Review the outline below (click to edit, right-click to add/remove items), then pick a template</span>
+      <span class="subtite" v-else>Enter your presentation topic below, with details such as industry, role, subject or purpose</span>
     </div>
     
     <template v-if="step === 'setup'">
@@ -12,12 +12,12 @@
         ref="inputRef"
         v-model:value="keyword" 
         :maxlength="50" 
-        placeholder="Nhập chủ đề bài trình bày, ví dụ: Kế hoạch nghề nghiệp cho sinh viên" 
+        placeholder="Enter a presentation topic, e.g. Career planning for students" 
         @enter="createOutline()"
       >
         <template #suffix>
           <span class="count">{{ keyword.length }} / 50</span>
-          <div class="submit" type="primary" @click="createOutline()"><i-icon-park-outline:send class="icon" /> AI tạo bài</div>
+          <div class="submit" type="primary" @click="createOutline()"><i-icon-park-outline:send class="icon" /> Generate with AI</div>
         </template>
       </Input>
       <div class="recommends">
@@ -25,35 +25,35 @@
       </div>
       <div class="configs">
         <div class="config-item">
-          <div class="label">Ngôn ngữ:</div>
+          <div class="label">Language:</div>
           <Select 
             class="config-content"
             style="width: 80px;"
             v-model:value="language"
             :options="[
-              { label: 'Tiếng Trung', value: 'Tiếng Trung' },
-              { label: 'Tiếng Anh', value: 'English' },
-              { label: 'Tiếng Nhật', value: '日本語' },
+              { label: 'Chinese', value: 'Chinese' },
+              { label: 'English', value: 'English' },
+              { label: 'Japanese', value: '日本語' },
             ]"
           />
         </div>
         <div class="config-item">
-          <div class="label">Phong cách:</div>
+          <div class="label">Style:</div>
           <Select 
             class="config-content"
             style="width: 80px;"
             v-model:value="style"
             :options="[
-              { label: 'Chung', value: 'Chung' },
-              { label: 'Học thuật', value: 'Học thuật' },
-              { label: 'Công sở', value: 'Công sở' },
-              { label: 'Giáo dục', value: 'Giáo dục' },
+              { label: 'General', value: 'General' },
+              { label: 'Academic', value: 'Academic' },
+              { label: 'Business', value: 'Business' },
+              { label: 'Education', value: 'Education' },
               { label: 'Marketing', value: 'Marketing' },
             ]"
           />
         </div>
         <div class="config-item">
-          <div class="label">Mô hình:</div>
+          <div class="label">Model:</div>
           <Select 
             class="config-content"
             style="width: 190px;"
@@ -67,23 +67,23 @@
           />
         </div>
         <div class="config-item">
-          <div class="label">Ảnh minh hoạ:</div>
+          <div class="label">Images:</div>
           <Select 
             class="config-content"
             style="width: 100px;"
             v-model:value="img"
             :options="[
-              { label: 'Không', value: '' },
-              { label: 'Thử nghiệm', value: 'test' },
-              { label: 'AI tìm ảnh', value: 'ai-search', disabled: true },
-              { label: 'AI vẽ ảnh', value: 'ai-create', disabled: true },
+              { label: 'None', value: '' },
+              { label: 'Test', value: 'test' },
+              { label: 'AI image search', value: 'ai-search', disabled: true },
+              { label: 'AI image generation', value: 'ai-create', disabled: true },
             ]"
           />
         </div>
       </div>
       <div class="configs" v-if="!isEmptySlide">
         <div class="config-item">
-          <Checkbox v-model:value="overwrite">Ghi đè slide hiện có</Checkbox>
+          <Checkbox v-model:value="overwrite">Overwrite existing slides</Checkbox>
         </div>
       </div>
     </template>
@@ -93,8 +93,8 @@
          <OutlineEditor v-model:value="outline" />
        </div>
       <div class="btns" v-if="!outlineCreating">
-        <Button class="btn" type="primary" @click="step = 'template'">Chọn mẫu</Button>
-        <Button class="btn" @click="outline = ''; step = 'setup'">Quay lại tạo lại</Button>
+        <Button class="btn" type="primary" @click="step = 'template'">Choose template</Button>
+        <Button class="btn" @click="outline = ''; step = 'setup'">Back and regenerate</Button>
       </div>
     </div>
     <div class="select-template" v-if="step === 'template'">
@@ -109,12 +109,12 @@
         </div>
       </div>
       <div class="btns">
-        <Button class="btn" type="primary" @click="createPPT()">tạo</Button>
-        <Button class="btn" @click="step = 'outline'">Về dàn ý</Button>
+        <Button class="btn" type="primary" @click="createPPT()">generate</Button>
+        <Button class="btn" @click="step = 'outline'">Back to outline</Button>
       </div>
     </div>
 
-    <FullscreenSpin :loading="loading" tip="AI đang tạo bài, vui lòng chờ..." />
+    <FullscreenSpin :loading="loading" tip="AI is generating, please wait..." />
   </div>
 </template>
 
@@ -144,8 +144,8 @@ const { templates } = storeToRefs(slidesStore)
 const { resetSlides, isEmptySlide } = useSlideHandler()
 const { AIPPT, presetImgPool, getMdContent } = useAIPPT()
 
-const language = ref('Tiếng Trung')
-const style = ref('Chung')
+const language = ref('Chinese')
+const style = ref('General')
 const img = ref('')
 const keyword = ref('')
 const outline = ref('')
@@ -159,16 +159,16 @@ const outlineRef = useTemplateRef<HTMLElement>('outlineRef')
 const inputRef = useTemplateRef<InstanceType<typeof Input>>('inputRef')
 
 const recommends = ref([
-  'Xu hướng công nghệ 2025',
-  'Dữ liệu lớn thay đổi thế giới ra sao',
-  'Khảo sát thị trường ẩm thực',
-  'Ứng dụng AIGC trong giáo dục',
-  'Mạng xã hội và marketing thương hiệu',
-  'Công nghệ 5G thay đổi cuộc sống ra sao',
-  'Tổng kết năm và định hướng',
-  'Công nghệ blockchain và ứng dụng',
-  'Kế hoạch nghề nghiệp cho sinh viên',
-  'Kế hoạch tổ chức tiệc cuối năm',
+  'Technology trends 2025',
+  'How big data is changing the world',
+  'Food and beverage market research',
+  'AIGC in education',
+  'Social media and brand marketing',
+  'How 5G is changing our lives',
+  'Year in review and outlook',
+  'Blockchain technology and its uses',
+  'Career planning for students',
+  'Year-end party plan',
 ]) 
 
 onMounted(() => {
@@ -183,7 +183,7 @@ const setKeyword = (value: string) => {
 }
 
 const createOutline = async () => {
-  if (!keyword.value) return message.error('Hãy nhập chủ đề bài trình bày trước')
+  if (!keyword.value) return message.error('Please enter a presentation topic first')
 
   loading.value = true
   outlineCreating.value = true
@@ -198,7 +198,7 @@ const createOutline = async () => {
   })
   if (typeof stream === 'object' && stream.state === -1) {
     loading.value = false
-    return message.error('Mô hình này đang quá tải, hãy chọn mô hình khác rồi thử lại')
+    return message.error('This model is overloaded. Pick another model and try again')
   }
 
   loading.value = false
@@ -232,7 +232,7 @@ const createOutline = async () => {
 const createPPT = async (template?: { slides: Slide[], theme: SlideTheme }) => {
   loading.value = true
   mainStore.setAIPPTDialogState('running')
-  message.loading('Đang tạo bài trình bày, vui lòng chờ ...', { duration: 0 })
+  message.loading('Generating the presentation, please wait ...', { duration: 0 })
 
   if (overwrite.value) resetSlides()
 
@@ -249,7 +249,7 @@ const createPPT = async (template?: { slides: Slide[], theme: SlideTheme }) => {
     loading.value = false
     message.closeAll()
     mainStore.setAIPPTDialogState(true)
-    return message.error('Mô hình này không dùng được, hãy chọn mô hình khác rồi thử lại')
+    return message.error('This model is unavailable, pick another model and try again')
   }
 
   if (img.value === 'test') {
@@ -317,7 +317,7 @@ const uploadLocalTemplate = () => {
           createPPT({ slides, theme })
         }
         catch {
-          message.error('File mẫu tải lên bị lỗi dữ liệu, hãy tải lại hoặc dùng mẫu có sẵn')
+          message.error('The uploaded template is invalid, upload it again or use a preset template')
         }
       })
       reader.readAsText(file)

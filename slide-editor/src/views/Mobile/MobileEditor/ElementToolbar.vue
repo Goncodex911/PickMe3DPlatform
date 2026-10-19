@@ -60,7 +60,7 @@
         </template>
 
         <div class="row-block" v-if="textColorPropsEnable">
-          <div class="label">Màu chữ:</div>
+          <div class="label">Text color:</div>
           <div class="colors">
             <div class="color" 
               v-for="color in colors" 
@@ -80,7 +80,7 @@
           </div>
         </div>
         <div class="row-block" v-if="fillPropsEnable">
-          <div class="label">Màu nền:</div>
+          <div class="label">Fill color:</div>
           <div class="colors">
             <div class="color" 
               v-for="color in colors" 
@@ -100,35 +100,35 @@
           </div>
         </div>
 
-        <div class="tip" v-if="!textPropsEnable && !textColorPropsEnable && !fillPropsEnable">Chưa có thuộc tính nào</div>
+        <div class="tip" v-if="!textPropsEnable && !textColorPropsEnable && !fillPropsEnable">No properties available</div>
       </div>
 
       <div class="common" v-if="activeTab === 'common'">
         <ButtonGroup class="row">
-          <Button style="flex: 1;" @click="copyElement()"><i-icon-park-outline:copy class="icon" /> Sao chép</Button>
-          <Button style="flex: 1;" @click="deleteElement()"><i-icon-park-outline:delete class="icon" /> Xoá</Button>
+          <Button style="flex: 1;" @click="copyElement()"><i-icon-park-outline:copy class="icon" /> Copy</Button>
+          <Button style="flex: 1;" @click="deleteElement()"><i-icon-park-outline:delete class="icon" /> Delete</Button>
         </ButtonGroup>
         
         <Divider :margin="20" />
 
         <ButtonGroup class="row">
-          <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.TOP)"><i-icon-park-outline:send-to-back class="icon" /> Lên trên cùng</Button>
-          <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.BOTTOM)"><i-icon-park-outline:bring-to-front-one class="icon" /> Xuống dưới cùng</Button>
-          <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.UP)"><i-icon-park-outline:bring-to-front class="icon" /> Lên một lớp</Button>
-          <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.DOWN)"><i-icon-park-outline:sent-to-back class="icon" /> Xuống một lớp</Button>
+          <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.TOP)"><i-icon-park-outline:send-to-back class="icon" /> Bring to front</Button>
+          <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.BOTTOM)"><i-icon-park-outline:bring-to-front-one class="icon" /> Send to back</Button>
+          <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.UP)"><i-icon-park-outline:bring-to-front class="icon" /> Forward</Button>
+          <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.DOWN)"><i-icon-park-outline:sent-to-back class="icon" /> Backward</Button>
         </ButtonGroup>
         
         <Divider :margin="20" />
 
         <ButtonGroup class="row">
-          <Button style="flex: 1;" @click="alignElementToCanvas(ElementAlignCommands.LEFT)"><i-icon-park-outline:align-left class="icon" /> Căn trái</Button>
-          <Button style="flex: 1;" @click="alignElementToCanvas(ElementAlignCommands.HORIZONTAL)"><i-icon-park-outline:align-vertically class="icon" /> Căn giữa ngang</Button>
-          <Button style="flex: 1;" @click="alignElementToCanvas(ElementAlignCommands.RIGHT)"><i-icon-park-outline:align-right class="icon" /> Căn phải</Button>
+          <Button style="flex: 1;" @click="alignElementToCanvas(ElementAlignCommands.LEFT)"><i-icon-park-outline:align-left class="icon" /> Align left</Button>
+          <Button style="flex: 1;" @click="alignElementToCanvas(ElementAlignCommands.HORIZONTAL)"><i-icon-park-outline:align-vertically class="icon" /> Center horizontally</Button>
+          <Button style="flex: 1;" @click="alignElementToCanvas(ElementAlignCommands.RIGHT)"><i-icon-park-outline:align-right class="icon" /> Align right</Button>
         </ButtonGroup>
         <ButtonGroup class="row">
-          <Button style="flex: 1;" @click="alignElementToCanvas(ElementAlignCommands.TOP)"><i-icon-park-outline:align-top class="icon" /> Căn trên</Button>
-          <Button style="flex: 1;" @click="alignElementToCanvas(ElementAlignCommands.VERTICAL)"><i-icon-park-outline:align-horizontally class="icon" /> Căn giữa dọc</Button>
-          <Button style="flex: 1;" @click="alignElementToCanvas(ElementAlignCommands.BOTTOM)"><i-icon-park-outline:align-bottom class="icon" /> Căn dưới</Button>
+          <Button style="flex: 1;" @click="alignElementToCanvas(ElementAlignCommands.TOP)"><i-icon-park-outline:align-top class="icon" /> Align top</Button>
+          <Button style="flex: 1;" @click="alignElementToCanvas(ElementAlignCommands.VERTICAL)"><i-icon-park-outline:align-horizontally class="icon" /> Center vertically</Button>
+          <Button style="flex: 1;" @click="alignElementToCanvas(ElementAlignCommands.BOTTOM)"><i-icon-park-outline:align-bottom class="icon" /> Align bottom</Button>
         </ButtonGroup>
       </div>
     </div>
@@ -177,8 +177,8 @@ const updateElement = (id: string, props: Partial<PPTElement>) => {
 }
 
 const tabs: TabItem[] = [
-  { key: 'style', label: 'Kiểu' },
-  { key: 'common', label: 'Bố cục' },
+  { key: 'style', label: 'Style' },
+  { key: 'common', label: 'Layout' },
 ]
 const activeTab = ref('common')
 

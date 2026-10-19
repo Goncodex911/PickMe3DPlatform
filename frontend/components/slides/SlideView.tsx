@@ -296,7 +296,7 @@ function ChartEl({ el }: { el: RenderElement }) {
   );
 }
 
-const PLACEHOLDER: Record<string, string> = { latex: "Công thức", video: "Video", audio: "Âm thanh" };
+const PLACEHOLDER: Record<string, string> = { latex: "Formula", video: "Video", audio: "Audio" };
 
 function Placeholder({ el }: { el: RenderElement }) {
   return (

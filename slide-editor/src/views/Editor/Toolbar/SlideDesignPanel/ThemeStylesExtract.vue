@@ -14,40 +14,40 @@
             <div class="value" :style="{ fontFamily: item }">{{ fontMap[item] || item }}</div>
             <div class="handler">
               <div class="state" :class="{ 'active': selectedIndex.fontName === index }"><i-icon-park-outline:check /></div>
-              <div class="config-btn" @click="selectedIndex.fontName = index">Chọn</div>
-              <div class="config-btn" @click="updateTheme({ fontName: item }); selectedIndex.fontName = index">Áp dụng vào chủ đề</div>
+              <div class="config-btn" @click="selectedIndex.fontName = index">Select</div>
+              <div class="config-btn" @click="updateTheme({ fontName: item }); selectedIndex.fontName = index">Apply to theme</div>
             </div>
           </div>
         </div>
       </div>
       <div class="config-item" v-if="themeStyles.fontColors.length">
-        <div class="label">Màu chữ:</div>
+        <div class="label">Text color:</div>
         <div class="values">
           <div class="value-wrap" v-for="(item, index) in themeStyles.fontColors" :key="item">
             <div class="value" :style="{ backgroundColor: item, color: getMostReadableColor(item) }">{{ getHexColor(item) }}</div>
             <div class="handler">
               <div class="state" :class="{ 'active': selectedIndex.fontColor === index }"><i-icon-park-outline:check /></div>
-              <div class="config-btn" @click="selectedIndex.fontColor = index">Chọn</div>
-              <div class="config-btn" @click="updateTheme({ fontColor: item }); selectedIndex.fontColor = index">Áp dụng vào chủ đề</div>
+              <div class="config-btn" @click="selectedIndex.fontColor = index">Select</div>
+              <div class="config-btn" @click="updateTheme({ fontColor: item }); selectedIndex.fontColor = index">Apply to theme</div>
             </div>
           </div>
         </div>
       </div>
       <div class="config-item" v-if="themeStyles.backgroundColors.length">
-        <div class="label">Màu nền:</div>
+        <div class="label">Fill color:</div>
         <div class="values">
           <div class="value-wrap" v-for="(item, index) in themeStyles.backgroundColors" :key="item">
             <div class="value" :style="{ backgroundColor: item, color: getMostReadableColor(item) }">{{ getHexColor(item) }}</div>
             <div class="handler">
               <div class="state" :class="{ 'active': selectedIndex.backgroundColor === index }"><i-icon-park-outline:check /></div>
-              <div class="config-btn" @click="selectedIndex.backgroundColor = index">Chọn</div>
-              <div class="config-btn" @click="updateTheme({ backgroundColor: item }); selectedIndex.backgroundColor = index">Áp dụng vào chủ đề</div>
+              <div class="config-btn" @click="selectedIndex.backgroundColor = index">Select</div>
+              <div class="config-btn" @click="updateTheme({ backgroundColor: item }); selectedIndex.backgroundColor = index">Apply to theme</div>
             </div>
           </div>
         </div>
       </div>
       <div class="config-item" v-if="themeStyles.themeColors.length">
-        <div class="label">Màu chủ đề:<span class="tip">(bấm vào ô màu để bỏ màu không cần)</span></div>
+        <div class="label">Theme color:<span class="tip">(click a swatch to exclude it)</span></div>
         <div class="values inline">
           <div class="value-wrap" v-for="(item, index) in themeStyles.themeColors" :key="item" @click="removeThemeColor(index)">
             <div class="value" :class="{ 'disabled': !selectedIndex.themeColors.includes(index) }" :style="{ backgroundColor: item }"></div>
@@ -57,7 +57,7 @@
     </div>
 
     <div class="btns">
-      <Button class="btn" type="primary" @click="updateAllThemes()"><i-icon-park-outline:check /> Lưu lựa chọn thành chủ đề</Button>
+      <Button class="btn" type="primary" @click="updateAllThemes()"><i-icon-park-outline:check /> Save selection as theme</Button>
     </div>
   </div>
 </template>
@@ -88,8 +88,8 @@ interface TabItem {
 }
 
 const tabs: TabItem[] = [
-  { key: 'single', label: 'Lấy từ slide hiện tại' },
-  { key: 'all', label: 'Lấy từ tất cả slide' },
+  { key: 'single', label: 'From current slide' },
+  { key: 'all', label: 'From all slides' },
 ]
 const activeTab = ref<'single' | 'all'>('single')
 
@@ -140,7 +140,7 @@ const updateAllThemes = () => {
   let themeColors = themeStyles.value.themeColors.filter((item, index) => selectedIndex.value.themeColors.includes(index))
   if (themeColors.length > 6) {
     themeColors = themeColors.slice(0, 6)
-    message.warning('Quá số màu chủ đề cho phép, đã tự lấy 6 màu đầu')
+    message.warning('Too many theme colors, kept the first 6')
   }
 
   const backgroundColor = themeStyles.value.backgroundColors[selectedIndex.value.backgroundColor]

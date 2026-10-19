@@ -1,7 +1,7 @@
 <template>
   <div class="element-opacity">
     <div class="row">
-      <div style="width: 40%;">Độ đục:</div>
+      <div style="width: 40%;">Opacity:</div>
       <Slider
         :min="0"
         :max="1"

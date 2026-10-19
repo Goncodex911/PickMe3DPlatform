@@ -1,27 +1,27 @@
 <template>
   <div class="element-positopn-panel">
-    <div class="title">Lớp:</div>
+    <div class="title">Layer:</div>
     <ButtonGroup class="row">
-      <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.TOP)"><i-icon-park-outline:send-to-back /> Lên trên cùng</Button>
-      <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.BOTTOM)"><i-icon-park-outline:bring-to-front-one /> Xuống dưới cùng</Button>
+      <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.TOP)"><i-icon-park-outline:send-to-back /> Bring to front</Button>
+      <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.BOTTOM)"><i-icon-park-outline:bring-to-front-one /> Send to back</Button>
     </ButtonGroup>
     <ButtonGroup class="row">
-      <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.UP)"><i-icon-park-outline:BringToFront /> Lên một lớp</Button>
-      <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.DOWN)"><i-icon-park-outline:SentToBack /> Xuống một lớp</Button>
+      <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.UP)"><i-icon-park-outline:BringToFront /> Forward</Button>
+      <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.DOWN)"><i-icon-park-outline:SentToBack /> Backward</Button>
     </ButtonGroup>
 
     <Divider />
     
-    <div class="title">Căn chỉnh:</div>
+    <div class="title">Align:</div>
     <ButtonGroup class="row">
-      <Button style="flex: 1;" v-tooltip="'Căn trái'" @click="alignElementToCanvas(ElementAlignCommands.LEFT)"><i-icon-park-outline:align-left /></Button>
-      <Button style="flex: 1;" v-tooltip="'Căn giữa ngang'" @click="alignElementToCanvas(ElementAlignCommands.HORIZONTAL)"><i-icon-park-outline:align-vertically /></Button>
-      <Button style="flex: 1;" v-tooltip="'Căn phải'" @click="alignElementToCanvas(ElementAlignCommands.RIGHT)"><i-icon-park-outline:align-right /></Button>
+      <Button style="flex: 1;" v-tooltip="'Align left'" @click="alignElementToCanvas(ElementAlignCommands.LEFT)"><i-icon-park-outline:align-left /></Button>
+      <Button style="flex: 1;" v-tooltip="'Center horizontally'" @click="alignElementToCanvas(ElementAlignCommands.HORIZONTAL)"><i-icon-park-outline:align-vertically /></Button>
+      <Button style="flex: 1;" v-tooltip="'Align right'" @click="alignElementToCanvas(ElementAlignCommands.RIGHT)"><i-icon-park-outline:align-right /></Button>
     </ButtonGroup>
     <ButtonGroup class="row">
-      <Button style="flex: 1;" v-tooltip="'Căn trên'" @click="alignElementToCanvas(ElementAlignCommands.TOP)"><i-icon-park-outline:align-top /></Button>
-      <Button style="flex: 1;" v-tooltip="'Căn giữa dọc'" @click="alignElementToCanvas(ElementAlignCommands.VERTICAL)"><i-icon-park-outline:align-horizontally /></Button>
-      <Button style="flex: 1;" v-tooltip="'Căn dưới'" @click="alignElementToCanvas(ElementAlignCommands.BOTTOM)"><i-icon-park-outline:align-bottom /></Button>
+      <Button style="flex: 1;" v-tooltip="'Align top'" @click="alignElementToCanvas(ElementAlignCommands.TOP)"><i-icon-park-outline:align-top /></Button>
+      <Button style="flex: 1;" v-tooltip="'Center vertically'" @click="alignElementToCanvas(ElementAlignCommands.VERTICAL)"><i-icon-park-outline:align-horizontally /></Button>
+      <Button style="flex: 1;" v-tooltip="'Align bottom'" @click="alignElementToCanvas(ElementAlignCommands.BOTTOM)"><i-icon-park-outline:align-bottom /></Button>
     </ButtonGroup>
 
     <Divider />
@@ -35,7 +35,7 @@
         style="width: 45%;"
       >
         <template #prefix>
-          Ngang:
+          Horizontal:
         </template>
       </NumberInput>
       <div style="width: 10%;"></div>
@@ -47,7 +47,7 @@
         style="width: 45%;"
       >
         <template #prefix>
-          Dọc:
+          Vertical:
         </template>
       </NumberInput>
     </div>
@@ -64,11 +64,11 @@
           style="width: 45%;"
         >
           <template #prefix>
-            Rộng:
+            Width:
           </template>
         </NumberInput>
         <template v-if="['image', 'shape', 'audio'].includes(handleElement!.type)">
-          <span style="width: 10%;" class="icon-btn" :class="{ 'active': fixedRatio }" v-tooltip="fixedRatio ? 'Mở khoá tỉ lệ khung' : 'Khoá tỉ lệ khung'" @click="updateFixedRatio(!fixedRatio)">
+          <span style="width: 10%;" class="icon-btn" :class="{ 'active': fixedRatio }" v-tooltip="fixedRatio ? 'Unlock aspect ratio' : 'Lock aspect ratio'" @click="updateFixedRatio(!fixedRatio)">
             <i-icon-park-outline:lock v-if="fixedRatio" />
             <i-icon-park-outline:unlock v-else />
           </span>
@@ -84,7 +84,7 @@
           style="width: 45%;"
         >
           <template #prefix>
-            Cao:
+            Height:
           </template>
         </NumberInput>
       </div>
@@ -103,7 +103,7 @@
           style="width: 45%;" 
         >
           <template #prefix>
-            Xoay:
+            Rotate:
           </template>
         </NumberInput>
         <div style="width: 7%;"></div>
