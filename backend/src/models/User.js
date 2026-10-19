@@ -49,6 +49,23 @@ const userSchema = new mongoose.Schema(
       trim: true,
       maxlength: [500, 'Bio cannot exceed 500 characters'],
     },
+    plan: {
+      type: String,
+      enum: ['free', 'pro', 'studio'],
+      default: 'free',
+    },
+    planExpiresAt: {
+      type: Date,
+      default: null,
+    },
+    aiUsed: {
+      type: Number,
+      default: 0,
+    },
+    aiPeriod: {
+      type: String,
+      default: '',
+    },
   },
   {
     timestamps: true,
