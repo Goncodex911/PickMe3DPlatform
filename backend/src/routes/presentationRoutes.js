@@ -8,6 +8,7 @@ router.post('/:id/view', optionalUser, presentation.view);
 router.use(attachUser);
 router.get('/', presentation.list);
 router.get('/community', presentation.community);
+router.get('/ai-providers', presentation.aiProviders);
 router.post('/', checkQuota('slides'), presentation.create);
 router.post('/generate', checkQuota('slides'), checkQuota('ai'), presentation.generate);
 router.get('/:id', presentation.getOne);

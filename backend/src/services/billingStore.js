@@ -80,7 +80,23 @@ function accountFromUser(user) {
   });
 }
 
+// Có cấu hình Mongo mà đang mất kết nối: chờ kết nối lại một lúc, không được rơi xuống bộ nhớ tạm
+// (nếu rơi xuống, tài khoản bị đổi sang id tạm và deck tạo ra sẽ mang sai chủ)
+async function waitForDb(ms = 8000) {
+  if (!process.env.MONGODB_URI || dbOn()) return;
+  const until = Date.now() + ms;
+  while (!dbOn() && Date.now() < until) {
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  if (!dbOn()) {
+    const err = new Error('Database unavailable, please try again shortly');
+    err.status = 503;
+    throw err;
+  }
+}
+
 async function getAccount(decoded) {
+  await waitForDb();
   const user = await findDbUser(decoded);
   if (user) {
     expire(user);

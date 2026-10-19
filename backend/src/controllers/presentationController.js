@@ -1,6 +1,6 @@
 const billing = require('../services/billingStore');
 const { getPlan } = require('../config/plans');
-const { generateDeck } = require('../services/slideAi');
+const { generateDeck, listProviders } = require('../services/slideAi');
 const { buildPptx } = require('../services/pptx');
 
 function owns(deck, user) {
@@ -58,7 +58,11 @@ exports.create = async (req, res) => {
 exports.generate = async (req, res) => {
   const topic = String(req.body?.topic || '').trim();
   if (!topic) return res.status(400).json({ success: false, message: 'Enter a topic' });
-  const generated = await generateDeck(topic);
+  // Người dùng có thể chọn nhà cung cấp AI và nhập key riêng (chỉ dùng cho lần gọi này, không lưu)
+  const generated = await generateDeck(topic, {
+    provider: typeof req.body?.aiProvider === 'string' ? req.body.aiProvider : 'auto',
+    key: typeof req.body?.aiKey === 'string' ? req.body.aiKey.slice(0, 300) : '',
+  });
   const deck = await billing.createDeck({
     userId: req.user.id,
     authorName: req.user.name || '',
@@ -68,9 +72,24 @@ exports.generate = async (req, res) => {
     thumbnail: '',
     isPublic: true,
   });
-  // Chỉ trừ lượt khi deck đã lưu và thật sự do AI viết (bộ mẫu dự phòng không tính)
-  if (generated.source === 'ai') await billing.bumpAi(req.user.id);
-  res.status(201).json({ success: true, data: deck, source: generated.source });
+  // Chỉ trừ lượt khi deck đã lưu và thật sự do AI của server viết (bộ mẫu dự phòng, key riêng không tính)
+  if (generated.source === 'ai' && !generated.ownKey) await billing.bumpAi(req.user.id);
+  res.status(201).json({
+    success: true,
+    data: deck,
+    source: generated.source,
+    ai: {
+      source: generated.source,
+      provider: generated.provider || null,
+      providerLabel: generated.providerLabel || null,
+      model: generated.model || null,
+      fallbacks: generated.fallbacks || [],
+    },
+  });
+};
+
+exports.aiProviders = (req, res) => {
+  res.json({ success: true, data: listProviders() });
 };
 
 // Chủ deck xem đầy đủ; tài khoản khác chỉ xem được deck công khai, ở chế độ chỉ xem

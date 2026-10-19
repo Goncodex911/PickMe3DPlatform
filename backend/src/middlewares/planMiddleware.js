@@ -14,13 +14,18 @@ async function attachUser(req, res, next) {
   if (!token) {
     return res.status(401).json({ success: false, message: 'Not authorized to access this route' });
   }
+  let decoded;
   try {
-    const decoded = jwt.verify(token, jwtSecret());
+    decoded = jwt.verify(token, jwtSecret());
+  } catch (err) {
+    return res.status(401).json({ success: false, message: 'Not authorized to access this route' });
+  }
+  try {
     req.auth = decoded;
     req.user = await billing.getAccount(decoded);
     return next();
   } catch (err) {
-    return res.status(401).json({ success: false, message: 'Not authorized to access this route' });
+    return res.status(err.status || 500).json({ success: false, message: err.message });
   }
 }
 
@@ -29,12 +34,18 @@ async function optionalUser(req, res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : '';
   if (!token) return next();
+  let decoded;
   try {
-    const decoded = jwt.verify(token, jwtSecret());
-    req.auth = decoded;
-    req.user = await billing.getAccount(decoded);
+    decoded = jwt.verify(token, jwtSecret());
   } catch {
     req.user = null;
+    return next();
+  }
+  try {
+    req.auth = decoded;
+    req.user = await billing.getAccount(decoded);
+  } catch (err) {
+    return res.status(err.status || 500).json({ success: false, message: err.message });
   }
   return next();
 }

@@ -8,7 +8,10 @@ import s from "@/components/slides/studio.module.css";
 import { startDeckDownload, type DeckExportFormat } from "@/lib/deckExport";
 import { quotaText } from "@/lib/deckFormat";
 import { fetchAccount, type AccountPlan } from "@/lib/paymentService";
-import { createDeck, deleteDeck, generateDeck, listCommunityDecks, listDecks, saveDeck, type Deck } from "@/lib/presentationService";
+import {
+  createDeck, deleteDeck, describeAiRun, generateDeckWithAi, listAiProviders, listCommunityDecks, listDecks, loadAiPrefs, saveAiPrefs, saveDeck,
+  type AiPrefs, type AiProvider, type AiProviderId, type Deck,
+} from "@/lib/presentationService";
 
 type Filter = "all" | "public" | "private" | "readonly";
 
@@ -40,6 +43,21 @@ export default function SlidesPage() {
   const [upgrade, setUpgrade] = useState("");
   const [toast, showToast] = useToast();
   const exporting = useRef(false);
+  const [providers, setProviders] = useState<AiProvider[]>([]);
+  const [primary, setPrimary] = useState("");
+  const [prefs, setPrefs] = useState<AiPrefs>({ provider: "auto", keys: {} });
+  const [aiNotice, setAiNotice] = useState<{ text: string; deckId: string } | null>(null);
+  const keyInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setPrefs(loadAiPrefs());
+    listAiProviders().then((info) => { setProviders(info.providers); setPrimary(info.primary); }).catch(() => {});
+  }, []);
+
+  const updatePrefs = (next: AiPrefs) => { setPrefs(next); saveAiPrefs(next); };
+  const picked = providers.find((p) => p.id === prefs.provider);
+  const primaryLabel = providers.find((p) => p.id === primary)?.label;
+  const needsOwnKey = Boolean(picked?.needsKey && !picked.hasServerKey);
 
   const load = useCallback(async () => {
     const [me, rows] = await Promise.all([fetchAccount(), listDecks()]);
@@ -98,9 +116,23 @@ export default function SlidesPage() {
       setHintError("Enter a topic first, for example: Silk L’Heure lookbook for a distributor meeting.");
       return;
     }
+    if (needsOwnKey && !prefs.keys[prefs.provider]) {
+      setHintError(`${picked?.label} needs an API key. Paste yours below, or pick another model.`);
+      keyInput.current?.focus();
+      return;
+    }
     setBusy(true);
+    setAiNotice(null);
     try {
-      const deck = await generateDeck(value);
+      const { deck, ai } = await generateDeckWithAi(value, prefs);
+      const notice = describeAiRun(ai);
+      // Có đổi model thì dừng lại báo cho người dùng, không thì mở studio ngay
+      if (notice) {
+        setBusy(false);
+        setAiNotice({ text: notice, deckId: deck.id });
+        load().catch(() => {});
+        return;
+      }
       window.location.href = `/slides/edit/?id=${deck.id}`;
     } catch (err) {
       setBusy(false);
@@ -215,6 +247,22 @@ export default function SlidesPage() {
                 placeholder="Topic for AI, e.g. Silk L’Heure lookbook for a distributor meeting"
               />
             </label>
+            <span className={s.cModel}>
+              <select
+                aria-label="AI model"
+                value={prefs.provider}
+                disabled={busy}
+                onChange={(event) => { updatePrefs({ ...prefs, provider: event.target.value as AiProviderId }); setHintError(""); }}
+              >
+                <option value="auto">Auto{primaryLabel ? ` · ${primaryLabel} first` : ""}</option>
+                {providers.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label} · {p.model}{p.needsKey && !p.hasServerKey ? " (your key)" : p.needsKey ? "" : " (free)"}
+                  </option>
+                ))}
+              </select>
+              <Icon name="expand_more" />
+            </span>
             <button className={`${s.btn} ${s.primary}`} type="submit" disabled={busy || aiLeft === 0 || deckFull}>
               {busy ? "AI is writing…" : "Generate with AI"} <Arrow />
             </button>
@@ -222,6 +270,32 @@ export default function SlidesPage() {
               Blank deck <span className={s.arrow} aria-hidden="true">+</span>
             </button>
           </div>
+          {picked?.needsKey && (
+            <div className={s.cKey}>
+              <label htmlFor="aiKey">
+                <Icon name="key" />
+                <input
+                  id="aiKey"
+                  ref={keyInput}
+                  type="password"
+                  autoComplete="off"
+                  value={prefs.keys[picked.id] || ""}
+                  onChange={(event) => { updatePrefs({ ...prefs, keys: { ...prefs.keys, [picked.id]: event.target.value.trim() } }); setHintError(""); }}
+                  placeholder={needsOwnKey ? `${picked.label} API key (required)` : `Your own ${picked.label} API key (optional, uses the server key when empty)`}
+                />
+              </label>
+              {picked.keyUrl && <a href={picked.keyUrl} target="_blank" rel="noreferrer">Get a key <Arrow /></a>}
+              <small>Stored only in this browser and sent with each request. Decks made with your own key do not use AI credits.</small>
+            </div>
+          )}
+          {aiNotice && (
+            <div className={s.aiNotice} role="status">
+              <Icon name="swap_horiz" />
+              <p>{aiNotice.text}</p>
+              <a className={`${s.btn} ${s.primary}`} href={`/slides/edit/?id=${aiNotice.deckId}`}>Open deck <Arrow /></a>
+              <button type="button" className={s.btn} onClick={() => setAiNotice(null)}>Dismiss</button>
+            </div>
+          )}
           <div className={s.cFoot}>
             <p className={`${s.hint} ${hintWarn ? s.warn : ""}`}>{hint}</p>
             <div className={s.usage}>

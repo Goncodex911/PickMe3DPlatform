@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import UpgradeModal from "@/components/UpgradeModal";
 import SlideStudioFrame, { type SlideStudioHandle } from "@/components/slides/SlideStudioFrame";
 import { fetchAccount, type AccountPlan } from "@/lib/paymentService";
-import { generateDeck, getDeck, saveDeck, type Deck } from "@/lib/presentationService";
+import { describeAiRun, generateDeckWithAi, getDeck, saveDeck, stashAiNotice, takeAiNotice, type Deck } from "@/lib/presentationService";
 import type { StudioMessage } from "@/lib/slideBridge";
 
 interface MyDesign {
@@ -27,6 +27,7 @@ export default function SlideEditPage() {
   const [upgrade, setUpgrade] = useState("");
   const [busy, setBusy] = useState("");
   const [openExport, setOpenExport] = useState<"pptx" | "pdf" | "image" | undefined>(undefined);
+  const [aiNotice, setAiNotice] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -34,6 +35,7 @@ export default function SlideEditPage() {
     const exportFormat = params.get("export");
     if (exportFormat === "pptx" || exportFormat === "pdf" || exportFormat === "image") setOpenExport(exportFormat);
     setId(deckId);
+    setAiNotice(takeAiNotice());
     try {
       setDesigns(JSON.parse(localStorage.getItem("pickme3d_my_designs") || "[]"));
     } catch { setDesigns([]); }
@@ -73,7 +75,8 @@ export default function SlideEditPage() {
       setBusy("Saving and creating a new deck…");
       await studio.current?.flush();
       try {
-        const created = await generateDeck(message.topic);
+        const { deck: created, ai } = await generateDeckWithAi(message.topic);
+        stashAiNotice(describeAiRun(ai));
         window.location.href = `/slides/edit/?id=${created.id}`;
       } catch (err) {
         const coded = err as Error & { code?: string };
@@ -135,6 +138,13 @@ export default function SlideEditPage() {
           </div>
         )}
       </header>
+      {aiNotice && (
+        <div role="status" className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-[#5a4a1a] bg-[#1d1a12] px-5 py-2.5 text-[13px] text-[#f1d58a]">
+          <span className="min-w-0 flex-1">{aiNotice}</span>
+          <a href="/slides/#topic" className="underline underline-offset-4 hover:text-white">Choose model or API key</a>
+          <button type="button" onClick={() => setAiNotice("")} className="text-[#adadad] hover:text-white" aria-label="Dismiss">✕</button>
+        </div>
+      )}
       <div className="min-h-0 flex-1">
         {error && <p className="grid h-full place-items-center text-[#ff8f8f]">{error}</p>}
         {deck && (

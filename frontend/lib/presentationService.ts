@@ -70,13 +70,85 @@ export async function createDeck(title: string) {
   return data.data as Deck;
 }
 
-export async function generateDeck(topic: string) {
+export type AiProviderId = "auto" | "gemini" | "groq" | "pollinations" | "custom";
+
+export type AiProvider = {
+  id: Exclude<AiProviderId, "auto">;
+  label: string;
+  model: string;
+  needsKey: boolean;
+  hasServerKey: boolean;
+  keyUrl: string;
+};
+
+export type AiFallback = { provider: string; label: string; reason: "quota" | "auth" | "nokey" | "timeout" | "format" | "error"; message: string };
+
+export type AiRun = {
+  source: "ai" | "template";
+  provider: string | null;
+  providerLabel: string | null;
+  model: string | null;
+  fallbacks: AiFallback[];
+};
+
+// Lựa chọn model và key riêng của người dùng: chỉ lưu trên trình duyệt này, gửi kèm từng lần tạo deck
+export type AiPrefs = { provider: AiProviderId; keys: Partial<Record<string, string>> };
+
+const AI_PREFS_KEY = "pickme3d_ai_prefs";
+
+export function loadAiPrefs(): AiPrefs {
+  try {
+    const raw = JSON.parse(localStorage.getItem(AI_PREFS_KEY) || "null");
+    if (raw && typeof raw.provider === "string") return { provider: raw.provider, keys: raw.keys || {} };
+  } catch {}
+  return { provider: "auto", keys: {} };
+}
+
+export function saveAiPrefs(prefs: AiPrefs) {
+  try { localStorage.setItem(AI_PREFS_KEY, JSON.stringify(prefs)); } catch {}
+}
+
+export async function listAiProviders(): Promise<{ primary: string; providers: AiProvider[] }> {
+  const res = await apiFetch(`${API_BASE}/presentations/ai-providers`);
+  const data = await read(res);
+  return data.data;
+}
+
+export async function generateDeckWithAi(topic: string, prefs: AiPrefs = loadAiPrefs()) {
+  const provider = prefs.provider || "auto";
   const res = await apiFetch(`${API_BASE}/presentations/generate`, {
     method: "POST",
-    body: JSON.stringify({ topic }),
+    body: JSON.stringify({ topic, aiProvider: provider, aiKey: provider === "auto" ? "" : prefs.keys[provider] || "" }),
   });
   const data = await read(res);
-  return data.data as Deck;
+  return { deck: data.data as Deck, ai: (data.ai || { source: data.source, provider: null, providerLabel: null, model: null, fallbacks: [] }) as AiRun };
+}
+
+export async function generateDeck(topic: string) {
+  return (await generateDeckWithAi(topic)).deck;
+}
+
+// Câu báo khi AI phải đổi model hoặc rơi về bộ mẫu; trả rỗng khi model chọn chạy được ngay
+export function describeAiRun(ai: AiRun) {
+  if (!ai.fallbacks.length) return "";
+  const why = ai.fallbacks.map((f) => f.message).join(", ");
+  if (ai.source !== "ai") return `${why}. Every AI model failed, so the deck uses the built-in template. Pick another model or enter a new API key.`;
+  return `${why}, so PickMe3D switched to ${ai.providerLabel}${ai.model ? ` (${ai.model})` : ""}. Pick another model or enter a new API key for next time.`;
+}
+
+const AI_NOTICE_KEY = "pickme3d_ai_notice";
+
+// Chuyển câu báo sang trang studio sau khi điều hướng
+export function stashAiNotice(text: string) {
+  try { if (text) sessionStorage.setItem(AI_NOTICE_KEY, text); } catch {}
+}
+
+export function takeAiNotice() {
+  try {
+    const text = sessionStorage.getItem(AI_NOTICE_KEY) || "";
+    sessionStorage.removeItem(AI_NOTICE_KEY);
+    return text;
+  } catch { return ""; }
 }
 
 export async function getDeck(id: string) {
