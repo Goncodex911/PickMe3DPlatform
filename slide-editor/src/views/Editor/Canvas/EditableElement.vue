@@ -75,90 +75,90 @@ const { selectAllElements } = useSelectElement()
 const contextmenus = (): ContextmenuItem[] => {
   if (props.elementInfo.lock) {
     return [{
-      text: 'Mở khoá', 
+      text: 'Unlock', 
       handler: () => unlockElement(props.elementInfo),
     }]
   }
 
   return [
     {
-      text: 'Cắt',
+      text: 'Cut',
       subText: 'Ctrl + X',
       handler: cutElement,
     },
     {
-      text: 'Sao chép',
+      text: 'Copy',
       subText: 'Ctrl + C',
       handler: copyElement,
     },
     {
-      text: 'Dán',
+      text: 'Paste',
       subText: 'Ctrl + V',
       handler: pasteElement,
     },
     { divider: true },
     {
-      text: 'Căn giữa ngang',
+      text: 'Center horizontally',
       handler: () => alignElementToCanvas(ElementAlignCommands.HORIZONTAL),
       children: [
-        { text: 'Căn giữa ngang và dọc', handler: () => alignElementToCanvas(ElementAlignCommands.CENTER), },
-        { text: 'Căn giữa ngang', handler: () => alignElementToCanvas(ElementAlignCommands.HORIZONTAL) },
-        { text: 'Căn trái', handler: () => alignElementToCanvas(ElementAlignCommands.LEFT) },
-        { text: 'Căn phải', handler: () => alignElementToCanvas(ElementAlignCommands.RIGHT) },
+        { text: 'Center both ways', handler: () => alignElementToCanvas(ElementAlignCommands.CENTER), },
+        { text: 'Center horizontally', handler: () => alignElementToCanvas(ElementAlignCommands.HORIZONTAL) },
+        { text: 'Align left', handler: () => alignElementToCanvas(ElementAlignCommands.LEFT) },
+        { text: 'Align right', handler: () => alignElementToCanvas(ElementAlignCommands.RIGHT) },
       ],
     },
     {
-      text: 'Căn giữa dọc',
+      text: 'Center vertically',
       handler: () => alignElementToCanvas(ElementAlignCommands.VERTICAL),
       children: [
-        { text: 'Căn giữa ngang và dọc', handler: () => alignElementToCanvas(ElementAlignCommands.CENTER) },
-        { text: 'Căn giữa dọc', handler: () => alignElementToCanvas(ElementAlignCommands.VERTICAL) },
-        { text: 'Căn trên', handler: () => alignElementToCanvas(ElementAlignCommands.TOP) },
-        { text: 'Căn dưới', handler: () => alignElementToCanvas(ElementAlignCommands.BOTTOM) },
+        { text: 'Center both ways', handler: () => alignElementToCanvas(ElementAlignCommands.CENTER) },
+        { text: 'Center vertically', handler: () => alignElementToCanvas(ElementAlignCommands.VERTICAL) },
+        { text: 'Align top', handler: () => alignElementToCanvas(ElementAlignCommands.TOP) },
+        { text: 'Align bottom', handler: () => alignElementToCanvas(ElementAlignCommands.BOTTOM) },
       ],
     },
     { divider: true },
     {
-      text: 'Đưa lên trên cùng',
+      text: 'Bring to front',
       disable: props.isMultiSelect && !props.elementInfo.groupId,
       handler: () => orderElement(props.elementInfo, ElementOrderCommands.TOP),
       children: [
-        { text: 'Đưa lên trên cùng', handler: () => orderElement(props.elementInfo, ElementOrderCommands.TOP) },
-        { text: 'Đưa lên một lớp', handler: () => orderElement(props.elementInfo, ElementOrderCommands.UP) },
+        { text: 'Bring to front', handler: () => orderElement(props.elementInfo, ElementOrderCommands.TOP) },
+        { text: 'Bring forward', handler: () => orderElement(props.elementInfo, ElementOrderCommands.UP) },
       ],
     },
     {
-      text: 'Đưa xuống dưới cùng',
+      text: 'Send to back',
       disable: props.isMultiSelect && !props.elementInfo.groupId,
       handler: () => orderElement(props.elementInfo, ElementOrderCommands.BOTTOM),
       children: [
-        { text: 'Đưa xuống dưới cùng', handler: () => orderElement(props.elementInfo, ElementOrderCommands.BOTTOM) },
-        { text: 'Đưa xuống một lớp', handler: () => orderElement(props.elementInfo, ElementOrderCommands.DOWN) },
+        { text: 'Send to back', handler: () => orderElement(props.elementInfo, ElementOrderCommands.BOTTOM) },
+        { text: 'Send backward', handler: () => orderElement(props.elementInfo, ElementOrderCommands.DOWN) },
       ],
     },
     { divider: true },
     {
-      text: 'Gắn liên kết',
+      text: 'Add link',
       handler: props.openLinkDialog,
     },
     {
-      text: props.elementInfo.groupId ? 'Bỏ nhóm' : 'Nhóm',
+      text: props.elementInfo.groupId ? 'Ungroup' : 'Group',
       subText: 'Ctrl + G',
       handler: props.elementInfo.groupId ? uncombineElements : combineElements,
       hide: !props.isMultiSelect,
     },
     {
-      text: 'Chọn tất cả',
+      text: 'Select all',
       subText: 'Ctrl + A',
       handler: selectAllElements,
     },
     {
-      text: 'Khoá',
+      text: 'Lock',
       subText: 'Ctrl + L',
       handler: lockElement,
     },
     {
-      text: 'Xoá',
+      text: 'Delete',
       subText: 'Delete',
       handler: deleteElement,
     },

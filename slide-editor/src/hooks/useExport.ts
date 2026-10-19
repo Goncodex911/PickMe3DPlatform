@@ -72,7 +72,7 @@ export default () => {
         saveAs(dataUrl, `${title.value}.${format}`)
       }).catch(() => {
         exporting.value = false
-        message.error('Xuất ảnh thất bại')
+        message.error('Image export failed')
       })
     }, 200)
   }
@@ -113,7 +113,7 @@ export default () => {
         pptx.writeFile({ fileName: `${title.value}.pptx` }).then(() => exporting.value = false)
       }).catch(() => {
         exporting.value = false
-        message.error('Xuất file thất bại')
+        message.error('Export failed')
       })
     }, 200)
   }
@@ -764,7 +764,7 @@ export default () => {
           for (let i = 0; i < el.data.series.length; i++) {
             const item = el.data.series[i]
             chartData.push({
-              name: `Chuỗi ${i + 1}`,
+              name: `Series ${i + 1}`,
               labels: el.data.labels,
               values: item,
             })
@@ -1005,8 +1005,8 @@ export default () => {
           resolve()
         }).catch(() => {
           exporting.value = false
-          message.error('Xuất file thất bại')
-          reject(new Error('Xuất file thất bại'))
+          message.error('Export failed')
+          reject(new Error('Export failed'))
         })
       }, 200)
     })

@@ -5,7 +5,7 @@
     <Editor v-else-if="_isPC" />
     <Mobile v-else />
   </template>
-  <FullscreenSpin tip="Đang mở bài trình bày..." v-else  loading :mask="false" />
+  <FullscreenSpin tip="Opening presentation..." v-else  loading :mask="false" />
 </template>
 
 <script lang="ts" setup>

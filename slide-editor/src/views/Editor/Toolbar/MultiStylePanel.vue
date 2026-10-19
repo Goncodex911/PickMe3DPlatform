@@ -1,7 +1,7 @@
 <template>
   <div class="multi-style-panel">
     <div class="row">
-      <div style="width: 40%;">Màu nền:</div>
+      <div style="width: 40%;">Fill color:</div>
       <Popover trigger="click" style="width: 60%;">
         <template #content>
           <ColorPicker
@@ -16,7 +16,7 @@
     <Divider />
 
     <div class="row">
-      <div style="width: 40%;">Kiểu viền:</div>
+      <div style="width: 40%;">Border style:</div>
       <SelectCustom style="width: 60%;">
         <template #options>
           <div class="option" v-for="item in lineStyleOptions" :key="item" @click="updateOutline({ style: item })">
@@ -29,7 +29,7 @@
       </SelectCustom>
     </div>
     <div class="row">
-      <div style="width: 40%;">Màu viền:</div>
+      <div style="width: 40%;">Border color:</div>
       <Popover trigger="click" style="width: 60%;">
         <template #content>
           <ColorPicker
@@ -41,7 +41,7 @@
       </Popover>
     </div>
     <div class="row">
-      <div style="width: 40%;">Độ dày viền:</div>
+      <div style="width: 40%;">Border width:</div>
       <NumberInput 
         :value="outline.width || 0"
         @update:value="value => updateOutline({ width: value })" 
@@ -56,7 +56,7 @@
         style="width: 60%;;"
         :value="richTextAttrs.fontname"
         search
-        searchLabel="Tìm font"
+        searchLabel="Search fonts"
         autofocus
         @update:value="value => updateFontStyle('fontname', value as string)"
         :options="FONTS"
@@ -69,7 +69,7 @@
         style="width: 40%;"
         :value="richTextAttrs.fontsize"
         search
-        searchLabel="Tìm cỡ chữ"
+        searchLabel="Search sizes"
         autofocus
         @update:value="value => updateFontStyle('fontsize', value as string)"
         :options="fontSizeOptions.map(item => ({
@@ -89,7 +89,7 @@
             @update:modelValue="value => updateFontStyle('color', value)"
           />
         </template>
-        <TextColorButton first :color="richTextAttrs.color" v-tooltip="'Màu chữ'">
+        <TextColorButton first :color="richTextAttrs.color" v-tooltip="'Text color'">
           <i-icon-park-outline:text />
         </TextColorButton>
       </Popover>
@@ -100,21 +100,21 @@
             @update:modelValue="value => updateFontStyle('backcolor', value)"
           />
         </template>
-        <TextColorButton :color="richTextAttrs.backcolor" v-tooltip="'Tô sáng chữ'">
+        <TextColorButton :color="richTextAttrs.backcolor" v-tooltip="'Highlight'">
           <i-icon-park-outline:high-light />
         </TextColorButton>
       </Popover>
       <Button 
         class="font-size-btn"
         style="width: 20%;"
-        v-tooltip="'Tăng cỡ chữ'"
+        v-tooltip="'Increase font size'"
         @click="updateFontStyle('fontsize-add', '2')"
       ><i-icon-park-outline:font-size />+</Button>
       <Button
         last
         class="font-size-btn"
         style="width: 20%;"
-        v-tooltip="'Giảm cỡ chữ'"
+        v-tooltip="'Decrease font size'"
         @click="updateFontStyle('fontsize-reduce', '2')"
       ><i-icon-park-outline:font-size />-</Button>
     </ButtonGroup>
@@ -124,10 +124,10 @@
       :value="richTextAttrs.align"
       @update:value="value => updateFontStyle('align', value)"
     >
-      <RadioButton value="left" style="flex: 1;" v-tooltip="'Căn trái'"><i-icon-park-outline:align-text-left /></RadioButton>
-      <RadioButton value="center" style="flex: 1;" v-tooltip="'Căn giữa'"><i-icon-park-outline:align-text-center /></RadioButton>
-      <RadioButton value="right" style="flex: 1;" v-tooltip="'Căn phải'"><i-icon-park-outline:align-text-right /></RadioButton>
-      <RadioButton value="justify" style="flex: 1;" v-tooltip="'Căn đều hai bên'"><i-icon-park-outline:align-text-both /></RadioButton>
+      <RadioButton value="left" style="flex: 1;" v-tooltip="'Align left'"><i-icon-park-outline:align-text-left /></RadioButton>
+      <RadioButton value="center" style="flex: 1;" v-tooltip="'Center'"><i-icon-park-outline:align-text-center /></RadioButton>
+      <RadioButton value="right" style="flex: 1;" v-tooltip="'Align right'"><i-icon-park-outline:align-text-right /></RadioButton>
+      <RadioButton value="justify" style="flex: 1;" v-tooltip="'Justify'"><i-icon-park-outline:align-text-both /></RadioButton>
     </RadioGroup>
   </div>
 </template>

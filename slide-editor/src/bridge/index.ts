@@ -65,7 +65,7 @@ let pendingDownload: 'pptx' | 'pdf' | 'image' | null = null
 function beginDownload(format: 'pptx' | 'pdf' | 'image') {
   if (format === 'pptx' && !canExportPptx()) {
     requestFeature('export-pptx')
-    post({ type: 'PM_EXPORT_DONE', status: 'blocked', message: 'Cần gói Pro để xuất PPTX' })
+    post({ type: 'PM_EXPORT_DONE', status: 'blocked', message: 'PPTX export requires the Pro plan' })
     return
   }
   bridge.downloadFormat = format
@@ -136,12 +136,12 @@ async function applyInit(data: InitMessage) {
   }
   else {
     const mode = theme.mode === 'light' ? 'light' : 'dark'
-    const legacy = Array.isArray(deck.slides) && deck.slides.length ? deck.slides as LegacySlide[] : [{ title: deck.title || 'Bài trình bày' }]
+    const legacy = Array.isArray(deck.slides) && deck.slides.length ? deck.slides as LegacySlide[] : [{ title: deck.title || 'Untitled deck' }]
     slides = legacyToPptist(legacy, mode)
     slideTheme = legacyTheme(mode, typeof theme.accent === 'string' ? theme.accent : undefined)
   }
 
-  slidesStore.setTitle(deck.title || 'Bài trình bày')
+  slidesStore.setTitle(deck.title || 'Untitled deck')
   slidesStore.setViewportRatio(typeof theme.viewportRatio === 'number' ? theme.viewportRatio : VIEWPORT_RATIO)
   slidesStore.updateSlideIndex(0)
   slidesStore.setSlides(slides, slideTheme)

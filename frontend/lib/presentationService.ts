@@ -45,7 +45,7 @@ export interface Deck {
 async function read(res: Response) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok || data.success === false) {
-    const error = new Error(res.status === 401 ? "Phiên đăng nhập đã hết hạn. Hãy vào lại từ trang chủ." : (data.message || "Không lưu được")) as Error & { code?: string };
+    const error = new Error(res.status === 401 ? "Your session has expired. Please sign in again from the home page." : (data.message || "Could not save")) as Error & { code?: string };
     error.code = data.code;
     throw error;
   }
@@ -63,7 +63,7 @@ export async function createDeck(title: string) {
     method: "POST",
     body: JSON.stringify({
       title,
-      slides: [{ id: "s1", layout: "title", title, body: "Bắt đầu bài trình bày" }],
+      slides: [{ id: "s1", layout: "title", title, body: "Start your presentation" }],
     }),
   });
   const data = await read(res);
@@ -161,10 +161,10 @@ export async function exportPptx(id: string) {
   const res = await apiFetch(`${API_BASE}/presentations/${id}/export.pptx`);
   if (res.status === 403) {
     const data = await res.json().catch(() => ({}));
-    const error = new Error(data.message || "Cần nâng cấp") as Error & { code?: string };
+    const error = new Error(data.message || "Upgrade required") as Error & { code?: string };
     error.code = data.code || "UPGRADE_REQUIRED";
     throw error;
   }
-  if (!res.ok) throw new Error("Không xuất được PPTX");
+  if (!res.ok) throw new Error("Could not export the PPTX");
   return res.blob();
 }

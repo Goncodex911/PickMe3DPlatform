@@ -13,28 +13,28 @@
     </div>
     <div class="configs">
       <div class="row">
-        <div class="title">Phạm vi xuất:</div>
+        <div class="title">Range:</div>
         <RadioGroup
           class="config-item"
           v-model:value="rangeType"
         >
-          <RadioButton style="width: 33.33%;" value="all">Tất cả</RadioButton>
-          <RadioButton style="width: 33.33%;" value="current">Slide hiện tại</RadioButton>
-          <RadioButton style="width: 33.33%;" value="custom">Tuỳ chỉnh</RadioButton>
+          <RadioButton style="width: 33.33%;" value="all">All</RadioButton>
+          <RadioButton style="width: 33.33%;" value="current">Current slide</RadioButton>
+          <RadioButton style="width: 33.33%;" value="custom">Custom</RadioButton>
         </RadioGroup>
       </div>
       <div class="row">
-        <div class="title">Chế độ xuất:</div>
+        <div class="title">Export mode:</div>
         <RadioGroup
           class="config-item"
           v-model:value="exportMode"
         >
-          <RadioButton style="width: 50%;" value="standard">Tiêu chuẩn</RadioButton>
-          <RadioButton style="width: 50%;" value="image">Chỉ hình ảnh</RadioButton>
+          <RadioButton style="width: 50%;" value="standard">Standard</RadioButton>
+          <RadioButton style="width: 50%;" value="image">Images only</RadioButton>
         </RadioGroup>
       </div>
       <div class="row" style="margin-bottom: 32px" v-if="rangeType === 'custom'">
-        <div class="title" :data-range="`(${range[0]} ~ ${range[1]})`">Phạm vi tuỳ chọn:</div>
+        <div class="title" :data-range="`(${range[0]} ~ ${range[1]})`">Custom range:</div>
         <Slider
           class="config-item"
           range
@@ -47,29 +47,29 @@
       
       <template v-if="exportMode === 'standard'">
         <div class="row">
-          <div class="title">Bỏ qua âm thanh/video:</div>
+          <div class="title">Skip audio/video:</div>
           <div class="config-item">
-            <Switch v-model:value="ignoreMedia" v-tooltip="'Mặc định khi xuất sẽ bỏ qua âm thanh/video. Nếu slide có âm thanh/video và bạn muốn đưa vào file PPTX, hãy tắt tuỳ chọn “Bỏ qua âm thanh/video”, nhưng việc xuất sẽ lâu hơn nhiều.'" />
+            <Switch v-model:value="ignoreMedia" v-tooltip="'Audio and video are skipped by default. If your slides contain audio/video and you want them in the PPTX, turn off “Skip audio/video”, but the export will take much longer.'" />
           </div>
         </div>
         <div class="row">
-          <div class="title">Ghi đè slide master mặc định:</div>
+          <div class="title">Override default master:</div>
           <div class="config-item">
             <Switch v-model:value="masterOverwrite" />
           </div>
         </div>
 
         <div class="tip" v-if="!ignoreMedia">
-          Lưu ý: 1. Hỗ trợ xuất định dạng avi, mp4, mov, wmv, mp3, wav; 2. Không xuất được tài nguyên khác domain.
+          Note: 1. Supported formats: avi, mp4, mov, wmv, mp3, wav; 2. Cross-origin resources cannot be exported.
         </div>
       </template>
     </div>
     <div class="btns">
-      <Button class="btn export" type="primary" @click="execExport()"><i-icon-park-outline:download /> Xuất PPTX</Button>
-      <Button class="btn close" @click="emit('close')">Đóng</Button>
+      <Button class="btn export" type="primary" @click="execExport()"><i-icon-park-outline:download /> Export PPTX</Button>
+      <Button class="btn close" @click="emit('close')">Close</Button>
     </div>
 
-    <FullscreenSpin :loading="exporting" tip="Đang xuất..." />
+    <FullscreenSpin :loading="exporting" tip="Exporting..." />
   </div>
 </template>
 

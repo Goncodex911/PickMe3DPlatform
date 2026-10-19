@@ -19,7 +19,7 @@ const request = async (url: string, options: RequestInit): Promise<Response> => 
       return jsonResponse
     } 
     catch (err) {
-      throw new Error('Máy chủ trả về phản hồi không phải dạng luồng')
+      throw new Error('The server returned a non-streaming response')
     }
   }
 

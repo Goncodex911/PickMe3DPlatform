@@ -1,8 +1,8 @@
 <template>
   <div class="table-generator">
     <div class="title">
-      <div class="lef">Bảng {{endCell.length ? `${endCell[0]} x ${endCell[1]}` : ''}}</div>
-      <div class="right" @click="isCustom = !isCustom">{{ isCustom ? 'Quay lại' : 'Tuỳ chỉnh'}}</div>
+      <div class="lef">Table {{endCell.length ? `${endCell[0]} x ${endCell[1]}` : ''}}</div>
+      <div class="right" @click="isCustom = !isCustom">{{ isCustom ? 'Back' : 'Custom'}}</div>
     </div>
     <table 
       @mouseleave="endCell = []" 
@@ -26,7 +26,7 @@
 
     <div class="custom" v-else>
       <div class="row">
-        <div class="label" style="width: 25%;">Số hàng:</div>
+        <div class="label" style="width: 25%;">Rows:</div>
         <NumberInput
           :min="1"
           :max="20"
@@ -35,7 +35,7 @@
         />
       </div>
       <div class="row">
-        <div class="label" style="width: 25%;">Số cột:</div>
+        <div class="label" style="width: 25%;">Columns:</div>
         <NumberInput
           :min="1"
           :max="20"
@@ -44,8 +44,8 @@
         />
       </div>
       <div class="btns">
-        <Button class="btn" @click="close()">Huỷ</Button>
-        <Button class="btn" type="primary" @click="insertCustomTable()">Xác nhận</Button>
+        <Button class="btn" @click="close()">Cancel</Button>
+        <Button class="btn" type="primary" @click="insertCustomTable()">Confirm</Button>
       </div>
     </div>
   </div>
@@ -79,8 +79,8 @@ const handleClickTable = () => {
 }
 
 const insertCustomTable = () => {
-  if (customRow.value < 1 || customRow.value > 20) return message.warning('Số hàng/cột phải trong khoảng 0~20!')
-  if (customCol.value < 1 || customCol.value > 20) return message.warning('Số hàng/cột phải trong khoảng 0~20!')
+  if (customRow.value < 1 || customRow.value > 20) return message.warning('Rows/columns must be between 0 and 20!')
+  if (customCol.value < 1 || customCol.value > 20) return message.warning('Rows/columns must be between 0 and 20!')
   emit('insert', { row: customRow.value, col: customCol.value })
   isCustom.value = false
 }

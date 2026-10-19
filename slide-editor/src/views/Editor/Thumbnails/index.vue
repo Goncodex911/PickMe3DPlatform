@@ -5,7 +5,7 @@
     v-click-outside="() => setThumbnailsFocus(false)"
   >
     <div class="add-slide">
-      <div class="btn" @click="createSlide()"><i-icon-park-outline:plus class="icon" />Thêm slide</div>
+      <div class="btn" @click="createSlide()"><i-icon-park-outline:plus class="icon" />Add slide</div>
       <Popover trigger="click" placement="bottom-start" v-model:value="presetLayoutPopoverVisible" center>
         <template #content>
           <Templates 
@@ -41,13 +41,13 @@
               :id="`section-title-input-${element?.sectionTag?.id || 'default'}`" 
               type="text"
               :value="element?.sectionTag?.title || ''"
-              placeholder="Nhập tên phần"
+              placeholder="Section name"
               @blur="$event => saveSection($event)"
               @keydown.enter.stop="$event => saveSection($event)"
               v-if="editingSectionId === element?.sectionTag?.id || (index === 0 && editingSectionId === 'default')"
             >
             <span class="text" v-else>
-              <div class="text-content">{{ element?.sectionTag ? (element?.sectionTag?.title || 'Phần chưa đặt tên') : 'Phần mặc định' }}</div>
+              <div class="text-content">{{ element?.sectionTag ? (element?.sectionTag?.title || 'Untitled section') : 'Default section' }}</div>
             </span>
           </div>
           <div
@@ -262,22 +262,22 @@ const contextmenusSection = (el: HTMLElement): ContextmenuItem[] => {
 
   return [
     {
-      text: 'Xoá phần',
+      text: 'Delete section',
       handler: () => removeSection(sectionId),
     },
     {
-      text: 'Xoá phần và các slide',
+      text: 'Delete section and slides',
       handler: () => {
         mainStore.setActiveElementIdList([])
         removeSectionSlides(sectionId)
       },
     },
     {
-      text: 'Xoá tất cả các phần',
+      text: 'Delete all sections',
       handler: removeAllSection,
     },
     {
-      text: 'Đổi tên phần',
+      text: 'Rename section',
       handler: () => editSection(sectionId),
     },
   ]
@@ -288,22 +288,22 @@ const { enterScreening, enterScreeningFromStart } = useScreening()
 const contextmenusThumbnails = (): ContextmenuItem[] => {
   return [
     {
-      text: 'Dán',
+      text: 'Paste',
       subText: 'Ctrl + V',
       handler: pasteSlide,
     },
     {
-      text: 'Chọn tất cả',
+      text: 'Select all',
       subText: 'Ctrl + A',
       handler: selectAllSlide,
     },
     {
-      text: 'Thêm slide',
+      text: 'Add slide',
       subText: 'Enter',
       handler: createSlide,
     },
     {
-      text: 'Trình chiếu',
+      text: 'Slideshow',
       subText: 'F5',
       handler: enterScreeningFromStart,
     },
@@ -313,49 +313,49 @@ const contextmenusThumbnails = (): ContextmenuItem[] => {
 const contextmenusThumbnailItem = (): ContextmenuItem[] => {
   return [
     {
-      text: 'Cắt',
+      text: 'Cut',
       subText: 'Ctrl + X',
       handler: cutSlide,
     },
     {
-      text: 'Sao chép',
+      text: 'Copy',
       subText: 'Ctrl + C',
       handler: copySlide,
     },
     {
-      text: 'Dán',
+      text: 'Paste',
       subText: 'Ctrl + V',
       handler: pasteSlide,
     },
     {
-      text: 'Chọn tất cả',
+      text: 'Select all',
       subText: 'Ctrl + A',
       handler: selectAllSlide,
     },
     { divider: true },
     {
-      text: 'Thêm slide',
+      text: 'Add slide',
       subText: 'Enter',
       handler: createSlide,
     },
     {
-      text: 'Nhân bản slide',
+      text: 'Duplicate slide',
       subText: 'Ctrl + D',
       handler: copyAndPasteSlide,
     },
     {
-      text: 'Xoá slide',
+      text: 'Delete slide',
       subText: 'Delete',
       handler: () => deleteSlide(),
     },
     {
-      text: 'Thêm phần',
+      text: 'Add section',
       handler: createSection,
       disable: !!currentSlide.value.sectionTag,
     },
     { divider: true },
     {
-      text: 'Trình chiếu từ đây',
+      text: 'Present from here',
       subText: 'Shift + F5',
       handler: enterScreening,
     },

@@ -1,7 +1,7 @@
 <template>
   <div class="upgrade-notice">
-    <p>Xuất PPTX cần gói Pro trở lên.</p>
-    <Button type="primary" @click="upgrade()">Xem gói nâng cấp</Button>
+    <p>PPTX export requires the Pro plan or higher.</p>
+    <Button type="primary" @click="upgrade()">See upgrade plans</Button>
   </div>
 </template>
 

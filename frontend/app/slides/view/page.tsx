@@ -18,7 +18,7 @@ export default function SlideViewPage() {
 
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("id") || "";
-    if (!id) { setError("Thiếu mã deck trong đường dẫn."); return; }
+    if (!id) { setError("The link is missing a deck id."); return; }
     getPublicDeck(id)
       .then((found) => {
         setDeck(found);
@@ -26,7 +26,7 @@ export default function SlideViewPage() {
           if (view?.counted) setDeck((current) => (current ? { ...current, viewsCount: view.viewsCount } : current));
         });
       })
-      .catch((err) => setError(err.message || "Không mở được deck"));
+      .catch((err) => setError(err.message || "Could not open this deck"));
   }, []);
 
   const slides = useMemo(() => (deck ? toRenderSlides(deck.slides, deck.theme) : []), [deck]);
@@ -49,7 +49,7 @@ export default function SlideViewPage() {
       const result = await likeDeck(deck.id);
       setDeck({ ...deck, likesCount: result.likesCount, liked: result.liked });
     } catch {
-      showToast("Đăng nhập để thích deck này");
+      showToast("Sign in to like this deck");
     }
   };
 
@@ -61,7 +61,7 @@ export default function SlideViewPage() {
       setDeck({ ...deck, comments });
       setNote("");
     } catch {
-      showToast("Đăng nhập để bình luận");
+      showToast("Sign in to comment");
     }
   };
 
@@ -75,37 +75,37 @@ export default function SlideViewPage() {
             <div className={s.dhead}>
               <div>
                 <p className={s.sub}>
-                  <span className={s.vis}><Icon name="person" />{deck.authorName || "Người dùng PickMe3D"}</span>
+                  <span className={s.vis}><Icon name="person" />{deck.authorName || "PickMe3D user"}</span>
                   <span>·</span><span>{slides.length} slide</span>
                   <span>·</span><span>{editedLabel(deck.updatedAt, deck.createdAt)}</span>
                 </p>
                 <h1 className={s.h1} id="viewTitle">{deck.title}</h1>
               </div>
               <div className={s.actions}>
-                <span className={s.btn} title="Lượt xem"><Icon name="visibility" />{deck.viewsCount || 0}</span>
-                <button type="button" className={`${s.btn} ${deck.liked ? s.liked : ""}`} onClick={toggleLike} aria-pressed={Boolean(deck.liked)} title={deck.liked ? "Bỏ thích" : "Thích"}>
+                <span className={s.btn} title="Views"><Icon name="visibility" />{deck.viewsCount || 0}</span>
+                <button type="button" className={`${s.btn} ${deck.liked ? s.liked : ""}`} onClick={toggleLike} aria-pressed={Boolean(deck.liked)} title={deck.liked ? "Unlike" : "Like"}>
                   <Icon name="favorite" />{deck.likesCount || 0}
                 </button>
               </div>
             </div>
 
             <div className={s.viewer} style={{ marginTop: 28 }}>
-              <div className={s.stage} aria-label={`Slide ${index + 1} trên ${slides.length}`}>
+              <div className={s.stage} aria-label={`Slide ${index + 1} of ${slides.length}`}>
                 <SlideView slide={slides[Math.min(index, last)]} className={s.stageSlide} />
-                <button type="button" className={`${s.navBtn} ${s.prev}`} onClick={() => go(-1)} disabled={index === 0} aria-label="Slide trước"><Icon name="chevron_left" /></button>
-                <button type="button" className={`${s.navBtn} ${s.next}`} onClick={() => go(1)} disabled={index >= last} aria-label="Slide sau"><Icon name="chevron_right" /></button>
+                <button type="button" className={`${s.navBtn} ${s.prev}`} onClick={() => go(-1)} disabled={index === 0} aria-label="Previous slide"><Icon name="chevron_left" /></button>
+                <button type="button" className={`${s.navBtn} ${s.next}`} onClick={() => go(1)} disabled={index >= last} aria-label="Next slide"><Icon name="chevron_right" /></button>
               </div>
               <div className={s.pager}>
                 <span>Slide {Math.min(index, last) + 1} / {slides.length}</span>
-                <span>Dùng <kbd>←</kbd> <kbd>→</kbd> để chuyển slide</span>
+                <span>Use <kbd>←</kbd> <kbd>→</kbd> to change slides</span>
               </div>
             </div>
 
             <section className={s.box} style={{ maxWidth: 760, margin: "40px auto 0" }} aria-labelledby="commentsTitle">
-              <h2 id="commentsTitle">Bình luận · {deck.comments?.length || 0}</h2>
+              <h2 id="commentsTitle">Comments · {deck.comments?.length || 0}</h2>
               <form className={s.linkRow} onSubmit={send}>
-                <input value={note} onChange={(event) => setNote(event.target.value)} maxLength={500} placeholder="Viết bình luận" aria-label="Bình luận" />
-                <button className={s.btn} type="submit" disabled={!note.trim()}>Gửi</button>
+                <input value={note} onChange={(event) => setNote(event.target.value)} maxLength={500} placeholder="Write a comment" aria-label="Comment" />
+                <button className={s.btn} type="submit" disabled={!note.trim()}>Send</button>
               </form>
               {(deck.comments || []).map((comment) => (
                 <p key={comment.id} className={s.notes}><strong style={{ color: "var(--fg)" }}>{comment.userName}</strong> {comment.content}</p>

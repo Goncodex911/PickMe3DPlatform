@@ -130,7 +130,7 @@ const execCommand = ({ target, action }: RichTextCommand) => {
       addMark(editorView, mark)
 
       if (item.value && !document.fonts.check(`16px ${item.value}`)) {
-        message.warning('Font cần tải xong mới hiển thị, vui lòng chờ')
+        message.warning('The font will appear once it has loaded, please wait')
       }
     }
     else if (item.command === 'fontsize' && item.value) {

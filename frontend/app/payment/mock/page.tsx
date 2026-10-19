@@ -31,7 +31,7 @@ function FakeQr({ seed }: { seed: string }) {
     </g>
   );
   return (
-    <svg viewBox="0 0 25 25" shapeRendering="crispEdges" role="img" aria-label="Mã QR giả lập">
+    <svg viewBox="0 0 25 25" shapeRendering="crispEdges" role="img" aria-label="Simulated QR code">
       {cells.map(([x, y]) => <rect key={`${x}.${y}`} x={x} y={y} width={1} height={1} fill="#0a0d15" />)}
       {finder(0, 0)}{finder(18, 0)}{finder(0, 18)}
     </svg>
@@ -50,7 +50,7 @@ export default function MockPaymentPage() {
     const code = new URLSearchParams(window.location.search).get("orderCode") || "";
     setOrderCode(code);
     fetchAccount().then(setAccount).catch(() => setAccount(null));
-    if (!code) { setError("Thiếu mã đơn. Quay lại bảng giá để tạo đơn mới."); return; }
+    if (!code) { setError("The link is missing an order code. Go back to Pricing to create a new order."); return; }
     fetchOrderStatus(code)
       .then((order) => {
         setAmount(order.amount);
@@ -68,7 +68,7 @@ export default function MockPaymentPage() {
       window.location.href = `/payment/result/?orderCode=${orderCode}`;
     } catch (err) {
       setPaying(false);
-      setError(err instanceof Error ? err.message : "Không xác nhận được thanh toán");
+      setError(err instanceof Error ? err.message : "Could not confirm the payment");
     }
   };
 
@@ -79,32 +79,32 @@ export default function MockPaymentPage() {
       <section className={`${s.wrap} ${s.payWrap}`} aria-labelledby="payTitle">
         <div className={s.payCard}>
           <div className={s.paySum}>
-            <a className={s.back} href="/pricing/"><Icon name="arrow_back" />Bảng giá</a>
+            <a className={s.back} href="/pricing/"><Icon name="arrow_back" />Pricing</a>
             <div>
-              <p className={s.kicker}>Đơn {orderCode || "—"}</p>
-              <h1 className={s.payTitle} id="payTitle">{planName ? `Nâng cấp gói ${planName}` : "Thanh toán PickMe3D"}</h1>
+              <p className={s.kicker}>Order {orderCode || "—"}</p>
+              <h1 className={s.payTitle} id="payTitle">{planName ? `Upgrade to ${planName}` : "PickMe3D payment"}</h1>
             </div>
             <dl className={s.kv}>
-              <dt>Gói</dt><dd>{planName || "—"}</dd>
-              <dt>Thời hạn</dt><dd>30 ngày</dd>
-              <dt>Phương thức</dt><dd>QR ngân hàng (payOS)</dd>
+              <dt>Plan</dt><dd>{planName || "—"}</dd>
+              <dt>Period</dt><dd>30 days</dd>
+              <dt>Method</dt><dd>Bank QR (payOS)</dd>
             </dl>
             <div>
-              <p className={s.kicker}>Tổng thanh toán</p>
+              <p className={s.kicker}>Total</p>
               <div className={s.amount}>{amount ? formatVnd(amount) : "—"}</div>
             </div>
-            <p className={s.notice} style={{ marginTop: 0 }}><Icon name="science" /><span>Chế độ giả lập: máy này chưa có khóa payOS. Bấm xác nhận sẽ kích hoạt gói ngay, không trừ tiền.</span></p>
+            <p className={s.notice} style={{ marginTop: 0 }}><Icon name="science" /><span>Simulation mode: payOS keys are not set on this machine. Confirming activates the plan right away and charges nothing.</span></p>
           </div>
           <div className={s.payBox}>
             <div className={s.qr}><FakeQr seed={orderCode || "pickme"} /></div>
             <ol className={s.steps}>
-              <li>Mở app ngân hàng và quét mã QR.</li>
-              <li>Kiểm tra số tiền {amount ? formatVnd(amount) : ""} và nội dung chuyển khoản.</li>
-              <li>Xác nhận, rồi quay lại trang này.</li>
+              <li>Open your banking app and scan the QR code.</li>
+              <li>Check the amount {amount ? formatVnd(amount) : ""} and the transfer note.</li>
+              <li>Confirm, then come back to this page.</li>
             </ol>
             {error && <p className={s.error} style={{ margin: 0 }}>{error}</p>}
             <button type="button" className={`${s.btn} ${s.primary}`} onClick={pay} disabled={!orderCode || !amount || paying}>
-              {paying ? "Đang xác nhận…" : "Tôi đã thanh toán"} <Icon name="check" />
+              {paying ? "Confirming…" : "I have paid"} <Icon name="check" />
             </button>
           </div>
         </div>

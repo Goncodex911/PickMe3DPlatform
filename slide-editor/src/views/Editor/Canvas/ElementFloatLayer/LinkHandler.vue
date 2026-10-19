@@ -1,11 +1,11 @@
 <template>
   <div class="link-handler" :style="handlerStyle">
     <a class="link" v-if="elementInfo.link?.type === 'web'" :href="elementInfo.link.target" target="_blank">{{elementInfo.link.target}}</a>
-    <a class="link" v-else-if="elementInfo.link" @click="turnTarget(elementInfo.link.target)">Slide trong bài {{elementInfo.link.target}}</a>
+    <a class="link" v-else-if="elementInfo.link" @click="turnTarget(elementInfo.link.target)">Slide in this deck {{elementInfo.link.target}}</a>
     <div class="btns">
-      <div class="btn" @click="openLinkDialog()">Đổi</div>
+      <div class="btn" @click="openLinkDialog()">Change</div>
       <Divider type="vertical" />
-      <div class="btn" @click="removeLink(elementInfo)">Gỡ</div>
+      <div class="btn" @click="removeLink(elementInfo)">Remove</div>
     </div>
   </div>
 </template>

@@ -1,7 +1,7 @@
 <template>
   <div class="element-color-mask">
     <div class="row">
-      <div style="width: 40%;">Phủ màu (mặt nạ):</div>
+      <div style="width: 40%;">Color overlay:</div>
       <div class="switch-wrapper" style="width: 60%;">
         <Switch 
           :value="hasColorMask" 
@@ -11,7 +11,7 @@
     </div>
     <template v-if="hasColorMask">
       <div class="row" style="margin-top: 15px;">
-        <div style="width: 40%;">Màu mặt nạ:</div>
+        <div style="width: 40%;">Overlay color:</div>
         <Popover trigger="click" style="width: 60%;">
           <template #content>
             <ColorPicker

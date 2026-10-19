@@ -11,7 +11,7 @@
       ref="inputRef"
       v-if="type === 'web'" 
       v-model:value="address" 
-      placeholder="Nhập địa chỉ web"
+      placeholder="Enter a web address"
       @enter="save()"
     />
 
@@ -23,13 +23,13 @@
     />
 
     <div class="preview" v-if="type === 'slide' && selectedSlide">
-      <div>Xem trước:</div>
+      <div>Preview:</div>
       <ThumbnailSlide class="thumbnail" :slide="selectedSlide" :size="500" />
     </div>
 
     <div class="btns">
-      <Button @click="emit('close')" style="margin-right: 10px;">Huỷ</Button>
-      <Button type="primary" @click="save()">Xác nhận</Button>
+      <Button @click="emit('close')" style="margin-right: 10px;">Cancel</Button>
+      <Button type="primary" @click="save()">Confirm</Button>
     </div>
   </div>
 </template>
@@ -82,8 +82,8 @@ const selectedSlide = computed(() => {
 })
 
 const tabs = computed<TabItem[]>(() => [
-  { key: 'web', label: 'Liên kết web' },
-  { key: 'slide', label: 'Slide trong bài', disabled: slides.value.length <= 1 },
+  { key: 'web', label: 'Web link' },
+  { key: 'slide', label: 'Slide in this deck', disabled: slides.value.length <= 1 },
 ])
 
 const { setLink } = useLink()

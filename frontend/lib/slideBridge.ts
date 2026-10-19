@@ -63,7 +63,7 @@ export function buildInitMessage(input: {
     plan: input.plan,
     user: input.user ? { name: input.user.name || "" } : null,
     brandTheme: input.brandTheme || null,
-    locale: "vi",
+    locale: "en",
     designs: input.designs,
     features: input.features || null,
   };

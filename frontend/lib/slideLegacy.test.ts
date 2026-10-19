@@ -44,11 +44,11 @@ describe("render helpers", () => {
 describe("deck labels", () => {
   const now = new Date(2026, 9, 17, 12, 0).getTime();
   it("shows relative edit times", () => {
-    expect(editedLabel(new Date(now - 18 * 60 * 1000).toISOString(), new Date(2026, 0, 1).toISOString(), now)).toBe("Sửa 18 phút trước");
-    expect(editedLabel(new Date(2026, 9, 16, 9).toISOString(), new Date(2026, 0, 1).toISOString(), now)).toBe("Sửa hôm qua");
-    expect(editedLabel(new Date(2026, 9, 6).toISOString(), new Date(2026, 0, 1).toISOString(), now)).toBe("Sửa 06/10");
+    expect(editedLabel(new Date(now - 18 * 60 * 1000).toISOString(), new Date(2026, 0, 1).toISOString(), now)).toBe("Edited 18 min ago");
+    expect(editedLabel(new Date(2026, 9, 16, 9).toISOString(), new Date(2026, 0, 1).toISOString(), now)).toBe("Edited yesterday");
+    expect(editedLabel(new Date(2026, 9, 6).toISOString(), new Date(2026, 0, 1).toISOString(), now)).toBe("Edited Oct 6");
     const created = new Date(2026, 8, 27).toISOString();
-    expect(editedLabel(created, created, now)).toBe("Tạo 27/09");
+    expect(editedLabel(created, created, now)).toBe("Created Sep 27");
   });
   it("formats quotas", () => {
     expect(quotaText(7, 50)).toBe("7 / 50");

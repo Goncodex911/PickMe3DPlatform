@@ -10,9 +10,9 @@
       </div>
     </div>
     <div class="menu">
-      <div class="menu-item" @click="changeMode('editor')"><i-icon-park-outline:edit class="icon" /> Sửa</div>
+      <div class="menu-item" @click="changeMode('editor')"><i-icon-park-outline:edit class="icon" /> Edit</div>
       <Divider type="vertical" style="height: 30px;" />
-      <div class="menu-item" @click="changeMode('player')"><i-icon-park-outline:full-screen-play class="icon" /> Trình chiếu</div>
+      <div class="menu-item" @click="changeMode('player')"><i-icon-park-outline:full-screen-play class="icon" /> Slideshow</div>
       <Divider type="vertical" style="height: 30px;" />
       <div class="menu-item ai" @click="openAIPPTDialog()">AIPPT</div>
     </div>

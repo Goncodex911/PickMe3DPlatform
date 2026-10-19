@@ -68,7 +68,7 @@
 
     <div class="btns">
       <div class="left">
-        Loại biểu đồ:{{ CHART_TYPE_MAP[chartType] }}
+        Chart type: {{ CHART_TYPE_MAP[chartType] }}
         <Popover trigger="click" placement="top" v-model:value="chartTypeSelectVisible">
           <template #content>
             <PopoverMenuItem
@@ -78,13 +78,13 @@
               @click="chartType = item; chartTypeSelectVisible = false"
             >{{CHART_TYPE_MAP[item]}}</PopoverMenuItem>
           </template>
-          <span class="change">Bấm để đổi</span>
+          <span class="change">Click to change</span>
         </Popover>
       </div>
       <div class="right">
-        <Button class="btn" @click="closeEditor()">Huỷ</Button>
-        <Button class="btn" @click="clear()">Xoá dữ liệu</Button>
-        <Button type="primary" class="btn" @click="getTableData()">Xác nhận</Button>
+        <Button class="btn" @click="closeEditor()">Cancel</Button>
+        <Button class="btn" @click="clear()">Clear data</Button>
+        <Button type="primary" class="btn" @click="getTableData()">Confirm</Button>
       </div>
     </div>
   </div>
@@ -206,13 +206,13 @@ const getTableData = () => {
 
   // 第一行为系列名，第一列为项目名，实际数据从第二行第二列开始
   for (let rowIndex = 1; rowIndex < row; rowIndex++) {
-    let labelsItem = `Hạng mục ${rowIndex}`
+    let labelsItem = `Category ${rowIndex}`
     const labelInputRef = document.querySelector(`#cell-${rowIndex}-0`) as HTMLInputElement
     if (labelInputRef && labelInputRef.value) labelsItem = labelInputRef.value
     labels.push(labelsItem)
   }
   for (let colIndex = 1; colIndex < col; colIndex++) {
-    let legendsItem = `Chuỗi ${colIndex}`
+    let legendsItem = `Series ${colIndex}`
     const labelInputRef = document.querySelector(`#cell-0-${colIndex}`) as HTMLInputElement
     if (labelInputRef && labelInputRef.value) legendsItem = labelInputRef.value
     legends.push(legendsItem)

@@ -1,8 +1,8 @@
 <template>
   <div class="viewport-size-setting">
-    <div class="title">Tuỳ chỉnh kích thước khung vẽ</div>
+    <div class="title">Custom canvas size</div>
     <div class="row">
-      <div class="label">Rộng:</div>
+      <div class="label">Width:</div>
       <NumberInput 
         v-model:value="customViewportWidth"
         :min="VIEWPORT_SIZE_MIN"
@@ -12,7 +12,7 @@
       />
     </div>
     <div class="row">
-      <div class="label">Cao:</div>
+      <div class="label">Height:</div>
       <NumberInput 
         v-model:value="customViewportHeight"
         :min="VIEWPORT_SIZE_MIN"
@@ -21,10 +21,10 @@
         @enter="applyCustomViewportSize()"
       />
     </div>
-    <div class="tip">Phạm vi rộng/cao:500 ~ 2000</div>
+    <div class="tip">Width/height range:500 ~ 2000</div>
     <div class="btns">
-      <Button type="primary" @click="applyCustomViewportSize()">Xác nhận</Button>
-      <Button style="margin-left: 10px;" @click="emit('close')">Huỷ</Button>
+      <Button type="primary" @click="applyCustomViewportSize()">Confirm</Button>
+      <Button style="margin-left: 10px;" @click="emit('close')">Cancel</Button>
     </div>
   </div>
 </template>
@@ -60,7 +60,7 @@ const applyCustomViewportSize = () => {
     width > VIEWPORT_SIZE_MAX ||
     height < VIEWPORT_SIZE_MIN ||
     height > VIEWPORT_SIZE_MAX
-  ) return message.warning(`Kích thước khung vẽ phải trong khoảng ${VIEWPORT_SIZE_MIN} ~ ${VIEWPORT_SIZE_MAX}`)
+  ) return message.warning(`Canvas size must be between ${VIEWPORT_SIZE_MIN} and ${VIEWPORT_SIZE_MAX}`)
 
   slidesStore.setViewportSize(width)
   slidesStore.setViewportRatio(height / width)

@@ -64,10 +64,10 @@ async function run(format: 'pptx' | 'pdf' | 'image') {
     await nextTick()
     if (!root.value) await new Promise(resolve => requestAnimationFrame(() => resolve(null)))
     const node = root.value
-    if (!node) throw new Error('Không dựng được slide')
+    if (!node) throw new Error('Could not render the slides')
     await waitPaint(node)
     const cards = [...node.querySelectorAll<HTMLElement>('.thumbnail-slide')]
-    if (!cards.length) throw new Error('Không dựng được slide')
+    if (!cards.length) throw new Error('Could not render the slides')
     if (format === 'image') {
       const files = []
       for (let index = 0; index < cards.length; index++) {
@@ -89,7 +89,7 @@ async function run(format: 'pptx' | 'pdf' | 'image') {
     notify('done')
   }
   catch (error) {
-    notify('error', error instanceof Error ? error.message : 'Xuất file thất bại')
+    notify('error', error instanceof Error ? error.message : 'Export failed')
   }
 }
 

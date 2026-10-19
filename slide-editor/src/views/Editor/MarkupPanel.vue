@@ -3,14 +3,14 @@
     class="notes-panel" 
     :width="300" 
     :height="130" 
-    title="Gắn loại slide" 
+    title="Slide type tags" 
     :left="-270" 
     :top="90"
     @close="close()"
   >
     <div class="container">
       <div class="row">
-        <div style="width: 40%;">Loại trang:</div>
+        <div style="width: 40%;">Page type:</div>
         <Select
           style="width: 60%;"
           :value="slideType"
@@ -19,7 +19,7 @@
         />
       </div>
       <div class="row" v-if="handleElement && (handleElement.type === 'text' || (handleElement.type === 'shape' && handleElement.text))">
-        <div style="width: 40%;">Loại chữ:</div>
+        <div style="width: 40%;">Text type:</div>
         <Select
           style="width: 60%;"
           :value="textType"
@@ -28,7 +28,7 @@
         />
       </div>
       <div class="row" v-else-if="handleElement && handleElement.type === 'image'">
-        <div style="width: 40%;">Loại ảnh:</div>
+        <div style="width: 40%;">Image type:</div>
         <Select
           style="width: 60%;"
           :value="imageType"
@@ -36,7 +36,7 @@
           :options="imageTypeOptions"
         />
       </div>
-      <div class="placeholder" v-else>Chọn ảnh, chữ hoặc hình có chữ để gắn loại</div>
+      <div class="placeholder" v-else>Select an image, text or a shape with text to tag it</div>
     </div>
   </MoveablePanel>
 </template>
@@ -56,33 +56,33 @@ const { currentSlide } = storeToRefs(slidesStore)
 const { handleElement, handleElementId } = storeToRefs(mainStore)
 
 const slideTypeOptions = ref<{ label: string; value: SlideType | '' }[]>([
-  { label: 'Chưa gắn loại', value: '' },
-  { label: 'Trang bìa', value: 'cover' },
-  { label: 'Trang mục lục', value: 'contents' },
-  { label: 'Trang chuyển tiếp', value: 'transition' },
-  { label: 'Trang nội dung', value: 'content' },
-  { label: 'Trang kết', value: 'end' },
+  { label: 'Untagged', value: '' },
+  { label: 'Cover page', value: 'cover' },
+  { label: 'Contents page', value: 'contents' },
+  { label: 'Transition page', value: 'transition' },
+  { label: 'Content page', value: 'content' },
+  { label: 'Closing page', value: 'end' },
 ])
 
 const textTypeOptions = ref<{ label: string; value: TextType | '' }[]>([
-  { label: 'Chưa gắn loại', value: '' },
-  { label: 'Tiêu đề', value: 'title' },
-  { label: 'Tiêu đề phụ', value: 'subtitle' },
-  { label: 'Nội dung', value: 'content' },
-  { label: 'Mục danh sách', value: 'item' },
-  { label: 'Tiêu đề mục danh sách', value: 'itemTitle' },
-  { label: 'Chú thích', value: 'notes' },
-  { label: 'Đầu trang', value: 'header' },
-  { label: 'Chân trang', value: 'footer' },
-  { label: 'Số phần', value: 'partNumber' },
-  { label: 'Số mục', value: 'itemNumber' },
+  { label: 'Untagged', value: '' },
+  { label: 'Title', value: 'title' },
+  { label: 'Subtitle', value: 'subtitle' },
+  { label: 'Body', value: 'content' },
+  { label: 'List item', value: 'item' },
+  { label: 'List item title', value: 'itemTitle' },
+  { label: 'Notes', value: 'notes' },
+  { label: 'Header', value: 'header' },
+  { label: 'Footer', value: 'footer' },
+  { label: 'Section number', value: 'partNumber' },
+  { label: 'Item number', value: 'itemNumber' },
 ])
 
 const imageTypeOptions = ref<{ label: string; value: ImageType | '' }[]>([
-  { label: 'Chưa gắn loại', value: '' },
-  { label: 'Ảnh minh hoạ trang', value: 'pageFigure' },
-  { label: 'Ảnh minh hoạ mục', value: 'itemFigure' },
-  { label: 'Ảnh nền', value: 'background' },
+  { label: 'Untagged', value: '' },
+  { label: 'Page figure', value: 'pageFigure' },
+  { label: 'Item figure', value: 'itemFigure' },
+  { label: 'Background image', value: 'background' },
 ])
 
 const slideType = computed(() => currentSlide.value?.type || '')

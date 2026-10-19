@@ -51,12 +51,12 @@ export default function PaymentResultPage() {
 
   const planName = order ? PLAN_NAME[order.planId] || order.planId : "";
   const title = {
-    loading: "Đang kiểm tra đơn…",
+    loading: "Checking your order…",
     PENDING: paymentCopy.resultPending,
     PAID: paymentCopy.resultPaid,
-    CANCELLED: "Đơn đã bị hủy",
+    CANCELLED: "Order cancelled",
     missing: paymentCopy.resultMissing,
-    error: "Không kiểm tra được đơn",
+    error: "Could not check the order",
   }[view];
 
   return (
@@ -65,40 +65,40 @@ export default function PaymentResultPage() {
         <div className={s.payCard} data-single="true">
           <div className={s.paySum}>
             <div>
-              <p className={s.kicker}>{orderCode ? `Đơn ${orderCode}` : "Thanh toán"}</p>
+              <p className={s.kicker}>{orderCode ? `Order ${orderCode}` : "Payment"}</p>
               <h1 className={s.payTitle} id="resultTitle">{title}</h1>
             </div>
 
             {view === "PAID" && (
               <div className={s.status} data-tone="ok" role="status">
                 <Icon name="check_circle" />
-                <span>Gói {PLAN_NAME[account?.plan || ""] || planName} đã được kích hoạt{account?.planExpiresAt ? `, dùng đến ${formatDate(account.planExpiresAt)}` : ""}.</span>
+                <span>Your {PLAN_NAME[account?.plan || ""] || planName} plan is active{account?.planExpiresAt ? ` until ${formatDate(account.planExpiresAt)}` : ""}.</span>
               </div>
             )}
             {(view === "PENDING" || view === "loading") && (
               <div className={s.status} data-tone="wait" role="status">
                 <Icon name="progress_activity" />
-                <span>Đang chờ ngân hàng xác nhận. Trang tự cập nhật mỗi 2 giây, bạn không cần tải lại.</span>
+                <span>Waiting for the bank to confirm. This page checks again every 2 seconds, no need to reload.</span>
               </div>
             )}
             {view === "CANCELLED" && (
               <div className={s.status} data-tone="bad" role="status">
                 <Icon name="cancel" />
-                <span>Không có khoản nào bị trừ. Tạo đơn mới từ bảng giá nếu bạn vẫn muốn nâng cấp.</span>
+                <span>Nothing was charged. Create a new order from Pricing if you still want to upgrade.</span>
               </div>
             )}
             {(view === "missing" || view === "error") && (
               <div className={s.status} data-tone="bad" role="status">
                 <Icon name="error" />
-                <span>{view === "missing" ? "Đường dẫn thiếu mã đơn. Mở lại từ email xác nhận hoặc tạo đơn mới." : error}</span>
+                <span>{view === "missing" ? "The link is missing an order code. Open it again from the confirmation email or create a new order." : error}</span>
               </div>
             )}
 
             {order && (
               <dl className={s.kv}>
-                <dt>Gói</dt><dd>{planName}</dd>
-                <dt>Số tiền</dt><dd>{formatVnd(order.amount)}</dd>
-                <dt>Trạng thái</dt><dd>{view === "PAID" ? "Đã thanh toán" : view === "CANCELLED" ? "Đã hủy" : "Chờ xác nhận"}</dd>
+                <dt>Plan</dt><dd>{planName}</dd>
+                <dt>Amount</dt><dd>{formatVnd(order.amount)}</dd>
+                <dt>Status</dt><dd>{view === "PAID" ? "Paid" : view === "CANCELLED" ? "Cancelled" : "Pending"}</dd>
               </dl>
             )}
 

@@ -1,15 +1,15 @@
 <template>
   <div class="slide-design-panel">
-    <div class="title">Nền</div>
+    <div class="title">Background</div>
     <div class="row">
       <Select 
         style="flex: 1;" 
         :value="background.type" 
         @update:value="value => updateBackgroundType(value as 'gradient' | 'image' | 'solid')"
         :options="[
-          { label: 'Tô màu đơn', value: 'solid' },
-          { label: 'Tô bằng ảnh', value: 'image' },
-          { label: 'Tô chuyển sắc', value: 'gradient' },
+          { label: 'Solid fill', value: 'solid' },
+          { label: 'Image fill', value: 'image' },
+          { label: 'Gradient fill', value: 'gradient' },
         ]"
       />
       <div style="width: 10px;"></div>
@@ -30,9 +30,9 @@
         @update:value="value => updateImageBackground({ size: value as SlideBackgroundImageSize })"
         v-else-if="background.type === 'image'"
         :options="[
-          { label: 'Thu phóng', value: 'contain' },
-          { label: 'Lát gạch', value: 'repeat' },
-          { label: 'Phủ kín', value: 'cover' },
+          { label: 'Zoom', value: 'contain' },
+          { label: 'Tile', value: 'repeat' },
+          { label: 'Cover', value: 'cover' },
         ]"
       />
 
@@ -42,8 +42,8 @@
         @update:value="value => updateGradientBackground({ type: value as GradientType })"
         v-else
         :options="[
-          { label: 'Chuyển sắc tuyến tính', value: 'linear' },
-          { label: 'Chuyển sắc toả tròn', value: 'radial' },
+          { label: 'Linear gradient', value: 'linear' },
+          { label: 'Radial gradient', value: 'radial' },
         ]"
       />
     </div>
@@ -68,7 +68,7 @@
         />
       </div>
       <div class="row">
-        <div style="width: 40%;">Điểm màu:</div>
+        <div style="width: 40%;">Color stop:</div>
         <Popover trigger="click" style="width: 60%;">
           <template #content>
             <ColorPicker
@@ -80,7 +80,7 @@
         </Popover>
       </div>
       <div class="row" v-if="background.gradient?.type === 'linear'">
-        <div style="width: 40%;">Góc chuyển sắc:</div>
+        <div style="width: 40%;">Gradient angle:</div>
         <Slider
           :min="0"
           :max="360"
@@ -93,7 +93,7 @@
     </div>
 
     <div class="row">
-      <Button style="flex: 1;" @click="applyBackgroundAllSlide()"><i-icon-park-outline:check /> Áp dụng nền cho tất cả</Button>
+      <Button style="flex: 1;" @click="applyBackgroundAllSlide()"><i-icon-park-outline:check /> Apply background to all</Button>
     </div>
 
     <Divider />
@@ -101,30 +101,30 @@
     <div class="row">
       <Select 
         style="width: 100%;" 
-        defaultLabel="Tuỳ chỉnh"
+        defaultLabel="Custom"
         :value="viewportRatio" 
         @update:value="value => updateViewportRatio(value)"
         :options="[
-          { label: 'Màn rộng 16 : 9', value: 0.5625 },
-          { label: 'Màn rộng 16 : 10', value: 0.625 },
-          { label: 'Tiêu chuẩn 4 : 3', value: 0.75 },
-          { label: 'Giấy A3 / A4', value: 0.70710678 },
-          { label: 'Dọc A3 / A4', value: 1.41421356 },
-          { label: 'Tuỳ chỉnh', value: 'custom' },
+          { label: 'Widescreen 16 : 9', value: 0.5625 },
+          { label: 'Widescreen 16 : 10', value: 0.625 },
+          { label: 'Standard 4 : 3', value: 0.75 },
+          { label: 'Paper A3 / A4', value: 0.70710678 },
+          { label: 'Vertical A3 / A4', value: 1.41421356 },
+          { label: 'Custom', value: 'custom' },
         ]"
       />
     </div>
 
     <div class="row">
-      <div class="canvas-size">Kích thước khung vẽ:{{  viewportSize  }} × {{ toFixed(viewportSize * viewportRatio) }}</div>
+      <div class="canvas-size">Canvas size:{{  viewportSize  }} × {{ toFixed(viewportSize * viewportRatio) }}</div>
     </div>
 
     <Divider />
 
     <div class="title">
-      <span>Chủ đề chung</span>
+      <span>Global theme</span>
       <span class="more" @click="moreThemeConfigsVisible = !moreThemeConfigsVisible">
-        <span class="text">Thêm</span>
+        <span class="text">Add</span>
         <i-icon-park-outline:down v-if="moreThemeConfigsVisible" />
         <i-icon-park-outline:right v-else />
       </span>
@@ -135,14 +135,14 @@
         style="width: 60%;"
         :value="theme.fontName"
         search
-        searchLabel="Tìm font"
+        searchLabel="Search fonts"
         autofocus
         @update:value="value => updateTheme({ fontName: value as string })"
         :options="FONTS"
       />
     </div>
     <div class="row">
-      <div style="width: 40%;">Màu chữ:</div>
+      <div style="width: 40%;">Text color:</div>
       <Popover trigger="click" style="width: 60%;">
         <template #content>
           <ColorPicker
@@ -154,7 +154,7 @@
       </Popover>
     </div>
     <div class="row">
-      <div style="width: 40%;">Màu nền:</div>
+      <div style="width: 40%;">Fill color:</div>
       <Popover trigger="click" style="width: 60%;">
         <template #content>
           <ColorPicker
@@ -166,13 +166,13 @@
       </Popover>
     </div>
     <div class="row">
-      <div style="width: 40%;">Màu chủ đề:</div>
+      <div style="width: 40%;">Theme color:</div>
       <ColorListButton style="width: 60%;" :colors="theme.themeColors" @click="themeColorsSettingVisible = true" />
     </div>
     
     <template v-if="moreThemeConfigsVisible">
       <div class="row">
-        <div style="width: 40%;">Kiểu viền:</div>
+        <div style="width: 40%;">Border style:</div>
         <SelectCustom style="width: 60%;">
           <template #options>
             <div class="option" v-for="item in lineStyleOptions" :key="item" @click="updateTheme({ outline: { ...theme.outline, style: item } })">
@@ -185,7 +185,7 @@
         </SelectCustom>
       </div>
       <div class="row">
-        <div style="width: 40%;">Màu viền:</div>
+        <div style="width: 40%;">Border color:</div>
         <Popover trigger="click" style="width: 60%;">
           <template #content>
             <ColorPicker
@@ -197,7 +197,7 @@
         </Popover>
       </div>
       <div class="row">
-        <div style="width: 40%;">Độ dày viền:</div>
+        <div style="width: 40%;">Border width:</div>
         <NumberInput 
           :value="theme.outline.width || 0" 
           @update:value="value => updateTheme({ outline: { ...theme.outline, width: value } })" 
@@ -205,7 +205,7 @@
         />
       </div>
       <div class="row" style="height: 30px;">
-        <div style="width: 40%;">Bóng ngang:</div>
+        <div style="width: 40%;">Shadow X:</div>
         <Slider 
           style="width: 60%;"
           :min="-20" 
@@ -216,7 +216,7 @@
         />
       </div>
       <div class="row" style="height: 30px;">
-        <div style="width: 40%;">Bóng dọc:</div>
+        <div style="width: 40%;">Shadow Y:</div>
         <Slider
           style="width: 60%;"
           :min="-20"
@@ -227,7 +227,7 @@
         />
       </div>
       <div class="row" style="height: 30px;">
-        <div style="width: 40%;">Độ nhoè:</div>
+        <div style="width: 40%;">Blur:</div>
         <Slider
           style="width: 60%;"
           :min="1"
@@ -238,7 +238,7 @@
         />
       </div>
       <div class="row">
-        <div style="width: 40%;">Màu bóng:</div>
+        <div style="width: 40%;">Shadow color:</div>
         <Popover trigger="click" style="width: 60%;">
           <template #content>
             <ColorPicker
@@ -252,20 +252,20 @@
     </template>
 
     <div class="row">
-      <Button style="flex: 1;" @click="applyThemeToAllSlides(moreThemeConfigsVisible)"><i-icon-park-outline:check /> Áp dụng chủ đề cho tất cả</Button>
+      <Button style="flex: 1;" @click="applyThemeToAllSlides(moreThemeConfigsVisible)"><i-icon-park-outline:check /> Apply theme to all</Button>
     </div>
 
     <div class="row">
-      <Button style="flex: 1;" @click="applyFontToAllSlides(theme.fontName)"><i-icon-park-outline:check /> Dùng một font cho tất cả</Button>
+      <Button style="flex: 1;" @click="applyFontToAllSlides(theme.fontName)"><i-icon-park-outline:check /> Use one font everywhere</Button>
     </div>
 
     <div class="row">
-      <Button style="flex: 1;" @click="themeStylesExtractVisible = true"><i-icon-park-outline:platte /> Lấy chủ đề từ slide</Button>
+      <Button style="flex: 1;" @click="themeStylesExtractVisible = true"><i-icon-park-outline:platte /> Extract theme from slides</Button>
     </div>
 
     <Divider />
 
-    <div class="title">Chủ đề có sẵn</div>
+    <div class="title">Preset themes</div>
     <div class="theme-list">
       <div 
         class="theme-item" 
@@ -277,14 +277,14 @@
         }"
       >
         <div class="theme-item-content">
-          <div class="text" :style="{ color: item.fontColor }">Chữ Aa</div>
+          <div class="text" :style="{ color: item.fontColor }">Text Aa</div>
           <div class="colors">
             <div class="color-block" v-for="(color, index) in item.colors" :key="index" :style="{ backgroundColor: color}"></div>
           </div>
 
           <div class="btns">
-            <Button type="primary" size="small" @click="applyPresetTheme(item)">Đặt</Button>
-            <Button type="primary" size="small" style="margin-top: 3px;" @click="applyPresetTheme(item, true)">Đặt và áp dụng</Button>
+            <Button type="primary" size="small" @click="applyPresetTheme(item)">Set</Button>
+            <Button type="primary" size="small" style="margin-top: 3px;" @click="applyPresetTheme(item, true)">Set and apply</Button>
           </div>
         </div>
       </div>

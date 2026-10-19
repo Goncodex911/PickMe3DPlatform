@@ -34,7 +34,7 @@ exports.checkout = async (req, res, next) => {
     const plan = getPlan(planId);
     const months = Math.min(12, Math.max(1, Number(req.body?.months) || 1));
     if (!plan || plan.price <= 0) {
-      return res.status(400).json({ success: false, message: 'Gói không hợp lệ' });
+      return res.status(400).json({ success: false, message: 'Invalid plan' });
     }
     const amount = plan.price * months;
     const orderCode = Date.now();
@@ -66,12 +66,12 @@ exports.webhook = async (req, res) => {
     return res.status(400).json({ success: false, message: verified.message });
   }
   const order = await billing.findOrder(verified.orderCode);
-  if (!order) return res.status(404).json({ success: false, message: 'Không thấy đơn' });
+  if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
   if (Number(order.amount) !== Number(verified.amount)) {
-    return res.status(400).json({ success: false, message: 'Sai số tiền' });
+    return res.status(400).json({ success: false, message: 'Amount mismatch' });
   }
   const marked = await billing.markPaid(order.orderCode, req.body);
-  if (!marked) return res.status(404).json({ success: false, message: 'Không thấy đơn' });
+  if (!marked) return res.status(404).json({ success: false, message: 'Order not found' });
   if (!marked.already) {
     await billing.extendPlan(order.userId, order.planId, order.months);
   }
@@ -81,7 +81,7 @@ exports.webhook = async (req, res) => {
 exports.status = async (req, res) => {
   const order = await billing.findOrder(req.params.orderCode);
   if (!order || String(order.userId) !== String(req.user.id)) {
-    return res.status(404).json({ success: false, message: 'Không thấy đơn' });
+    return res.status(404).json({ success: false, message: 'Order not found' });
   }
   if (order.status === 'PENDING' && !payos.isMockMode()) {
     const info = await payos.getPaymentLinkInformation(order.orderCode);

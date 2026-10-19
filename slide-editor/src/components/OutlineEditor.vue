@@ -196,23 +196,23 @@ const contextmenus = (el: HTMLElement): ContextmenuItem[] => {
   if (lv === 1) {
     return [
       {
-        text: 'Thêm mục con (chương)',
-        handler: () => addItem(id, 'next', 'Chương mới'),
+        text: 'Add child item (chapter)',
+        handler: () => addItem(id, 'next', 'New chapter'),
       },
     ]
   }
   else if (lv === 2) {
     return [
       {
-        text: 'Thêm chương cùng cấp phía trên',
-        handler: () => addItem(id, 'prev', 'Chương mới'),
+        text: 'Add chapter above',
+        handler: () => addItem(id, 'prev', 'New chapter'),
       },
       {
-        text: 'Thêm mục con (phần)',
-        handler: () => addItem(id, 'next', 'Phần mới'),
+        text: 'Add child item (section)',
+        handler: () => addItem(id, 'next', 'New section'),
       },
       {
-        text: 'Xoá chương này',
+        text: 'Delete this chapter',
         handler: () => deleteItem(id, true),
       },
     ]
@@ -220,30 +220,30 @@ const contextmenus = (el: HTMLElement): ContextmenuItem[] => {
   else if (lv === 3) {
     return [
       {
-        text: 'Thêm phần cùng cấp phía trên',
-        handler: () => addItem(id, 'prev', 'Phần mới'),
+        text: 'Add section above',
+        handler: () => addItem(id, 'prev', 'New section'),
       },
       {
-        text: 'Thêm mục con (ý)',
-        handler: () => addItem(id, 'next', 'Ý mới'),
+        text: 'Add child item (point)',
+        handler: () => addItem(id, 'next', 'New point'),
       },
       {
-        text: 'Xoá phần này',
+        text: 'Delete this section',
         handler: () => deleteItem(id, true),
       },
     ]
   }
   return [
     {
-      text: 'Thêm ý cùng cấp phía trên',
-      handler: () => addItem(id, 'prev', 'Ý mới'),
+      text: 'Add point above',
+      handler: () => addItem(id, 'prev', 'New point'),
     },
     {
-      text: 'Thêm ý cùng cấp phía dưới',
-      handler: () => addItem(id, 'next', 'Ý mới'),
+      text: 'Add point below',
+      handler: () => addItem(id, 'next', 'New point'),
     },
     {
-      text: 'Xoá ý này',
+      text: 'Delete this point',
       handler: () => deleteItem(id),
     },
   ]
@@ -335,13 +335,13 @@ const contextmenus = (el: HTMLElement): ContextmenuItem[] => {
     }
   }
   .item.lv-1 .flag::after {
-    content: 'Chủ đề';
+    content: 'Theme';
   }
   .item.lv-2 .flag::after {
-    content: 'Chương';
+    content: 'Chapter';
   }
   .item.lv-3 .flag::after {
-    content: 'Phần';
+    content: 'Section';
   }
   .item.lv-4 .flag::after {
     opacity: 0;

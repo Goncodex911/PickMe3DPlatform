@@ -42,14 +42,14 @@
     >
       <div class="content">
         <div class="tool-btn page-number" @click="slideThumbnailModelVisible = true">Slide {{slideIndex + 1}} / {{slides.length}}</div>
-        <i-icon-park-outline:write class="tool-btn" v-tooltip="'Bút vẽ'" @click="writingBoardToolVisible = true" />
-        <i-icon-park-outline:magic class="tool-btn" v-tooltip="'Bút laser'" :class="{ 'active': laserPen }" @click="laserPen = !laserPen" />
-        <i-icon-park-outline:stopwatch-start class="tool-btn" v-tooltip="'Đồng hồ'" :class="{ 'active': timerlVisible }" @click="timerlVisible = !timerlVisible" />
-        <i-icon-park-outline:list-view class="tool-btn" v-tooltip="'Chế độ người thuyết trình'" @click="changeViewMode('presenter')" />
-        <i-icon-park-outline:peoples-two class="tool-btn" v-tooltip="'Chế độ khán giả'" @click="openAudienceView()" />
-        <i-icon-park-outline:off-screen-one class="tool-btn" v-tooltip="'Thoát toàn màn hình'" v-if="fullscreenState" @click="manualExitFullscreen()" />
-        <i-icon-park-outline:full-screen-one class="tool-btn" v-tooltip="'Toàn màn hình'" v-else @click="enterFullscreen()" />
-        <i-icon-park-outline:power class="tool-btn" v-tooltip="'Kết thúc trình chiếu'" @click="exitScreening()" />
+        <i-icon-park-outline:write class="tool-btn" v-tooltip="'Pen'" @click="writingBoardToolVisible = true" />
+        <i-icon-park-outline:magic class="tool-btn" v-tooltip="'Laser pointer'" :class="{ 'active': laserPen }" @click="laserPen = !laserPen" />
+        <i-icon-park-outline:stopwatch-start class="tool-btn" v-tooltip="'Timer'" :class="{ 'active': timerlVisible }" @click="timerlVisible = !timerlVisible" />
+        <i-icon-park-outline:list-view class="tool-btn" v-tooltip="'Presenter view'" @click="changeViewMode('presenter')" />
+        <i-icon-park-outline:peoples-two class="tool-btn" v-tooltip="'Audience view'" @click="openAudienceView()" />
+        <i-icon-park-outline:off-screen-one class="tool-btn" v-tooltip="'Exit full screen'" v-if="fullscreenState" @click="manualExitFullscreen()" />
+        <i-icon-park-outline:full-screen-one class="tool-btn" v-tooltip="'Full screen'" v-else @click="enterFullscreen()" />
+        <i-icon-park-outline:power class="tool-btn" v-tooltip="'End slideshow'" @click="exitScreening()" />
       </div>
     </div>
 
@@ -125,84 +125,84 @@ const exitScreening = () => {
 const contextmenus = (): ContextmenuItem[] => {
   return [
     {
-      text: 'Slide trước',
+      text: 'Previous slide',
       subText: '↑ ←',
       disable: slideIndex.value <= 0,
       handler: () => turnPrevSlide(),
     },
     {
-      text: 'Slide sau',
+      text: 'Next slide',
       subText: '↓ →',
       disable: slideIndex.value >= slides.value.length - 1,
       handler: () => turnNextSlide(),
     },
     {
-      text: 'Slide đầu',
+      text: 'First slide',
       disable: slideIndex.value === 0,
       handler: () => turnSlideToIndex(0),
     },
     {
-      text: 'Slide cuối',
+      text: 'Last slide',
       disable: slideIndex.value === slides.value.length - 1,
       handler: () => turnSlideToIndex(slides.value.length - 1),
     },
     { divider: true },
     {
-      text: autoPlayTimer.value ? 'Tắt tự chạy slide' : 'Tự chạy slide',
+      text: autoPlayTimer.value ? 'Stop autoplay' : 'Autoplay',
       handler: autoPlayTimer.value ? closeAutoPlay : autoPlay,
       children: [
         {
-          text: '2.5 giây',
+          text: '2.5 s',
           subText: autoPlayInterval.value === 2500 ? '√' : '',
           handler: () => setAutoPlayInterval(2500),
         },
         {
-          text: '5 giây',
+          text: '5 s',
           subText: autoPlayInterval.value === 5000 ? '√' : '',
           handler: () => setAutoPlayInterval(5000),
         },
         {
-          text: '7.5 giây',
+          text: '7.5 s',
           subText: autoPlayInterval.value === 7500 ? '√' : '',
           handler: () => setAutoPlayInterval(7500),
         },
         {
-          text: '10 giây',
+          text: '10 s',
           subText: autoPlayInterval.value === 10000 ? '√' : '',
           handler: () => setAutoPlayInterval(10000),
         },
       ],
     },
     {
-      text: 'Trình chiếu lặp lại',
+      text: 'Loop slideshow',
       subText: loopPlay.value ? '√' : '',
       handler: () => setLoopPlay(!loopPlay.value),
     },
     { divider: true },
     {
-      text: 'Hiện thanh công cụ',
+      text: 'Show toolbar',
       handler: () => rightToolsVisible.value = true,
     },
     {
-      text: 'Xem tất cả slide',
+      text: 'View all slides',
       handler: () => slideThumbnailModelVisible.value = true,
     },
     {
-      text: 'Hiện hình thu nhỏ khi rê xuống đáy',
+      text: 'Show thumbnails at the bottom edge',
       subText: bottomThumbnailsVisible.value ? '√' : '',
       handler: () => bottomThumbnailsVisible.value = !bottomThumbnailsVisible.value,
     },
     {
-      text: 'Bút vẽ',
+      text: 'Pen',
       handler: () => writingBoardToolVisible.value = true,
     },
     {
-      text: 'Chế độ người thuyết trình',
+      text: 'Presenter view',
       handler: () => props.changeViewMode('presenter'),
     },
     { divider: true },
     {
-      text: 'Kết thúc trình chiếu',
+      text: 'End slideshow',
       subText: 'ESC',
       handler: exitScreening,
     },

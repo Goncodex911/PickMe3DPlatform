@@ -18,7 +18,7 @@ describe("slide bridge", () => {
     const message = buildInitMessage({ deck: { title: "A" }, plan: "free", user: { name: "Designer" }, designs: [] });
     expect(message).not.toHaveProperty("token");
     expect(JSON.stringify(message)).not.toMatch(/eyJ/);
-    expect(message.locale).toBe("vi");
+    expect(message.locale).toBe("en");
   });
 
   it("rejects a save without slides and accepts save status", () => {

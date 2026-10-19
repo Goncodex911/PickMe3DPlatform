@@ -165,7 +165,7 @@ const keydownListener = (e: KeyboardEvent) => {
   if (key === KEYS.ENTER) create()
 }
 onMounted(() => {
-  message.success('Bấm để vẽ hình tự do, nối điểm cuối với điểm đầu để hoàn tất. Nhấn ESC hoặc chuột phải để huỷ, nhấn ENTER để hoàn tất sớm', {
+  message.success('Click to draw a freeform shape and close it on the first point to finish. Press ESC or right-click to cancel, ENTER to finish early', {
     duration: 0,
   })
   document.addEventListener('keydown', keydownListener)

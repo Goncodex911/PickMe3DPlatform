@@ -1,7 +1,7 @@
 <template>
   <div class="chart-style-panel">
     <Button class="full-width-btn" @click="openDataEditor()">
-      <i-icon-park-outline:edit /> Sửa biểu đồ
+      <i-icon-park-outline:edit /> Edit chart
     </Button>
 
     <Divider />
@@ -12,20 +12,20 @@
           @update:value="value => updateOptions({ stack: value })" 
           :value="stack"
           style="flex: 2;"
-        >Xếp chồng</Checkbox>
+        >Stacked</Checkbox>
         <Checkbox 
           v-if="handleChartElement.chartType === 'line'"
           @update:value="value => updateOptions({ lineSmooth: value })" 
           :value="lineSmooth"
           style="flex: 3;"
-        >Đường cong mượt</Checkbox>
+        >Smooth lines</Checkbox>
       </div>
   
       <Divider />
     </template>
 
     <div class="row">
-      <div style="width: 40%;">Màu nền:</div>
+      <div style="width: 40%;">Fill color:</div>
       <Popover trigger="click" style="width: 60%;">
         <template #content>
           <ColorPicker
@@ -37,7 +37,7 @@
       </Popover>
     </div>
     <div class="row">
-      <div style="width: 40%;">Trục và chữ:</div>
+      <div style="width: 40%;">Axis and text:</div>
       <Popover trigger="click" style="width: 60%;">
         <template #content>
           <ColorPicker
@@ -49,7 +49,7 @@
       </Popover>
     </div>
     <div class="row">
-      <div style="width: 40%;">Màu lưới:</div>
+      <div style="width: 40%;">Grid color:</div>
       <Popover trigger="click" style="width: 60%;">
         <template #content>
           <ColorPicker
@@ -62,11 +62,11 @@
     </div>
 
     <div class="row">
-      <div style="width: 40%;">Bảng màu chủ đề:</div>
+      <div style="width: 40%;">Theme palette:</div>
       <Popover trigger="click" v-model:value="themesVisible" style="width: 60%;">
         <template #content>
           <div class="themes">
-            <div class="label">Chủ đề biểu đồ có sẵn:</div>
+            <div class="label">Preset chart themes:</div>
             <div class="preset-themes">
               <div class="preset-theme" v-for="(item, index) in CHART_PRESET_THEMES" :key="index" @click="setThemeColors(item)">
                 <div 
@@ -77,7 +77,7 @@
                 ></div>
               </div>
             </div>
-            <div class="label">Chủ đề slide:</div>
+            <div class="label">Slide theme:</div>
             <div class="preset-themes" :style="{ marginBottom: '-10px' }">
               <div class="preset-theme" @click="setThemeColors(theme.themeColors)">
                 <div 
@@ -89,7 +89,7 @@
               </div>
             </div>
             <Divider :margin="10" />
-            <Button class="full-width-btn" @click="themesVisible = false; themeColorsSettingVisible = true">Tự chọn màu</Button>
+            <Button class="full-width-btn" @click="themesVisible = false; themeColorsSettingVisible = true">Custom colors</Button>
           </div>
         </template>
         <ColorListButton :colors="themeColors" />

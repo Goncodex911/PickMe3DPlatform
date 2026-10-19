@@ -10,12 +10,12 @@
       display: 'flex',
       flexDirection: 'column',
     }"
-    title="Thư viện ảnh (từ pexels.com)" 
+    title="Image library (from pexels.com)" 
     @close="close()"
   >
-    <div class="container" v-loading="{ state: loading, text: 'Đang tải...' }">
+    <div class="container" v-loading="{ state: loading, text: 'Loading...' }">
       <div class="tools">
-        <Input class="input" v-model:value="searchWord" placeholder="Tìm ảnh" @enter="search()">
+        <Input class="input" v-model:value="searchWord" placeholder="Search images" @enter="search()">
           <template #prefix>
             <Popover class="more-icon" trigger="click" v-model:value="orientationVisible">
               <template #content>
@@ -48,7 +48,7 @@
           <div class="img-item">
             <img :src="props.src">
             <div class="mask">
-              <Button type="primary" size="small" @click="createImageElement(props.src)">Chèn</Button>
+              <Button type="primary" size="small" @click="createImageElement(props.src)">Insert</Button>
             </div>
           </div>
         </template>
@@ -96,16 +96,16 @@ const orientationOptions: {
   key: Orientation
   label: string
 }[] = [
-  { key: 'all', label: 'Tất cả' },
-  { key: 'landscape', label: 'Ngang' },
-  { key: 'portrait', label: 'Dọc' },
-  { key: 'square', label: 'Vuông' },
+  { key: 'all', label: 'All' },
+  { key: 'landscape', label: 'Horizontal' },
+  { key: 'portrait', label: 'Vertical' },
+  { key: 'square', label: 'Square' },
 ]
 const orientationMap: Record<string, string> = {
-  'all': 'Tất cả',
-  'landscape': 'Ngang',
-  'portrait': 'Dọc',
-  'square': 'Vuông',
+  'all': 'All',
+  'landscape': 'Horizontal',
+  'portrait': 'Vertical',
+  'square': 'Square',
 }
 
 const close = () => {
@@ -113,12 +113,12 @@ const close = () => {
 }
 
 onMounted(() => {
-  search('phong cảnh')
+  search('landscape')
 })
 
 const search = (q?: string) => {  
   const query = q || searchWord.value
-  if (!query) return message.error('Hãy nhập từ khoá tìm kiếm')
+  if (!query) return message.error('Please enter a search term')
 
   loading.value = true
   page.value = 1
@@ -153,7 +153,7 @@ const loadMore = () => {
   page.value += 1
 
   api.searchImage({
-    query: searchWord.value || 'phong cảnh',
+    query: searchWord.value || 'landscape',
     per_page: perPage.value,
     page: page.value,
     orientation: orientation.value,

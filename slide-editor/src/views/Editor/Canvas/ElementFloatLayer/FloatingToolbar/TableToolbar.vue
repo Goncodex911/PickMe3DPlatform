@@ -6,7 +6,7 @@
       </template>
       <button class="toolbar-btn">
         <i-icon-park-outline:fill class="icon" />
-        <span>Tô màu</span>
+        <span>Fill</span>
       </button>
     </Popover>
     <BorderPanel />
@@ -16,27 +16,27 @@
     <Popover trigger="click">
       <template #content>
         <div class="table-command-menu">
-          <PopoverMenuItem center @click="emitTableCommand('insert-row', 'before')">Chèn hàng phía trên</PopoverMenuItem>
-          <PopoverMenuItem center @click="emitTableCommand('insert-row', 'after')">Chèn hàng phía dưới</PopoverMenuItem>
-          <PopoverMenuItem center @click="emitTableCommand('insert-col', 'before')">Chèn cột bên trái</PopoverMenuItem>
-          <PopoverMenuItem center @click="emitTableCommand('insert-col', 'after')">Chèn cột bên phải</PopoverMenuItem>
+          <PopoverMenuItem center @click="emitTableCommand('insert-row', 'before')">Insert row above</PopoverMenuItem>
+          <PopoverMenuItem center @click="emitTableCommand('insert-row', 'after')">Insert row below</PopoverMenuItem>
+          <PopoverMenuItem center @click="emitTableCommand('insert-col', 'before')">Insert column left</PopoverMenuItem>
+          <PopoverMenuItem center @click="emitTableCommand('insert-col', 'after')">Insert column right</PopoverMenuItem>
         </div>
       </template>
       <button class="toolbar-btn">
         <i-icon-park-outline:add class="icon" />
-        <span>Thêm</span>
+        <span>Add</span>
       </button>
     </Popover>
     <Popover trigger="click">
       <template #content>
         <div class="table-command-menu">
-          <PopoverMenuItem center @click="emitTableCommand('delete-row')">Xoá hàng</PopoverMenuItem>
-          <PopoverMenuItem center @click="emitTableCommand('delete-col')">Xoá cột</PopoverMenuItem>
+          <PopoverMenuItem center @click="emitTableCommand('delete-row')">Delete row</PopoverMenuItem>
+          <PopoverMenuItem center @click="emitTableCommand('delete-col')">Delete column</PopoverMenuItem>
         </div>
       </template>
       <button class="toolbar-btn">
         <i-icon-park-outline:reduce class="icon" />
-        <span>Xoá</span>
+        <span>Delete</span>
       </button>
     </Popover>
   </div>

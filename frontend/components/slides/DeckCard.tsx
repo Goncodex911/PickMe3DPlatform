@@ -17,7 +17,7 @@ export function DeckCover({ deck }: { deck: Deck }) {
     return <img src={deck.thumbnail} alt="" />;
   }
   if (first) return <SlideView slide={first} className={s.thumbView} />;
-  return <span className={s.cover}><strong>{deck.title}</strong><span>Chưa có slide</span></span>;
+  return <span className={s.cover}><strong>{deck.title}</strong><span>No slides yet</span></span>;
 }
 
 export type DeckMenuAction = "studio" | "pptx" | "pdf" | "png" | "copy" | "toggle" | "delete" | "confirm-delete" | "cancel";
@@ -26,8 +26,8 @@ export type DeckMenuAction = "studio" | "pptx" | "pdf" | "png" | "copy" | "toggl
 export function DeckStats({ deck }: { deck: Deck }) {
   return (
     <>
-      <span className={s.vis} title="Lượt xem"><Icon name="visibility" />{deck.viewsCount || 0}</span>
-      <span className={s.vis} title="Lượt thích"><Icon name="favorite" />{deck.likesCount || 0}</span>
+      <span className={s.vis} title="Views"><Icon name="visibility" />{deck.viewsCount || 0}</span>
+      <span className={s.vis} title="Likes"><Icon name="favorite" />{deck.likesCount || 0}</span>
     </>
   );
 }
@@ -57,20 +57,20 @@ export default function DeckCard({
   const count = deck.slideCount ?? deck.slides.length;
   return (
     <article className={s.deck}>
-      <a className={s.thumb} href={href} aria-label={`Xem ${deck.title}`}>
+      <a className={s.thumb} href={href} aria-label={`View ${deck.title}`}>
         <DeckCover deck={deck} />
         {locked && (
           <span className={s.locked}>
-            <span><Icon name="lock" />Vượt hạn mức gói hiện tại<br />Chỉ xem được</span>
+            <span><Icon name="lock" />Over your plan limit<br />View only</span>
           </span>
         )}
       </a>
       {confirming ? (
         <div className={s.confirm} role="alert">
-          Xóa “{deck.title}” và {count} slide? Không khôi phục được.
+          Delete “{deck.title}” and its {count} {count === 1 ? "slide" : "slides"}? This cannot be undone.
           <div>
-            <button type="button" className={s.btn} onClick={() => onAction("cancel", deck)}>Giữ lại</button>
-            <button type="button" className={`${s.btn} ${s.primary}`} onClick={() => onAction("confirm-delete", deck)}>Xóa</button>
+            <button type="button" className={s.btn} onClick={() => onAction("cancel", deck)}>Keep</button>
+            <button type="button" className={`${s.btn} ${s.primary}`} onClick={() => onAction("confirm-delete", deck)}>Delete</button>
           </div>
         </div>
       ) : (
@@ -79,7 +79,7 @@ export default function DeckCard({
           <button
             type="button"
             className={s.more}
-            aria-label={`Tùy chọn cho ${deck.title}`}
+            aria-label={`Options for ${deck.title}`}
             aria-haspopup="menu"
             aria-expanded={menuOpen}
             onClick={(event) => { event.stopPropagation(); onMenu(menuOpen ? null : deck.id); }}
@@ -88,16 +88,16 @@ export default function DeckCard({
           </button>
           <p>
             {community ? (
-              <span className={s.vis}><Icon name="person" />{deck.authorName || "Người dùng PickMe3D"}</span>
+              <span className={s.vis}><Icon name="person" />{deck.authorName || "PickMe3D user"}</span>
             ) : locked ? (
-              <span className={s.vis} data-ro="true"><Icon name="lock" />Chỉ xem</span>
+              <span className={s.vis} data-ro="true"><Icon name="lock" />View only</span>
             ) : deck.isPublic ? (
-              <span className={s.vis}><Icon name="public" />Công khai</span>
+              <span className={s.vis}><Icon name="public" />Public</span>
             ) : (
-              <span className={s.vis}><Icon name="visibility_off" />Riêng tư</span>
+              <span className={s.vis}><Icon name="visibility_off" />Private</span>
             )}
             <span className={s.sep}>·</span>
-            <span className={s.count}>{count} slide</span>
+            <span className={s.count}>{count} {count === 1 ? "slide" : "slides"}</span>
             <span className={s.sep}>·</span>
             <span>{editedLabel(deck.updatedAt, deck.createdAt)}</span>
             <span className={s.sep}>·</span>
@@ -107,17 +107,17 @@ export default function DeckCard({
       )}
       {menuOpen && community && (
         <div className={s.menu} role="menu" onClick={(event) => event.stopPropagation()}>
-          <a role="menuitem" href={href}><Icon name="slideshow" />Xem deck</a>
-          <a role="menuitem" href={`/slides/view/?id=${deck.id}`} target="_blank" rel="noreferrer"><Icon name="open_in_new" />Trang xem công khai</a>
-          <button type="button" role="menuitem" onClick={() => onAction("copy", deck)}><Icon name="link" />Sao chép link</button>
+          <a role="menuitem" href={href}><Icon name="slideshow" />View deck</a>
+          <a role="menuitem" href={`/slides/view/?id=${deck.id}`} target="_blank" rel="noreferrer"><Icon name="open_in_new" />Public page</a>
+          <button type="button" role="menuitem" onClick={() => onAction("copy", deck)}><Icon name="link" />Copy link</button>
         </div>
       )}
       {menuOpen && !community && (
         <div className={s.menu} role="menu" onClick={(event) => event.stopPropagation()}>
           {locked ? (
-            <a role="menuitem" href={href}><Icon name="slideshow" />Xem deck</a>
+            <a role="menuitem" href={href}><Icon name="slideshow" />View deck</a>
           ) : (
-            <button type="button" role="menuitem" onClick={() => onAction("studio", deck)}><Icon name="edit" />Mở trong studio</button>
+            <button type="button" role="menuitem" onClick={() => onAction("studio", deck)}><Icon name="edit" />Open in studio</button>
           )}
           {!locked && (
             <>
@@ -130,15 +130,15 @@ export default function DeckCard({
             </>
           )}
           <a role="menuitem" href={`/slides/view/?id=${deck.id}`} target="_blank" rel="noreferrer" aria-disabled={!deck.isPublic} style={deck.isPublic ? undefined : { pointerEvents: "none", color: "var(--faint)" }}>
-            <Icon name="open_in_new" />Trang xem công khai
+            <Icon name="open_in_new" />Public page
           </a>
-          <button type="button" role="menuitem" disabled={!deck.isPublic} onClick={() => onAction("copy", deck)}><Icon name="link" />Sao chép link</button>
+          <button type="button" role="menuitem" disabled={!deck.isPublic} onClick={() => onAction("copy", deck)}><Icon name="link" />Copy link</button>
           <button type="button" role="menuitem" disabled={locked} onClick={() => onAction("toggle", deck)}>
             <Icon name={deck.isPublic ? "visibility_off" : "public"} />
-            {deck.isPublic ? "Chuyển sang riêng tư" : "Chuyển sang công khai"}
+            {deck.isPublic ? "Make private" : "Make public"}
             {!canPrivate && deck.isPublic && <small>Pro</small>}
           </button>
-          <button type="button" role="menuitem" className={s.danger} onClick={() => onAction("delete", deck)}><Icon name="delete" />Xóa deck</button>
+          <button type="button" role="menuitem" className={s.danger} onClick={() => onAction("delete", deck)}><Icon name="delete" />Delete deck</button>
         </div>
       )}
     </article>

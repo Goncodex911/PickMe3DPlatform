@@ -1,17 +1,17 @@
 <template>
   <div class="ai-topic">
-    <div class="title">AI tạo bài trình bày</div>
-    <p class="hint">Nhập chủ đề. PickMe3D sẽ tạo một deck mới và mở nó trong studio; bài đang sửa được lưu trước.</p>
+    <div class="title">Generate a deck with AI</div>
+    <p class="hint">Enter a topic. PickMe3D will create a new deck and open it in the studio; the deck you are editing is saved first.</p>
     <Input
       ref="inputRef"
       v-model:value="topic"
-      placeholder="Ví dụ: Bộ sưu tập lụa thu đông"
+      placeholder="e.g. Silk autumn/winter collection"
       :maxlength="80"
       @enter="submit()"
     />
     <div class="actions">
-      <Button @click="bridge.aiDialog = false">Huỷ</Button>
-      <Button type="primary" :disabled="!topic.trim()" @click="submit()">Tạo</Button>
+      <Button @click="bridge.aiDialog = false">Cancel</Button>
+      <Button type="primary" :disabled="!topic.trim()" @click="submit()">Generate</Button>
     </div>
   </div>
 </template>

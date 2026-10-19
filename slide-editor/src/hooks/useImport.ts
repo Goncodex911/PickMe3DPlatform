@@ -355,7 +355,7 @@ export default () => {
         else addSlidesFromData(slides)
       }
       catch {
-        message.error('Không đọc / phân tích được file này')
+        message.error('Could not read / parse this file')
       }
     })
     reader.readAsText(file)
@@ -388,7 +388,7 @@ export default () => {
         else addSlidesFromData(slides)
       }
       catch {
-        message.error('Không đọc / phân tích được file này')
+        message.error('Could not read / parse this file')
       }
     })
     reader.readAsText(file)
@@ -675,7 +675,7 @@ export default () => {
       }
       catch {
         exporting.value = false
-        message.error('Không đọc / phân tích được file này')
+        message.error('Could not read / parse this file')
         return
       }
 
@@ -1226,7 +1226,7 @@ export default () => {
               let series: number[][]
   
               if (el.chartType === 'scatterChart' || el.chartType === 'bubbleChart') {
-                labels = el.data[0].map((item, index) => `Điểm ${index + 1}`)
+                labels = el.data[0].map((item, index) => `Point ${index + 1}`)
                 legends = el.data.map((item, index) => {
                   if (index === 0) return 'X'
                   if (index === 1) return 'Y'

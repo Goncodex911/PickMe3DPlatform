@@ -11,7 +11,7 @@
     @click="autoHideController()"
   >
     <div class="video-wrap" @click="toggle()">
-      <div class="load-error" v-if="loadError">Không tải được video</div>
+      <div class="load-error" v-if="loadError">Could not load the video</div>
 
       <canvas ref="bgCanvasRef" class="bg-canvas"></canvas>
       <video
@@ -77,7 +77,7 @@
       <div class="icons icons-right">
         <div class="speed">
           <div class="icon speed-icon">
-            <span class="icon-content" @click="speedMenuVisible = !speedMenuVisible">{{playbackRate === 1 ? 'Tốc độ' : (playbackRate + 'x')}}</span>
+            <span class="icon-content" @click="speedMenuVisible = !speedMenuVisible">{{playbackRate === 1 ? 'Speed' : (playbackRate + 'x')}}</span>
             <div class="speed-menu" v-if="speedMenuVisible" @mouseleave="speedMenuVisible = false">
               <div 
                 class="speed-menu-item" 
@@ -91,7 +91,7 @@
         </div>
         <div class="loop" @click="toggleLoop()">
           <div class="icon loop-icon" :class="{ 'active': loop }">
-            <span class="icon-content">Lặp: {{loop ? 'Bật' : 'Tắt'}}</span>
+            <span class="icon-content">Loop: {{loop ? 'On' : 'Off'}}</span>
           </div>
         </div>
       </div>

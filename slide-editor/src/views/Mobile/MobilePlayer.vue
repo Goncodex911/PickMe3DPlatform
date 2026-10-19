@@ -46,7 +46,7 @@
 
     <template v-if="toolVisible">
       <div class="header">
-        <div class="back" @click="changeMode('preview')"><i-icon-park-outline:logout /> Thoát trình chiếu</div>
+        <div class="back" @click="changeMode('preview')"><i-icon-park-outline:logout /> Exit slideshow</div>
       </div>
       <MobileThumbnails class="thumbnails" />
     </template>

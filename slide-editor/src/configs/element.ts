@@ -1,13 +1,13 @@
 export const ELEMENT_TYPE_ZH: Record<string, string> = {
-  text: 'Văn bản',
-  image: 'Hình ảnh',
-  shape: 'Hình khối',
-  line: 'Đường kẻ',
-  chart: 'Biểu đồ',
-  table: 'Bảng',
+  text: 'Text',
+  image: 'Image',
+  shape: 'Shape',
+  line: 'Line',
+  chart: 'Chart',
+  table: 'Table',
   video: 'Video',
-  audio: 'Âm thanh',
-  latex: 'Công thức',
+  audio: 'Audio',
+  latex: 'Formula',
 }
 
 export const MIN_SIZE: Record<string, number> = {

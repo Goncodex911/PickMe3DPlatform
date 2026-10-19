@@ -35,19 +35,19 @@ function styled(layout, title, body, index) {
 }
 
 function cleanTopic(topic) {
-  return String(topic || 'Bộ sưu tập mới').trim().slice(0, 80) || 'Bộ sưu tập mới';
+  return String(topic || 'New collection').trim().slice(0, 80) || 'New collection';
 }
 
 // Bộ mẫu dựng sẵn khi AI không trả lời được
 function templateDeck(topic) {
   const name = cleanTopic(topic);
   const items = [
-    ['title', name, 'Bài pitch được tạo cho PickMe3D'],
-    ['pitch', 'Vì sao khách chọn', `Ba điểm chạm của ${name}: chất liệu, dáng cắt, và câu chuyện thương hiệu.`],
-    ['lookbook', 'Lookbook', 'Ảnh chủ đạo của bộ sưu tập, kèm chú thích ngắn.'],
-    ['case-study', 'Case study', 'Trước khi có thiết kế này, trang sản phẩm thiếu nhịp. Sau khi dựng trên canvas, khách dừng lại lâu hơn.'],
-    ['quote', 'Một câu của nhà thiết kế', `“${name} là cuộc gặp giữa tay nghề và ánh sáng.”`],
-    ['closing', 'Bước tiếp theo', 'Đặt lịch xem mẫu hoặc mở storefront 3D để chọn mẫu trực tuyến.'],
+    ['title', name, 'A pitch deck made with PickMe3D'],
+    ['pitch', 'Why customers choose it', `Three touchpoints of ${name}: fabric, cut and brand story.`],
+    ['lookbook', 'Lookbook', 'The key image of the collection, with a short caption.'],
+    ['case-study', 'Case study', 'Before this design, the product page lacked rhythm. After rebuilding it on the canvas, shoppers stayed longer.'],
+    ['quote', 'From the designer', `“${name} is where craft meets light.”`],
+    ['closing', 'Next steps', 'Book a sample viewing or open the 3D storefront to pick styles online.'],
   ];
   return {
     title: name,
@@ -57,15 +57,15 @@ function templateDeck(topic) {
   };
 }
 
-const SYSTEM_PROMPT = `Bạn là biên tập viên lookbook và pitch cho thương hiệu thời trang.
-Chỉ trả về một đối tượng JSON, không giải thích, không markdown.
-Định dạng: {"title": string, "slides": [{"layout": string, "title": string, "body": string}]}
-- 6 đến 8 slide, viết tiếng Việt.
-- layout chỉ được là một trong: ${LAYOUTS.join(', ')}.
-  title: trang bìa; pitch: một ý chính; lookbook: một mẫu/look kèm chất liệu, dáng; case-study: số liệu hoặc kết quả;
-  portfolio: nhiều sản phẩm; quote: một câu trích dẫn ngắn; two-column: so sánh hai ý; closing: lời kết, bước tiếp theo.
-- Slide đầu là title, slide cuối là closing.
-- title tối đa 60 ký tự; body tối đa 220 ký tự, có thể xuống dòng bằng \\n.`;
+const SYSTEM_PROMPT = `You are an editor of lookbooks and pitch decks for fashion brands.
+Return a single JSON object only, no explanation, no markdown.
+Format: {"title": string, "slides": [{"layout": string, "title": string, "body": string}]}
+- 6 to 8 slides, written in the same language as the topic (English if unclear).
+- layout must be one of: ${LAYOUTS.join(', ')}.
+  title: cover; pitch: one key idea; lookbook: one look with fabric and silhouette; case-study: figures or results;
+  portfolio: several products; quote: one short quote; two-column: compare two ideas; closing: wrap-up and next steps.
+- The first slide is title, the last slide is closing.
+- title at most 60 characters; body at most 220 characters, line breaks allowed with \\n.`;
 
 // Lấy đối tượng JSON đầu tiên trong câu trả lời (AI hay bọc trong \`\`\`json ... \`\`\`)
 function extractJson(text) {
@@ -74,7 +74,7 @@ function extractJson(text) {
   const body = fenced ? fenced[1] : raw;
   const start = body.indexOf('{');
   const end = body.lastIndexOf('}');
-  if (start < 0) throw new Error('AI không trả về JSON');
+  if (start < 0) throw new Error('AI did not return JSON');
   try {
     return JSON.parse(body.slice(start, end + 1).replace(/\r?\n/g, ' '));
   } catch {
@@ -100,7 +100,7 @@ function salvage(text) {
     };
     slides.push({ layout: unescape(m[1]), title: unescape(m[2]), body: unescape(m[3]) });
   }
-  if (!slides.length) throw new Error('AI không trả về JSON');
+  if (!slides.length) throw new Error('AI did not return JSON');
   return { title: title ? title[1].replace(/\\"/g, '"') : '', slides };
 }
 
@@ -114,7 +114,7 @@ function normalize(data, topic) {
       const layout = LAYOUTS.includes(item.layout) ? item.layout : i === 0 ? 'title' : 'pitch';
       return styled(layout, String(item.title || '').slice(0, 90), String(item.body || '').slice(0, 400), i);
     });
-  if (slides.length < 3) throw new Error('AI trả về quá ít slide');
+  if (slides.length < 3) throw new Error('AI returned too few slides');
   // AI hay quên slide bìa: tự thêm bìa từ tên deck
   if (slides[0].layout !== 'title') slides.unshift(styled('title', String(data.title || name).slice(0, 90), name, -1));
   return {
@@ -135,7 +135,7 @@ async function askAi(topic) {
       model: AI_MODEL(),
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: `Chủ đề deck: ${cleanTopic(topic)}` },
+        { role: 'user', content: `Deck topic: ${cleanTopic(topic)}` },
       ],
       temperature: 0.8,
       max_tokens: AI_MAX_TOKENS(),
@@ -152,13 +152,13 @@ async function askAi(topic) {
       signal: controller.signal,
       body: JSON.stringify(body),
     });
-    if (!res.ok) throw new Error(`AI trả lỗi ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    if (!res.ok) throw new Error(`AI error ${res.status}: ${(await res.text()).slice(0, 200)}`);
     const data = await res.json();
     const content = data?.choices?.[0]?.message?.content;
     try {
       return normalize(extractJson(content), topic);
     } catch (err) {
-      throw new Error(`${err.message} (AI trả: ${String(content ?? JSON.stringify(data)).slice(0, 160).replace(/\s+/g, ' ')})`);
+      throw new Error(`${err.message} (AI returned: ${String(content ?? JSON.stringify(data)).slice(0, 160).replace(/\s+/g, ' ')})`);
     }
   } finally {
     clearTimeout(timer);
@@ -172,10 +172,10 @@ async function generateDeck(topic) {
     try {
       return await askAi(topic);
     } catch (err) {
-      console.warn(`[slideAi] Lần ${attempt} không sinh được bằng AI: ${err.message}`);
+      console.warn(`[slideAi] Attempt ${attempt} failed: ${err.message}`);
     }
   }
-  console.warn('[slideAi] Dùng bộ mẫu dựng sẵn');
+  console.warn('[slideAi] Falling back to the built-in template');
   return templateDeck(topic);
 }
 

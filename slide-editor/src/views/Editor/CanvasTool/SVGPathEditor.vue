@@ -86,17 +86,17 @@
             :value="activeSegmentType"
             @update:value="updateSegmentType"
           >
-            <RadioButton value="L" :disabled="activePointIndex === 0">Đường thẳng</RadioButton>
-            <RadioButton value="Q" :disabled="activePointIndex === 0">Cong Q</RadioButton>
-            <RadioButton value="C" :disabled="activePointIndex === 0">Cong C</RadioButton>
-            <RadioButton value="A" :disabled="activePointIndex === 0">Cung tròn</RadioButton>
+            <RadioButton value="L" :disabled="activePointIndex === 0">Straight lines</RadioButton>
+            <RadioButton value="Q" :disabled="activePointIndex === 0">Curve Q</RadioButton>
+            <RadioButton value="C" :disabled="activePointIndex === 0">Curve C</RadioButton>
+            <RadioButton value="A" :disabled="activePointIndex === 0">Arc</RadioButton>
           </RadioGroup>
         </div>
 
         <Divider :margin="20" />
 
         <div class="panel-section">
-          <div class="section-title">Toạ độ:</div>
+          <div class="section-title">Coordinates:</div>
           <div class="input-row">
             <NumberInput
               class="number-input"
@@ -106,7 +106,7 @@
               :value="activePoint.x"
               @update:value="value => updatePointPosition('x', value)"
             >
-              <template #prefix>Ngang:</template>
+              <template #prefix>Horizontal:</template>
             </NumberInput>
             <NumberInput
               class="number-input"
@@ -116,7 +116,7 @@
               :value="activePoint.y"
               @update:value="value => updatePointPosition('y', value)"
             >
-              <template #prefix>Dọc:</template>
+              <template #prefix>Vertical:</template>
             </NumberInput>
           </div>
         </div>
@@ -124,7 +124,7 @@
         <template v-if="activePoint.q">
           <Divider :margin="20" />
           <div class="panel-section">
-            <div class="section-title">Điểm điều khiển:</div>
+            <div class="section-title">Control points:</div>
             <div class="input-row">
               <NumberInput
                 class="number-input"
@@ -134,7 +134,7 @@
                 :value="activePoint.q.x"
                 @update:value="value => updateQuadraticPosition('x', value)"
               >
-                <template #prefix>Ngang:</template>
+                <template #prefix>Horizontal:</template>
               </NumberInput>
               <NumberInput
                 class="number-input"
@@ -144,7 +144,7 @@
                 :value="activePoint.q.y"
                 @update:value="value => updateQuadraticPosition('y', value)"
               >
-                <template #prefix>Dọc:</template>
+                <template #prefix>Vertical:</template>
               </NumberInput>
             </div>
           </div>
@@ -153,7 +153,7 @@
         <template v-if="activePoint.c">
           <Divider :margin="20" />
           <div class="panel-section">
-            <div class="section-title">Điểm điều khiển:</div>
+            <div class="section-title">Control points:</div>
             <div class="input-row">
               <NumberInput
                 class="number-input"
@@ -173,7 +173,7 @@
                 :value="activePoint.c[0].y"
                 @update:value="value => updateCubicPosition('y', value, 0)"
               >
-                <template #prefix>1-Dọc:</template>
+                <template #prefix>1-Vertical:</template>
               </NumberInput>
             </div>
             <div class="input-row">
@@ -195,7 +195,7 @@
                 :value="activePoint.c[1].y"
                 @update:value="value => updateCubicPosition('y', value, 1)"
               >
-                <template #prefix>2-Dọc:</template>
+                <template #prefix>2-Vertical:</template>
               </NumberInput>
             </div>
           </div>
@@ -204,7 +204,7 @@
         <template v-if="activePoint.a">
           <Divider :margin="20" />
           <div class="panel-section">
-            <div class="section-title">Cung tròn:</div>
+            <div class="section-title">Arc:</div>
             <div class="input-row">
               <NumberInput
                 class="number-input"
@@ -214,7 +214,7 @@
                 :value="activePoint.a.rx"
                 @update:value="value => updateArcParam('rx', value)"
               >
-                <template #prefix>Bán kính ngang:</template>
+                <template #prefix>Radius X:</template>
               </NumberInput>
               <NumberInput
                 class="number-input"
@@ -224,7 +224,7 @@
                 :value="activePoint.a.ry"
                 @update:value="value => updateArcParam('ry', value)"
               >
-                <template #prefix>Bán kính dọc:</template>
+                <template #prefix>Radius Y:</template>
               </NumberInput>
             </div>
             <div class="input-row">
@@ -236,12 +236,12 @@
                 :value="activePoint.a.rot"
                 @update:value="value => updateArcParam('rot', value)"
               >
-                <template #prefix>Xoay:</template>
+                <template #prefix>Rotate:</template>
               </NumberInput>
             </div>
             <div class="checkbox-row">
-              <Checkbox :value="activePoint.a.laf === 1" @update:value="value => updateArcParam('laf', value ? 1 : 0)">Cung lớn</Checkbox>
-              <Checkbox :value="activePoint.a.sf === 1" @update:value="value => updateArcParam('sf', value ? 1 : 0)">Theo chiều kim đồng hồ</Checkbox>
+              <Checkbox :value="activePoint.a.laf === 1" @update:value="value => updateArcParam('laf', value ? 1 : 0)">Large arc</Checkbox>
+              <Checkbox :value="activePoint.a.sf === 1" @update:value="value => updateArcParam('sf', value ? 1 : 0)">Clockwise</Checkbox>
             </div>
           </div>
         </template>
@@ -249,7 +249,7 @@
         <Divider :margin="20" />
 
         <div class="panel-section">
-          <Checkbox :value="closePath" @update:value="value => closePath = value">Khép kín đường</Checkbox>
+          <Checkbox :value="closePath" @update:value="value => closePath = value">Close path</Checkbox>
         </div>
 
         <Divider :margin="20" />
@@ -261,10 +261,10 @@
     </div>
 
     <div class="footer">
-      <div class="tooltips">Tips: Bấm đúp để thêm đoạn thẳng, chuột phải để thêm đoạn hoặc xoá điểm; kéo điểm đầu mút và điểm điều khiển để chỉnh đường.</div>
+      <div class="tooltips">Tips: Double-click to add a straight segment, right-click to add a segment or delete a point; drag end points and control points to adjust the path.</div>
       <div class="footer-actions">
-        <Button @click="emit('close')">Đóng</Button>
-        <Button type="primary" :disabled="!canInsert" @click="insert()">Xác nhận</Button>
+        <Button @click="emit('close')">Close</Button>
+        <Button type="primary" :disabled="!canInsert" @click="insert()">Confirm</Button>
       </div>
     </div>
   </div>
@@ -542,24 +542,24 @@ const prepareContextmenu = (e: MouseEvent) => {
 const contextmenus = (): ContextmenuItem[] => {
   return [
     {
-      text: 'Thêm đoạn thẳng',
+      text: 'Add straight segment',
       handler: () => addPoint('L'),
     },
     {
-      text: 'Thêm đường cong bậc hai',
+      text: 'Add quadratic curve',
       handler: () => addPoint('Q'),
     },
     {
-      text: 'Thêm đường cong bậc ba',
+      text: 'Add cubic curve',
       handler: () => addPoint('C'),
     },
     {
-      text: 'Thêm cung tròn',
+      text: 'Add arc',
       handler: () => addPoint('A'),
     },
     { divider: true },
     {
-      text: 'Xoá điểm này',
+      text: 'Delete this point',
       disable: activePointIndex.value === 0,
       handler: removeActivePoint,
     },
