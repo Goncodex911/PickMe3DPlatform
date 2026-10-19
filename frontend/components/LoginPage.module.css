@@ -92,3 +92,15 @@
   .footer p { text-align: center; font-size: 8px; }
 }
 @media(prefers-reduced-motion:reduce) { .spinner { animation: none; } }
+
+/* Đăng nhập khách */
+.guest { display: flex; flex-direction: column; align-items: center; gap: 10px; width: min(100%, 420px); margin-top: 18px; }
+.or { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: #bdbdbd; }
+.guestLabel { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.guestRow { display: flex; gap: 8px; width: 290px; max-width: 100%; }
+.guestInput { flex: 1; min-width: 0; min-height: 44px; padding: 0 14px; border: 1px solid rgba(255, 255, 255, .45); border-radius: 4px; background: rgba(0, 0, 0, .35); color: #fff; font: inherit; font-size: 14px; }
+.guestInput::placeholder { color: #bdbdbd; }
+.guestInput:focus-visible { outline: 2px solid white; outline-offset: 2px; }
+.guestButton { min-height: 44px; padding: 0 14px; border: 1px solid #fff; border-radius: 4px; background: transparent; color: #fff; font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.guestButton:hover { background: rgba(255, 255, 255, .12); }
+.guestButton:focus-visible { outline: 2px solid white; outline-offset: 2px; }
