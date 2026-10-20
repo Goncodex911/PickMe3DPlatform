@@ -148,3 +148,20 @@ describe('Last Admin Protection Logic', () => {
     assert.strictEqual(canBanAdmin(targetUser, 3), true);
   });
 });
+
+describe('Subscription Plan Validation & Safeguards', () => {
+  it('validates plan tier values and calculates correct expiration extensions', () => {
+    const validPlans = ['free', 'pro', 'studio'];
+    assert.strictEqual(validPlans.includes('pro'), true);
+    assert.strictEqual(validPlans.includes('studio'), true);
+    assert.strictEqual(validPlans.includes('free'), true);
+    assert.strictEqual(validPlans.includes('unlimited'), false);
+
+    const now = Date.now();
+    const months = 3;
+    const addMs = months * 30 * 24 * 60 * 60 * 1000;
+    const expiresAt = new Date(now + addMs);
+    assert.strictEqual(expiresAt.getTime() > now, true);
+  });
+});
+

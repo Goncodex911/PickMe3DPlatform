@@ -187,23 +187,33 @@ export default function AdminAnalyticsPage() {
         </div>
       </div>
 
-      {/* Specification & Monetization Notice (Phase 4 F & G Compliance) */}
+      {/* PayOS Monetization Audit Strip */}
       <div className="p-6 rounded-3xl bg-[#141824] border border-neutral-800/80">
-        <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/20">
-            <span className="material-symbols-rounded text-2xl">account_balance</span>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20">
+              <span className="material-symbols-rounded text-2xl">payments</span>
+            </div>
+            <div className="space-y-1 text-xs text-neutral-400">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <span>Doanh Thu & Giao Dịch Cổng PayOS</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                  Đang hoạt động
+                </span>
+              </h3>
+              <p className="leading-relaxed">
+                Hệ thống gói cước (Pro / Studio) và đơn hàng thanh toán tự động qua cổng PayOS đã được tích hợp trực tiếp vào cơ sở dữ liệu MongoDB Atlas.
+              </p>
+            </div>
           </div>
-          <div className="space-y-1.5 text-xs text-neutral-400">
-            <h3 className="text-sm font-bold text-white">
-              Báo Cáo Doanh Thu & Hệ Thống Đăng Ký Trả Phí (Monetization Audit)
-            </h3>
-            <p className="leading-relaxed">
-              Theo tài liệu kỹ thuật dự án (<code className="text-neutral-300 font-mono">FEATURE_PROPOSALS.md: Mục 3.4</code>), hệ thống gói trả phí (Free / Pro / Studio) và cổng thanh toán giao dịch chưa được phát triển trong cơ sở dữ liệu hiện tại.
-            </p>
-            <p className="leading-relaxed text-neutral-500">
-              Quy tắc thực thi: Hệ thống quản trị chỉ hiển thị và báo cáo số liệu thực tế được lưu trữ trong MongoDB Atlas, tuyệt đối không tạo số liệu giả hoặc doanh thu ảo.
-            </p>
-          </div>
+
+          <a
+            href="/admin/billing"
+            className="px-4 py-2.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-300 text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0"
+          >
+            <span>Quản Lý Doanh Thu & Đơn Hàng</span>
+            <span className="material-symbols-rounded text-sm">arrow_forward</span>
+          </a>
         </div>
       </div>
     </div>

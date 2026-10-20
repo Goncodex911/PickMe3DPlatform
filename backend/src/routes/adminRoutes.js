@@ -6,6 +6,7 @@ const {
   createAdminUser,
   updateUserStatus,
   updateUserRole,
+  updateUserPlan,
   importUsers,
   getAdminTemplates,
   createSystemTemplate,
@@ -17,6 +18,11 @@ const {
   getAuditLogs,
   exportAuditLogsCsv,
   getReportingAnalytics,
+  getAdminOrders,
+  exportOrdersCsv,
+  getAdminPresentations,
+  togglePresentationVisibility,
+  deleteAdminPresentation,
 } = require('../controllers/adminController');
 const { protect, authorize } = require('../middlewares/authMiddleware');
 
@@ -31,11 +37,21 @@ router.get('/stats', getDashboardStats);
 router.route('/users').get(getAdminUsers).post(createAdminUser);
 router.put('/users/:id/status', updateUserStatus);
 router.put('/users/:id/role', updateUserRole);
+router.put('/users/:id/plan', updateUserPlan);
 router.post('/users/import', importUsers);
 
 // Templates and 3D Assets Management
 router.route('/templates').get(getAdminTemplates).post(createSystemTemplate);
 router.route('/templates/:id').put(updateAdminTemplate).delete(deleteAdminTemplate);
+
+// Slide Presentations Moderation
+router.get('/presentations', getAdminPresentations);
+router.put('/presentations/:id/visibility', togglePresentationVisibility);
+router.delete('/presentations/:id', deleteAdminPresentation);
+
+// Billing & Orders Management
+router.get('/orders/export', exportOrdersCsv);
+router.get('/orders', getAdminOrders);
 
 // Incident Reports
 router.get('/reports/export', exportReportsCsv);

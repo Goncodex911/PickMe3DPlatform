@@ -6,6 +6,7 @@ import {
   createAdminUserApi,
   updateUserStatusApi,
   updateUserRoleApi,
+  updateUserPlanApi,
   importUsersApi,
   AdminUser,
   PaginationMeta,
@@ -21,6 +22,12 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState("");
   const [role, setRole] = useState("all");
   const [status, setStatus] = useState("all");
+  const [plan, setPlan] = useState("all");
+
+  // Plan modal state
+  const [planModalUser, setPlanModalUser] = useState<AdminUser | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<"free" | "pro" | "studio">("free");
+  const [planMonths, setPlanMonths] = useState<number>(1);
 
   // Modals state
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -53,6 +60,7 @@ export default function AdminUsersPage() {
       search,
       role,
       status,
+      plan,
     });
     if (res.success && res.data) {
       setUsers(res.data);
@@ -65,7 +73,7 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     loadUsers(1);
-  }, [role, status]);
+  }, [role, status, plan]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,6 +110,24 @@ export default function AdminUsersPage() {
       loadUsers(pagination.page);
     } else {
       setModalError(res.message || "Không thể tạo tài khoản");
+    }
+    setActionBusy(false);
+  };
+
+
+  // 2b. Update User Plan
+  const handlePlanSubmit = async () => {
+    if (!planModalUser) return;
+    setActionBusy(true);
+    const res = await updateUserPlanApi(planModalUser._id, {
+      plan: selectedPlan,
+      months: selectedPlan === "free" ? 0 : planMonths,
+    });
+    if (res.success) {
+      setPlanModalUser(null);
+      loadUsers(pagination.page);
+    } else {
+      alert("Lỗi: " + (res.message || "Không thể cập nhật gói cước"));
     }
     setActionBusy(false);
   };
@@ -275,6 +301,21 @@ export default function AdminUsersPage() {
               <option value="banned">Bị khóa</option>
             </select>
           </div>
+
+          {/* Plan Filter */}
+          <div className="flex items-center gap-1.5 text-xs text-neutral-400">
+            <span>Gói cước:</span>
+            <select
+              value={plan}
+              onChange={(e) => setPlan(e.target.value)}
+              className="bg-[#1b2030] border border-neutral-700/60 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+            >
+              <option value="all">Tất cả gói</option>
+              <option value="free">Free</option>
+              <option value="pro">Pro</option>
+              <option value="studio">Studio</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -299,6 +340,7 @@ export default function AdminUsersPage() {
                   <th className="py-3.5 px-4">Người dùng</th>
                   <th className="py-3.5 px-4">Username / Nghề</th>
                   <th className="py-3.5 px-4">Vai trò</th>
+                  <th className="py-3.5 px-4">Gói cước</th>
                   <th className="py-3.5 px-4">Trạng thái</th>
                   <th className="py-3.5 px-4">Thiết kế</th>
                   <th className="py-3.5 px-4">Ngày tạo</th>
@@ -350,6 +392,37 @@ export default function AdminUsersPage() {
                       </span>
                     </td>
 
+                    {/* Subscription Plan */}
+                    <td className="py-3 px-4">
+                      {u.plan === "studio" ? (
+                        <div>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 uppercase tracking-wider">
+                            Studio
+                          </span>
+                          {u.planExpiresAt && (
+                            <div className="text-[10px] text-neutral-400 mt-0.5">
+                              Hết hạn: {new Date(u.planExpiresAt).toLocaleDateString("vi-VN")}
+                            </div>
+                          )}
+                        </div>
+                      ) : u.plan === "pro" ? (
+                        <div>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 uppercase tracking-wider">
+                            Pro
+                          </span>
+                          {u.planExpiresAt && (
+                            <div className="text-[10px] text-neutral-400 mt-0.5">
+                              Hết hạn: {new Date(u.planExpiresAt).toLocaleDateString("vi-VN")}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-800 text-neutral-400 border border-neutral-700/50">
+                          Free
+                        </span>
+                      )}
+                    </td>
+
                     {/* Status */}
                     <td className="py-3 px-4">
                       <span
@@ -388,6 +461,19 @@ export default function AdminUsersPage() {
                           title="Xem chi tiết"
                         >
                           <span className="material-symbols-rounded text-base">visibility</span>
+                        </button>
+
+                        {/* Change Plan */}
+                        <button
+                          onClick={() => {
+                            setPlanModalUser(u);
+                            setSelectedPlan(u.plan || "free");
+                            setPlanMonths(1);
+                          }}
+                          className="p-1.5 rounded-lg bg-neutral-800/80 hover:bg-neutral-800 text-amber-400 hover:text-amber-300 transition-colors"
+                          title="Cập nhật gói cước (Free / Pro / Studio)"
+                        >
+                          <span className="material-symbols-rounded text-base">workspace_premium</span>
                         </button>
 
                         {/* Change Role */}
@@ -572,6 +658,110 @@ export default function AdminUsersPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      
+      {/* ── MODAL: UPDATE USER PLAN ── */}
+      {planModalUser && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-[#161b29] border border-neutral-700 rounded-3xl p-6 shadow-2xl space-y-4">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <span className="material-symbols-rounded text-amber-400">workspace_premium</span>
+              Cập Nhật Gói Cước
+            </h3>
+            <p className="text-xs text-neutral-400">
+              Điều chỉnh gói dịch vụ của người dùng: <span className="font-semibold text-white">{planModalUser.name}</span> ({planModalUser.email}).
+            </p>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-neutral-300 mb-1">
+                  Chọn Gói Thuê Bao
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPlan("free")}
+                    className={`p-3 rounded-xl border text-center transition-all ${
+                      selectedPlan === "free"
+                        ? "bg-slate-500/20 border-slate-400 text-white font-bold"
+                        : "bg-[#111420] border-neutral-800 text-neutral-400 hover:text-white"
+                    }`}
+                  >
+                    <div className="text-xs">Free</div>
+                    <div className="text-[10px] text-neutral-400 mt-0.5">Tiêu chuẩn</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPlan("pro")}
+                    className={`p-3 rounded-xl border text-center transition-all ${
+                      selectedPlan === "pro"
+                        ? "bg-indigo-500/20 border-indigo-400 text-indigo-300 font-bold shadow-sm"
+                        : "bg-[#111420] border-neutral-800 text-neutral-400 hover:text-white"
+                    }`}
+                  >
+                    <div className="text-xs">Pro</div>
+                    <div className="text-[10px] text-indigo-400/80 mt-0.5">99k / tháng</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPlan("studio")}
+                    className={`p-3 rounded-xl border text-center transition-all ${
+                      selectedPlan === "studio"
+                        ? "bg-amber-500/20 border-amber-400 text-amber-300 font-bold shadow-sm"
+                        : "bg-[#111420] border-neutral-800 text-neutral-400 hover:text-white"
+                    }`}
+                  >
+                    <div className="text-xs">Studio</div>
+                    <div className="text-[10px] text-amber-400/80 mt-0.5">199k / tháng</div>
+                  </button>
+                </div>
+              </div>
+
+              {selectedPlan !== "free" && (
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-300 mb-1">
+                    Thời Hạn Gia Hạn (Tháng)
+                  </label>
+                  <select
+                    value={planMonths}
+                    onChange={(e) => setPlanMonths(Number(e.target.value))}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#1b2030] border border-neutral-700 text-xs text-white outline-none focus:border-indigo-500"
+                  >
+                    <option value={1}>1 tháng (+30 ngày)</option>
+                    <option value={3}>3 tháng (+90 ngày)</option>
+                    <option value={6}>6 tháng (+180 ngày)</option>
+                    <option value={12}>12 tháng (+360 ngày)</option>
+                  </select>
+                </div>
+              )}
+
+              {planModalUser.planExpiresAt && (
+                <div className="p-3 rounded-xl bg-[#111420] border border-neutral-800 text-[11px] text-neutral-400">
+                  Thời hạn hiện tại: <span className="text-neutral-200">{new Date(planModalUser.planExpiresAt).toLocaleDateString("vi-VN")}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2.5 pt-3">
+              <button
+                type="button"
+                onClick={() => setPlanModalUser(null)}
+                className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-semibold"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={actionBusy}
+                onClick={handlePlanSubmit}
+                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold shadow-md shadow-indigo-600/30"
+              >
+                {actionBusy ? "Đang lưu..." : "Xác Nhận Cập Nhật"}
+              </button>
+            </div>
           </div>
         </div>
       )}

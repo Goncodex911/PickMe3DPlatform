@@ -16,11 +16,11 @@ interface AdminUserSession {
 const NAV_ITEMS = [
   { href: "/admin", label: "Tổng quan", icon: "dashboard", exact: true },
   { href: "/admin/users", label: "Quản lý người dùng", icon: "group" },
-  { href: "/admin/templates", label: "Mẫu & Tài sản 3D", icon: "view_in_ar" },
+  { href: "/admin/templates", label: "Mẫu 3D & Slides", icon: "view_in_ar" },
+  { href: "/admin/billing", label: "Doanh thu & Gói cước", icon: "payments" },
   { href: "/admin/reports", label: "Sự cố & Vi phạm", icon: "report_problem" },
   { href: "/admin/audit-logs", label: "Nhật ký kiểm toán", icon: "history_edu" },
   { href: "/admin/analytics", label: "Báo cáo & Phân tích", icon: "analytics" },
-  { href: "/admin/billing", label: "Tổ chức & Gói dịch vụ", icon: "corporate_fare" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
