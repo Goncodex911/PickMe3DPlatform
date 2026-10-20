@@ -32,6 +32,44 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  // Admin login credentials state
+  const [adminUsername, setAdminUsername] = useState("admin123");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
+
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adminUsername.trim() || !adminPassword) {
+      setLoginError("Vui lòng nhập tên đăng nhập và mật khẩu");
+      return;
+    }
+    setLoginLoading(true);
+    setLoginError("");
+    try {
+      const res = await fetch("/api/auth/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: adminUsername.trim(),
+          password: adminPassword,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Tên đăng nhập hoặc mật khẩu quản trị không chính xác");
+      }
+      localStorage.setItem("pickme3d_token", data.token);
+      localStorage.setItem("pickme3d_user", JSON.stringify(data.user));
+      setCurrentUser(data.user);
+      setIsAuthorized(true);
+    } catch (err: any) {
+      setLoginError(err.message || "Đăng nhập thất bại");
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
   useEffect(() => {
     try {
       const token = localStorage.getItem("pickme3d_token");
@@ -61,6 +99,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const handleLogout = () => {
     localStorage.removeItem("pickme3d_token");
     localStorage.removeItem("pickme3d_user");
+    setCurrentUser(null);
+    setIsAuthorized(false);
     router.push("/");
   };
 
@@ -74,37 +114,95 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  // 2. Unauthorized State
+  // 2. Unauthorized State -> Displays Admin Login Form
   if (!isAuthorized) {
     return (
       <div className="min-h-screen bg-[#0b0d14] text-white flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-[#151926] border border-neutral-800 rounded-3xl p-8 shadow-2xl text-center">
-          <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 mx-auto flex items-center justify-center mb-6">
-            <span className="material-symbols-rounded text-3xl">lock</span>
+        <div className="max-w-md w-full bg-[#151926] border border-neutral-800 rounded-3xl p-8 shadow-2xl">
+          <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 mx-auto flex items-center justify-center mb-5">
+            <span className="material-symbols-rounded text-3xl">admin_panel_settings</span>
           </div>
 
-          <h2 className="text-2xl font-bold mb-2">Truy Cập Bị Từ Chối</h2>
-          <p className="text-neutral-400 text-sm leading-relaxed mb-6">
-            {currentUser
-              ? `Tài khoản ${currentUser.email} không có vai trò Quản trị viên (Admin). Vui lòng đăng nhập với tài khoản có thẩm quyền.`
-              : "Bạn cần đăng nhập với tài khoản Quản trị viên để truy cập khu vực quản lý hệ thống."}
+          <h2 className="text-2xl font-bold mb-1 text-center">Đăng Nhập Quản Trị Viên</h2>
+          <p className="text-neutral-400 text-xs leading-relaxed mb-6 text-center">
+            Khu vực dành riêng cho Quản trị viên hệ thống PickMe3D Platform.
           </p>
 
-          <div className="flex flex-col gap-3">
-            {!currentUser ? (
+          {currentUser && currentUser.role !== "admin" && (
+            <div className="mb-5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between gap-2">
+              <span>Đang đăng nhập: <b>{currentUser.email}</b> (Không có quyền admin)</span>
               <button
-                onClick={() => router.push("/login?redirect=/admin")}
-                className="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-semibold text-sm transition-all shadow-lg shadow-indigo-600/30"
+                onClick={handleLogout}
+                className="underline text-amber-200 hover:text-white font-semibold cursor-pointer"
               >
-                Đăng nhập quản trị viên
+                Đổi tài khoản
               </button>
-            ) : null}
+            </div>
+          )}
 
+          {loginError && (
+            <div className="mb-5 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+              <span className="material-symbols-rounded text-sm">error</span>
+              <span>{loginError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleAdminLogin} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-neutral-300 mb-1.5 text-left">
+                Tên Đăng Nhập
+              </label>
+              <div className="relative">
+                <span className="material-symbols-rounded absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 text-sm">
+                  person
+                </span>
+                <input
+                  type="text"
+                  value={adminUsername}
+                  onChange={(e) => setAdminUsername(e.target.value)}
+                  placeholder="admin123"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#0e111a] border border-neutral-700/80 text-xs text-white placeholder-neutral-500 outline-none focus:border-indigo-500"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-neutral-300 mb-1.5 text-left">
+                Mật Khẩu
+              </label>
+              <div className="relative">
+                <span className="material-symbols-rounded absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 text-sm">
+                  key
+                </span>
+                <input
+                  type="password"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  placeholder="Nhập mật khẩu (VD: admin123)"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#0e111a] border border-neutral-700/80 text-xs text-white placeholder-neutral-500 outline-none focus:border-indigo-500"
+                  required
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loginLoading}
+              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 font-semibold text-xs text-white transition-all shadow-lg shadow-indigo-600/30 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+            >
+              <span className="material-symbols-rounded text-base">login</span>
+              <span>{loginLoading ? "Đang xác thực..." : "Đăng Nhập Admin Console"}</span>
+            </button>
+          </form>
+
+          <div className="mt-6 pt-5 border-t border-neutral-800 text-center">
             <Link
               href="/"
-              className="w-full py-3 px-4 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-medium text-sm transition-all"
+              className="text-xs text-neutral-400 hover:text-white transition-colors flex items-center justify-center gap-1"
             >
-              Về trang chủ PickMe3D
+              <span className="material-symbols-rounded text-sm">arrow_back</span>
+              <span>Về trang chủ PickMe3D</span>
             </Link>
           </div>
         </div>

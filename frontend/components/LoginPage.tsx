@@ -62,6 +62,37 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     }
   }
 
+  // Admin login: đăng nhập tài khoản quản trị viên với username/password
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [adminUsername, setAdminUsername] = useState("admin123");
+  const [adminPassword, setAdminPassword] = useState("");
+
+  async function handleAdminLogin(event: React.FormEvent) {
+    event.preventDefault();
+    if (loading) return;
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch(`${basePath}/api/auth/admin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: adminUsername.trim(),
+          password: adminPassword,
+        }),
+        signal: AbortSignal.timeout(20000),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success || typeof result.token !== "string" || !result.token || !result.user) {
+        throw new Error(result.message || "Tên đăng nhập hoặc mật khẩu quản trị viên không chính xác.");
+      }
+      onLoginSuccess(result.token, result.user);
+    } catch (err: any) {
+      setError(err.message || "Unable to sign in as admin. Please check your credentials.");
+      setLoading(false);
+    }
+  }
+
   return (
     <main className={styles.page} lang="en">
       <img
@@ -101,6 +132,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           {loading && <div className={styles.loading} role="status"><span className={styles.spinner} />Signing in…</div>}
           {error && <p className={styles.error} role="alert">{error}</p>}
         </div>
+
+        {/* Guest Login */}
         <form className={styles.guest} onSubmit={(event) => { event.preventDefault(); handleGuest(); }} inert={loading}>
           <span className={styles.or}>or</span>
           <label className={styles.guestLabel} htmlFor="guest-name">Display name</label>
@@ -117,6 +150,65 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             <button type="submit" className={styles.guestButton}>Continue as guest</button>
           </div>
         </form>
+
+        {/* Admin Login Toggle & Form */}
+        <div style={{ marginTop: "18px", width: "100%", maxWidth: "340px", textAlign: "center" }}>
+          {!showAdminLogin ? (
+            <button
+              type="button"
+              onClick={() => setShowAdminLogin(true)}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#999",
+                fontSize: "12px",
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
+            >
+              🔐 Đăng nhập Quản trị viên (Admin Login)
+            </button>
+          ) : (
+            <form onSubmit={handleAdminLogin} style={{ display: "flex", flexDirection: "column", gap: "8px", background: "rgba(0,0,0,0.4)", padding: "16px", borderRadius: "16px", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <div style={{ fontSize: "12px", fontWeight: "bold", color: "#fff", marginBottom: "4px" }}>
+                Admin Console Login
+              </div>
+              <input
+                type="text"
+                placeholder="Tên đăng nhập (admin123)"
+                value={adminUsername}
+                onChange={(e) => setAdminUsername(e.target.value)}
+                style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #444", background: "#111", color: "#fff", fontSize: "12px" }}
+                required
+              />
+              <input
+                type="password"
+                placeholder="Mật khẩu (admin123)"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #444", background: "#111", color: "#fff", fontSize: "12px" }}
+                required
+              />
+              <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowAdminLogin(false)}
+                  style={{ flex: 1, padding: "8px", borderRadius: "8px", border: "1px solid #444", background: "#222", color: "#aaa", fontSize: "12px", cursor: "pointer" }}
+                >
+                  Đóng
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={{ flex: 2, padding: "8px", borderRadius: "8px", border: "none", background: "#4f46e5", color: "#fff", fontWeight: "bold", fontSize: "12px", cursor: "pointer" }}
+                >
+                  Đăng nhập Admin
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+
         <p className={styles.authNote}>One account. Every idea. All in PickMe3D.</p>
       </section>
 

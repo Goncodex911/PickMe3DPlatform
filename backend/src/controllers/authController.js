@@ -123,3 +123,101 @@ exports.googleLogin = async (req, res, next) => {
     return res.status(401).json({ success: false, message: 'Xác thực Google không hợp lệ: ' + error.message });
   }
 };
+
+exports.adminLogin = async (req, res, next) => {
+  try {
+    const { username, password } = req.body || {};
+    if (!username || !password) {
+      return res.status(400).json({ success: false, message: 'Tên đăng nhập và mật khẩu là bắt buộc' });
+    }
+
+    const expectedUsername = process.env.ADMIN_USERNAME || 'admin123';
+    const expectedPassword = process.env.ADMIN_PASSWORD || 'admin123';
+
+    if (username.trim() !== expectedUsername || password !== expectedPassword) {
+      return res.status(401).json({ success: false, message: 'Sai tên đăng nhập hoặc mật khẩu quản trị viên' });
+    }
+
+    let userObj = {
+      id: 'admin-root',
+      _id: 'admin-root',
+      name: 'System Administrator',
+      email: 'admin@pickme3d.com',
+      username: expectedUsername,
+      picture: '',
+      role: 'admin',
+      status: 'active',
+      plan: 'studio',
+    };
+
+    // If MongoDB is connected, find or create the admin user in DB
+    if (mongoose.connection.readyState === 1) {
+      try {
+        let adminUser = await User.findOne({
+          $or: [{ username: expectedUsername }, { email: 'admin@pickme3d.com' }],
+        });
+
+        if (!adminUser) {
+          adminUser = await User.create({
+            name: 'System Administrator',
+            email: 'admin@pickme3d.com',
+            username: expectedUsername,
+            role: 'admin',
+            status: 'active',
+            plan: 'studio',
+          });
+        } else {
+          let updated = false;
+          if (adminUser.role !== 'admin') {
+            adminUser.role = 'admin';
+            updated = true;
+          }
+          if (adminUser.status !== 'active') {
+            adminUser.status = 'active';
+            updated = true;
+          }
+          if (updated) await adminUser.save();
+        }
+
+        userObj = {
+          id: adminUser._id.toString(),
+          _id: adminUser._id.toString(),
+          name: adminUser.name,
+          email: adminUser.email,
+          username: adminUser.username || expectedUsername,
+          picture: adminUser.picture || '',
+          role: 'admin',
+          status: 'active',
+          plan: adminUser.plan || 'studio',
+        };
+      } catch (dbErr) {
+        console.warn('MongoDB admin sync warning:', dbErr.message);
+      }
+    }
+
+    // Generate JWT
+    const jwtSecret = process.env.JWT_SECRET || 'pickme3d_super_secret_jwt_key_2026';
+    const jwtToken = jwt.sign(
+      {
+        id: userObj.id,
+        _id: userObj.id,
+        email: userObj.email,
+        role: 'admin',
+        name: userObj.name,
+      },
+      jwtSecret,
+      { expiresIn: '7d' }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Đăng nhập Quản trị viên thành công',
+      token: jwtToken,
+      user: userObj,
+    });
+  } catch (error) {
+    console.error('Admin Auth Error:', error);
+    return res.status(500).json({ success: false, message: 'Lỗi xác thực máy chủ: ' + error.message });
+  }
+};
+
