@@ -5,11 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { TemplateItem } from "@/lib/templateService";
 import { fetchMyDesignsApi, updateDesignApi, deleteDesignApi, prepareEditorSession } from "@/lib/templateService";
-import NotificationBell from "@/components/NotificationBell";
 import { CollectionItem, fetchMyCollectionsApi, deleteCollectionApi } from "@/lib/collectionService";
 import { fetchMyProfileApi, mergeCurrentUserProfile, updateMyProfileApi } from "@/lib/userService";
 import UserAvatar from "@/components/UserAvatar";
-import { Logo } from "@/components/Logo";
 import styles from "./page.module.css";
 
 type ProfileTab = "overview" | "designs" | "collections";
@@ -92,6 +90,7 @@ export default function ProfilePage() {
       setEditBio(refreshedUser.bio || "");
       setEditUsername(refreshedUser.username || "");
       localStorage.setItem("pickme3d_user", JSON.stringify(refreshedUser));
+      window.dispatchEvent(new Event("storage"));
     });
 
     return () => { active = false; };
@@ -118,6 +117,7 @@ export default function ProfilePage() {
       const updated = mergeCurrentUserProfile(user, result.data);
       setUser(updated);
       localStorage.setItem("pickme3d_user", JSON.stringify(updated));
+      window.dispatchEvent(new Event("storage"));
       showToast("Đã cập nhật tên tài khoản.");
     } else {
       showToast(result.message || "Không thể cập nhật tên lúc này.");
@@ -142,6 +142,7 @@ export default function ProfilePage() {
       const updated = mergeCurrentUserProfile(user, result.data);
       setUser(updated);
       localStorage.setItem("pickme3d_user", JSON.stringify(updated));
+      window.dispatchEvent(new Event("storage"));
       showToast("Đã cập nhật hồ sơ.");
     } else {
       showToast(result.message || "Không thể cập nhật hồ sơ.");
@@ -205,11 +206,7 @@ export default function ProfilePage() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("pickme3d_token");
-    localStorage.removeItem("pickme3d_user");
-    router.push("/");
-  };
+
 
   const filteredDesigns = designs.filter((design) => {
     if (filterMode === "public" && !design.isPublic) return false;
@@ -230,28 +227,7 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <header className={styles.topbar}>
-        <div className={styles.topbarInner}>
-          <Link href="/" className={styles.brand} aria-label="PickMe3D trang chủ">
-            <Logo size={27} color="currentColor" />
-            <span>PickMe<span className={styles.brandLight}>3D</span></span>
-          </Link>
-          <nav className={styles.nav} aria-label="Điều hướng chính">
-            <Link href="/">Trang chủ</Link>
-            <Link href="/templates/">Khám phá mẫu</Link>
-          </nav>
-          <div className={styles.topbarActions}>
-            <NotificationBell />
-            <Link href="/editor/" className={styles.editorButton}>
-              <span className="material-symbols-rounded">draw</span>
-              <span>Vào Canvas Editor</span>
-            </Link>
-            <button className={styles.iconButton} onClick={handleLogout} title="Đăng xuất" aria-label="Đăng xuất">
-              <span className="material-symbols-rounded">logout</span>
-            </button>
-          </div>
-        </div>
-      </header>
+
 
       <main className={styles.main}>
         <section className={styles.profileCard} aria-labelledby="profile-name">

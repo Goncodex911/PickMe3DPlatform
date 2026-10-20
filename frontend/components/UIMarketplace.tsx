@@ -4,7 +4,6 @@ import { useState, useMemo, useCallback, useRef, useEffect, createContext, useCo
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { UITemplate, CATEGORIES, buildPreviewHTML, buildDownloadHTML } from "@/lib/ui-marketplace-data";
-import NotificationBell from "@/components/NotificationBell";
 import styles from "@/app/ui-marketplace/marketplace.module.css";
 import { purchaseTemplate, getPurchasedTemplateIds, subscribePurchasedTemplates } from "@/lib/purchased-animations";
 
@@ -580,39 +579,7 @@ export default function UIMarketplacePage() {
     <TokensCtx.Provider value={tokensCSS}>
       <div className={styles.page} lang="en">
         {/* ─── SYSTEM HEADER / NAVBAR ───────────── */}
-        <header className={styles.header}>
-          <Link href="/" className={styles.brand} aria-label="PickMe3D — Home">
-            <svg viewBox="0 0 40 44" fill="currentColor" aria-hidden="true">
-              <path d="M20 1 38 11.5 20 22 2 11.5 20 1ZM2 15l16 9.5V43L2 33V15ZM22 24.5 38 15v18L22 43V24.5Z" />
-            </svg>
-            <span>PickMe3D</span>
-          </Link>
 
-          <nav className={styles.nav} aria-label="Main navigation">
-            <Link href="/" className={styles.homeLink}>Home</Link>
-            <Link href="/templates/">Template</Link>
-            <Link href="/ui-marketplace/" aria-current="page" className={styles.activeNav}>
-              UI Marketplace
-            </Link>
-
-            {currentUser ? (
-              <>
-                <div className={styles.shared}>
-                  <NotificationBell />
-                </div>
-                <Link href="/profile/" className={styles.profile}>
-                  {currentUser.name || "Profile"}
-                </Link>
-              </>
-            ) : (
-              <Link href="/login/">Sign in</Link>
-            )}
-
-            <Link href={editorHref} className={styles.primary}>
-              Open Canvas <span aria-hidden="true">↗</span>
-            </Link>
-          </nav>
-        </header>
 
         {/* ─── HERO SECTION ─────────────────────── */}
         <section className={styles.hero} aria-labelledby="marketplace-title">

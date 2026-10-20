@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from "motion/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import ScrollCanvas from "@/components/ScrollCanvas";
-import UserAvatar from "@/components/UserAvatar";
 
 // Ensure GSAP plugins are registered on client
 if (typeof window !== "undefined") {
@@ -27,7 +26,6 @@ export default function LandingPage({
   onLoginSuccess,
   user,
   onStartNow,
-  onLogout,
 }: LandingPageProps) {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<any>(user || null);
@@ -35,7 +33,6 @@ export default function LandingPage({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [activeTheme, setActiveTheme] = useState<"light" | "noir">("light");
-  const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -58,30 +55,13 @@ export default function LandingPage({
     }
   };
 
-  const handleLogoutClick = () => {
-    localStorage.removeItem("pickme3d_token");
-    localStorage.removeItem("pickme3d_user");
-    setCurrentUser(null);
-    if (onLogout) {
-      onLogout();
-    }
-  };
+
 
   // DOM Refs for GSAP Pinning and Story Choreography
   const containerRef = useRef<HTMLDivElement>(null);
   const pinSectionRef = useRef<HTMLDivElement>(null);
   const phoneFrameRef = useRef<HTMLDivElement>(null);
   const cursorFollowerRef = useRef<HTMLDivElement>(null);
-
-  // Monitor scroll position to turn navbar transparent on scroll
-  useEffect(() => {
-    const handleNavScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    window.addEventListener("scroll", handleNavScroll, { passive: true });
-    handleNavScroll();
-    return () => window.removeEventListener("scroll", handleNavScroll);
-  }, []);
 
   // Auth handler
   const handleSuccess = async (credentialResponse: any) => {
@@ -271,114 +251,7 @@ export default function LandingPage({
       {/* ------------------------------------------------------------- */}
       {/* NAVIGATION BAR */}
       {/* ------------------------------------------------------------- */}
-      <header
-        className={`landing-nav fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 sm:px-12 py-4 transition-all duration-300 ${
-          isScrolled
-            ? "bg-transparent border-b border-transparent backdrop-blur-none shadow-none"
-            : "bg-[#090d16]/75 border-b border-white/10 backdrop-blur-xl"
-        }`}
-      >
-        <div className="flex items-center gap-3 pointer-events-auto">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-red-600 via-rose-500 to-amber-400 p-[1.5px] flex items-center justify-center shadow-[0_0_20px_rgba(229,43,43,0.4)]">
-            <div className="w-full h-full bg-[#090d16] rounded-[10px] flex items-center justify-center">
-              <span className="material-symbols-rounded text-red-400 text-lg">view_in_ar</span>
-            </div>
-          </div>
-          <div className="flex flex-col">
-            <span
-              style={{ fontFamily: "'Instrument Serif', 'Playfair Display', serif", fontStyle: "italic" }}
-              className="text-2xl font-normal tracking-wide text-white leading-none"
-            >
-              PICK ME 3D
-            </span>
-            <span className="text-[9px] font-mono tracking-widest text-slate-400 uppercase">Fashion Store Builder</span>
-          </div>
-        </div>
 
-        <nav className="hidden md:flex items-center gap-8 text-sm text-slate-300 font-medium pointer-events-auto">
-          <a href="#hero-3d-canvas" className="hover:text-white transition-colors flex items-center gap-1.5 text-red-400 font-semibold">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
-            <span>3D Sticky Canvas</span>
-          </a>
-          <a href="#story" className="hover:text-white transition-colors">Tính năng kéo thả</a>
-          <Link href="/templates" className="hover:text-white transition-colors flex items-center gap-1">
-            <span>Bộ sưu tập mẫu</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-          </Link>
-          <Link href="/ui-marketplace" className="hover:text-white transition-colors flex items-center gap-1.5">
-            <span>UI Marketplace</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
-          </Link>
-          <a href="#features" className="hover:text-white transition-colors">Tính năng nổi bật</a>
-          <Link href="/pricing" className="hover:text-white transition-colors">Bảng giá</Link>
-          <Link href="/slides" className="hover:text-white transition-colors">Slides</Link>
-        </nav>
-
-        <div className="flex items-center gap-3 pointer-events-auto">
-
-          {currentUser ? (
-            <div className="flex items-center gap-2.5">
-              {/* User Avatar & Name Pill -> Links to Profile */}
-              <Link
-                href="/profile"
-                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 hover:border-red-500/50 backdrop-blur-md text-xs cursor-pointer transition-all group"
-                title="Xem trang Hồ sơ cá nhân & các mẫu đã thiết kế"
-              >
-                <UserAvatar
-                  picture={currentUser.picture}
-                  googlePicture={currentUser.googlePicture}
-                  name={currentUser.name}
-                  email={currentUser.email}
-                  size={20}
-                  className="group-hover:scale-105 transition-transform"
-                />
-                <span className="text-slate-200 group-hover:text-white font-medium max-w-[120px] truncate">
-                  {currentUser.name || "Creator"}
-                </span>
-                <span className="material-symbols-rounded text-xs text-slate-400 group-hover:text-red-400 transition-colors">
-                  person
-                </span>
-              </Link>
-
-              {/* Glowing START NOW Button -> Redirects to Canvas Editor */}
-              <button
-                onClick={handleGoToEditor}
-                className="px-6 py-2 rounded-full bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 hover:opacity-95 text-white text-xs font-bold tracking-wider shadow-[0_0_25px_rgba(229,43,43,0.65)] hover:shadow-[0_0_35px_rgba(229,43,43,0.9)] transition-all cursor-pointer flex items-center gap-2 group animate-pulse hover:animate-none"
-                title="Bắt đầu vào chỉnh Canvas Editor"
-              >
-                <span>START NOW</span>
-                <span className="material-symbols-rounded text-sm group-hover:translate-x-1 transition-transform">
-                  arrow_forward
-                </span>
-              </button>
-
-              <button
-                onClick={handleLogoutClick}
-                className="px-3 py-1.5 rounded-full border border-white/15 hover:border-red-500/50 bg-white/5 hover:bg-red-500/10 text-[11px] text-slate-300 hover:text-white transition-all cursor-pointer"
-                title="Đăng xuất"
-              >
-                <span className="material-symbols-rounded text-sm">logout</span>
-              </button>
-            </div>
-          ) : (
-            <>
-              <button
-                onClick={() => setAuthOpen(true)}
-                className="px-5 py-2 rounded-full border border-white/20 hover:border-red-500/60 bg-white/5 hover:bg-red-500/10 text-xs font-semibold tracking-wider transition-all cursor-pointer"
-              >
-                ĐĂNG NHẬP
-              </button>
-              <button
-                onClick={() => setAuthOpen(true)}
-                className="px-5 py-2 rounded-full bg-red-600 hover:bg-red-500 text-white text-xs font-semibold tracking-wider shadow-[0_0_25px_rgba(229,43,43,0.45)] hover:shadow-[0_0_35px_rgba(229,43,43,0.7)] transition-all cursor-pointer flex items-center gap-1.5"
-              >
-                <span>MỞ STUDIO</span>
-                <span className="material-symbols-rounded text-sm">arrow_forward</span>
-              </button>
-            </>
-          )}
-        </div>
-      </header>
 
       {/* ------------------------------------------------------------- */}
       {/* SECTION 1: HERO TALL SCROLL AREA WITH STICKY 3D CANVAS (344F) */}
