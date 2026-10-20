@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import styles from "@/app/landing/page.module.css";
+import { Logo } from "@/components/Logo";
 
 // Thanh điều hướng chung của PickMe3D: trang chủ (nổi trên video) và các trang Slides, Bảng giá, Thanh toán (thanh nền mực).
 
 export function Brand() {
-  return <span className={styles.brand}><svg viewBox="0 0 40 44" fill="none" aria-hidden="true"><path d="M20 1 38 11.5 20 22 2 11.5 20 1ZM2 15l16 9.5V43L2 33V15ZM22 24.5 38 15v18L22 43V24.5Z" fill="currentColor"/></svg><span>PickMe<span className={styles.brandLight}>3D</span></span></span>;
+  return <span className={styles.brand}><Logo size={35} color="currentColor" /><span>PickMe<span className={styles.brandLight}>3D</span></span></span>;
 }
 
 function Arrow() { return <span aria-hidden="true">↗</span>; }
@@ -49,12 +50,14 @@ export default function SiteNav({
   variant = "bar",
   active,
   auth: authProp,
+  actions,
 }: {
   // overlay: nổi trên video ở trang chủ; bar: thanh nền mực dính đầu trang ở các trang khác
   variant?: "overlay" | "bar";
   active?: "slides" | "templates" | "pricing";
   // Trang chủ truyền trạng thái của nó vào để nút "Start designing" và thanh nav dùng chung một nguồn
   auth?: AuthState;
+  actions?: ReactNode;
 }) {
   const ownAuth = useAuthState();
   const { authenticated, name, logout } = authProp || ownAuth;
@@ -65,6 +68,8 @@ export default function SiteNav({
   const header = (
     <header className={`${styles.header} ${variant === "bar" ? styles.headerBarIn : ""}`} onKeyDown={(event) => { if (event.key === "Escape") setMenuOpen(false); }}>
       <Link href="/" aria-label="PickMe3D — Home"><Brand/></Link>
+      <div className={styles.headerActions}>
+      {actions}
       <button className={styles.menuToggle} aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen} aria-controls="site-nav" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? "Close −" : "Menu +"}</button>
       <nav id="site-nav" className={`${styles.nav} ${menuOpen ? styles.navOpen : ""}`} aria-label="Main navigation">
         <a href={`${anchor}#about`} onClick={() => setMenuOpen(false)}>About</a>
@@ -76,6 +81,7 @@ export default function SiteNav({
           ? <><Link href="/profile/" className={styles.account} title={name}>{name || "Account"}</Link><button onClick={() => { logout(); setMenuOpen(false); }} className={styles.logout}>Sign out</button></>
           : <Link className={styles.login} href="/login/">Sign in <Arrow/></Link>}
       </nav>
+      </div>
     </header>
   );
 

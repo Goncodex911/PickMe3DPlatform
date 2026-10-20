@@ -43,6 +43,38 @@ function getAuthHeaders(): Record<string, string> {
   return headers;
 }
 
+/** Fetches the signed-in user's latest saved profile, including their Google photo. */
+export async function fetchMyProfileApi(): Promise<Record<string, any> | null> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("pickme3d_token") : null;
+  if (!token) return null;
+
+  try {
+    const res = await fetch(`${API_BASE}/users/profile`, {
+      headers: getAuthHeaders(),
+      cache: "no-store",
+    });
+    const json = await res.json();
+    return res.ok && json.success && json.data ? json.data : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Merge the server profile into the cached login object without dropping its auth identity. */
+export function mergeCurrentUserProfile(
+  cachedUser: Record<string, any>,
+  profile: Record<string, any>,
+): Record<string, any> {
+  const googlePicture = profile.googlePicture || cachedUser.googlePicture || "";
+  return {
+    ...cachedUser,
+    ...profile,
+    id: profile._id || cachedUser.id,
+    picture: profile.picture || cachedUser.picture || googlePicture,
+    googlePicture,
+  };
+}
+
 /**
  * Fetches a public profile by username
  */

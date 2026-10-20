@@ -4,8 +4,8 @@
 .page button { font:inherit; cursor:pointer; }
 .page a:focus-visible,.page button:focus-visible { outline:3px solid #b9a5ff; outline-offset:6px; }
 .hero { min-height:750px; height:100svh; max-height:1080px; position:relative; isolation:isolate; overflow:hidden; background:#0e0e0e; }
-.heroVideo { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:grayscale(1) brightness(.6); z-index:-3; }
-.heroShade { position:absolute; inset:0; z-index:-2; background:linear-gradient(90deg,rgba(0,0,0,.86),rgba(0,0,0,.48) 52%,rgba(0,0,0,.16)),linear-gradient(0deg,rgba(0,0,0,.58),transparent 35%); }
+.heroVideo { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:grayscale(1) brightness(.8); z-index:-3; }
+.heroShade { position:absolute; inset:0; z-index:-2; background:linear-gradient(90deg,rgba(0,0,0,.74),rgba(0,0,0,.32) 52%,rgba(0,0,0,.08)),linear-gradient(0deg,rgba(0,0,0,.58),transparent 35%); }
 .header { max-width:1600px; margin:auto; padding:32px 6.25%; display:flex; align-items:center; justify-content:space-between; gap:32px; }
 .brand { display:inline-flex; gap:12px; align-items:center; font-size:25px; font-weight:700; letter-spacing:-1px; }
 .brand svg { width:35px; height:39px; }
@@ -124,7 +124,7 @@
   .heroContent { padding:110px 24px 130px; }
   .hero h1 { font-size:clamp(45px,8.3vw,64px); letter-spacing:-2px; }
   .heroDescription { font-size:16px; }
-  .heroShade { background:linear-gradient(90deg,rgba(0,0,0,.88),rgba(0,0,0,.45)),linear-gradient(0deg,rgba(0,0,0,.5),transparent); }
+  .heroShade { background:linear-gradient(90deg,rgba(0,0,0,.76),rgba(0,0,0,.32)),linear-gradient(0deg,rgba(0,0,0,.5),transparent); }
   .heroBottom { left:24px; right:24px; bottom:22px; gap:16px; }
   .heroBottom a { font-size:9px; letter-spacing:1px; gap:12px; }
   .section { padding:72px 24px; }
@@ -157,3 +157,37 @@
   .footer>span { margin-top:4px; }
 }
 @media(prefers-reduced-motion:reduce) { .page * { transition:none!important; animation:none!important; } }
+
+.headerActions { display:flex; align-items:center; gap:24px; }
+.themeToggle { display:grid; place-items:center; width:44px; height:44px; flex-shrink:0; border:1px solid #888; border-radius:50%; color:inherit; background:transparent; transition:background 180ms; }
+.themeToggle:hover { background:#ffffff20; }
+.page[data-theme="light"] { --ink:#f7f7f5; --paper:#191919; --muted:#606060; color-scheme:light; }
+.page[data-theme="dark"] { color-scheme:dark; }
+.page[data-theme="light"] .hero { background:#e7e7e3; }
+.page[data-theme="light"] .heroVideo { filter:grayscale(1) brightness(1.05); }
+.page[data-theme="light"] .heroShade { background:linear-gradient(90deg,rgba(250,250,247,.96),rgba(250,250,247,.78) 52%,rgba(250,250,247,.45)),linear-gradient(0deg,rgba(250,250,247,.65),transparent 35%); }
+.page[data-theme="light"] .heroDescription,
+.page[data-theme="light"] .aboutCopy>p:not(.eyebrow),
+.page[data-theme="light"] .feature p,
+.page[data-theme="light"] .finalCta>div>p:not(.eyebrow) { color:#505050; }
+.page[data-theme="light"] .manifesto>span,
+.page[data-theme="light"] .sectionHeading .eyebrow,
+.page[data-theme="light"] .feature>span,
+.page[data-theme="light"] .finalCta .eyebrow,
+.page[data-theme="light"] .footer>p,
+.page[data-theme="light"] .footer>span { color:#606060; }
+.page[data-theme="light"] .features,
+.page[data-theme="light"] .footer { border-color:#d4d4d0; }
+.page[data-theme="light"] .inspiration { background:#eaeae6; color:#191919; }
+.page[data-theme="light"] .button { background:#191919; color:white!important; }
+.page[data-theme="light"] .button:hover { background:#383838; }
+.page[data-theme="light"] .logout,
+.page[data-theme="light"] .menuToggle { color:inherit; }
+.page[data-theme="light"] .login:hover { background:#191919; color:white; }
+.page[data-theme="light"] .themeToggle:hover { background:#0000000d; }
+.page[data-theme="light"] .textLink:hover { border-color:#191919; }
+.aboutImage>span { color:white; }
+@media(max-width:760px) {
+  .headerActions { gap:12px; }
+  .page[data-theme="light"] .navOpen { background:#fafaf7; border-color:#ccc; }
+}

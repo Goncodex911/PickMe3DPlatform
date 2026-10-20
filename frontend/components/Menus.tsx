@@ -6,6 +6,8 @@ import { Palette } from "@/lib/tokens";
 import { LANGS, Lang, t, useLang } from "@/lib/i18n";
 import { IconBtn } from "./ui";
 import { Icon } from "./M3Node";
+import UserAvatar from "./UserAvatar";
+import { fetchMyProfileApi, mergeCurrentUserProfile } from "@/lib/userService";
 
 const EASE = [0.2, 0, 0, 1] as const;
 
@@ -125,10 +127,25 @@ export function ProfileMenu({ p, size = 40, side = "down" }: { p: Palette; size?
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
+    let active = true;
+    let cachedUser: any = null;
     try {
-      const u = JSON.parse(localStorage.getItem("pickme3d_user") || "null");
-      setUser(u);
+      cachedUser = JSON.parse(localStorage.getItem("pickme3d_user") || "null");
+      setUser(cachedUser);
     } catch { }
+
+    void fetchMyProfileApi().then((profile) => {
+      if (!active || !profile) return;
+      let latestCachedUser = cachedUser || {};
+      try {
+        latestCachedUser = JSON.parse(localStorage.getItem("pickme3d_user") || "null") || latestCachedUser;
+      } catch { }
+      const refreshedUser = mergeCurrentUserProfile(latestCachedUser, profile);
+      localStorage.setItem("pickme3d_user", JSON.stringify(refreshedUser));
+      setUser(refreshedUser);
+    });
+
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -180,11 +197,14 @@ export function ProfileMenu({ p, size = 40, side = "down" }: { p: Palette; size?
             overflow: "hidden",
           }}
         >
-          {user?.picture ? (
-            <img src={user.picture} alt="Avatar" style={{ width: size - 4, height: size - 4, borderRadius: "50%", objectFit: "cover" }} />
-          ) : (
-            <Icon name="account_circle" size={size - 4} color={p.onSurfaceVariant} />
-          )}
+          <UserAvatar
+            picture={user?.picture}
+            googlePicture={user?.googlePicture}
+            name={user?.name}
+            email={user?.email}
+            size={size - 4}
+            alt="Avatar"
+          />
         </button>
         <AnimatePresence>
           {open && (

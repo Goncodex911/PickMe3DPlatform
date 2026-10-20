@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import styles from "@/app/landing/page.module.css";
 import SiteNav, { Brand, useAuthState } from "@/components/SiteNav";
 
@@ -24,13 +25,33 @@ function Arrow() { return <span aria-hidden="true">↗</span>; }
 export default function ProjectLanding() {
   const auth = useAuthState();
   const { authenticated } = auth;
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("pickme3d_landing_theme");
+      setTheme(saved === "light" || saved === "dark" ? saved : window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+    } catch {}
+  }, []);
+
+  function toggleTheme() {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    try { localStorage.setItem("pickme3d_landing_theme", next); } catch {}
+  }
   const startHref = authenticated ? "/editor/" : "/login/";
 
-  return <main className={styles.page} lang="en" id="top">
+  return <main className={styles.page} data-theme={theme} lang="en" id="top">
     <section className={styles.hero} aria-labelledby="hero-title">
       <video className={styles.heroVideo} src={`${basePath}/landing/pickme3d-story.mp4`} poster={`${basePath}/hero/hero-portrait.png`} autoPlay muted loop playsInline preload="auto" aria-label="PickMe3D creative workspace demo" />
       <div className={styles.heroShade}/>
-
+      <SiteNav variant="overlay" auth={auth} actions={
+        <button className={styles.themeToggle} onClick={toggleTheme} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+            {theme === "dark" ? <><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></> : <path d="M20.5 14A8.5 8.5 0 0 1 10 3.5 8.5 8.5 0 1 0 20.5 14Z"/>}
+          </svg>
+        </button>
+      }/>
       <div className={styles.heroContent}>
         <p className={styles.eyebrow}>YOUR IDEAS. YOUR CANVAS.</p>
         <h1 id="hero-title">Your ideas.<br/>No limits.</h1>
@@ -59,6 +80,6 @@ export default function ProjectLanding() {
     </section>
 
     <section className={`${styles.section} ${styles.finalCta}`} aria-labelledby="cta-title"><div><p className={styles.eyebrow}>YOUR NEXT CREATIVE CHAPTER</p><h2 id="cta-title">Let’s create<br/>something different.</h2><p>Your next idea is waiting.<br/>Open a canvas and start today.</p><Link href={startHref} className={styles.button}>Start designing <Arrow/></Link></div><div className={styles.ctaImage}><img src={`${basePath}/hero/card-kinetic.png`} alt="Creative energy in motion" loading="lazy"/></div></section>
-
+    <footer className={styles.footer}><Link href="/" aria-label="PickMe3D — Home"><Brand/></Link><p>A space for original ideas.</p><nav aria-label="Footer links"><Link href="/templates/">Template library</Link><Link href={authenticated ? "/slides/" : "/login/"}>Slide Studio</Link><Link href={authenticated ? "/profile/" : "/login/"}>{authenticated ? "My designs" : "Sign in"}</Link><a href="#top">Back to top ↑</a></nav><span>© {new Date().getFullYear()} PickMe3D</span></footer>
   </main>;
 }
