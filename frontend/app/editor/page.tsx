@@ -3,7 +3,6 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Skeleton } from "@/components/Skeleton";
 import { isLang, setGlobalLang, type Lang } from "@/lib/i18n";
 
@@ -61,17 +60,6 @@ export default function EditorPage() {
     <div className="relative w-full h-full" suppressHydrationWarning>
       {isAuth ? (
         <>
-          {/* Return to Landing Page Floating Pill */}
-          <Link
-            href="/"
-            className="fixed top-3 left-16 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition-colors transition-all"
-            style={{ background: "#f8f8fa", color: "#44464e", borderColor: "#d5d5dc", fontFamily: "var(--font-ui)", minHeight: 36 }}
-            title="Back to home"
-          >
-            <span className="material-symbols-rounded text-sm">arrow_back</span>
-            <span className="font-medium text-[11px]">Home</span>
-          </Link>
-
           {lang && <Editor initialLang={lang} onReady={() => setPhase((p) => (p === "loading" ? "fading" : p))} />}
         </>
       ) : null}

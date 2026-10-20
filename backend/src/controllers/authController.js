@@ -55,12 +55,15 @@ exports.googleLogin = async (req, res, next) => {
     
     const payload = ticket.getPayload();
     const { sub, email, name, picture } = payload;
+    const googlePicture = typeof picture === 'string' ? picture : '';
+    const isGooglePicture = (value) => /^https:\/\/(?:lh\d+\.)?googleusercontent\.com\//i.test(value || '');
     
     let userObj = {
       id: sub,
       name: name || 'Creator',
       email,
-      picture: picture || '',
+      picture: googlePicture,
+      googlePicture,
       role: 'designer',
       jobRole: 'Fashion Designer',
     };
@@ -74,18 +77,22 @@ exports.googleLogin = async (req, res, next) => {
             googleId: sub,
             email,
             name,
-            picture,
+            picture: googlePicture,
+            googlePicture,
           });
-        } else if (!user.googleId) {
-          user.googleId = sub;
-          user.picture = picture;
+        } else {
+          if (!user.googleId) user.googleId = sub;
+          user.googlePicture = googlePicture;
+          // Refresh a missing or outdated Google photo while preserving uploaded profile photos.
+          if (!user.picture || isGooglePicture(user.picture)) user.picture = googlePicture || user.picture;
           await user.save();
         }
         userObj = {
           id: user._id,
           name: user.name,
           email: user.email,
-          picture: user.picture,
+          picture: user.picture || googlePicture,
+          googlePicture: user.googlePicture || googlePicture,
           role: user.role,
           jobRole: user.jobRole,
         };
