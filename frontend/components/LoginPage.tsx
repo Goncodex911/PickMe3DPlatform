@@ -62,10 +62,9 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     }
   }
 
-  // Admin login: đăng nhập tài khoản quản trị viên với username/password
+  // Admin login: đăng nhập tài khoản quản trị viên bằng email phantrongquy23032005@gmail.com
   const [showAdminLogin, setShowAdminLogin] = useState(false);
-  const [adminUsername, setAdminUsername] = useState("admin123");
-  const [adminPassword, setAdminPassword] = useState("");
+  const [adminEmail, setAdminEmail] = useState("phantrongquy23032005@gmail.com");
 
   async function handleAdminLogin(event: React.FormEvent) {
     event.preventDefault();
@@ -77,18 +76,17 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username: adminUsername.trim(),
-          password: adminPassword,
+          email: adminEmail.trim(),
         }),
         signal: AbortSignal.timeout(20000),
       });
       const result = await response.json();
       if (!response.ok || !result.success || typeof result.token !== "string" || !result.token || !result.user) {
-        throw new Error(result.message || "Tên đăng nhập hoặc mật khẩu quản trị viên không chính xác.");
+        throw new Error(result.message || "Email không hợp lệ hoặc không có quyền quản trị viên.");
       }
       onLoginSuccess(result.token, result.user);
     } catch (err: any) {
-      setError(err.message || "Unable to sign in as admin. Please check your credentials.");
+      setError(err.message || "Không thể đăng nhập tài khoản quản trị viên.");
       setLoading(false);
     }
   }
@@ -166,26 +164,18 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 textDecoration: "underline",
               }}
             >
-              🔐 Đăng nhập Quản trị viên (Admin Login)
+              🔐 Đăng nhập Quản trị viên (Admin)
             </button>
           ) : (
             <form onSubmit={handleAdminLogin} style={{ display: "flex", flexDirection: "column", gap: "8px", background: "rgba(0,0,0,0.4)", padding: "16px", borderRadius: "16px", border: "1px solid rgba(255,255,255,0.1)" }}>
               <div style={{ fontSize: "12px", fontWeight: "bold", color: "#fff", marginBottom: "4px" }}>
-                Admin Console Login
+                Đăng nhập Admin bằng Email
               </div>
               <input
-                type="text"
-                placeholder="Tên đăng nhập (admin123)"
-                value={adminUsername}
-                onChange={(e) => setAdminUsername(e.target.value)}
-                style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #444", background: "#111", color: "#fff", fontSize: "12px" }}
-                required
-              />
-              <input
-                type="password"
-                placeholder="Mật khẩu (admin123)"
-                value={adminPassword}
-                onChange={(e) => setAdminPassword(e.target.value)}
+                type="email"
+                placeholder="phantrongquy23032005@gmail.com"
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
                 style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #444", background: "#111", color: "#fff", fontSize: "12px" }}
                 required
               />
@@ -202,7 +192,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                   disabled={loading}
                   style={{ flex: 2, padding: "8px", borderRadius: "8px", border: "none", background: "#4f46e5", color: "#fff", fontWeight: "bold", fontSize: "12px", cursor: "pointer" }}
                 >
-                  Đăng nhập Admin
+                  Xác nhận Admin
                 </button>
               </div>
             </form>

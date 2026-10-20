@@ -56,13 +56,18 @@ exports.googleLogin = async (req, res, next) => {
     const payload = ticket.getPayload();
     const { sub, email, name, picture } = payload;
     
+    const adminEmail = (process.env.ADMIN_EMAIL || 'phantrongquy23032005@gmail.com').toLowerCase().trim();
+    const isAdmin = Boolean(email && email.toLowerCase().trim() === adminEmail);
+
     let userObj = {
       id: sub,
-      name: name || 'Creator',
+      name: name || (isAdmin ? 'Admin Phan Trọng Quý' : 'Creator'),
       email,
       picture: picture || '',
-      role: 'designer',
-      jobRole: 'Fashion Designer',
+      role: isAdmin ? 'admin' : 'designer',
+      jobRole: isAdmin ? 'Platform Administrator' : 'Fashion Designer',
+      status: 'active',
+      plan: isAdmin ? 'studio' : 'free',
     };
 
     // If MongoDB is connected, find or create the user in DB
@@ -81,22 +86,55 @@ exports.googleLogin = async (req, res, next) => {
           user = await User.create({
             googleId: sub,
             email,
-            name,
+            name: name || (isAdmin ? 'Admin Phan Trọng Quý' : 'Creator'),
             picture,
+            role: isAdmin ? 'admin' : 'designer',
+            jobRole: isAdmin ? 'Platform Administrator' : 'Fashion Designer',
+            status: 'active',
+            plan: isAdmin ? 'studio' : 'free',
           });
-        } else if (!user.googleId) {
-          user.googleId = sub;
-          user.picture = picture;
-          await user.save();
+        } else {
+          let updated = false;
+          if (!user.googleId) {
+            user.googleId = sub;
+            updated = true;
+          }
+          if (picture && user.picture !== picture) {
+            user.picture = picture;
+            updated = true;
+          }
+          if (name && !user.name) {
+            user.name = name;
+            updated = true;
+          }
+          if (isAdmin) {
+            if (user.role !== 'admin') {
+              user.role = 'admin';
+              updated = true;
+            }
+            if (user.status !== 'active') {
+              user.status = 'active';
+              updated = true;
+            }
+            if (!user.plan || user.plan === 'free') {
+              user.plan = 'studio';
+              updated = true;
+            }
+          }
+          if (updated) {
+            await user.save();
+          }
         }
         userObj = {
-          id: user._id,
+          id: user._id.toString(),
+          _id: user._id.toString(),
           name: user.name,
           email: user.email,
-          picture: user.picture,
-          role: user.role,
-          jobRole: user.jobRole,
+          picture: user.picture || picture || '',
+          role: isAdmin ? 'admin' : user.role,
+          jobRole: user.jobRole || (isAdmin ? 'Platform Administrator' : 'Fashion Designer'),
           status: user.status || 'active',
+          plan: isAdmin ? 'studio' : (user.plan || 'free'),
         };
       } catch (dbErr) {
         console.warn('⚠️  MongoDB query failed, proceeding with verified Google session:', dbErr.message);
@@ -108,7 +146,7 @@ exports.googleLogin = async (req, res, next) => {
     // Generate JWT
     const jwtSecret = process.env.JWT_SECRET || 'super_secret_pickme3d_jwt_key_2024';
     const jwtToken = jwt.sign(
-      { id: userObj.id, email: userObj.email, role: userObj.role },
+      { id: userObj.id, _id: userObj.id, email: userObj.email, role: userObj.role, name: userObj.name },
       jwtSecret,
       { expiresIn: '7d' }
     );
@@ -126,24 +164,26 @@ exports.googleLogin = async (req, res, next) => {
 
 exports.adminLogin = async (req, res, next) => {
   try {
-    const { username, password } = req.body || {};
-    if (!username || !password) {
-      return res.status(400).json({ success: false, message: 'Tên đăng nhập và mật khẩu là bắt buộc' });
-    }
+    const adminEmail = (process.env.ADMIN_EMAIL || 'phantrongquy23032005@gmail.com').toLowerCase().trim();
+    const inputEmail = (req.body?.email || req.body?.adminEmail || '').toLowerCase().trim();
+    const inputUsername = (req.body?.username || '').trim();
 
-    const expectedUsername = process.env.ADMIN_USERNAME || 'admin123';
-    const expectedPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    // Admin logs in via email without password
+    const isMatchingEmail = inputEmail === adminEmail;
+    const isMatchingUsername = inputUsername && inputUsername === (process.env.ADMIN_USERNAME || 'admin123');
 
-    if (username.trim() !== expectedUsername || password !== expectedPassword) {
-      return res.status(401).json({ success: false, message: 'Sai tên đăng nhập hoặc mật khẩu quản trị viên' });
+    if (!isMatchingEmail && !isMatchingUsername) {
+      return res.status(401).json({
+        success: false,
+        message: `Email '${inputEmail || inputUsername}' không phải là email quản trị viên. Email quản trị viên hợp lệ là: ${adminEmail}`,
+      });
     }
 
     let userObj = {
       id: 'admin-root',
       _id: 'admin-root',
-      name: 'System Administrator',
-      email: 'admin@pickme3d.com',
-      username: expectedUsername,
+      name: 'Admin Phan Trọng Quý',
+      email: adminEmail,
       picture: '',
       role: 'admin',
       status: 'active',
@@ -153,15 +193,12 @@ exports.adminLogin = async (req, res, next) => {
     // If MongoDB is connected, find or create the admin user in DB
     if (mongoose.connection.readyState === 1) {
       try {
-        let adminUser = await User.findOne({
-          $or: [{ username: expectedUsername }, { email: 'admin@pickme3d.com' }],
-        });
+        let adminUser = await User.findOne({ email: adminEmail });
 
         if (!adminUser) {
           adminUser = await User.create({
-            name: 'System Administrator',
-            email: 'admin@pickme3d.com',
-            username: expectedUsername,
+            name: 'Admin Phan Trọng Quý',
+            email: adminEmail,
             role: 'admin',
             status: 'active',
             plan: 'studio',
@@ -176,15 +213,18 @@ exports.adminLogin = async (req, res, next) => {
             adminUser.status = 'active';
             updated = true;
           }
+          if (!adminUser.plan || adminUser.plan === 'free') {
+            adminUser.plan = 'studio';
+            updated = true;
+          }
           if (updated) await adminUser.save();
         }
 
         userObj = {
           id: adminUser._id.toString(),
           _id: adminUser._id.toString(),
-          name: adminUser.name,
+          name: adminUser.name || 'Admin Phan Trọng Quý',
           email: adminUser.email,
-          username: adminUser.username || expectedUsername,
           picture: adminUser.picture || '',
           role: 'admin',
           status: 'active',
@@ -211,7 +251,7 @@ exports.adminLogin = async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Đăng nhập Quản trị viên thành công',
+      message: 'Đăng nhập Quản trị viên thành công bằng email: ' + adminEmail,
       token: jwtToken,
       user: userObj,
     });

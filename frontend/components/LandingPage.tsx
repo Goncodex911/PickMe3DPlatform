@@ -82,10 +82,9 @@ export default function LandingPage({
     return () => window.removeEventListener("scroll", handleNavScroll);
   }, []);
 
-  // Admin login credentials state
+  // Admin login by email (no username/password)
   const [showAdminModal, setShowAdminModal] = useState(false);
-  const [adminUsername, setAdminUsername] = useState("admin123");
-  const [adminPassword, setAdminPassword] = useState("");
+  const [adminEmail, setAdminEmail] = useState("phantrongquy23032005@gmail.com");
 
   const handleAdminAuthLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,8 +95,7 @@ export default function LandingPage({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username: adminUsername.trim(),
-          password: adminPassword,
+          email: adminEmail.trim(),
         }),
       });
       const data = await res.json();
@@ -111,7 +109,7 @@ export default function LandingPage({
         }
         router.push("/admin");
       } else {
-        setError(data.message || "Tên đăng nhập hoặc mật khẩu quản trị không chính xác");
+        setError(data.message || "Email không hợp lệ hoặc không có quyền quản trị viên");
       }
     } catch (err: any) {
       setError("Lỗi kết nối máy chủ: " + err.message);
@@ -1105,12 +1103,12 @@ export default function LandingPage({
                     onClick={() => setShowAdminModal(true)}
                     className="text-[11px] text-slate-400 hover:text-white underline cursor-pointer"
                   >
-                    🔐 Đăng nhập Quản trị viên (Admin Login)
+                    🔐 Đăng nhập Quản trị viên (Admin)
                   </button>
                 ) : (
                   <form onSubmit={handleAdminAuthLogin} className="mt-2 p-4 rounded-2xl bg-black/50 border border-white/10 space-y-2.5 text-left w-full">
                     <div className="text-xs font-bold text-white flex items-center justify-between">
-                      <span>Đăng nhập Admin (admin123)</span>
+                      <span>Đăng nhập Admin bằng Email</span>
                       <button
                         type="button"
                         onClick={() => setShowAdminModal(false)}
@@ -1120,18 +1118,10 @@ export default function LandingPage({
                       </button>
                     </div>
                     <input
-                      type="text"
-                      placeholder="Tên đăng nhập (admin123)"
-                      value={adminUsername}
-                      onChange={(e) => setAdminUsername(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-black/60 border border-neutral-700 text-xs text-white outline-none focus:border-indigo-500"
-                      required
-                    />
-                    <input
-                      type="password"
-                      placeholder="Mật khẩu (admin123)"
-                      value={adminPassword}
-                      onChange={(e) => setAdminPassword(e.target.value)}
+                      type="email"
+                      placeholder="phantrongquy23032005@gmail.com"
+                      value={adminEmail}
+                      onChange={(e) => setAdminEmail(e.target.value)}
                       className="w-full px-3 py-2 rounded-xl bg-black/60 border border-neutral-700 text-xs text-white outline-none focus:border-indigo-500"
                       required
                     />
