@@ -3,7 +3,10 @@
 import { useState, useMemo, useCallback, useRef, useEffect, createContext, useContext } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
-import { UITemplate, CATEGORIES, buildPreviewHTML } from "@/lib/ui-marketplace-data";
+import { UITemplate, CATEGORIES, buildPreviewHTML, buildDownloadHTML } from "@/lib/ui-marketplace-data";
+import NotificationBell from "@/components/NotificationBell";
+import styles from "@/app/ui-marketplace/marketplace.module.css";
+import { purchaseTemplate, getPurchasedTemplateIds, subscribePurchasedTemplates } from "@/lib/purchased-animations";
 
 /* ───────────────────────────────────────────────── */
 /*  Tokens CSS Context                              */
@@ -11,160 +14,34 @@ import { UITemplate, CATEGORIES, buildPreviewHTML } from "@/lib/ui-marketplace-d
 const TokensCtx = createContext<string>("");
 
 /* ───────────────────────────────────────────────── */
-/*  Lightweight CSS-only preview for grid cards     */
-/*  (no iframe — pure CSS/HTML placeholder)         */
+/*  Live iframe Component                           */
 /* ───────────────────────────────────────────────── */
-function GridPreview({ template }: { template: UITemplate }) {
-  const c1 = template.hue;
-  const c2 = template.hue2;
-  const cat = template.category;
-
-  if (cat === "버튼") {
-    return (
-      <div className="w-full h-full flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${c1}0c, ${c2}0c)` }}>
-        <div className="relative">
-          <div className="px-8 py-3.5 rounded-full text-[11px] font-bold text-white/90 tracking-wide"
-            style={{ background: `linear-gradient(135deg, ${c1}cc, ${c2}cc)`, boxShadow: `0 12px 32px ${c1}33, inset 0 1px 0 rgba(255,255,255,0.2)` }}>
-            {template.titleEn.split(" ").slice(0, 3).join(" ")}
-          </div>
-          <div className="absolute inset-0 rounded-full animate-pulse" style={{ background: `${c1}11`, filter: "blur(12px)" }} />
-        </div>
-      </div>
-    );
-  }
-  if (cat === "토글·선택") {
-    return (
-      <div className="w-full h-full flex items-center justify-center gap-4" style={{ background: `linear-gradient(135deg, ${c1}08, ${c2}08)` }}>
-        <div className="w-12 h-7 rounded-full relative" style={{ background: `${c1}33` }}>
-          <div className="absolute right-1 top-1 w-5 h-5 rounded-full shadow-md" style={{ background: c1 }} />
-        </div>
-        <div className="space-y-1.5">
-          <div className="h-2 w-20 rounded-full" style={{ background: `${c1}33` }} />
-          <div className="h-1.5 w-14 rounded-full" style={{ background: `${c2}22` }} />
-        </div>
-      </div>
-    );
-  }
-  if (cat === "입력·검색") {
-    return (
-      <div className="w-full h-full flex items-center justify-center px-5" style={{ background: `linear-gradient(135deg, ${c1}08, ${c2}08)` }}>
-        <div className="w-full max-w-[200px]">
-          <div className="h-10 rounded-xl border-2 flex items-center px-3 gap-2" style={{ borderColor: `${c1}55`, background: `${c1}08` }}>
-            <div className="w-3.5 h-3.5 rounded-full" style={{ background: `${c1}66` }} />
-            <div className="h-2 rounded-full flex-1" style={{ background: `${c2}22` }} />
-            <div className="w-5 h-5 rounded-md" style={{ background: `${c1}33` }} />
-          </div>
-          <div className="mt-2 h-1.5 w-3/4 rounded-full ml-3" style={{ background: `${c2}18` }} />
-        </div>
-      </div>
-    );
-  }
-  if (cat === "메뉴·탭") {
-    return (
-      <div className="w-full h-full flex flex-col items-center justify-center gap-2 px-4" style={{ background: `linear-gradient(135deg, ${c1}08, ${c2}08)` }}>
-        <div className="flex gap-1 p-1 rounded-xl w-full max-w-[180px]" style={{ background: `${c1}11` }}>
-          {[0, 1, 2].map(i => (
-            <div key={i} className="flex-1 h-7 rounded-lg flex items-center justify-center"
-              style={{ background: i === 0 ? `${c1}cc` : "transparent" }}>
-              <div className="w-6 h-1.5 rounded-full" style={{ background: i === 0 ? "#fff" : `${c2}33` }} />
-            </div>
-          ))}
-        </div>
-        <div className="space-y-1.5 w-full max-w-[180px]">
-          {[0, 1].map(i => <div key={i} className="h-2 rounded-full" style={{ background: `${c1}${i === 0 ? "22" : "11"}`, width: i === 0 ? "85%" : "60%" }} />)}
-        </div>
-      </div>
-    );
-  }
-  if (cat === "카드·콘텐츠") {
-    return (
-      <div className="w-full h-full flex items-center justify-center px-4" style={{ background: `linear-gradient(135deg, ${c1}06, ${c2}06)` }}>
-        <div className="w-full rounded-2xl overflow-hidden" style={{ background: `${c1}0d`, border: `1px solid ${c1}22` }}>
-          <div className="h-14 w-full" style={{ background: `linear-gradient(135deg, ${c1}33, ${c2}33)` }} />
-          <div className="p-3 space-y-2">
-            <div className="h-2.5 w-3/4 rounded-full" style={{ background: `${c1}33` }} />
-            <div className="h-2 w-1/2 rounded-full" style={{ background: `${c2}22` }} />
-          </div>
-        </div>
-      </div>
-    );
-  }
-  if (cat === "로그인·가입") {
-    return (
-      <div className="w-full h-full flex items-center justify-center px-5" style={{ background: `linear-gradient(135deg, ${c1}08, ${c2}08)` }}>
-        <div className="w-full max-w-[180px] space-y-2.5">
-          <div className="w-9 h-9 rounded-full mx-auto" style={{ background: `linear-gradient(135deg, ${c1}, ${c2})` }} />
-          <div className="h-8 rounded-lg border" style={{ borderColor: `${c1}33`, background: `${c1}08` }} />
-          <div className="h-8 rounded-lg border" style={{ borderColor: `${c1}22`, background: `${c1}06` }} />
-          <div className="h-8 rounded-lg" style={{ background: `linear-gradient(135deg, ${c1}cc, ${c2}cc)` }} />
-        </div>
-      </div>
-    );
-  }
-  if (cat === "위젯·차트" || cat === "분석·데이터") {
-    return (
-      <div className="w-full h-full flex items-end justify-center gap-1.5 px-5 pb-5" style={{ background: `linear-gradient(135deg, ${c1}06, ${c2}06)` }}>
-        {[40, 65, 50, 80, 60, 45, 72, 55].map((h, i) => (
-          <div key={i} className="w-3.5 rounded-t-md transition-all" style={{ height: `${h}%`, background: `linear-gradient(to top, ${c1}${60 + i * 5 > 99 ? "99" : String(60 + i * 5)}, ${c2}${40 + i * 5 > 99 ? "99" : String(40 + i * 5)})` }} />
-        ))}
-      </div>
-    );
-  }
-  if (cat === "로딩·진행") {
-    return (
-      <div className="w-full h-full flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${c1}06, ${c2}06)` }}>
-        <div className="flex flex-col items-center gap-3">
-          <div className="flex gap-2">
-            {[0, 1, 2].map(i => (
-              <div key={i} className="w-3 h-3 rounded-full animate-bounce" style={{ background: i === 1 ? c2 : c1, animationDelay: `${i * 0.15}s` }} />
-            ))}
-          </div>
-          <div className="w-24 h-1.5 rounded-full overflow-hidden" style={{ background: `${c1}22` }}>
-            <div className="h-full w-2/3 rounded-full animate-pulse" style={{ background: `linear-gradient(90deg, ${c1}, ${c2})` }} />
-          </div>
-        </div>
-      </div>
-    );
-  }
-  if (cat === "알림·피드백") {
-    return (
-      <div className="w-full h-full flex items-center justify-center px-4" style={{ background: `linear-gradient(135deg, ${c1}06, ${c2}06)` }}>
-        <div className="w-full rounded-xl p-3 flex items-center gap-2.5" style={{ background: `${c1}15`, border: `1px solid ${c1}33` }}>
-          <div className="w-6 h-6 rounded-full flex-shrink-0" style={{ background: c1 }} />
-          <div className="flex-1 space-y-1.5">
-            <div className="h-2 w-3/4 rounded-full" style={{ background: `${c1}44` }} />
-            <div className="h-1.5 w-1/2 rounded-full" style={{ background: `${c2}22` }} />
-          </div>
-        </div>
-      </div>
-    );
-  }
-  // Default: abstract shape
-  return (
-    <div className="w-full h-full flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${c1}08, ${c2}08)` }}>
-      <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${c1}22, ${c2}22)`, border: `1px solid ${c1}33` }}>
-        <span className="material-symbols-rounded text-xl" style={{ color: c1 }}>widgets</span>
-      </div>
-    </div>
-  );
-}
-
-/* ───────────────────────────────────────────────── */
-/*  Live iframe — only used in Detail Dialog        */
-/* ───────────────────────────────────────────────── */
-function LiveIframe({ template, className, interactive = false }: { template: UITemplate; className?: string; interactive?: boolean }) {
+function LiveIframe({
+  template,
+  className,
+  interactive = false,
+  autoPlayDemo = true,
+}: {
+  template: UITemplate;
+  className?: string;
+  interactive?: boolean;
+  autoPlayDemo?: boolean;
+}) {
   const tokensCSS = useContext(TokensCtx);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const srcDoc = useMemo(() => {
     if (!template.html || !tokensCSS) return "";
-    return buildPreviewHTML(template, tokensCSS, "dark");
-  }, [template, tokensCSS]);
+    return buildPreviewHTML(template, tokensCSS, "dark", autoPlayDemo, interactive);
+  }, [template, tokensCSS, autoPlayDemo, interactive]);
 
   if (!srcDoc) {
     return (
-      <div className={`flex items-center justify-center ${className || ""}`} style={{ background: `linear-gradient(135deg, ${template.hue}15, ${template.hue2}15)` }}>
-        <GridPreview template={template} />
+      <div
+        className={`flex items-center justify-center ${className || ""}`}
+        style={{ background: "#111" }}
+      >
+        <span className="text-xs text-[#666] font-mono">#{template.id}</span>
       </div>
     );
   }
@@ -175,41 +52,69 @@ function LiveIframe({ template, className, interactive = false }: { template: UI
       srcDoc={srcDoc}
       className={className}
       sandbox="allow-scripts"
-      style={{ border: "none", pointerEvents: interactive ? "auto" : "none" }}
-      title={template.titleEn}
+      loading="lazy"
+      tabIndex={-1}
+      style={{
+        border: "none",
+        pointerEvents: interactive ? "auto" : "none",
+        width: "100%",
+        height: "100%",
+      }}
+      title={template.titleEn || template.title}
     />
   );
 }
 
 /* ───────────────────────────────────────────────── */
-/*  Detail Dialog                                   */
+/*  Detail Dialog Modal (PickMe3D Design System)     */
 /* ───────────────────────────────────────────────── */
-function DetailDialog({ template, onClose }: { template: UITemplate; onClose: () => void }) {
+function DetailDialog({
+  template,
+  onClose,
+  isPurchased,
+  onBuy,
+}: {
+  template: UITemplate;
+  onClose: () => void;
+  isPurchased: boolean;
+  onBuy: (template: UITemplate) => void;
+}) {
   const tokensCSS = useContext(TokensCtx);
   const [tab, setTab] = useState<"demo" | "prompt" | "code">("demo");
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const origOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
     document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
+    return () => {
+      document.body.style.overflow = origOverflow;
+      document.removeEventListener("keydown", handler);
+    };
   }, [onClose]);
+
+  const catLabel = useMemo(() => {
+    return CATEGORIES.find((c) => c.id === template.category)?.label || template.category;
+  }, [template.category]);
 
   const fullCode = useMemo(() => {
     if (!template.html) return "// No code available for this template";
-    return `<!-- ${template.titleEn} (#${template.id}) -->\n<!-- Category: ${template.category} | Tags: ${template.tags.join(", ")} -->\n\n${template.html}\n\n<script>\n${template.js}\n<\/script>`;
-  }, [template]);
+    return `<!-- ${template.titleEn} (#${template.id}) -->\n<!-- Category: ${catLabel} | Tags: ${template.tags.join(", ")} -->\n\n${template.html}\n\n<script>\n${template.js}\n<\/script>`;
+  }, [template, catLabel]);
 
   const promptText = useMemo(() => {
     return `[UI Component: ${template.titleEn}]
-ID: #${template.id} | Category: ${template.category}
+ID: #${template.id} | Category: ${catLabel}
 Tags: ${template.tags.join(", ")}
 
 📋 Description:
-${template.summaryEn}
+${template.summaryEn || template.summary}
 
-💡 Interaction hint:
-${template.hintEn || template.hint}
+💡 Interaction Hint:
+${template.hintEn || template.hint || "Interactive component with automated micro-interactions"}
 
 ---
 Full reference implementation (HTML + CSS + JS):
@@ -217,9 +122,9 @@ Full reference implementation (HTML + CSS + JS):
 ${fullCode}
 
 ---
-Instructions: Please implement this UI component in my project. 
-Adapt the code above to my tech stack and design system while preserving all animations and interactions.`;
-  }, [template, fullCode]);
+Instructions:
+Please implement this animated UI component in my project. Adapt the code above to my tech stack and design system while preserving all micro-animations and interactive behaviors.`;
+  }, [template, catLabel, fullCode]);
 
   const handleCopy = useCallback(async () => {
     const text = tab === "prompt" ? promptText : fullCode;
@@ -230,7 +135,7 @@ Adapt the code above to my tech stack and design system while preserving all ani
 
   const handleDownload = useCallback(() => {
     if (!tokensCSS) return;
-    const html = buildPreviewHTML(template, tokensCSS, "dark");
+    const html = buildDownloadHTML(template, tokensCSS);
     const blob = new Blob([html], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -240,169 +145,345 @@ Adapt the code above to my tech stack and design system while preserving all ani
     URL.revokeObjectURL(url);
   }, [template, tokensCSS]);
 
-  const catLabel = CATEGORIES.find((c) => c.id === template.category)?.label || template.category;
-
   return (
-    <motion.div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-lg" onClick={onClose} />
-      <motion.div
-        className="relative w-full max-w-3xl max-h-[92vh] rounded-3xl overflow-hidden flex flex-col"
-        style={{ background: "linear-gradient(180deg, #12162a 0%, #0b0e1a 100%)", border: "1px solid rgba(255,255,255,0.1)" }}
-        initial={{ scale: 0.9, y: 40 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 40 }}
-        transition={{ type: "spring", damping: 25 }}
-      >
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalBox} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="p-5 pb-3 flex items-start justify-between gap-4 border-b border-white/10">
+        <div className={styles.modalHeader}>
           <div>
-            <p className="text-xs text-slate-400 mb-1 flex items-center gap-2">
-              <span className="font-mono font-bold" style={{ color: template.hue }}>#{template.id}</span>
-              <span className="w-1 h-1 rounded-full bg-slate-600" />
-              <span>{catLabel}</span>
-              {template.html && <span className="px-1.5 py-0.5 rounded text-[9px] bg-emerald-500/20 text-emerald-400 font-bold">LIVE</span>}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, fontSize: 11, color: "#888" }}>
+              <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#fff", background: "#262626", padding: "2px 8px" }}>
+                #{template.id}
+              </span>
+              <span>·</span>
+              <span style={{ textTransform: "uppercase", letterSpacing: "1px" }}>{catLabel}</span>
+              <span>·</span>
+              <span style={{ color: "#34d399", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <span className={styles.cardLiveDot} /> LIVE DEMO
+              </span>
+            </div>
+            <h2 style={{ fontSize: 24, fontWeight: 600, margin: "0 0 6px", color: "#fff" }}>
+              {template.titleEn}
+            </h2>
+            <p style={{ fontSize: 13, color: "#aaa", margin: 0, lineHeight: 1.6 }}>
+              {template.summaryEn}
             </p>
-            <h2 className="text-lg font-semibold text-white">{template.title}</h2>
-            <p className="text-xs text-slate-400 mt-0.5">{template.titleEn}</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 transition-colors flex-shrink-0">
-            <span className="material-symbols-rounded text-base">close</span>
+          <button onClick={onClose} className={styles.modalClose} aria-label="Close dialog">
+            <span className="material-symbols-rounded" style={{ fontSize: 18 }}>close</span>
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="mx-5 mt-3 flex items-center gap-1 p-1 rounded-xl bg-white/5">
+        <div className={styles.modalTabs}>
           {([
-            { key: "demo" as const, icon: "play_circle", label: "Demo trực tiếp" },
-            { key: "prompt" as const, icon: "auto_awesome", label: "Prompt AI" },
-            { key: "code" as const, icon: "code", label: "Code gốc" },
+            { key: "demo" as const, icon: "play_circle", label: "Interactive Demo" },
+            { key: "prompt" as const, icon: "auto_awesome", label: "AI Prompt" },
+            { key: "code" as const, icon: "code", label: "Source Code" },
           ]).map((t) => (
-            <button key={t.key}
-              className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${tab === t.key ? "bg-white/10 text-white shadow" : "text-slate-400 hover:text-white"}`}
-              onClick={() => setTab(t.key)}>
-              <span className="material-symbols-rounded text-sm">{t.icon}</span>{t.label}
+            <button
+              key={t.key}
+              className={styles.modalTab}
+              aria-selected={tab === t.key}
+              onClick={() => setTab(t.key)}
+            >
+              <span className="material-symbols-rounded" style={{ fontSize: 16 }}>{t.icon}</span>
+              {t.label}
             </button>
           ))}
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-auto mx-5 mt-3 mb-2 min-h-0">
+        {/* Body */}
+        <div className={styles.modalBody}>
           {tab === "demo" ? (
-            <div className="flex flex-col gap-3">
-              <div className="rounded-2xl overflow-hidden bg-[#07080D]" style={{ border: `1px solid ${template.hue}33` }}>
-                <LiveIframe template={template} className={`w-full ${template.shape === "tall" ? "h-[420px]" : "h-[300px]"}`} interactive={true} />
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  height: template.shape === "tall" ? 420 : 320,
+                  background: "#0c0c0c",
+                  border: "1px solid #333",
+                  overflow: "hidden",
+                }}
+              >
+                <LiveIframe
+                  template={template}
+                  className="w-full h-full"
+                  interactive={true}
+                  autoPlayDemo={true}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: 12,
+                    left: 12,
+                    padding: "6px 12px",
+                    background: "rgba(19,19,19,0.85)",
+                    border: "1px solid #363636",
+                    fontSize: 10,
+                    color: "#aaa",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    pointerEvents: "none",
+                  }}
+                >
+                  <span className="material-symbols-rounded" style={{ fontSize: 14 }}>touch_app</span>
+                  Interactive: test clicks, hover, and controls directly
+                </div>
               </div>
-              <div className="p-4 rounded-xl bg-white/[0.03] border border-white/8 space-y-3">
-                <p className="text-sm text-slate-300 leading-relaxed">{template.summary}</p>
-                <p className="text-xs text-slate-500 leading-relaxed italic">{template.summaryEn}</p>
-                {template.hint && (
-                  <div className="flex items-start gap-2 pt-2 border-t border-white/8">
-                    <span className="material-symbols-rounded text-sm text-amber-400 mt-0.5">lightbulb</span>
-                    <div>
-                      <p className="text-xs text-amber-300/80">{template.hint}</p>
-                      {template.hintEn && <p className="text-[11px] text-amber-300/50 mt-1 italic">{template.hintEn}</p>}
-                    </div>
+
+              {template.hintEn && (
+                <div
+                  style={{
+                    padding: "14px 18px",
+                    background: "#1c1c1c",
+                    border: "1px solid #363636",
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 12,
+                    fontSize: 12,
+                    color: "#ccc",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  <span className="material-symbols-rounded" style={{ fontSize: 18, color: "#fff" }}>
+                    lightbulb
+                  </span>
+                  <div>
+                    <strong style={{ color: "#fff" }}>Tip: </strong>
+                    {template.hintEn}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           ) : (
-            <div className="p-4 rounded-xl text-[12px] text-slate-300 leading-relaxed font-mono whitespace-pre-wrap overflow-auto max-h-[420px]" style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div
+              style={{
+                padding: 18,
+                background: "#121212",
+                border: "1px solid #333",
+                fontSize: 12,
+                fontFamily: "monospace",
+                color: "#ddd",
+                lineHeight: 1.6,
+                whiteSpace: "pre-wrap",
+                overflowY: "auto",
+                maxHeight: 400,
+              }}
+            >
               {tab === "prompt" ? promptText : fullCode}
             </div>
           )}
         </div>
 
-        {/* Tags */}
-        <div className="mx-5 flex flex-wrap gap-1.5 mb-2">
-          {template.tags.map((tag) => (
-            <span key={tag} className="px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: `${template.hue}15`, color: template.hue, border: `1px solid ${template.hue}25` }}>{tag}</span>
-          ))}
-        </div>
-
-        {/* Actions */}
-        <div className="p-4 border-t border-white/10 flex items-center justify-between gap-3">
-          <p className="text-[10px] text-slate-500">
-            Nguồn: <a href="https://lucianlabs.dev/uxui-prompt/" target="_blank" rel="noopener" className="underline hover:text-slate-300">lucianlabs.dev</a>
-          </p>
-          <div className="flex items-center gap-2">
+        {/* Footer */}
+        <div className={styles.modalFooter}>
+          <div style={{ fontSize: 11, color: "#777" }}>
+            Dataset: <span style={{ color: "#aaa" }}>Hiếu Thuận</span> · PickMe3D
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {isPurchased ? (
+              <Link
+                href="/editor/"
+                target="_blank"
+                className={styles.modalOwnedBtn}
+              >
+                <span className="material-symbols-rounded" style={{ fontSize: 16 }}>check_circle</span>
+                Đã sở hữu · Mở Editor ↗
+              </Link>
+            ) : (
+              <button
+                onClick={() => onBuy(template)}
+                className={styles.modalBuyBtn}
+              >
+                <span className="material-symbols-rounded" style={{ fontSize: 16 }}>shopping_bag</span>
+                Mua Animation (Miễn phí)
+              </button>
+            )}
             {template.html && (
-              <button onClick={handleDownload} className="px-3 py-2 rounded-xl text-xs font-medium text-slate-300 bg-white/5 hover:bg-white/10 border border-white/10 flex items-center gap-1.5 transition-all">
-                <span className="material-symbols-rounded text-sm">download</span>Tải HTML
+              <button
+                onClick={handleDownload}
+                style={{
+                  minHeight: 40,
+                  padding: "10px 18px",
+                  background: "#222",
+                  border: "1px solid #444",
+                  color: "#eee",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  cursor: "pointer",
+                }}
+              >
+                <span className="material-symbols-rounded" style={{ fontSize: 16 }}>download</span>
+                Export HTML
               </button>
             )}
             {tab !== "demo" && (
-              <button onClick={handleCopy}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-white flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95"
-                style={{ background: copied ? "#22C3A6" : `linear-gradient(135deg, ${template.hue}, ${template.hue2})`, boxShadow: `0 6px 20px ${template.hue}44` }}>
-                <span className="material-symbols-rounded text-sm">{copied ? "check" : "content_copy"}</span>
-                {copied ? "Đã copy!" : tab === "prompt" ? "Copy Prompt" : "Copy Code"}
+              <button
+                onClick={handleCopy}
+                style={{
+                  minHeight: 40,
+                  padding: "10px 22px",
+                  background: copied ? "#22C3A6" : "#fff",
+                  color: copied ? "#fff" : "#131313",
+                  border: "1px solid white",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  cursor: "pointer",
+                }}
+              >
+                <span className="material-symbols-rounded" style={{ fontSize: 16 }}>
+                  {copied ? "check" : "content_copy"}
+                </span>
+                {copied ? "Copied!" : tab === "prompt" ? "Copy AI Prompt" : "Copy Code"}
               </button>
             )}
           </div>
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }
 
 /* ───────────────────────────────────────────────── */
-/*  Grid Card Component                             */
+/*  Grid Card Component with Live Continuous Demo    */
 /* ───────────────────────────────────────────────── */
-function TemplateCard({ template, idx, onClick }: { template: UITemplate; idx: number; onClick: () => void }) {
-  const [isVisible, setIsVisible] = useState(false);
+function SystemTemplateCard({
+  template,
+  idx,
+  onClick,
+  isPurchased,
+  onBuy,
+}: {
+  template: UITemplate;
+  idx: number;
+  onClick: () => void;
+  isPurchased: boolean;
+  onBuy: (template: UITemplate) => void;
+}) {
+  const [isVisible, setIsVisible] = useState(idx < 12);
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (isVisible) return;
     const el = cardRef.current;
     if (!el) return;
-    const obs = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) { setIsVisible(true); obs.disconnect(); }
-    }, { rootMargin: "100px" });
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          obs.disconnect();
+        }
+      },
+      { rootMargin: "500px" }
+    );
     obs.observe(el);
     return () => obs.disconnect();
-  }, []);
+  }, [isVisible]);
+
+  const catLabel = useMemo(() => {
+    return CATEGORIES.find((c) => c.id === template.category)?.label || template.category;
+  }, [template.category]);
 
   return (
-    <motion.article ref={cardRef} layout
-      initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.92 }}
-      transition={{ duration: 0.25, delay: idx < 24 ? idx * 0.018 : 0 }}
-      className="group cursor-pointer rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:-translate-y-1"
-      style={{ background: `linear-gradient(160deg, ${template.hue}0a, ${template.hue2}06)`, border: "1px solid rgba(255,255,255,0.07)" }}
-      onClick={onClick}>
-      {/* Preview */}
-      <div className={`relative overflow-hidden ${template.shape === "tall" ? "h-44" : "h-36"}`}>
-        {isVisible && <GridPreview template={template} />}
-        {/* Live badge */}
-        {template.html && (
-          <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded text-[8px] font-bold bg-emerald-500/20 text-emerald-400 backdrop-blur-sm border border-emerald-500/30">
-            LIVE
+    <article ref={cardRef} className={styles.card}>
+      {/* Live Preview Area */}
+      <div className={styles.cardStage} onClick={onClick}>
+        <span className={styles.cardCategory}>{catLabel}</span>
+        <span className={styles.cardLiveBadge}>
+          <span className={styles.cardLiveDot} /> LIVE
+        </span>
+
+        {isVisible ? (
+          <LiveIframe
+            template={template}
+            className="w-full h-full pointer-events-none"
+            interactive={false}
+            autoPlayDemo={true}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-[#111]">
+            <span className="text-xs text-[#555] font-mono">#{template.id}</span>
           </div>
         )}
-        {/* Hover overlay */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
-          <div className="flex items-center gap-2">
-            <span className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center text-white">
-              <span className="material-symbols-rounded text-base">play_circle</span>
-            </span>
-            <span className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center text-white">
-              <span className="material-symbols-rounded text-base">content_copy</span>
-            </span>
+
+        <div className={styles.cardHoverAction}>
+          <span>View details</span>
+          <span aria-hidden="true">↗</span>
+        </div>
+      </div>
+
+      {/* Info Area */}
+      <div className={styles.cardInfo}>
+        <div className={styles.cardMetrics}>
+          <span>#{template.id}</span>
+          <span>{template.shape === "tall" ? "Tall widget" : "Component"}</span>
+        </div>
+
+        <button className={styles.cardTitle} onClick={onClick}>
+          {template.titleEn}
+        </button>
+
+        <p className={styles.cardDesc}>
+          {template.summaryEn}
+        </p>
+
+        <div className={styles.cardBottom}>
+          <div className={styles.cardTags}>
+            {template.tags.slice(0, 2).map((tag) => (
+              <span key={tag} className={styles.cardTag}>
+                #{tag}
+              </span>
+            ))}
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {isPurchased ? (
+              <button
+                className={styles.cardOwnedBtn}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open("/editor/", "_blank");
+                }}
+                title="Mẫu đã mua — Mở trong Canvas Editor"
+              >
+                <span className="material-symbols-rounded" style={{ fontSize: 14 }}>check_circle</span>
+                <span>Đã mua ↗</span>
+              </button>
+            ) : (
+              <button
+                className={styles.cardBuyBtn}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onBuy(template);
+                }}
+                title="Mua mẫu animation này để đưa vào Editor"
+              >
+                <span className="material-symbols-rounded" style={{ fontSize: 14 }}>shopping_bag</span>
+                <span>Mua</span>
+              </button>
+            )}
+            <button className={styles.cardUseBtn} onClick={onClick}>
+              <span>Inspect</span>
+              <span aria-hidden="true">↗</span>
+            </button>
           </div>
         </div>
       </div>
-      {/* Caption */}
-      <div className="p-3 sm:p-4">
-        <p className="flex items-center gap-2 mb-1">
-          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md" style={{ background: `${template.hue}20`, color: template.hue }}>{template.id}</span>
-          <span className="text-[10px] text-slate-500 truncate">{template.titleEn}</span>
-        </p>
-        <h3 className="text-xs sm:text-sm font-medium text-white group-hover:text-red-300 transition-colors leading-snug truncate">{template.title}</h3>
-      </div>
-    </motion.article>
+    </article>
   );
 }
 
 /* ───────────────────────────────────────────────── */
-/*  Main Marketplace Page                           */
+/*  Main Marketplace Page (PickMe3D Aligned)         */
 /* ───────────────────────────────────────────────── */
 export default function UIMarketplacePage() {
   const [catalog, setCatalog] = useState<UITemplate[]>([]);
@@ -413,6 +494,36 @@ export default function UIMarketplacePage() {
   const [selectedTemplate, setSelectedTemplate] = useState<UITemplate | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [visibleCount, setVisibleCount] = useState(24);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [purchasedIds, setPurchasedIds] = useState<string[]>([]);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPurchasedIds(getPurchasedTemplateIds());
+    return subscribePurchasedTemplates(() => {
+      setPurchasedIds(getPurchasedTemplateIds());
+    });
+  }, []);
+
+  const handleBuy = useCallback((tmpl: UITemplate) => {
+    const ok = purchaseTemplate(tmpl);
+    if (ok) {
+      setToastMessage(`Đã mua thành công "${tmpl.titleEn || tmpl.title}"! Mẫu đã được thêm vào mục Animation ở trang Editor.`);
+      setTimeout(() => setToastMessage(null), 4500);
+    }
+  }, []);
+
+  // Authenticated user state
+  useEffect(() => {
+    try {
+      const u = localStorage.getItem("pickme3d_user");
+      if (u && localStorage.getItem("pickme3d_token")) {
+        setCurrentUser(JSON.parse(u));
+      }
+    } catch {}
+  }, []);
+
+  const editorHref = currentUser ? "/editor/" : "/login/";
 
   // Load catalog data + tokens CSS at runtime
   useEffect(() => {
@@ -430,239 +541,396 @@ export default function UIMarketplacePage() {
 
   const filtered = useMemo(() => {
     let result = catalog;
-    if (activeCategory !== "all") result = result.filter((t) => t.category === activeCategory);
+    if (activeCategory !== "all") {
+      result = result.filter((t) => t.category === activeCategory);
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      result = result.filter((t) =>
-        t.title.toLowerCase().includes(q) || t.titleEn.toLowerCase().includes(q) ||
-        t.slug?.toLowerCase().includes(q) || t.tags.some((tag) => tag.includes(q)) ||
-        t.summary.toLowerCase().includes(q) || t.summaryEn.toLowerCase().includes(q)
+      result = result.filter(
+        (t) =>
+          t.title.toLowerCase().includes(q) ||
+          t.titleEn.toLowerCase().includes(q) ||
+          t.slug?.toLowerCase().includes(q) ||
+          t.tags.some((tag) => tag.includes(q)) ||
+          t.summary.toLowerCase().includes(q) ||
+          t.summaryEn.toLowerCase().includes(q)
       );
     }
     return result;
   }, [catalog, activeCategory, searchQuery]);
 
   const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
-  const loadMore = useCallback(() => setVisibleCount((prev) => Math.min(prev + 24, filtered.length)), [filtered.length]);
-  useEffect(() => { setVisibleCount(24); }, [activeCategory, searchQuery]);
+  const loadMore = useCallback(() => {
+    setVisibleCount((prev) => Math.min(prev + 24, filtered.length));
+  }, [filtered.length]);
+
+  useEffect(() => {
+    setVisibleCount(24);
+  }, [activeCategory, searchQuery]);
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { all: catalog.length };
-    catalog.forEach((t) => { counts[t.category] = (counts[t.category] || 0) + 1; });
+    catalog.forEach((t) => {
+      counts[t.category] = (counts[t.category] || 0) + 1;
+    });
     return counts;
   }, [catalog]);
 
   return (
     <TokensCtx.Provider value={tokensCSS}>
-    <div className="min-h-screen bg-[#070a12] text-white">
-      {/* ─── STICKY HEADER ────────────────────── */}
-      <header className="sticky top-0 z-50 border-b border-white/10" style={{ background: "rgba(7,10,18,0.85)", backdropFilter: "blur(20px) saturate(1.5)" }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-600/30 group-hover:scale-110 transition-transform">
-              <span className="material-symbols-rounded text-base text-white">palette</span>
-            </div>
-            <div>
-              <span className="text-sm font-bold text-white block leading-tight">Chợ Giao Diện</span>
-              <span className="text-[9px] font-mono text-slate-500 tracking-wider uppercase">UI Marketplace · {catalog.length} Templates</span>
-            </div>
+      <div className={styles.page} lang="en">
+        {/* ─── SYSTEM HEADER / NAVBAR ───────────── */}
+        <header className={styles.header}>
+          <Link href="/" className={styles.brand} aria-label="PickMe3D — Home">
+            <svg viewBox="0 0 40 44" fill="currentColor" aria-hidden="true">
+              <path d="M20 1 38 11.5 20 22 2 11.5 20 1ZM2 15l16 9.5V43L2 33V15ZM22 24.5 38 15v18L22 43V24.5Z" />
+            </svg>
+            <span>PickMe3D</span>
           </Link>
 
-          <div className="hidden sm:flex items-center flex-1 max-w-md">
-            <div className="relative w-full">
-              <span className="material-symbols-rounded absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg pointer-events-none">search</span>
-              <input type="search" placeholder="Tìm: button, chart, login, toggle..."
-                value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-10 pl-10 pr-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:bg-white/8 transition-all" />
+          <nav className={styles.nav} aria-label="Main navigation">
+            <Link href="/" className={styles.homeLink}>Home</Link>
+            <Link href="/templates/">Template</Link>
+            <Link href="/ui-marketplace/" aria-current="page" className={styles.activeNav}>
+              UI Marketplace
+            </Link>
+
+            {currentUser ? (
+              <>
+                <div className={styles.shared}>
+                  <NotificationBell />
+                </div>
+                <Link href="/profile/" className={styles.profile}>
+                  {currentUser.name || "Profile"}
+                </Link>
+              </>
+            ) : (
+              <Link href="/login/">Sign in</Link>
+            )}
+
+            <Link href={editorHref} className={styles.primary}>
+              Open Canvas <span aria-hidden="true">↗</span>
+            </Link>
+          </nav>
+        </header>
+
+        {/* ─── HERO SECTION ─────────────────────── */}
+        <section className={styles.hero} aria-labelledby="marketplace-title">
+          <div className={styles.heroCopy}>
+            <p className={styles.eyebrow}>THE UI MOTION COLLECTION</p>
+            <h1 id="marketplace-title">
+              Interactive micro-interactions.<br />
+              <em>Your canvas in motion.</em>
+            </h1>
+            <p>
+              Explore {catalog.length || 200} live interactive UI components in continuous motion.
+              Watch animations in real time, inspect interactions, copy AI prompts, or export pure HTML/CSS/JS code.
+            </p>
+            <div className={styles.heroMeta}>
+              <span>
+                <span className="material-symbols-rounded" style={{ fontSize: 16 }}>play_circle</span>
+                Continuous Live Demos
+              </span>
+              <span>·</span>
+              <span>
+                <span className="material-symbols-rounded" style={{ fontSize: 16 }}>code</span>
+                Pure HTML/CSS/JS
+              </span>
+              <span>·</span>
+              <span>
+                <span className="material-symbols-rounded" style={{ fontSize: 16 }}>auto_awesome</span>
+                Ready-to-use AI Prompts
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {/* ─── COLLECTION CONTAINER ─────────────── */}
+        <main className={styles.collection}>
+          {/* Search Row */}
+          <div className={styles.searchRow}>
+            <div className={styles.search}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+              <input
+                type="search"
+                placeholder="Search components (button, chart, modal, toggle, card)..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Search UI components"
+              />
               {searchQuery && (
-                <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
-                  <span className="material-symbols-rounded text-sm">close</span>
+                <button onClick={() => setSearchQuery("")} aria-label="Clear search">
+                  <span className="material-symbols-rounded" style={{ fontSize: 18 }}>close</span>
                 </button>
               )}
             </div>
+
+            <div className={styles.controlsRight}>
+              <button
+                className={styles.viewToggle}
+                onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
+                title={viewMode === "grid" ? "Switch to list view" : "Switch to grid view"}
+                aria-label="Toggle view mode"
+              >
+                <span className="material-symbols-rounded" style={{ fontSize: 20 }}>
+                  {viewMode === "grid" ? "view_list" : "grid_view"}
+                </span>
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
-              className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white border border-white/10 transition-all">
-              <span className="material-symbols-rounded text-lg">{viewMode === "grid" ? "view_list" : "grid_view"}</span>
-            </button>
-            <Link href="/" className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-slate-300 hover:text-white transition-all flex items-center gap-1.5">
-              <span className="material-symbols-rounded text-sm">arrow_back</span><span className="hidden sm:inline">Trang chủ</span>
-            </Link>
-          </div>
-        </div>
-        {/* Mobile search */}
-        <div className="sm:hidden px-4 pb-3">
-          <div className="relative w-full">
-            <span className="material-symbols-rounded absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg pointer-events-none">search</span>
-            <input type="search" placeholder="Tìm kiếm giao diện..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-9 pl-10 pr-4 rounded-xl bg-white/5 border border-white/10 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 transition-all" />
-          </div>
-        </div>
-      </header>
-
-      {/* ─── HERO ─────────────────────────────── */}
-      <section className="relative overflow-hidden py-14 sm:py-20 px-4 sm:px-6">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-600/8 rounded-full blur-[120px]" />
-          <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-fuchsia-600/8 rounded-full blur-[100px]" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-600/5 rounded-full blur-[150px]" />
-        </div>
-        <div className="relative max-w-4xl mx-auto text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs font-medium mb-5">
-              <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
-              {catalog.length} mẫu UI tương tác · Dữ liệu từ Lucian UX/UI
-            </span>
-          </motion.div>
-          <motion.h1 className="text-4xl sm:text-6xl lg:text-7xl font-normal text-white mb-4 leading-tight"
-            style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic" }}
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}>
-            Chợ Giao Diện{" "}
-            <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-amber-400 bg-clip-text text-transparent">Động</span>
-          </motion.h1>
-          <motion.p className="text-sm sm:text-base text-slate-400 max-w-2xl mx-auto leading-relaxed mb-6"
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
-            Tương tác trực tiếp với <span className="text-white font-medium">{catalog.length} mẫu UI/UX animation</span> thật —
-            nút bấm glass, biểu đồ tương tác, form, login, chart, và hơn thế. Xem demo live, lấy prompt AI, hoặc copy code gốc.
-          </motion.p>
-          <motion.div className="flex items-center justify-center gap-5 text-xs text-slate-500 flex-wrap"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
-            <span className="flex items-center gap-1.5"><span className="material-symbols-rounded text-sm text-violet-400">touch_app</span>Demo animation thật</span>
-            <span className="w-1 h-1 rounded-full bg-slate-700" />
-            <span className="flex items-center gap-1.5"><span className="material-symbols-rounded text-sm text-fuchsia-400">code</span>HTML/CSS/JS gốc</span>
-            <span className="w-1 h-1 rounded-full bg-slate-700" />
-            <span className="flex items-center gap-1.5"><span className="material-symbols-rounded text-sm text-amber-400">auto_awesome</span>Prompt AI sẵn dùng</span>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ─── CATEGORY BAR ─────────────────────── */}
-      <div className="sticky top-[57px] sm:top-[65px] z-40 border-b border-white/8" style={{ background: "rgba(7,10,18,0.92)", backdropFilter: "blur(16px)" }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2">
-          <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+          {/* Categories Bar */}
+          <div className={styles.categories} role="tablist" aria-label="Component categories">
             {CATEGORIES.map((cat) => {
               const isActive = activeCategory === cat.id;
               const count = categoryCounts[cat.id] || 0;
               return (
-                <button key={cat.id} onClick={() => setActiveCategory(cat.id)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${isActive ? "bg-violet-500/15 text-violet-400 border border-violet-500/30" : "text-slate-400 hover:text-white hover:bg-white/5 border border-transparent"}`}>
-                  <span className="material-symbols-rounded text-sm">{cat.icon}</span>
-                  {cat.label}
-                  {count > 0 && <span className={`ml-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${isActive ? "bg-violet-500/20" : "bg-white/5"}`}>{count}</span>}
+                <button
+                  key={cat.id}
+                  className={styles.categoryBtn}
+                  aria-pressed={isActive}
+                  onClick={() => setActiveCategory(cat.id)}
+                >
+                  <span className="material-symbols-rounded" style={{ fontSize: 15 }}>{cat.icon}</span>
+                  <span>{cat.label}</span>
+                  {count > 0 && <span className={styles.categoryCount}>({count})</span>}
                 </button>
               );
             })}
           </div>
-        </div>
-      </div>
 
-      {/* ─── RESULTS INFO ─────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-5 pb-2 flex items-center justify-between">
-        <p className="text-xs text-slate-500">
-          {loading ? "Đang tải dữ liệu..." : (
-            <>Hiển thị <span className="text-white font-medium">{Math.min(visibleCount, filtered.length)}</span> / {filtered.length} mẫu
-            {searchQuery && <> cho &ldquo;<span className="text-violet-400">{searchQuery}</span>&rdquo;</>}</>
-          )}
-        </p>
-        {!loading && filtered.length === 0 && (
-          <button onClick={() => { setSearchQuery(""); setActiveCategory("all"); }} className="text-xs text-violet-400 hover:text-violet-300">Xóa bộ lọc</button>
-        )}
-      </div>
+          {/* Results Heading */}
+          <div className={styles.resultsHeading}>
+            <p>
+              {loading ? (
+                "Loading component catalog..."
+              ) : (
+                <>
+                  Showing <strong>{Math.min(visibleCount, filtered.length)}</strong> of {filtered.length} components
+                  {searchQuery && <> for &ldquo;<span style={{ color: "#fff" }}>{searchQuery}</span>&rdquo;</>}
+                </>
+              )}
+            </p>
+            {!loading && (filtered.length === 0 || activeCategory !== "all" || searchQuery) && (
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setActiveCategory("all");
+                }}
+                className={styles.clearBtn}
+              >
+                Clear all filters
+              </button>
+            )}
+          </div>
 
-      {/* ─── GRID / LIST ──────────────────────── */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 pb-20">
-        {loading ? (
-          <div className="py-20 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-2 border-transparent border-t-violet-500 border-r-white/30 mx-auto mb-4" />
-            <p className="text-sm text-slate-400">Đang tải {catalog.length || ""} giao diện...</p>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="py-20 text-center">
-            <span className="material-symbols-rounded text-5xl text-slate-700 mb-3 block">search_off</span>
-            <p className="text-base text-slate-400 mb-2">Không tìm thấy giao diện phù hợp</p>
-            <p className="text-xs text-slate-500">Thử từ khóa khác hoặc chọn danh mục khác.</p>
-          </div>
-        ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-            <AnimatePresence mode="popLayout">
+          {/* Grid or List View */}
+          {loading ? (
+            <div style={{ padding: "90px 24px", textAlign: "center" }}>
+              <div
+                style={{
+                  display: "inline-block",
+                  width: 28,
+                  height: 28,
+                  border: "2px solid #444",
+                  borderTopColor: "#fff",
+                  borderRadius: "50%",
+                  animation: "spin 800ms linear infinite",
+                  marginBottom: 16,
+                }}
+              />
+              <p style={{ fontSize: 13, color: "#aaa", margin: 0 }}>
+                Loading UI components...
+              </p>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div style={{ padding: "80px 24px", textAlign: "center" }}>
+              <h2 style={{ fontSize: 32, fontWeight: 400, margin: "0 0 14px", color: "#fff" }}>
+                No components found
+              </h2>
+              <p style={{ fontSize: 14, color: "#888", maxWidth: 460, margin: "0 auto 24px", lineHeight: 1.7 }}>
+                Try searching with different keywords or choosing another category from the list above.
+              </p>
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setActiveCategory("all");
+                }}
+                className={styles.categoryBtn}
+                style={{ margin: "0 auto" }}
+              >
+                Reset filters
+              </button>
+            </div>
+          ) : viewMode === "grid" ? (
+            <div className={styles.cardGrid}>
               {visible.map((template, idx) => (
-                <TemplateCard key={template.id} template={template} idx={idx} onClick={() => setSelectedTemplate(template)} />
+                <SystemTemplateCard
+                  key={template.id}
+                  template={template}
+                  idx={idx}
+                  isPurchased={purchasedIds.includes(template.id)}
+                  onBuy={handleBuy}
+                  onClick={() => setSelectedTemplate(template)}
+                />
               ))}
-            </AnimatePresence>
-          </div>
-        ) : (
-          /* LIST VIEW */
-          <div className="space-y-2">
-            <AnimatePresence mode="popLayout">
-              {visible.map((template, idx) => (
-                <motion.article key={template.id} layout
-                  initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.2, delay: idx < 24 ? idx * 0.012 : 0 }}
-                  className="group cursor-pointer flex items-center gap-4 p-3 rounded-2xl transition-all hover:bg-white/5"
-                  style={{ border: "1px solid rgba(255,255,255,0.05)" }}
-                  onClick={() => setSelectedTemplate(template)}>
-                  <div className="w-14 h-14 rounded-xl flex-shrink-0 overflow-hidden" style={{ border: `1px solid ${template.hue}33` }}>
-                    <GridPreview template={template} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md" style={{ background: `${template.hue}20`, color: template.hue }}>{template.id}</span>
-                      <span className="text-[10px] text-slate-500">{CATEGORIES.find((c) => c.id === template.category)?.label}</span>
-                      {template.html && <span className="px-1 py-0.5 rounded text-[8px] bg-emerald-500/20 text-emerald-400 font-bold">LIVE</span>}
+            </div>
+          ) : (
+            <div className={styles.listView}>
+              {visible.map((template, idx) => {
+                const catLabel = CATEGORIES.find((c) => c.id === template.category)?.label || template.category;
+                return (
+                  <div
+                    key={template.id}
+                    className={styles.listItem}
+                    onClick={() => setSelectedTemplate(template)}
+                  >
+                    <div className={styles.listStage}>
+                      <LiveIframe
+                        template={template}
+                        className="w-full h-full pointer-events-none"
+                        interactive={false}
+                        autoPlayDemo={true}
+                      />
                     </div>
-                    <h3 className="text-sm font-medium text-white group-hover:text-violet-300 transition-colors truncate">{template.title}</h3>
-                    <p className="text-[11px] text-slate-500 truncate">{template.titleEn}</p>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 10, color: "#888", marginBottom: 4 }}>
+                        <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#fff" }}>#{template.id}</span>
+                        <span>·</span>
+                        <span style={{ textTransform: "uppercase" }}>{catLabel}</span>
+                        <span>·</span>
+                        <span style={{ color: "#34d399", fontWeight: 700 }}>LIVE</span>
+                      </div>
+                      <h3 style={{ fontSize: 16, fontWeight: 600, color: "#fff", margin: "0 0 4px" }}>
+                        {template.titleEn}
+                      </h3>
+                      <p style={{ fontSize: 12, color: "#aaa", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {template.summaryEn}
+                      </p>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      {purchasedIds.includes(template.id) ? (
+                        <button
+                          className={styles.cardOwnedBtn}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open("/editor/", "_blank");
+                          }}
+                          title="Mở trong Canvas Editor"
+                        >
+                          <span className="material-symbols-rounded" style={{ fontSize: 14 }}>check_circle</span>
+                          <span>Đã mua ↗</span>
+                        </button>
+                      ) : (
+                        <button
+                          className={styles.cardBuyBtn}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleBuy(template);
+                          }}
+                          title="Mua mẫu animation này để đưa vào Editor"
+                        >
+                          <span className="material-symbols-rounded" style={{ fontSize: 14 }}>shopping_bag</span>
+                          <span>Mua</span>
+                        </button>
+                      )}
+                      <span className="material-symbols-rounded" style={{ fontSize: 20, color: "#777" }}>
+                        arrow_forward
+                      </span>
+                    </div>
                   </div>
-                  <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
-                    {template.tags.slice(0, 3).map((tag) => (
-                      <span key={tag} className="px-2 py-0.5 rounded-full text-[10px] bg-white/5 text-slate-400 border border-white/8">{tag}</span>
-                    ))}
-                  </div>
-                  <span className="material-symbols-rounded text-lg text-slate-500 group-hover:text-white transition-colors flex-shrink-0">arrow_forward</span>
-                </motion.article>
-              ))}
-            </AnimatePresence>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Load More */}
+          {visibleCount < filtered.length && (
+            <div className={styles.loadMoreWrap}>
+              <button onClick={loadMore} className={styles.loadMoreBtn}>
+                <span>Load more components ({filtered.length - visibleCount} remaining)</span>
+                <span className="material-symbols-rounded" style={{ fontSize: 18 }}>expand_more</span>
+              </button>
+            </div>
+          )}
+        </main>
+
+        {/* ─── SYSTEM FOOTER ────────────────────── */}
+        <footer className={styles.footer}>
+          <Link href="/">PickMe3D</Link>
+          <p>A space for original ideas.</p>
+          <div className={styles.footerLinks}>
+            <Link href="/templates/">Template library</Link>
+            <Link href="/ui-marketplace/">UI Marketplace ↗</Link>
+            <Link href={editorHref}>Start designing ↗</Link>
           </div>
+          <span className={styles.footerCopy}>© {new Date().getFullYear()} PickMe3D</span>
+        </footer>
+
+        {/* ─── DETAIL MODAL ─────────────────────── */}
+        {selectedTemplate && (
+          <DetailDialog
+            template={selectedTemplate}
+            isPurchased={purchasedIds.includes(selectedTemplate.id)}
+            onBuy={handleBuy}
+            onClose={() => setSelectedTemplate(null)}
+          />
         )}
 
-        {/* Load More */}
-        {visibleCount < filtered.length && (
-          <div className="mt-10 text-center">
-            <button onClick={loadMore} className="px-8 py-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm text-slate-300 hover:text-white transition-all flex items-center gap-2 mx-auto">
-              <span className="material-symbols-rounded text-lg">expand_more</span>
-              Xem thêm ({filtered.length - visibleCount} mẫu còn lại)
-            </button>
+        {/* ─── PURCHASE TOAST ───────────────────── */}
+        {toastMessage && (
+          <div className={styles.toast}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span className="material-symbols-rounded" style={{ color: "#34d399", fontSize: 26 }}>
+                check_circle
+              </span>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>Mua thành công!</div>
+                <div style={{ fontSize: 12, color: "#ccc", maxWidth: 420 }}>{toastMessage}</div>
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <Link
+                href="/editor/"
+                target="_blank"
+                style={{
+                  background: "#34d399",
+                  color: "#0c1a14",
+                  padding: "6px 14px",
+                  borderRadius: 8,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  textDecoration: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <span>Mở Editor</span>
+                <span className="material-symbols-rounded" style={{ fontSize: 14 }}>arrow_outward</span>
+              </Link>
+              <button
+                onClick={() => setToastMessage(null)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#888",
+                  cursor: "pointer",
+                  padding: 4,
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
+                <span className="material-symbols-rounded" style={{ fontSize: 18 }}>close</span>
+              </button>
+            </div>
           </div>
         )}
-      </main>
-
-      {/* ─── FOOTER ───────────────────────────── */}
-      <footer className="border-t border-white/8 py-8 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <p>
-            Dữ liệu gốc từ{" "}
-            <a href="https://lucianlabs.dev/uxui-prompt/" target="_blank" rel="noopener" className="text-slate-400 hover:text-white underline underline-offset-2">
-              Lucian UX/UI Prompt ({catalog.length} templates)
-            </a> · PickMe 3D Platform
-          </p>
-          <Link href="/" className="text-slate-400 hover:text-white transition-colors flex items-center gap-1">
-            <span className="material-symbols-rounded text-sm">arrow_back</span>Quay về trang chủ
-          </Link>
-        </div>
-      </footer>
-
-      {/* ─── DETAIL DIALOG ────────────────────── */}
-      <AnimatePresence>
-        {selectedTemplate && <DetailDialog template={selectedTemplate} onClose={() => setSelectedTemplate(null)} />}
-      </AnimatePresence>
-
-      <style jsx global>{`
-        .no-scrollbar::-webkit-scrollbar{display:none}
-        .no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
-      `}</style>
-    </div>
+      </div>
     </TokensCtx.Provider>
   );
 }

@@ -614,7 +614,8 @@ export type Kind =
   | "radio"
   | "carousel"
   | "datePicker"
-  | "timePicker";
+  | "timePicker"
+  | "animation";
 
 /** how a carousel arranges its items: M3's four layouts */
 export type CarouselLayout = "multiBrowse" | "uncontained" | "hero" | "fullScreen";
@@ -1577,6 +1578,24 @@ export const KIND_SPEC: Record<Kind, KindSpec> = {
     defLabel: "選択肢",
     defIcon: null,
   },
+  animation: {
+    label: "Animation",
+    noun: "アニメーション",
+    category: "content",
+    paletteIcon: "auto_awesome",
+    w: 252,
+    h: 78,
+    radius: 999,
+    hasVariant: false,
+    hasLabel: true,
+    hasSupporting: true,
+    hasIcon: false,
+    size: { min: 48, max: PHONE_W, step: 4, icon: "width", presets: [200, 252, 320] },
+    size2: { min: 36, max: 480, step: 4, icon: "height", presets: [56, 78, 160, 220] },
+    defLabel: "Animation",
+    defIcon: null,
+    defSize: 252,
+  },
 };
 
 export const KIND_ORDER: Kind[] = [
@@ -1690,6 +1709,10 @@ export type Item = {
   layout?: PartLayout;
   /** how many cards a carousel holds */
   count?: number;
+  /** interactive animation template properties */
+  animationId?: string;
+  animationHtml?: string;
+  animationJs?: string;
   /** runtime-only: the editor is showing this FAB's menu open. Never written to JSON. */
   [fabOpen]?: boolean;
   /** runtime-only: the menu rises out of the part's top rather than dropping below it. */
@@ -1765,7 +1788,7 @@ export type FabKind = (typeof FAB_KINDS)[number];
 export const isFab = (k: Kind): k is FabKind => (FAB_KINDS as readonly string[]).includes(k);
 /** parts the palette does not list on their own: a FAB's other two shapes are reached from its
  *  own panel, where the three sit side by side. A saved sketch may still hold any of them. */
-export const PALETTE_HIDDEN: Kind[] = ["extendedFab", "fabMenu", "circularProgress"];
+export const PALETTE_HIDDEN: Kind[] = ["extendedFab", "fabMenu", "circularProgress", "animation"];
 /** how tall an extended FAB is drawn, and what it is made of at that height */
 export const extendedFabHeight = (it: Item) => clamp(Math.round(it.size2 ?? 56), 56, FAB_H_MAX);
 export function extendedFabMetrics(h: number) {
@@ -2486,6 +2509,8 @@ export function sizeOf(it: Item, widths: Record<string, number>) {
       return { w: n, h: it.size2 ?? Math.round((n * 4) / 3) };
     case "map":
       return { w: n, h: it.size2 ?? Math.round((n * 3) / 4) };
+    case "animation":
+      return { w: n, h: it.size2 ?? 200 };
     case "topAppBar":
       /* the status-bar inset belongs to a phone: a bar wider than one has no status bar above it.
        * (An Android tablet does; the canvas leaves that to the prompt.) */
