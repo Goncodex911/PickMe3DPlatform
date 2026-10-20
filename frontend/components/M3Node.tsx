@@ -239,6 +239,7 @@ const NO_BOX: Kind[] = [
   "splitButton",
   "fabMenu",
   "carousel",
+  "animation",
 ];
 
 /** Padding follows M3: icon+label is tighter than label alone. */
@@ -875,7 +876,7 @@ function FabMenuContent({ item, p, shown = true }: { item: Item; p: Palette; sho
   );
 }
 
-function Body({ item, p, tabScroll, menuShown }: { item: Item; p: Palette; tabScroll?: number; menuShown?: boolean }) {
+function Body({ item, p, tabScroll, menuShown, interactive }: { item: Item; p: Palette; tabScroll?: number; menuShown?: boolean; interactive?: boolean }) {
   const lang = useLang();
   const w = useWeight();
   const hasLabel = item.label.trim().length > 0;
@@ -885,6 +886,175 @@ function Body({ item, p, tabScroll, menuShown }: { item: Item; p: Palette; tabSc
   if (MEASURED.includes(item.kind)) return <MeasuredContent item={item} p={p} />;
 
   switch (item.kind) {
+    case "animation": {
+      const title = item.label || "Animation Component";
+      const cat = item.supporting || "UI Motion";
+      const html = item.animationHtml || "";
+      const js = item.animationJs || "";
+      const isButton =
+        cat === "버튼" ||
+        cat.toLowerCase().includes("button") ||
+        title.toLowerCase().includes("button") ||
+        item.animationId === "001";
+      const isDark = p.key?.toLowerCase().includes("dark") || p.surface === "#141218" || p.surface === "#000000";
+      const themeAttr = isDark ? "dark" : "light";
+      const srcDoc = html
+        ? `<!DOCTYPE html>
+<html data-theme="${themeAttr}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script>
+(function() {
+  try {
+    window.focus = function() {};
+    window.scrollTo = function() {};
+    window.scrollBy = function() {};
+    if (window.Element && window.Element.prototype) {
+      window.Element.prototype.scrollIntoView = function() {};
+    }
+    HTMLElement.prototype.focus = function() {};
+    if (window.HTMLInputElement && HTMLInputElement.prototype) {
+      HTMLInputElement.prototype.select = function() {};
+    }
+  } catch(e) {}
+})();
+<\/script>
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent !important;
+  color: ${p.onSurface};
+  font-family: system-ui, -apple-system, sans-serif;
+  overflow: visible;
+  user-select: none;
+}
+.ux {
+  transform-origin: center center;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+${
+  isButton
+    ? `
+.ux {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+/* Hide the outer gallery showcase blobs so only the button itself is displayed */
+.u001-blobs, .u002-glow {
+  display: none !important;
+}
+@keyframes u001-shimmer {
+  0%, 25% { transform: translateX(-150%) skewX(-12deg); }
+  65%, 100% { transform: translateX(350%) skewX(-12deg); }
+}
+.u001-sheen {
+  animation: u001-shimmer 4.5s ease-in-out infinite;
+}
+`
+    : ""
+}
+</style>
+</head>
+<body>
+${html}
+<script>${js}<\/script>
+<script>
+(function() {
+  function fit() {
+    var el = document.querySelector('.ux');
+    if (!el) return;
+    ${
+      isButton
+        ? `
+    el.style.width = '100%';
+    el.style.height = '100%';
+    var btn = el.querySelector('button') || el;
+    var btnW = btn.offsetWidth || 252;
+    var btnH = btn.offsetHeight || 78;
+    var winW = window.innerWidth || 252;
+    var winH = window.innerHeight || 78;
+    var s = Math.min(1, winW / Math.max(btnW, 1), winH / Math.max(btnH, 1));
+    if (s < 0.98) {
+      el.style.transform = 'scale(' + s.toFixed(3) + ')';
+    } else {
+      el.style.transform = 'none';
+    }
+    el.style.transformOrigin = 'center center';
+    `
+        : `
+    var w = el.offsetWidth || 340;
+    var h = el.offsetHeight || 240;
+    var winW = window.innerWidth || 340;
+    var winH = window.innerHeight || 240;
+    var pad = 8;
+    var s = Math.min(1, (winW - pad) / Math.max(w, 1), (winH - pad) / Math.max(h, 1));
+    el.style.transform = 'scale(' + s.toFixed(3) + ')';
+    el.style.transformOrigin = 'center center';
+    `
+    }
+  }
+  window.addEventListener('resize', fit);
+  fit();
+  setTimeout(fit, 80);
+})();
+<\/script>
+</body>
+</html>`
+        : "";
+
+      return (
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            position: "relative",
+            background: "transparent",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "visible",
+          }}
+        >
+          {srcDoc ? (
+            <iframe
+              srcDoc={srcDoc}
+              sandbox="allow-scripts allow-same-origin"
+              tabIndex={-1}
+              style={{
+                width: "100%",
+                height: "100%",
+                border: "none",
+                pointerEvents: interactive ? "none" : "auto",
+                background: "transparent",
+              }}
+              title={title}
+            />
+          ) : (
+            <div style={{ display: "grid", placeItems: "center", height: "100%", color: p.onSurfaceVariant, fontSize: 12 }}>
+              Animation #{item.animationId || ""}
+            </div>
+          )}
+        </div>
+      );
+    }
+
     case "bottomSheet":
       return (
         <div style={{ display: "flex", justifyContent: "center", paddingTop: 16 }}>
@@ -1938,7 +2108,7 @@ export function M3Node({
       }}
     >
       <RippleCtx.Provider value={{ list: shown, color: contentColor(drawn, palette) }}>
-        <Body item={drawn} p={palette} tabScroll={tabScroll} menuShown={menu.open} />
+        <Body item={drawn} p={palette} tabScroll={tabScroll} menuShown={menu.open} interactive={interactive} />
         {/* a part drawn as one shape is lit through its own box; one made of several -- a split
             button -- carries the light inside each of them instead */}
         {(lights || !!carried) && item.kind !== "splitButton" && <RippleShape part={null} />}
@@ -1988,7 +2158,7 @@ export function M3Static({
         ...style,
       }}
     >
-      <Body item={item} p={palette} />
+      <Body item={item} p={palette} interactive={false} />
     </div>
   );
 }

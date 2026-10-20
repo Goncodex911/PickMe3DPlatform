@@ -161,6 +161,7 @@ import ImportTemplateModal from "@/components/ImportTemplateModal";
 import EmbedModal from "@/components/EmbedModal";
 import { DeviceConfig, findDeviceById } from "@/constants/devices";
 import { TemplateFile } from "@/types/template-file";
+import { UITemplate } from "@/lib/ui-marketplace-data";
 
 /** the screens while a model drafts: primary, tertiary and primary container, drifting */
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
@@ -1686,6 +1687,107 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     };
     dragRef.current = d;
     setDrag({ ...d });
+  };
+
+  const onAnimationPointerDown = (e: React.PointerEvent, template: UITemplate) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    flushPending();
+    const isButton =
+      template.category === "버튼" ||
+      template.category?.toLowerCase().includes("button") ||
+      template.id === "001" ||
+      template.titleEn?.toLowerCase().includes("button");
+    const item: Item = {
+      ...makeItem("animation"),
+      id: uid(),
+      label: template.titleEn || template.title,
+      supporting: template.category,
+      animationId: template.id,
+      animationHtml: template.html,
+      animationJs: template.js,
+      size: isButton ? 252 : Math.min(320, PHONE_W - 32),
+      size2: isButton ? 78 : template.shape === "tall" ? 280 : 200,
+    };
+    const pt = toWorld(e.clientX, e.clientY);
+    const sz = sizeOf(item, widthsRef.current);
+    const offX = Math.min(sz.w / 2, 90);
+    const offY = Math.min(sz.h / 2, 40);
+    sx.jump(pt.x - offX);
+    sy.jump(pt.y - offY);
+    setSelectedIds([item.id]);
+    setRightTab("edit");
+    setDragLit({ x: offX, y: offY, at: performance.now() });
+    const d: DragState = {
+      item,
+      base: item,
+      baseOffX: offX,
+      baseOffY: offY,
+      offX,
+      offY,
+      startX: pt.x,
+      startY: pt.y,
+      px: pt.x,
+      py: pt.y,
+      active: true,
+      fromPalette: true,
+      overBin: false,
+      snap: null,
+      settling: false,
+      vanishing: false,
+      guide: null,
+    };
+    dragRef.current = d;
+    setDrag({ ...d });
+  };
+
+  const onAddAnimation = (template: UITemplate) => {
+    flushPending();
+    const isButton =
+      template.category === "버튼" ||
+      template.category?.toLowerCase().includes("button") ||
+      template.id === "001" ||
+      template.titleEn?.toLowerCase().includes("button");
+    const item: Item = {
+      ...makeItem("animation"),
+      id: uid(),
+      label: template.titleEn || template.title,
+      supporting: template.category,
+      animationId: template.id,
+      animationHtml: template.html,
+      animationJs: template.js,
+      size: isButton ? 252 : Math.min(320, PHONE_W - 32),
+      size2: isButton ? 78 : template.shape === "tall" ? 280 : 200,
+    };
+    const sz = sizeOf(item, widthsRef.current);
+    const f = selectedFrameId
+      ? framesRef.current.find((x) => x.id === selectedFrameId) || framesRef.current[0]
+      : framesRef.current[0];
+    const { w, h } = f ? frameSizeOf(f) : { w: PHONE_W, h: PHONE_H };
+    let x = f ? f.x + Math.max(16, Math.round((w - sz.w) / 2)) : 100;
+    let y = f ? f.y + 120 : 100;
+    if (f) {
+      const taken = (yy: number) =>
+        itemRects().some((o) => o.l < x + sz.w && o.r > x && o.t < yy + sz.h && o.b > yy);
+      let tries = 0;
+      while (taken(y) && y + sz.h < f.y + h - 20 && tries++ < 10) {
+        y += sz.h + 12;
+      }
+    }
+    snapshot();
+    setGroups((gs) => [
+      ...gs,
+      {
+        id: uid(),
+        x: Math.round(x),
+        y: Math.round(y),
+        axis: "x",
+        items: [item],
+      },
+    ]);
+    setSelectedIds([item.id]);
+    setSelectedFrameId(f ? f.id : null);
   };
 
   /** the in-flight size drag on a lone button's edge handle */
@@ -4554,6 +4656,8 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                           )
                         }
                         onPartPointerDown={onPartPointerDown}
+                        onAddAnimation={onAddAnimation}
+                        onAnimationPointerDown={onAnimationPointerDown}
                       />
                     ) : leftTab === "color" ? (
                       <ColorPanel
