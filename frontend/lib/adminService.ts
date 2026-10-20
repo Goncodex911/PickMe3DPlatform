@@ -25,6 +25,10 @@ export interface AdminUser {
   email: string;
   role: "user" | "admin";
   status: "active" | "banned";
+  plan?: "free" | "pro" | "studio";
+  planExpiresAt?: string | null;
+  aiUsed?: number;
+  aiPeriod?: string;
   jobRole?: string;
   bio?: string;
   username?: string;
@@ -32,6 +36,37 @@ export interface AdminUser {
   bannedAt?: string | null;
   bannedReason?: string;
   templatesCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminOrder {
+  _id: string;
+  orderCode: number;
+  userId: string;
+  userName?: string;
+  userEmail?: string;
+  userPicture?: string | null;
+  planId: "pro" | "studio";
+  months: number;
+  amount: number;
+  status: "PENDING" | "PAID" | "CANCELLED";
+  paidAt?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface AdminPresentation {
+  _id: string;
+  title: string;
+  authorName: string;
+  userId: string;
+  thumbnail?: string;
+  slidesCount: number;
+  isPublic: boolean;
+  likesCount: number;
+  viewsCount: number;
+  commentsCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -113,6 +148,21 @@ export interface AdminDashboardStats {
     priorityBreakdown: Array<{ _id: string; count: number }>;
   };
   categories: Array<{ _id: string; count: number }>;
+  presentations?: {
+    total: number;
+    public: number;
+  };
+  billing?: {
+    totalRevenue: number;
+    totalOrders: number;
+    paidOrders: number;
+    pendingOrders: number;
+  };
+  plans?: {
+    free: number;
+    pro: number;
+    studio: number;
+  };
   recentAuditLogs: AuditLogItem[];
   recentUsers: Array<{
     _id: string;
@@ -168,6 +218,7 @@ export async function fetchAdminUsersApi(params?: {
   search?: string;
   role?: string;
   status?: string;
+  plan?: string;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
 }): Promise<{
@@ -508,4 +559,139 @@ export async function downloadReportsCsv(): Promise<void> {
   a.click();
   a.remove();
   window.URL.revokeObjectURL(url);
+}
+
+
+// ==========================================
+// G. USER PLAN & BILLING ORDERS APIS
+// ==========================================
+
+export async function updateUserPlanApi(
+  userId: string,
+  data: { plan: "free" | "pro" | "studio"; months?: number }
+): Promise<{ success: boolean; message?: string; data?: any }> {
+  try {
+    const res = await fetch(`${API_BASE}/admin/users/${userId}/plan`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, message: err.message || "Lỗi cập nhật gói cước" };
+  }
+}
+
+export async function fetchAdminOrdersApi(params?: {
+  page?: number;
+  limit?: number;
+  status?: string;
+  planId?: string;
+  search?: string;
+}): Promise<{
+  success: boolean;
+  data?: AdminOrder[];
+  summary?: {
+    totalRevenue: number;
+    paidOrdersCount: number;
+    pendingOrdersCount: number;
+  };
+  pagination?: PaginationMeta;
+  message?: string;
+}> {
+  try {
+    const query = new URLSearchParams();
+    if (params?.page) query.append("page", params.page.toString());
+    if (params?.limit) query.append("limit", params.limit.toString());
+    if (params?.status && params.status !== "all") query.append("status", params.status);
+    if (params?.planId && params.planId !== "all") query.append("planId", params.planId);
+    if (params?.search) query.append("search", params.search);
+
+    const res = await fetch(`${API_BASE}/admin/orders?${query.toString()}`, {
+      headers: getAuthHeaders(),
+      cache: "no-store",
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, message: err.message || "Lỗi tải đơn hàng thanh toán" };
+  }
+}
+
+export async function downloadOrdersCsv(): Promise<void> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("pickme3d_token") : null;
+  const res = await fetch(`${API_BASE}/admin/orders/export`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error("Không thể tải file CSV đơn hàng");
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `pickme3d_orders_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+// ==========================================
+// H. SLIDE PRESENTATION MODERATION APIS
+// ==========================================
+
+export async function fetchAdminPresentationsApi(params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  isPublic?: string;
+}): Promise<{
+  success: boolean;
+  data?: AdminPresentation[];
+  pagination?: PaginationMeta;
+  message?: string;
+}> {
+  try {
+    const query = new URLSearchParams();
+    if (params?.page) query.append("page", params.page.toString());
+    if (params?.limit) query.append("limit", params.limit.toString());
+    if (params?.search) query.append("search", params.search);
+    if (params?.isPublic && params.isPublic !== "all") query.append("isPublic", params.isPublic);
+
+    const res = await fetch(`${API_BASE}/admin/presentations?${query.toString()}`, {
+      headers: getAuthHeaders(),
+      cache: "no-store",
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, message: err.message || "Lỗi tải bản trình chiếu" };
+  }
+}
+
+export async function togglePresentationVisibilityApi(
+  id: string,
+  isPublic: boolean
+): Promise<{ success: boolean; message?: string; data?: any }> {
+  try {
+    const res = await fetch(`${API_BASE}/admin/presentations/${id}/visibility`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ isPublic }),
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, message: err.message || "Lỗi cập nhật hiển thị bản trình chiếu" };
+  }
+}
+
+export async function deleteAdminPresentationApi(
+  id: string
+): Promise<{ success: boolean; message?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/admin/presentations/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, message: err.message || "Lỗi xóa bản trình chiếu" };
+  }
 }

@@ -5,6 +5,8 @@ const Report = require('../models/Report');
 const AuditLog = require('../models/AuditLog');
 const Comment = require('../models/Comment');
 const Collection = require('../models/Collection');
+const Order = require('../models/Order');
+const Presentation = require('../models/Presentation');
 const { logAdminAction } = require('../helpers/auditLogger');
 
 // ==========================================
@@ -21,14 +23,23 @@ exports.getDashboardStats = async (req, res, next) => {
       activeUsers,
       bannedUsers,
       adminUsers,
+      freeUsers,
+      proUsers,
+      studioUsers,
       totalTemplates,
       systemTemplates,
       userTemplates,
+      totalPresentations,
+      publicPresentations,
       totalComments,
       totalCollections,
       totalReports,
       pendingReports,
       resolvedReports,
+      totalOrders,
+      paidOrders,
+      pendingOrders,
+      revenueStats,
       recentAuditLogs,
       recentUsers,
     ] = await Promise.all([
@@ -36,16 +47,28 @@ exports.getDashboardStats = async (req, res, next) => {
       User.countDocuments({ status: { $ne: 'banned' } }),
       User.countDocuments({ status: 'banned' }),
       User.countDocuments({ role: 'admin' }),
+      User.countDocuments({ $or: [{ plan: 'free' }, { plan: null }, { plan: { $exists: false } }] }),
+      User.countDocuments({ plan: 'pro' }),
+      User.countDocuments({ plan: 'studio' }),
       Template.countDocuments(),
       Template.countDocuments({ isSystem: true }),
       Template.countDocuments({ isSystem: { $ne: true } }),
+      Presentation.countDocuments(),
+      Presentation.countDocuments({ isPublic: { $ne: false } }),
       Comment.countDocuments(),
       Collection.countDocuments(),
       Report.countDocuments(),
       Report.countDocuments({ status: 'pending' }),
       Report.countDocuments({ status: 'resolved' }),
+      Order.countDocuments(),
+      Order.countDocuments({ status: 'PAID' }),
+      Order.countDocuments({ status: 'PENDING' }),
+      Order.aggregate([
+        { $match: { status: 'PAID' } },
+        { $group: { _id: null, total: { $sum: '$amount' } } },
+      ]),
       AuditLog.find().sort({ createdAt: -1 }).limit(8),
-      User.find().sort({ createdAt: -1 }).limit(5).select('name email role status picture createdAt'),
+      User.find().sort({ createdAt: -1 }).limit(5).select('name email role status plan picture createdAt'),
     ]);
 
     // Template category distribution
@@ -85,6 +108,21 @@ exports.getDashboardStats = async (req, res, next) => {
           priorityBreakdown: reportPriorityStats,
         },
         categories: categoryStats,
+        presentations: {
+          total: totalPresentations,
+          public: publicPresentations,
+        },
+        billing: {
+          totalRevenue: revenueStats[0]?.total || 0,
+          totalOrders,
+          paidOrders,
+          pendingOrders,
+        },
+        plans: {
+          free: freeUsers,
+          pro: proUsers,
+          studio: studioUsers,
+        },
         recentAuditLogs,
         recentUsers,
       },
@@ -107,7 +145,7 @@ exports.getAdminUsers = async (req, res, next) => {
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 10));
     const skip = (page - 1) * limit;
 
-    const { search, role, status, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+    const { search, role, status, plan, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
 
     const query = {};
 
@@ -123,6 +161,14 @@ exports.getAdminUsers = async (req, res, next) => {
 
     if (status && status !== 'all') {
       query.status = status;
+    }
+
+    if (plan && plan !== 'all') {
+      if (plan === 'free') {
+        query.$or = [{ plan: 'free' }, { plan: null }, { plan: { $exists: false } }];
+      } else {
+        query.plan = plan;
+      }
     }
 
     const sort = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
@@ -840,7 +886,7 @@ exports.getReportingAnalytics = async (req, res, next) => {
     const fourteenDaysAgo = new Date();
     fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
-    const [userTrends, templateTrends, reportTrends] = await Promise.all([
+    const [userTrends, templateTrends, reportTrends, recentRevenueTrends, totalRevenueAgg, paidOrdersCount] = await Promise.all([
       User.aggregate([
         { $match: { createdAt: { $gte: fourteenDaysAgo } } },
         {
@@ -871,6 +917,22 @@ exports.getReportingAnalytics = async (req, res, next) => {
         },
         { $sort: { _id: 1 } },
       ]),
+      Order.aggregate([
+        { $match: { status: 'PAID', createdAt: { $gte: fourteenDaysAgo } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            revenue: { $sum: '$amount' },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]),
+      Order.aggregate([
+        { $match: { status: 'PAID' } },
+        { $group: { _id: null, total: { $sum: '$amount' } } },
+      ]),
+      Order.countDocuments({ status: 'PAID' }),
     ]);
 
     res.status(200).json({
@@ -882,8 +944,11 @@ exports.getReportingAnalytics = async (req, res, next) => {
           reportsSubmitted: reportTrends,
         },
         monetization: {
-          status: 'not_configured',
-          message: 'Hệ thống thanh toán / đăng ký tổ chức chưa được định nghĩa trong schema dự án',
+          status: 'configured',
+          provider: 'PayOS',
+          totalRevenue: totalRevenueAgg[0]?.total || 0,
+          paidOrdersCount,
+          recentRevenueTrends,
         },
       },
     });
@@ -923,6 +988,315 @@ exports.exportReportsCsv = async (req, res, next) => {
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="pickme3d_incident_reports_${Date.now()}.csv"`);
     res.status(200).send(csvContent);
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+// ==========================================
+// G. USER PLAN & SUBSCRIPTION MANAGEMENT
+// ==========================================
+
+// @desc    Update user subscription plan
+// @route   PUT /api/admin/users/:id/plan
+// @access  Private/Admin
+exports.updateUserPlan = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { plan, months = 1 } = req.body;
+
+    if (!['free', 'pro', 'studio'].includes(plan)) {
+      return res.status(400).json({ success: false, message: 'Gói dịch vụ không hợp lệ. Phải là free, pro hoặc studio' });
+    }
+
+    const targetUser = await User.findById(id);
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy người dùng' });
+    }
+
+    const previousPlan = targetUser.plan || 'free';
+    targetUser.plan = plan;
+
+    if (plan === 'free') {
+      targetUser.planExpiresAt = null;
+    } else {
+      const addMs = Math.max(1, Number(months) || 1) * 30 * 24 * 60 * 60 * 1000;
+      const base = targetUser.planExpiresAt && targetUser.planExpiresAt.getTime() > Date.now()
+        ? targetUser.planExpiresAt.getTime()
+        : Date.now();
+      targetUser.planExpiresAt = new Date(base + addMs);
+    }
+
+    await targetUser.save();
+
+    await logAdminAction(req, {
+      action: 'USER_PLAN_UPDATE',
+      targetType: 'user',
+      targetId: targetUser._id,
+      targetLabel: targetUser.name + ' (' + targetUser.email + ')',
+      details: {
+        previousPlan,
+        newPlan: plan,
+        months: plan === 'free' ? 0 : months,
+        expiresAt: targetUser.planExpiresAt,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Đã cập nhật gói cước của người dùng sang ' + plan.toUpperCase(),
+      data: {
+        _id: targetUser._id,
+        plan: targetUser.plan,
+        planExpiresAt: targetUser.planExpiresAt,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ==========================================
+// H. BILLING & REVENUE MANAGEMENT
+// ==========================================
+
+// @desc    Get paginated billing orders with user info
+// @route   GET /api/admin/orders
+// @access  Private/Admin
+exports.getAdminOrders = async (req, res, next) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 15));
+    const skip = (page - 1) * limit;
+
+    const { status, planId, search } = req.query;
+    const query = {};
+
+    if (status && status !== 'all') {
+      query.status = status.toUpperCase();
+    }
+    if (planId && planId !== 'all') {
+      query.planId = planId.toLowerCase();
+    }
+    if (search) {
+      const num = Number(search);
+      if (!isNaN(num)) {
+        query.orderCode = num;
+      } else {
+        query.userId = search;
+      }
+    }
+
+    const [total, orders, totalPaidRevenue, totalPaidCount, totalPendingCount] = await Promise.all([
+      Order.countDocuments(query),
+      Order.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      Order.aggregate([
+        { $match: { status: 'PAID' } },
+        { $group: { _id: null, total: { $sum: '$amount' } } },
+      ]),
+      Order.countDocuments({ status: 'PAID' }),
+      Order.countDocuments({ status: 'PENDING' }),
+    ]);
+
+    // Lookup user information for orders
+    const userIds = [...new Set(orders.map((o) => o.userId).filter(Boolean))];
+    const validObjectIds = userIds.filter((id) => mongoose.isValidObjectId(id));
+    const users = await User.find({ _id: { $in: validObjectIds } }).select('name email picture').lean();
+    const userMap = new Map(users.map((u) => [u._id.toString(), u]));
+
+    const populatedOrders = orders.map((o) => {
+      const u = userMap.get(String(o.userId));
+      return {
+        ...o,
+        userName: u ? u.name : 'Vãng lai / Không rõ',
+        userEmail: u ? u.email : '',
+        userPicture: u ? u.picture : null,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: populatedOrders,
+      summary: {
+        totalRevenue: totalPaidRevenue[0]?.total || 0,
+        paidOrdersCount: totalPaidCount,
+        pendingOrdersCount: totalPendingCount,
+      },
+      pagination: {
+        total,
+        page,
+        pages: Math.ceil(total / limit) || 1,
+        limit,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Export orders to CSV
+// @route   GET /api/admin/orders/export
+// @access  Private/Admin
+exports.exportOrdersCsv = async (req, res, next) => {
+  try {
+    const orders = await Order.find().sort({ createdAt: -1 }).limit(1000).lean();
+    const userIds = [...new Set(orders.map((o) => o.userId).filter(Boolean))];
+    const validObjectIds = userIds.filter((id) => mongoose.isValidObjectId(id));
+    const users = await User.find({ _id: { $in: validObjectIds } }).select('name email').lean();
+    const userMap = new Map(users.map((u) => [u._id.toString(), u]));
+
+    const headers = ['Mã đơn hàng', 'Khách hàng', 'Email', 'Gói dịch vụ', 'Thời hạn (tháng)', 'Số tiền (VNĐ)', 'Trạng thái', 'Thời gian thanh toán', 'Ngày tạo'];
+
+    const escapeCsv = (val) => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return '"' + str + '"';
+    };
+
+    const rows = orders.map((o) => {
+      const u = userMap.get(String(o.userId));
+      return [
+        escapeCsv(o.orderCode),
+        escapeCsv(u ? u.name : o.userId),
+        escapeCsv(u ? u.email : ''),
+        escapeCsv(o.planId ? o.planId.toUpperCase() : ''),
+        escapeCsv(o.months || 1),
+        escapeCsv(o.amount || 0),
+        escapeCsv(o.status || ''),
+        escapeCsv(o.paidAt ? new Date(o.paidAt).toISOString() : ''),
+        escapeCsv(new Date(o.createdAt).toISOString()),
+      ];
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="pickme3d_orders_' + Date.now() + '.csv"');
+    res.status(200).send(csvContent);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ==========================================
+// I. SLIDE PRESENTATION MODERATION
+// ==========================================
+
+// @desc    Get paginated slide presentations for moderation
+// @route   GET /api/admin/presentations
+// @access  Private/Admin
+exports.getAdminPresentations = async (req, res, next) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 12));
+    const skip = (page - 1) * limit;
+
+    const { search, isPublic } = req.query;
+    const query = {};
+
+    if (search) {
+      const searchRegex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      query.$or = [{ title: searchRegex }, { authorName: searchRegex }];
+    }
+
+    if (isPublic !== undefined && isPublic !== 'all') {
+      query.isPublic = isPublic === 'true';
+    }
+
+    const [total, presentations] = await Promise.all([
+      Presentation.countDocuments(query),
+      Presentation.find(query).sort({ updatedAt: -1 }).skip(skip).limit(limit).lean(),
+    ]);
+
+    const formatted = presentations.map((p) => ({
+      _id: p._id,
+      title: p.title,
+      authorName: p.authorName || 'Không rõ',
+      userId: p.userId,
+      thumbnail: p.thumbnail || '',
+      slidesCount: Array.isArray(p.slides) ? p.slides.length : 0,
+      isPublic: p.isPublic !== false,
+      likesCount: p.likesCount || 0,
+      viewsCount: p.viewsCount || 0,
+      commentsCount: Array.isArray(p.comments) ? p.comments.length : 0,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: formatted,
+      pagination: {
+        total,
+        page,
+        pages: Math.ceil(total / limit) || 1,
+        limit,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Toggle presentation visibility (public/private moderation)
+// @route   PUT /api/admin/presentations/:id/visibility
+// @access  Private/Admin
+exports.togglePresentationVisibility = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { isPublic } = req.body;
+
+    const pres = await Presentation.findById(id);
+    if (!pres) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy bản trình chiếu' });
+    }
+
+    pres.isPublic = Boolean(isPublic);
+    await pres.save();
+
+    await logAdminAction(req, {
+      action: 'PRESENTATION_MODERATE',
+      targetType: 'presentation',
+      targetId: pres._id,
+      targetLabel: pres.title,
+      details: { isPublic: pres.isPublic },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Đã cập nhật trạng thái hiển thị của bản trình chiếu thành ' + (pres.isPublic ? 'Công khai' : 'Riêng tư'),
+      data: pres,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Delete presentation by Admin (Violations / NSFW)
+// @route   DELETE /api/admin/presentations/:id
+// @access  Private/Admin
+exports.deleteAdminPresentation = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const pres = await Presentation.findById(id);
+    if (!pres) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy bản trình chiếu' });
+    }
+
+    await Presentation.findByIdAndDelete(id);
+
+    await logAdminAction(req, {
+      action: 'PRESENTATION_DELETE',
+      targetType: 'presentation',
+      targetId: id,
+      targetLabel: pres.title,
+      details: { authorName: pres.authorName, title: pres.title },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Bản trình chiếu đã được xóa khỏi hệ thống',
+    });
   } catch (error) {
     next(error);
   }

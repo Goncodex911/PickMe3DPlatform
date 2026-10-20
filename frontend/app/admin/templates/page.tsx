@@ -6,7 +6,11 @@ import {
   createSystemTemplateApi,
   updateAdminTemplateApi,
   deleteAdminTemplateApi,
+  fetchAdminPresentationsApi,
+  togglePresentationVisibilityApi,
+  deleteAdminPresentationApi,
   AdminTemplate,
+  AdminPresentation,
   PaginationMeta,
 } from "@/lib/adminService";
 
@@ -33,6 +37,14 @@ export default function AdminTemplatesPage() {
   const [isSystem, setIsSystem] = useState("all");
   const [isPublic, setIsPublic] = useState("all");
 
+  // Tab switcher: "templates" | "presentations"
+  const [activeTab, setActiveTab] = useState<"templates" | "presentations">("templates");
+  const [presentations, setPresentations] = useState<AdminPresentation[]>([]);
+  const [presentationPagination, setPresentationPagination] = useState<PaginationMeta>({ total: 0, page: 1, pages: 1, limit: 12 });
+  const [loadingPresentations, setLoadingPresentations] = useState(false);
+  const [presSearch, setPresSearch] = useState("");
+  const [presPublicFilter, setPresPublicFilter] = useState("all");
+
   // Modals
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalTemplate, setEditModalTemplate] = useState<AdminTemplate | null>(null);
@@ -49,6 +61,50 @@ export default function AdminTemplatesPage() {
   const [formIsFeatured, setFormIsFeatured] = useState(false);
   const [formIsPublic, setFormIsPublic] = useState(true);
   const [formIsSystem, setFormIsSystem] = useState(true);
+
+
+  const loadPresentations = async (page = 1) => {
+    setLoadingPresentations(true);
+    try {
+      const res = await fetchAdminPresentationsApi({
+        page,
+        limit: 12,
+        search: presSearch.trim() || undefined,
+        isPublic: presPublicFilter,
+      });
+      if (res.success && res.data) {
+        setPresentations(res.data);
+        if (res.pagination) setPresentationPagination(res.pagination);
+      }
+    } catch (err) {
+      console.error("Lỗi khi tải bản trình chiếu:", err);
+    } finally {
+      setLoadingPresentations(false);
+    }
+  };
+
+  const handleTogglePresVisibility = async (p: AdminPresentation) => {
+    const nextPublic = !p.isPublic;
+    const res = await togglePresentationVisibilityApi(p._id, nextPublic);
+    if (res.success) {
+      setPresentations((prev) =>
+        prev.map((item) => (item._id === p._id ? { ...item, isPublic: nextPublic } : item))
+      );
+    } else {
+      alert("Lỗi: " + (res.message || "Không thể cập nhật"));
+    }
+  };
+
+  const handleDeletePresentation = async (id: string) => {
+    if (!confirm("Bạn có chắc chắn muốn xóa bản trình chiếu này khỏi hệ thống?")) return;
+    const res = await deleteAdminPresentationApi(id);
+    if (res.success) {
+      setPresentations((prev) => prev.filter((p) => p._id !== id));
+      setPresentationPagination((prev) => ({ ...prev, total: Math.max(0, prev.total - 1) }));
+    } else {
+      alert("Lỗi: " + (res.message || "Không thể xóa"));
+    }
+  };
 
   const loadTemplates = async (page = 1) => {
     setLoading(true);
@@ -232,6 +288,156 @@ export default function AdminTemplatesPage() {
         </button>
       </div>
 
+      {/* Tab Switcher: 3D Templates vs Slide Presentations */}
+      <div className="flex items-center gap-2 border-b border-neutral-800 pb-3">
+        <button
+          onClick={() => setActiveTab("templates")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            activeTab === "templates"
+              ? "bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 shadow-sm"
+              : "text-neutral-400 hover:text-white hover:bg-neutral-800/50"
+          }`}
+        >
+          <span className="material-symbols-rounded text-base">view_in_ar</span>
+          <span>Mẫu 3D Canvas ({pagination.total})</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setActiveTab("presentations");
+            loadPresentations(1);
+          }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            activeTab === "presentations"
+              ? "bg-purple-600/20 text-purple-300 border border-purple-500/30 shadow-sm"
+              : "text-neutral-400 hover:text-white hover:bg-neutral-800/50"
+          }`}
+        >
+          <span className="material-symbols-rounded text-base">slideshow</span>
+          <span>Bản Trình Chiếu Slide Studio ({presentationPagination.total})</span>
+        </button>
+      </div>
+
+      {activeTab === "presentations" ? (
+        <div className="space-y-6">
+          {/* Presentations Filters */}
+          <div className="p-4 rounded-2xl bg-[#141824] border border-neutral-800/80 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+            <div className="flex-1 flex items-center gap-2">
+              <div className="relative flex-1">
+                <span className="material-symbols-rounded absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-xl">
+                  search
+                </span>
+                <input
+                  type="text"
+                  placeholder="Tìm bản trình chiếu theo tiêu đề hoặc tác giả..."
+                  value={presSearch}
+                  onChange={(e) => setPresSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") loadPresentations(1);
+                  }}
+                  className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-[#1b2030] border border-neutral-700/60 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-purple-500"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => loadPresentations(1)}
+                className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold"
+              >
+                Tìm
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-neutral-400">Hiển thị:</span>
+              <select
+                value={presPublicFilter}
+                onChange={(e) => {
+                  setPresPublicFilter(e.target.value);
+                  setTimeout(() => loadPresentations(1), 0);
+                }}
+                className="bg-[#1b2030] border border-neutral-700/60 rounded-xl px-3 py-2 text-xs text-white outline-none"
+              >
+                <option value="all">Tất cả</option>
+                <option value="true">Công khai</option>
+                <option value="false">Riêng tư</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Presentations Grid */}
+          {loadingPresentations ? (
+            <div className="p-16 text-center text-neutral-400 text-sm">
+              <div className="w-8 h-8 rounded-full border-2 border-purple-500 border-t-transparent animate-spin mx-auto mb-3" />
+              Đang tải danh sách bài trình chiếu...
+            </div>
+          ) : presentations.length === 0 ? (
+            <div className="p-16 text-center text-neutral-400 bg-[#141824] border border-neutral-800 rounded-3xl">
+              <span className="material-symbols-rounded text-4xl text-neutral-600 block mb-2">slideshow</span>
+              <p className="font-medium text-white text-sm">Không có bản trình chiếu nào</p>
+              <p className="text-xs text-neutral-500 mt-1">Người dùng tạo slide trong Slide Studio sẽ xuất hiện tại đây.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {presentations.map((p) => (
+                <div key={p._id} className="rounded-2xl bg-[#141824] border border-neutral-800/80 overflow-hidden hover:border-neutral-700 transition-all flex flex-col">
+                  <div className="aspect-video bg-neutral-900 relative overflow-hidden flex items-center justify-center">
+                    {p.thumbnail ? (
+                      <img src={p.thumbnail} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="text-neutral-600 flex flex-col items-center">
+                        <span className="material-symbols-rounded text-3xl">slideshow</span>
+                        <span className="text-[10px] mt-1">Chưa có thumbnail</span>
+                      </div>
+                    )}
+                    <span className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                      p.isPublic
+                        ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                        : "bg-neutral-800 text-neutral-400 border-neutral-700"
+                    }`}>
+                      {p.isPublic ? "Công khai" : "Riêng tư"}
+                    </span>
+                  </div>
+
+                  <div className="p-4 flex-1 flex flex-col justify-between">
+                    <div>
+                      <h3 className="font-bold text-white text-sm line-clamp-1">{p.title}</h3>
+                      <p className="text-xs text-neutral-400 mt-0.5">Tác giả: {p.authorName || "Ẩn danh"}</p>
+                      <div className="flex items-center gap-3 text-[11px] text-neutral-400 mt-2">
+                        <span>{p.slidesCount} trang slide</span>
+                        <span>•</span>
+                        <span>{p.viewsCount} xem</span>
+                        <span>•</span>
+                        <span>{p.likesCount} thích</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-3 mt-3 border-t border-neutral-800">
+                      <button
+                        onClick={() => handleTogglePresVisibility(p)}
+                        className="text-xs text-neutral-300 hover:text-white flex items-center gap-1"
+                      >
+                        <span className="material-symbols-rounded text-sm">
+                          {p.isPublic ? "visibility_off" : "visibility"}
+                        </span>
+                        <span>{p.isPublic ? "Ẩn đi" : "Công khai"}</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleDeletePresentation(p._id)}
+                        className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1"
+                      >
+                        <span className="material-symbols-rounded text-sm">delete</span>
+                        <span>Xóa</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <>
       {/* Filters Bar */}
       <div className="p-4 rounded-2xl bg-[#141824] border border-neutral-800/80 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
         <form onSubmit={handleSearchSubmit} className="flex-1 flex items-center gap-2">
@@ -454,6 +660,9 @@ export default function AdminTemplatesPage() {
             </button>
           </div>
         </div>
+      )}
+
+      </>
       )}
 
       {/* ── MODAL: CREATE SYSTEM TEMPLATE ── */}

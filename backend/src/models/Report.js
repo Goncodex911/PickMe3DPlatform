@@ -14,7 +14,7 @@ const reportSchema = new mongoose.Schema(
     },
     targetType: {
       type: String,
-      enum: ['template', 'user', 'comment', 'system'],
+      enum: ['template', 'presentation', 'user', 'comment', 'system'],
       required: true,
       index: true,
     },

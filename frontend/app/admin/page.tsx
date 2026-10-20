@@ -193,6 +193,40 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
+      {/* Revenue & Platform Monetization Strip */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-[#141824] to-indigo-950/30 border border-emerald-500/20 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center flex-shrink-0">
+            <span className="material-symbols-rounded text-2xl">monetization_on</span>
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-white uppercase tracking-wider">Doanh Thu PayOS:</span>
+              <span className="text-base font-extrabold text-emerald-400">
+                {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(stats.billing?.totalRevenue || 0)}
+              </span>
+              <span className="text-xs text-neutral-400">({stats.billing?.paidOrders || 0} đơn thành công)</span>
+            </div>
+            <div className="text-[11px] text-neutral-400 flex items-center gap-2 mt-0.5">
+              <span>Thuê bao:</span>
+              <span className="text-indigo-400 font-semibold">{stats.plans?.pro || 0} Pro</span>
+              <span>•</span>
+              <span className="text-amber-400 font-semibold">{stats.plans?.studio || 0} Studio</span>
+              <span>•</span>
+              <span className="text-purple-400 font-semibold">{stats.presentations?.total || 0} bản trình chiếu Slide</span>
+            </div>
+          </div>
+        </div>
+
+        <Link
+          href="/admin/billing"
+          className="px-4 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-300 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 flex-shrink-0"
+        >
+          <span>Xem Chi Tiết Đơn Hàng</span>
+          <span className="material-symbols-rounded text-sm">arrow_forward</span>
+        </Link>
+      </div>
+
       {/* Middle Grid: Quick Links & Recent Activities */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Cols: Distribution & Quick Modules */}
@@ -204,7 +238,7 @@ export default function AdminDashboardPage() {
               Lối Tắt Quản Trị Hệ Thống
             </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <Link
                 href="/admin/users"
                 className="p-4 rounded-2xl bg-[#1a1f30] hover:bg-[#20273d] border border-neutral-700/60 transition-all group"
@@ -241,6 +275,19 @@ export default function AdminDashboardPage() {
                 <div className="font-semibold text-sm text-white mb-1">Xử Lý Báo Cáo</div>
                 <p className="text-xs text-neutral-400 leading-relaxed">
                   Xem phản ánh nội dung, cập nhật trạng thái giải quyết vi phạm.
+                </p>
+              </Link>
+
+              <Link
+                href="/admin/billing"
+                className="p-4 rounded-2xl bg-[#1a1f30] hover:bg-[#20273d] border border-neutral-700/60 transition-all group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                  <span className="material-symbols-rounded">payments</span>
+                </div>
+                <div className="font-semibold text-sm text-white mb-1">Doanh Thu & Đơn Hàng</div>
+                <p className="text-xs text-neutral-400 leading-relaxed">
+                  Theo dõi đơn PayOS, đối soát doanh thu, nâng cấp gói dịch vụ.
                 </p>
               </Link>
             </div>
