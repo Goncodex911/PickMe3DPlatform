@@ -92,6 +92,7 @@ export default function TemplatesPage() {
         <nav className={styles.nav} aria-label="Main navigation">
           <Link href="/" className={styles.homeLink}>Home</Link>
           <Link href="/templates/" aria-current="page" className={styles.activeNav}>Template</Link>
+          <Link href="/ui-marketplace/">UI Marketplace</Link>
           {currentUser ? <><div className={styles.shared}><NotificationBell /></div><Link href="/profile/" className={styles.profile}>{currentUser.name || "Profile"}</Link></> : <Link href="/login/">Sign in</Link>}
           <Link href={editorHref} className={styles.primary}>Open Canvas <span aria-hidden="true">↗</span></Link>
         </nav>
@@ -156,7 +157,15 @@ export default function TemplatesPage() {
           setTemplates((prev) => prev.map((item) => ((item._id || item.id) === (updated._id || updated.id) ? updated : item)));
         }} />
       </div>
-      <footer className={styles.footer}><Link href="/">PickMe3D</Link><p>A space for original ideas.</p><Link href={editorHref}>Start designing ↗</Link><span>© {new Date().getFullYear()} PickMe3D</span></footer>
+      <footer className={styles.footer}>
+        <Link href="/">PickMe3D</Link>
+        <p>A space for original ideas.</p>
+        <div style={{ display: "flex", gap: "24px", alignItems: "center" }}>
+          <Link href="/ui-marketplace/">UI Marketplace ↗</Link>
+          <Link href={editorHref}>Start designing ↗</Link>
+        </div>
+        <span>© {new Date().getFullYear()} PickMe3D</span>
+      </footer>
     </div>
   );
 }

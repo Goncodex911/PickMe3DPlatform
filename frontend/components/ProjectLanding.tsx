@@ -30,7 +30,7 @@ export default function ProjectLanding() {
     <section className={styles.hero} aria-labelledby="hero-title">
       <video className={styles.heroVideo} src={`${basePath}/landing/pickme3d-story.mp4`} poster={`${basePath}/hero/hero-portrait.png`} autoPlay muted loop playsInline preload="auto" aria-label="PickMe3D creative workspace demo" />
       <div className={styles.heroShade}/>
-      <SiteNav variant="overlay" auth={auth}/>
+
       <div className={styles.heroContent}>
         <p className={styles.eyebrow}>YOUR IDEAS. YOUR CANVAS.</p>
         <h1 id="hero-title">Your ideas.<br/>No limits.</h1>
@@ -59,6 +59,6 @@ export default function ProjectLanding() {
     </section>
 
     <section className={`${styles.section} ${styles.finalCta}`} aria-labelledby="cta-title"><div><p className={styles.eyebrow}>YOUR NEXT CREATIVE CHAPTER</p><h2 id="cta-title">Let’s create<br/>something different.</h2><p>Your next idea is waiting.<br/>Open a canvas and start today.</p><Link href={startHref} className={styles.button}>Start designing <Arrow/></Link></div><div className={styles.ctaImage}><img src={`${basePath}/hero/card-kinetic.png`} alt="Creative energy in motion" loading="lazy"/></div></section>
-    <footer className={styles.footer}><Link href="/" aria-label="PickMe3D — Home"><Brand/></Link><p>A space for original ideas.</p><nav aria-label="Footer links"><Link href="/templates/">Template library</Link><Link href={authenticated ? "/slides/" : "/login/"}>Slide Studio</Link><Link href={authenticated ? "/profile/" : "/login/"}>{authenticated ? "My designs" : "Sign in"}</Link><a href="#top">Back to top ↑</a></nav><span>© {new Date().getFullYear()} PickMe3D</span></footer>
+
   </main>;
 }
