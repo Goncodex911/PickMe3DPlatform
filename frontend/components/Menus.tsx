@@ -255,6 +255,56 @@ export function ProfileMenu({ p, size = 40, side = "down" }: { p: Palette; size?
                 Hồ sơ cá nhân
               </button>
               <button
+                onClick={() => {
+                  window.location.href = "/ui-marketplace/";
+                }}
+                className="m3-press"
+                style={{
+                  width: "100%",
+                  height: 40,
+                  padding: "0 14px",
+                  borderRadius: 12,
+                  border: "none",
+                  background: "transparent",
+                  color: p.onSurface,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  marginBottom: 2,
+                }}
+              >
+                <Icon name="storefront" size={18} />
+                UI Marketplace
+              </button>
+              <button
+                onClick={() => {
+                  window.location.href = "/templates/";
+                }}
+                className="m3-press"
+                style={{
+                  width: "100%",
+                  height: 40,
+                  padding: "0 14px",
+                  borderRadius: 12,
+                  border: "none",
+                  background: "transparent",
+                  color: p.onSurface,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  marginBottom: 2,
+                }}
+              >
+                <Icon name="category" size={18} />
+                Bộ sưu tập mẫu
+              </button>
+              <button
                 onClick={handleLogout}
                 className="m3-press"
                 style={{

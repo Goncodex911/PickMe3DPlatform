@@ -306,7 +306,7 @@ export default function LandingPage({
             <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
           </Link>
           <Link href="/ui-marketplace" className="hover:text-white transition-colors flex items-center gap-1.5">
-            <span>Chợ Giao Diện</span>
+            <span>UI Marketplace</span>
             <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
           </Link>
           <a href="#features" className="hover:text-white transition-colors">Tính năng nổi bật</a>
