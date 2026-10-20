@@ -308,7 +308,9 @@ export default function LandingPage({
             <span>UI Marketplace</span>
             <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
           </Link>
-          <a href="#pricing" className="hover:text-white transition-colors">Bảng giá</a>
+          <a href="#features" className="hover:text-white transition-colors">Tính năng nổi bật</a>
+          <Link href="/pricing" className="hover:text-white transition-colors">Bảng giá</Link>
+          <Link href="/slides" className="hover:text-white transition-colors">Slides</Link>
         </nav>
 
         <div className="flex items-center gap-3 pointer-events-auto">
