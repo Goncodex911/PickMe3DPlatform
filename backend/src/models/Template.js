@@ -54,6 +54,11 @@ const templateSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isSystem: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
     likesCount: {
       type: Number,
       default: 0,

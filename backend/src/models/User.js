@@ -45,6 +45,21 @@ const userSchema = new mongoose.Schema(
       trim: true,
       maxlength: [500, 'Bio cannot exceed 500 characters'],
     },
+    status: {
+      type: String,
+      enum: ['active', 'banned'],
+      default: 'active',
+      index: true,
+    },
+    bannedAt: {
+      type: Date,
+      default: null,
+    },
+    bannedReason: {
+      type: String,
+      default: '',
+      trim: true,
+    },
   },
   {
     timestamps: true,
