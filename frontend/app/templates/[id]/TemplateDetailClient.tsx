@@ -19,7 +19,6 @@ import { Preview } from "@/components/Preview";
 import { DEFAULT_THEME, paletteOf } from "@/lib/tokens";
 import CommentThread from "@/components/CommentThread";
 import { AddToCollectionModal } from "@/components/CollectionManager";
-import NotificationBell from "@/components/NotificationBell";
 
 interface TemplateDetailClientProps {
   id: string;
@@ -223,12 +222,12 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
   if (loading) {
     return (
       <div className="min-h-screen bg-[#070b14] text-white flex flex-col">
-        <header className="border-b border-white/10 px-6 py-4 bg-[#0a0e17]">
+        <div className="border-b border-white/10 px-6 py-4 bg-[#0a0e17]">
           <Link href="/templates" className="text-xs text-slate-400 hover:text-white flex items-center gap-1">
             <span className="material-symbols-rounded text-sm">arrow_back</span>
             <span>Bộ sưu tập mẫu</span>
           </Link>
-        </header>
+        </div>
         <div className="flex-1 flex flex-col items-center justify-center gap-3">
           <div className="w-7 h-7 border-2 border-white/20 border-t-red-500 rounded-full animate-spin" />
           <p className="text-xs text-slate-400 font-mono">Đang tải chi tiết thiết kế...</p>
@@ -241,12 +240,12 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
   if (error || !template) {
     return (
       <div className="min-h-screen bg-[#070b14] text-white flex flex-col">
-        <header className="border-b border-white/10 px-6 py-4 bg-[#0a0e17]">
+        <div className="border-b border-white/10 px-6 py-4 bg-[#0a0e17]">
           <Link href="/templates" className="text-xs text-slate-400 hover:text-white flex items-center gap-1">
             <span className="material-symbols-rounded text-sm">arrow_back</span>
             <span>Bộ sưu tập mẫu</span>
           </Link>
-        </header>
+        </div>
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto">
           <div className="w-12 h-12 rounded-md bg-slate-800 text-slate-400 flex items-center justify-center mb-4">
             <span className="material-symbols-rounded text-2xl">error_outline</span>
@@ -283,7 +282,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
   return (
     <div className="min-h-screen bg-[#070b14] text-white flex flex-col">
       {/* Top Header / Breadcrumb */}
-      <header className="sticky top-0 z-40 bg-[#0a0e17] border-b border-white/10 px-4 sm:px-8 py-3.5 flex items-center justify-between">
+      <div className="bg-[#0a0e17] border-b border-white/10 px-4 sm:px-8 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link
             href="/templates"
@@ -317,7 +316,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
             <span>Dùng mẫu này</span>
           </button>
         </div>
-      </header>
+      </div>
 
       {/* Main Content Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">

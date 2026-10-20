@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import NotificationBell from "@/components/NotificationBell";
+import { useEffect, useState } from "react";
 import styles from "@/app/landing/page.module.css";
 import { Logo } from "@/components/Logo";
 
-// Thanh điều hướng chung của PickMe3D: trang chủ (nổi trên video) và các trang Slides, Bảng giá, Thanh toán (thanh nền mực).
+// Navigation is rendered once by the root layout.
 
 export function Brand() {
   return <span className={styles.brand}><Logo size={35} color="currentColor" /><span>PickMe<span className={styles.brandLight}>3D</span></span></span>;
@@ -21,6 +23,7 @@ export interface AuthState {
 
 // Trạng thái đăng nhập lấy từ localStorage (token + user), đồng bộ giữa các tab
 export function useAuthState(): AuthState {
+  const pathname = usePathname();
   const [authenticated, setAuthenticated] = useState(false);
   const [name, setName] = useState("");
 
@@ -33,58 +36,60 @@ export function useAuthState(): AuthState {
     }
     syncAuth();
     window.addEventListener("storage", syncAuth);
-    return () => window.removeEventListener("storage", syncAuth);
-  }, []);
+    window.addEventListener("focus", syncAuth);
+    return () => {
+      window.removeEventListener("storage", syncAuth);
+      window.removeEventListener("focus", syncAuth);
+    };
+  }, [pathname]);
 
   function logout() {
     localStorage.removeItem("pickme3d_token");
     localStorage.removeItem("pickme3d_user");
     setAuthenticated(false);
     setName("");
+    window.dispatchEvent(new Event("storage"));
   }
 
   return { authenticated, name, logout };
 }
 
-export default function SiteNav({
-  variant = "bar",
-  active,
-  auth: authProp,
-  actions,
-}: {
-  // overlay: nổi trên video ở trang chủ; bar: thanh nền mực dính đầu trang ở các trang khác
-  variant?: "overlay" | "bar";
-  active?: "slides" | "templates" | "pricing";
-  // Trang chủ truyền trạng thái của nó vào để nút "Start designing" và thanh nav dùng chung một nguồn
-  auth?: AuthState;
-  actions?: ReactNode;
-}) {
+export default function SiteNav() {
+  const pathname = usePathname();
+  const router = useRouter();
   const ownAuth = useAuthState();
-  const { authenticated, name, logout } = authProp || ownAuth;
+  const { authenticated, name, logout } = ownAuth;
   const [menuOpen, setMenuOpen] = useState(false);
-  // Ở trang chủ About/Features là neo trong trang; ở trang khác thì quay về trang chủ
-  const anchor = variant === "overlay" ? "" : "/";
+  const isLanding = pathname === "/" || pathname === "/landing" || pathname === "/landing/";
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const syncScroll = () => setScrolled(window.scrollY > 24);
+    syncScroll();
+    window.addEventListener("scroll", syncScroll, { passive: true });
+    return () => window.removeEventListener("scroll", syncScroll);
+  }, []);
+  const current = (href: string) => pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
 
   const header = (
-    <header className={`${styles.header} ${variant === "bar" ? styles.headerBarIn : ""}`} onKeyDown={(event) => { if (event.key === "Escape") setMenuOpen(false); }}>
+    <header className={`${styles.header} ${styles.headerBarIn}`} onKeyDown={(event) => { if (event.key === "Escape") setMenuOpen(false); }}>
       <Link href="/" aria-label="PickMe3D — Home"><Brand/></Link>
       <div className={styles.headerActions}>
-      {actions}
       <button className={styles.menuToggle} aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen} aria-controls="site-nav" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? "Close −" : "Menu +"}</button>
       <nav id="site-nav" className={`${styles.nav} ${menuOpen ? styles.navOpen : ""}`} aria-label="Main navigation">
-        <a href={`${anchor}#about`} onClick={() => setMenuOpen(false)}>About</a>
-        <a href={`${anchor}#features`} onClick={() => setMenuOpen(false)}>Features</a>
-        <Link href="/templates/" aria-current={active === "templates" ? "page" : undefined}>Template <Arrow/></Link>
-        <Link href={authenticated ? "/slides/" : "/login/"} aria-current={active === "slides" ? "page" : undefined} onClick={() => setMenuOpen(false)}>Slides <Arrow/></Link>
-        <Link href="/pricing/" aria-current={active === "pricing" ? "page" : undefined} onClick={() => setMenuOpen(false)}>Pricing <Arrow/></Link>
+        <Link href="/" aria-current={pathname === "/" || pathname === "/landing/" ? "page" : undefined} onClick={() => setMenuOpen(false)}>Home</Link>
+        <Link href="/templates/" aria-current={current("/templates") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Templates</Link>
+        <Link href="/ui-marketplace/" aria-current={current("/ui-marketplace") ? "page" : undefined} onClick={() => setMenuOpen(false)}>UI Marketplace</Link>
+        <Link href={authenticated ? "/slides/" : "/login/"} aria-current={current("/slides") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Slides</Link>
+        <Link href="/pricing/" aria-current={current("/pricing") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Pricing</Link>
+        {authenticated && <NotificationBell />}
         {authenticated
-          ? <><Link href="/profile/" className={styles.account} title={name}>{name || "Account"}</Link><button onClick={() => { logout(); setMenuOpen(false); }} className={styles.logout}>Sign out</button></>
+          ? <><Link href="/profile/" aria-current={current("/profile") ? "page" : undefined} className={styles.account} title={name}>{name || "Account"}</Link><button onClick={() => { logout(); setMenuOpen(false); router.push("/"); router.refresh(); }} className={styles.logout}>Sign out</button></>
           : <Link className={styles.login} href="/login/">Sign in <Arrow/></Link>}
+        <Link className={styles.login} href={authenticated ? "/editor/" : "/login/"} onClick={() => setMenuOpen(false)}>Open Canvas <Arrow/></Link>
       </nav>
       </div>
     </header>
   );
 
-  if (variant === "overlay") return header;
-  return <div className={styles.headerBar}>{header}</div>;
+  return <div className={`${styles.headerBar} ${isLanding ? styles.headerOverlay : ""} ${isLanding && scrolled ? styles.headerScrolled : ""}`}>{header}</div>;
 }

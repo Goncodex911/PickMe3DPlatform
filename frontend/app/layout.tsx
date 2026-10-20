@@ -26,6 +26,8 @@ export const viewport: Viewport = {
   themeColor: "#6750A4",
 };
 
+import SiteNavigation from "@/components/SiteNavigation";
+
 import GoogleAuthProvider from "@/components/GoogleAuthProvider";
 
 export default function RootLayout({
@@ -61,6 +63,7 @@ export default function RootLayout({
       </head>
       <body style={{ fontFamily: "Roboto, system-ui, sans-serif" }} suppressHydrationWarning>
         <GoogleAuthProvider>
+          <SiteNavigation />
           {children}
         </GoogleAuthProvider>
       </body>

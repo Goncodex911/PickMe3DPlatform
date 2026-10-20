@@ -12,7 +12,6 @@ import {
   fetchUserPublicCollectionsApi,
 } from "@/lib/collectionService";
 import { CollectionCard } from "@/components/CollectionManager";
-import NotificationBell from "@/components/NotificationBell";
 
 function timeAgo(dateStr: string): string {
   const now = Date.now();
@@ -70,13 +69,13 @@ function CreatorProfileClient({ username }: CreatorProfileClientProps) {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#070b14] text-white flex flex-col">
-        <header className="border-b border-white/10 px-6 py-4 bg-[#0a0e17] flex items-center justify-between">
+        <div className="border-b border-white/10 px-6 py-4 bg-[#0a0e17] flex items-center justify-between">
           <Link href="/templates" className="text-xs text-slate-400 hover:text-white flex items-center gap-1">
             <span className="material-symbols-rounded text-sm">arrow_back</span>
             <span>Khám phá mẫu</span>
           </Link>
-          <NotificationBell />
-        </header>
+
+        </div>
         <div className="flex-1 flex flex-col items-center justify-center gap-3">
           <div className="w-7 h-7 border-2 border-white/20 border-t-red-500 rounded-full animate-spin" />
           <p className="text-xs text-slate-400 font-mono">Đang tải hồ sơ...</p>
@@ -89,12 +88,12 @@ function CreatorProfileClient({ username }: CreatorProfileClientProps) {
   if (error || !profile) {
     return (
       <div className="min-h-screen bg-[#070b14] text-white flex flex-col">
-        <header className="border-b border-white/10 px-6 py-4 bg-[#0a0e17]">
+        <div className="border-b border-white/10 px-6 py-4 bg-[#0a0e17]">
           <Link href="/templates" className="text-xs text-slate-400 hover:text-white flex items-center gap-1">
             <span className="material-symbols-rounded text-sm">arrow_back</span>
             <span>Khám phá mẫu</span>
           </Link>
-        </header>
+        </div>
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto">
           <div className="w-14 h-14 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center mb-4">
             <span className="material-symbols-rounded text-3xl">person_off</span>
@@ -119,7 +118,7 @@ function CreatorProfileClient({ username }: CreatorProfileClientProps) {
   return (
     <div className="min-h-screen bg-[#070b14] text-white flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-[#0a0e17]/80 backdrop-blur-xl border-b border-white/10 px-4 sm:px-8 py-3.5 flex items-center justify-between">
+      <div className="bg-[#0a0e17]/80 backdrop-blur-xl border-b border-white/10 px-4 sm:px-8 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link
             href="/templates"
@@ -132,7 +131,7 @@ function CreatorProfileClient({ username }: CreatorProfileClientProps) {
           <span className="text-xs text-slate-200 font-medium">@{user.username || user.name}</span>
         </div>
         <div className="flex items-center gap-3">
-          <NotificationBell />
+
           <Link
             href="/editor"
             className="px-4 py-1.5 rounded-full bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 hover:opacity-95 text-xs font-bold text-white shadow-[0_0_20px_rgba(229,43,43,0.5)] transition-all flex items-center gap-1.5"
@@ -141,7 +140,7 @@ function CreatorProfileClient({ username }: CreatorProfileClientProps) {
             <span>Vào Canvas</span>
           </Link>
         </div>
-      </header>
+      </div>
 
       {/* Profile Hero Section */}
       <section className="relative overflow-hidden">

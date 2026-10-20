@@ -191,3 +191,33 @@
   .headerActions { gap:12px; }
   .page[data-theme="light"] .navOpen { background:#fafaf7; border-color:#ccc; }
 }
+
+/* Use the same compact menu before the full navigation stops fitting. */
+.headerBar .nav { gap:20px; }
+@media (max-width: 1200px) {
+  .headerBar .menuToggle { display:block; background:transparent; border:1px solid #777; color:white; padding:10px 15px; min-height:44px; }
+  .headerBar .nav { display:none; }
+  .headerBar .navOpen { display:flex; position:absolute; top:100%; left:20px; right:20px; max-height:calc(100svh - 100px); overflow-y:auto; padding:20px; background:#181818; border:1px solid #444; flex-direction:column; align-items:stretch; gap:5px; }
+  .headerBar .navOpen a { padding:10px 12px; }
+  .headerBar .navOpen .account { max-width:none; }
+  .headerBar .logout { text-align:left; padding:10px 12px; }
+}
+
+@media print { .headerBar { display:none; } }
+
+/* The shared navigation blends into the landing hero video. */
+.headerBar.headerOverlay {
+  position:fixed;
+  inset:0 0 auto;
+  background:linear-gradient(180deg,rgba(0,0,0,.38),transparent);
+  border-bottom:0;
+}
+
+.headerBar.headerOverlay { transition:background-color 180ms ease,backdrop-filter 180ms ease; }
+.headerBar.headerOverlay.headerScrolled {
+  background:rgba(19,19,19,.86);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(255,255,255,.12);
+}
+@media (prefers-reduced-motion:reduce) { .headerBar.headerOverlay { transition:none; } }
