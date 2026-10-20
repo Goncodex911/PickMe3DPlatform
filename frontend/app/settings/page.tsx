@@ -35,6 +35,7 @@ export default function SettingsPage() {
         setUser(refreshedUser);
         setNewName(refreshedUser.name || "");
         localStorage.setItem("pickme3d_user", JSON.stringify(refreshedUser));
+        window.dispatchEvent(new Event("storage"));
       });
     }
 
@@ -61,6 +62,7 @@ export default function SettingsPage() {
       if (data.success) {
         setUser(data.data);
         localStorage.setItem("pickme3d_user", JSON.stringify(data.data));
+        window.dispatchEvent(new Event("storage"));
         setIsEditingName(false);
       } else {
         alert(data.message || "Lỗi khi cập nhật tên");
@@ -101,6 +103,7 @@ export default function SettingsPage() {
         if (data.success) {
           setUser(data.data);
           localStorage.setItem("pickme3d_user", JSON.stringify(data.data));
+          window.dispatchEvent(new Event("storage"));
         } else {
           alert(data.message || "Lỗi khi cập nhật ảnh");
         }
@@ -136,6 +139,7 @@ export default function SettingsPage() {
       if (data.success) {
         setUser(data.data);
         localStorage.setItem("pickme3d_user", JSON.stringify(data.data));
+        window.dispatchEvent(new Event("storage"));
       } else {
         alert(data.message || "Lỗi khi xoá ảnh");
       }
@@ -160,6 +164,7 @@ export default function SettingsPage() {
       if (data.success) {
         setUser(data.data);
         localStorage.setItem("pickme3d_user", JSON.stringify(data.data));
+        window.dispatchEvent(new Event("storage"));
       } else {
         alert(data.message || "Lỗi khi cập nhật vai trò");
       }

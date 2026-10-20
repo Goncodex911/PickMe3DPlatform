@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useRef, useState, type ReactNode } from "react";
-import SiteNav from "@/components/SiteNav";
 import s from "./studio.module.css";
 
 export function Icon({ name, className }: { name: string; className?: string }) {
@@ -25,11 +24,9 @@ export function useToast() {
 }
 
 // plan giữ trong props cho các trang đang truyền vào; thanh điều hướng chung không hiện gói
-export default function StudioShell({ active, children }: { plan?: string; active: "slides" | "pricing" | "templates"; children: ReactNode }) {
+export default function StudioShell({ children }: { plan?: string; active: "slides" | "pricing" | "templates"; children: ReactNode }) {
   return (
     <div className={s.root}>
-      {/* Thanh điều hướng chung của toàn site (cùng component với trang chủ) */}
-      <SiteNav variant="bar" active={active} />
       <main>{children}</main>
     </div>
   );
