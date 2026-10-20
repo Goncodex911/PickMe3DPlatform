@@ -333,6 +333,17 @@ export default function LandingPage({
                 </span>
               </Link>
 
+              {currentUser.role === "admin" && (
+                <Link
+                  href="/admin"
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/40 text-xs font-semibold text-indigo-300 transition-all shadow-sm"
+                  title="Vào trang Quản trị hệ thống (Admin Console)"
+                >
+                  <span className="material-symbols-rounded text-sm text-indigo-400">admin_panel_settings</span>
+                  <span>Admin</span>
+                </Link>
+              )}
+
               {/* Glowing START NOW Button -> Redirects to Canvas Editor */}
               <button
                 onClick={handleGoToEditor}

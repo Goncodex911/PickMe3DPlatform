@@ -35,6 +35,14 @@ exports.googleLogin = async (req, res, next) => {
     if (mongoose.connection.readyState === 1) {
       try {
         let user = await User.findOne({ email });
+        if (user && user.status === 'banned') {
+          return res.status(403).json({
+            success: false,
+            isBanned: true,
+            message: 'Tài khoản của bạn đã bị khóa: ' + (user.bannedReason || 'Vi phạm điều khoản cộng đồng'),
+          });
+        }
+
         if (!user) {
           user = await User.create({
             googleId: sub,
@@ -54,6 +62,7 @@ exports.googleLogin = async (req, res, next) => {
           picture: user.picture,
           role: user.role,
           jobRole: user.jobRole,
+          status: user.status || 'active',
         };
       } catch (dbErr) {
         console.warn('⚠️  MongoDB query failed, proceeding with verified Google session:', dbErr.message);

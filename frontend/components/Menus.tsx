@@ -209,6 +209,33 @@ export function ProfileMenu({ p, size = 40, side = "down" }: { p: Palette; size?
                 <div style={{ fontSize: 14, fontWeight: 600, color: p.onSurface }}>{user?.name || "Người dùng"}</div>
                 <div style={{ fontSize: 12, color: p.onSurfaceVariant }}>{user?.email}</div>
               </div>
+              {user?.role === "admin" && (
+                <button
+                  onClick={() => {
+                    window.location.href = "/admin";
+                  }}
+                  className="m3-press"
+                  style={{
+                    width: "100%",
+                    height: 40,
+                    padding: "0 14px",
+                    borderRadius: 12,
+                    border: "none",
+                    background: "rgba(99, 102, 241, 0.12)",
+                    color: "#818cf8",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    marginBottom: 4,
+                  }}
+                >
+                  <Icon name="admin_panel_settings" size={18} />
+                  Bảng Quản Trị
+                </button>
+              )}
               <button
                 onClick={() => {
                   window.location.href = "/profile";

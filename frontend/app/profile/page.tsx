@@ -306,6 +306,15 @@ export default function ProfilePage() {
 
         <div className="flex items-center gap-3">
           <NotificationBell />
+          {user?.role === "admin" && (
+            <Link
+              href="/admin"
+              className="px-3 py-1.5 rounded-full bg-indigo-600/30 hover:bg-indigo-600/40 border border-indigo-500/50 text-xs font-bold text-indigo-300 transition-all flex items-center gap-1.5 shadow-[0_0_15px_rgba(99,102,241,0.3)]"
+            >
+              <span className="material-symbols-rounded text-sm text-indigo-400">admin_panel_settings</span>
+              <span>Admin Console</span>
+            </Link>
+          )}
           <Link
             href="/editor"
             className="px-4 py-1.5 rounded-full bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 hover:opacity-95 text-xs font-bold text-white shadow-[0_0_20px_rgba(229,43,43,0.4)] transition-all flex items-center gap-1.5"
