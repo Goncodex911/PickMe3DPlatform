@@ -60,11 +60,27 @@ const userSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
+    plan: {
+      type: String,
+      enum: ['free', 'pro', 'studio'],
+      default: 'free',
+    },
+    planExpiresAt: {
+      type: Date,
+      default: null,
+    },
+    aiUsed: {
+      type: Number,
+      default: 0,
+    },
+    aiPeriod: {
+      type: String,
+      default: '',
+    },
   },
   {
     timestamps: true,
   }
 );
-
 
 module.exports = mongoose.model('User', userSchema);

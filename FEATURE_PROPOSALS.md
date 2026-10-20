@@ -130,4 +130,4 @@
 | Thông báo | ⭐⭐⭐ Cao | 🟡 Trung | ✅ Đã xong |
 | Bình luận | ⭐⭐ Trung | 🟡 Trung | ✅ Đã xong |
 | Contest | ⭐⭐⭐⭐ Cao | 🔥 Cao | 🔴 Sau |
-| Gói trả phí | ⭐⭐⭐⭐ Cao | 🔥 Cao | 🔴 Sau |
+| Gói trả phí | ⭐⭐⭐⭐ Cao | 🔥 Cao | ✅ Đã có (payOS + mock) |

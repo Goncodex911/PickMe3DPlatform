@@ -7,6 +7,8 @@ const notificationRoutes = require('./notificationRoutes');
 const commentRoutes = require('./commentRoutes');
 const collectionRoutes = require('./collectionRoutes');
 const aiRoutes = require('./aiRoutes');
+const paymentRoutes = require('./paymentRoutes');
+const presentationRoutes = require('./presentationRoutes');
 const adminRoutes = require('./adminRoutes');
 const reportRoutes = require('./reportRoutes');
 
@@ -21,6 +23,8 @@ router.use('/notifications', notificationRoutes);
 router.use('/comments', commentRoutes);
 router.use('/collections', collectionRoutes);
 router.use('/ai', aiRoutes);
+router.use('/payments', paymentRoutes);
+router.use('/presentations', presentationRoutes);
 router.use('/admin', adminRoutes);
 router.use('/reports', reportRoutes);
 
