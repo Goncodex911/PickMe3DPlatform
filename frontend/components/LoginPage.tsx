@@ -15,6 +15,7 @@ type LoginPageProps = {
 export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [guestName, setGuestName] = useState("Designer");
 
   async function handleSuccess({ credential }: CredentialResponse) {
     if (!credential || loading) return;
@@ -34,6 +35,29 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       onLoginSuccess(result.token, result.user);
     } catch {
       setError("Unable to sign in. Please check your connection and try again.");
+      setLoading(false);
+    }
+  }
+
+  // Đăng nhập khách: tạo tài khoản theo tên, không cần Google (dùng để thử Slide Studio và thanh toán)
+  async function handleGuest() {
+    if (loading) return;
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch(`${basePath}/api/auth/guest`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: guestName.trim() || "Designer" }),
+        signal: AbortSignal.timeout(20000),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success || typeof result.token !== "string" || !result.token || !result.user) {
+        throw new Error(result.message || "Unable to continue as guest.");
+      }
+      onLoginSuccess(result.token, result.user);
+    } catch {
+      setError("Unable to continue as guest. Please check your connection and try again.");
       setLoading(false);
     }
   }
@@ -77,6 +101,22 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           {loading && <div className={styles.loading} role="status"><span className={styles.spinner} />Signing in…</div>}
           {error && <p className={styles.error} role="alert">{error}</p>}
         </div>
+        <form className={styles.guest} onSubmit={(event) => { event.preventDefault(); handleGuest(); }} inert={loading}>
+          <span className={styles.or}>or</span>
+          <label className={styles.guestLabel} htmlFor="guest-name">Display name</label>
+          <div className={styles.guestRow}>
+            <input
+              id="guest-name"
+              className={styles.guestInput}
+              value={guestName}
+              onChange={(event) => setGuestName(event.target.value)}
+              maxLength={30}
+              placeholder="Display name"
+              autoComplete="nickname"
+            />
+            <button type="submit" className={styles.guestButton}>Continue as guest</button>
+          </div>
+        </form>
         <p className={styles.authNote}>One account. Every idea. All in PickMe3D.</p>
       </section>
 
