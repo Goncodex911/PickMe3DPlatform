@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Giới thiệu PickMe3D</title>
+<meta name="description" content="PickMe3D làm được gì: thiết kế giao diện bằng Canvas Editor, AI sinh màn hình, thư viện mẫu cộng đồng, Slide Studio và các gói cước.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;1,400;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Bố cục: một cột đọc 1080px; mở đầu bằng sơ đồ canvas nhỏ, sau đó là 5 mảng sản phẩm, luồng làm việc, bảng gói, bản đồ đường dẫn. Một theme tối như app. */
+:root {
+  color-scheme: dark;
+  --ink: #0a0d15;
+  --panel: #111624;
+  --panel-2: #171d2d;
+  --line: #242b3d;
+  --line-soft: #1b2132;
+  --fg: #f3efe7;
+  --muted: #a3aaba;
+  --faint: #6f7789;
+  --accent: #e8294f;
+  --accent-wash: #2a1220;
+  --gold: #e6c47e;
+  --ok: #7fd3b0;
+  --display: "Playfair Display", Georgia, "Times New Roman", serif;
+  --body: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--ink); color: var(--fg); }
+body { font: 16px/1.65 var(--body); -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+section { padding-block: 56px; border-top: 1px solid var(--line-soft); }
+.kicker { margin: 0 0 10px; font-size: 12px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+h1, h2, h3 { text-wrap: balance; }
+h1 { margin: 0; font: italic 400 clamp(40px, 6vw, 68px)/1.05 var(--display); letter-spacing: -.01em; }
+h2 { margin: 0 0 8px; font: italic 400 clamp(28px, 3.6vw, 40px)/1.15 var(--display); }
+h3 { margin: 0; font-size: 18px; font-weight: 700; }
+p { margin: 0; }
+.lede { margin-top: 18px; font-size: 18px; color: var(--muted); max-width: 60ch; }
+.intro { color: var(--muted); max-width: 64ch; }
+
+/* Mở đầu */
+.hero { padding-block: 64px 56px; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 48px; align-items: center; }
+.pills { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 8px; }
+.pill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+.board { position: relative; aspect-ratio: 4 / 3; border-radius: 18px; border: 1px solid var(--line); background:
+  radial-gradient(circle at 1px 1px, #232a3c 1px, transparent 1.4px) 0 0 / 18px 18px, var(--panel); overflow: hidden; }
+.board .bar { position: absolute; inset: 0 0 auto; height: 34px; display: flex; align-items: center; gap: 6px; padding: 0 12px; border-bottom: 1px solid var(--line); background: var(--panel-2); font-size: 11px; color: var(--faint); }
+.board .bar i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+.board .bar span { margin-left: auto; padding: 2px 8px; border-radius: 999px; background: var(--accent); color: #fff; font-weight: 600; }
+.phone { position: absolute; width: 27%; aspect-ratio: 9 / 18; border-radius: 14px; background: #f4ede2; border: 3px solid #1d2232; padding: 9% 6% 6%; display: grid; align-content: start; gap: 7%; }
+.phone b { display: block; height: 7%; border-radius: 4px; background: #2f2723; width: 70%; }
+.phone em { display: block; aspect-ratio: 4 / 3; border-radius: 6px; background: linear-gradient(160deg, #e8b9c0, #c88d98); }
+.phone s { display: block; height: 5%; border-radius: 3px; background: #c9b08f; width: 90%; }
+.phone u { display: block; height: 9%; border-radius: 999px; background: var(--accent); width: 60%; margin-top: 4%; }
+.p1 { left: 8%; top: 22%; }
+.p2 { left: 42%; top: 30%; background: #10141c; }
+.p2 b { background: #f5f2ea; } .p2 em { background: linear-gradient(160deg, #2b2730, #4a4350); } .p2 s { background: #3a3d4a; }
+.p3 { left: 76%; top: 22%; width: 18%; background: #0f1830; }
+.p3 b { background: #eef2ff; } .p3 em { background: #2b3b66; } .p3 s { background: #7fd3b0; }
+.board svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.tag { position: absolute; padding: 4px 9px; border-radius: 8px; font-size: 11px; font-weight: 600; background: var(--fg); color: var(--ink); white-space: nowrap; }
+
+/* Năm mảng */
+.mods { margin-top: 28px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.mod { padding: 22px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line-soft); display: grid; gap: 12px; align-content: start; }
+.mod.wide { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px 32px; }
+.mod.wide .head, .mod.wide .route { grid-column: 1 / -1; }
+.head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.route { font: 600 12px/1 ui-monospace, "Cascadia Code", Consolas, monospace; color: var(--gold); background: #1d1a12; padding: 5px 8px; border-radius: 6px; white-space: nowrap; }
+.what { color: var(--muted); font-size: 15px; }
+.mod ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 15px; }
+.mod li::marker { color: var(--accent); }
+
+/* Luồng làm việc */
+.flow { margin: 28px 0 0; padding: 0; list-style: none; display: grid; gap: 0; counter-reset: step; }
+.flow li { counter-increment: step; display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--line-soft); }
+.flow li::before { content: counter(step); width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line); font-weight: 700; color: var(--fg); font-variant-numeric: tabular-nums; }
+.flow b { display: block; font-size: 16px; }
+.flow span { color: var(--muted); font-size: 15px; }
+.flow code, .faq code { font: 600 12px ui-monospace, Consolas, monospace; color: var(--gold); }
+
+/* Bảng gói */
+.table { margin-top: 24px; overflow-x: auto; border: 1px solid var(--line-soft); border-radius: 16px; }
+table { width: 100%; border-collapse: collapse; min-width: 560px; font-size: 15px; }
+th, td { padding: 13px 18px; text-align: left; border-bottom: 1px solid var(--line-soft); }
+thead th { font-size: 13px; color: var(--muted); font-weight: 600; background: var(--panel); }
+thead th strong { display: block; font: italic 500 22px/1.2 var(--display); color: var(--fg); }
+tbody th { font-weight: 500; color: var(--muted); }
+td { font-variant-numeric: tabular-nums; }
+tr:last-child th, tr:last-child td { border-bottom: 0; }
+.col-pro { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.yes { color: var(--ok); } .no { color: var(--faint); }
+.note { margin-top: 12px; font-size: 13px; color: var(--faint); }
+
+/* Bản đồ đường dẫn + hỏi đáp */
+.map { margin-top: 24px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.map div { padding: 14px 16px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line-soft); display: grid; gap: 4px; }
+.map code { font: 600 13px ui-monospace, Consolas, monospace; color: var(--gold); }
+.map span { font-size: 14px; color: var(--muted); }
+.faq { margin-top: 24px; display: grid; gap: 10px; }
+details { border: 1px solid var(--line-soft); border-radius: 12px; background: var(--panel); padding: 0 18px; }
+summary { cursor: pointer; padding: 15px 0; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+summary::after { content: "+"; color: var(--faint); font-weight: 400; }
+details[open] summary::after { content: "–"; }
+details p { padding-bottom: 16px; color: var(--muted); font-size: 15px; }
+summary:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+footer { padding-block: 28px 48px; border-top: 1px solid var(--line-soft); color: var(--faint); font-size: 13px; }
+
+@media (max-width: 860px) {
+  .hero { grid-template-columns: 1fr; gap: 32px; padding-block: 40px; }
+  .mods { grid-template-columns: 1fr; }
+  .mod.wide { grid-template-columns: 1fr; }
+  .map { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 520px) {
+  section { padding-block: 40px; }
+  .map { grid-template-columns: 1fr; }
+  .flow li { grid-template-columns: 40px minmax(0, 1fr); gap: 12px; }
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="wrap hero">
+    <div>
+      <p class="kicker">PickMe3D là gì</p>
+      <h1>Không gian thiết kế giao diện cho thương hiệu thời trang</h1>
+      <p class="lede">Bạn dựng các màn hình storefront bằng kéo thả hoặc nhờ AI, nối chúng thành bản chạy thử, rồi xuất ra code. Mẫu đẹp thì chia sẻ cho cộng đồng; khi cần đi gặp đối tác thì làm luôn bộ slide lookbook hay pitch ngay trong PickMe3D.</p>
+      <div class="pills" aria-label="Các phần chính">
+        <span class="pill">Canvas Editor</span>
+        <span class="pill">AI sinh màn hình</span>
+        <span class="pill">Thư viện mẫu</span>
+        <span class="pill">Slide Studio</span>
+        <span class="pill">Gói Free · Pro · Studio</span>
+      </div>
+    </div>
+
+    <div class="board" role="img" aria-label="Minh hoạ Canvas Editor: ba màn hình điện thoại được nối với nhau thành một luồng chạy thử">
+      <div class="bar"><i></i><i></i><i></i>&nbsp; Canvas Editor · Silk L’Heure storefront <span>Xem thử</span></div>
+      <svg viewBox="0 0 400 300" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M140 150 C 160 150, 155 170, 170 170" fill="none" stroke="#e8294f" stroke-width="2" stroke-dasharray="5 4" />
+        <path d="M276 160 C 292 160, 290 150, 305 150" fill="none" stroke="#e8294f" stroke-width="2" stroke-dasharray="5 4" />
+      </svg>
+      <div class="phone p1"><b></b><em></em><s></s><s></s><u></u></div>
+      <div class="phone p2"><b></b><em></em><s></s><u></u></div>
+      <div class="phone p3"><b></b><em></em><s></s></div>
+      <span class="tag" style="left:6%; top:84%">Trang chủ</span>
+      <span class="tag" style="left:41%; top:88%">Chi tiết sản phẩm</span>
+      <span class="tag" style="left:74%; top:72%">Giỏ hàng</span>
+    </div>
+  </div>
+
+  <section aria-labelledby="mods">
+    <div class="wrap">
+      <p class="kicker">Năm phần của sản phẩm</p>
+      <h2 id="mods">Vào PickMe3D bạn làm được gì</h2>
+      <p class="intro">Mỗi phần có một đường dẫn riêng trong app. Các phần dùng chung một tài khoản và một gói cước.</p>
+
+      <div class="mods">
+        <article class="mod wide">
+          <div class="head"><h3>Canvas Editor</h3><span class="route">/editor</span></div>
+          <p class="what">Nơi thiết kế chính. Bạn kéo các thành phần giao diện (nút, thẻ, ảnh, thanh điều hướng theo chuẩn Material 3 Expressive) vào từng màn hình, chỉnh màu, chữ và bố cục trong bảng thuộc tính.</p>
+          <ul>
+            <li><b>AI sinh màn hình:</b> gõ mô tả ý tưởng, AI dựng màn hình để bạn sửa tiếp.</li>
+            <li><b>Nối màn hình và xem thử:</b> gắn nút này mở màn kia, bấm thử như một app thật ngay trong editor.</li>
+          </ul>
+          <ul>
+            <li><b>Xuất file:</b> tải toàn bộ màn hình dạng HTML prototype, React, ZIP hoặc PDF.</li>
+            <li><b>Prompt cho AI viết code:</b> chép prompt mô tả thiết kế sang công cụ AI bạn đang dùng để code tiếp.</li>
+          </ul>
+        </article>
+
+        <article class="mod">
+          <div class="head"><h3>Thư viện mẫu</h3><span class="route">/templates</span></div>
+          <p class="what">Thiết kế mà cộng đồng chia sẻ. Thấy mẫu hợp thì fork về sửa thành của mình.</p>
+          <ul>
+            <li>Tìm theo từ khoá, nhiều hashtag, thời gian, chỉ mẫu cho phép fork</li>
+            <li>Thích, chấm sao, bình luận và trả lời bình luận</li>
+            <li>Lưu mẫu vào bộ sưu tập riêng</li>
+          </ul>
+        </article>
+
+        <article class="mod">
+          <div class="head"><h3>Slide Studio</h3><span class="route">/slides</span></div>
+          <p class="what">Làm lookbook, line sheet, pitch gửi đối tác. Trình soạn đầy đủ như PowerPoint, chạy ngay trên trình duyệt.</p>
+          <ul>
+            <li>Chữ, ảnh, hình, bảng, biểu đồ, hiệu ứng, 8 bộ mẫu có sẵn</li>
+            <li>AI dựng deck 6 slide từ một chủ đề</li>
+            <li>Chèn thiết kế từ Canvas vào slide, trình chiếu, xuất PPTX, PDF, PNG</li>
+          </ul>
+        </article>
+
+        <article class="mod">
+          <div class="head"><h3>Hồ sơ và cộng đồng</h3><span class="route">/profile</span></div>
+          <p class="what">Quản lý mọi thiết kế và bộ sưu tập của bạn. Mỗi người có một trang hồ sơ công khai.</p>
+          <ul>
+            <li>Đặt thiết kế công khai hoặc riêng tư, sửa hoặc xoá</li>
+            <li>Trang công khai <code style="color:var(--gold)">/creator/tên-của-bạn</code> với số lượt thích và fork</li>
+            <li>Chuông thông báo khi có người thích, fork hay bình luận</li>
+          </ul>
+        </article>
+
+        <article class="mod">
+          <div class="head"><h3>Gói cước</h3><span class="route">/pricing</span></div>
+          <p class="what">Ba gói Free, Pro, Studio. Thanh toán bằng QR ngân hàng qua payOS, mỗi lần cộng thêm 30 ngày.</p>
+          <ul>
+            <li>Gói quyết định số thiết kế, số deck, lượt AI mỗi tháng</li>
+            <li>Pro mở xuất PPTX và deck riêng tư; Studio thêm brand kit</li>
+            <li>Hết gói không mất dữ liệu: phần vượt hạn mức chuyển sang chỉ xem</li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="flow">
+    <div class="wrap">
+      <p class="kicker">Một vòng làm việc</p>
+      <h2 id="flow">Từ ý tưởng tới buổi gặp đối tác</h2>
+      <p class="intro">Ví dụ: một thương hiệu chuẩn bị ra mắt dòng sơ mi lụa Silk L’Heure.</p>
+      <ol class="flow">
+        <li><div><b>Đăng nhập</b><span>Bằng tài khoản Google, hoặc nhập một tên để vào dùng thử với tài khoản khách.</span></div></li>
+        <li><div><b>Chọn điểm bắt đầu</b><span>Fork một mẫu storefront trong <code>/templates</code>, hoặc mở canvas trống trong <code>/editor</code>.</span></div></li>
+        <li><div><b>Dựng màn hình</b><span>Kéo thả thành phần, hoặc gõ “trang chi tiết sơ mi lụa có bảng size” để AI dựng giúp, rồi chỉnh lại màu và chữ.</span></div></li>
+        <li><div><b>Nối thành bản chạy thử</b><span>Gắn nút “Thêm vào giỏ” sang màn giỏ hàng, bấm Xem thử để đi hết luồng mua.</span></div></li>
+        <li><div><b>Giao cho lập trình</b><span>Xuất HTML hoặc React, hoặc chép prompt sang công cụ AI viết code.</span></div></li>
+        <li><div><b>Làm deck</b><span>Vào <code>/slides</code>, cho AI dựng lookbook “Silk L’Heure”, chèn ảnh các màn vừa thiết kế, chỉnh lại trong studio.</span></div></li>
+        <li><div><b>Trình bày và chia sẻ</b><span>Trình chiếu ngay trên trình duyệt, xuất PPTX gửi đối tác, đăng mẫu lên thư viện để cộng đồng fork.</span></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section aria-labelledby="plans">
+    <div class="wrap">
+      <p class="kicker">Gói cước</p>
+      <h2 id="plans">Mỗi gói gồm những gì</h2>
+      <div class="table">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Theo tháng</th>
+              <th scope="col"><strong>Free</strong>0đ</th>
+              <th scope="col" class="col-pro"><strong>Pro</strong>99.000đ</th>
+              <th scope="col"><strong>Studio</strong>249.000đ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">Thiết kế đã lưu</th><td>5</td><td class="col-pro">Không giới hạn</td><td>Không giới hạn</td></tr>
+            <tr><th scope="row">Deck slide</th><td>3</td><td class="col-pro">Không giới hạn</td><td>Không giới hạn</td></tr>
+            <tr><th scope="row">Lượt AI mỗi tháng</th><td>3</td><td class="col-pro">50</td><td>Không giới hạn</td></tr>
+            <tr><th scope="row">Xuất PPTX</th><td class="no">Không</td><td class="col-pro yes">Có</td><td class="yes">Có</td></tr>
+            <tr><th scope="row">Deck riêng tư</th><td class="no">Không</td><td class="col-pro yes">Có</td><td class="yes">Có</td></tr>
+            <tr><th scope="row">Brand kit (logo, màu, font)</th><td class="no">Không</td><td class="col-pro no">Không</td><td class="yes">Có</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">Số liệu lấy từ cấu hình gói của backend (<code style="color:var(--gold)">backend/src/config/plans.js</code>). Lượt AI tính lại từ đầu mỗi tháng.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="where">
+    <div class="wrap">
+      <p class="kicker">Bản đồ</p>
+      <h2 id="where">Vào đâu để làm gì</h2>
+      <div class="map">
+        <div><code>/</code><span>Trang giới thiệu, nút bắt đầu thiết kế</span></div>
+        <div><code>/login</code><span>Đăng nhập Google hoặc tài khoản khách</span></div>
+        <div><code>/editor</code><span>Canvas Editor: thiết kế, AI, xem thử, xuất file</span></div>
+        <div><code>/templates</code><span>Thư viện mẫu cộng đồng, chi tiết từng mẫu</span></div>
+        <div><code>/profile</code><span>Thiết kế và bộ sưu tập của bạn</span></div>
+        <div><code>/creator/…</code><span>Hồ sơ công khai của một người sáng tạo</span></div>
+        <div><code>/slides</code><span>Danh sách deck, tạo deck bằng AI</span></div>
+        <div><code>/slides/deck</code><span>Xem nội dung deck, chia sẻ, xuất file</span></div>
+        <div><code>/pricing</code><span>So sánh và nâng cấp gói</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="faq">
+    <div class="wrap">
+      <p class="kicker">Hỏi nhanh</p>
+      <h2 id="faq">Những câu người mới hay hỏi</h2>
+      <div class="faq">
+        <details><summary>Tôi không biết code, có dùng được không?</summary><p>Được. Canvas Editor là kéo thả. Code chỉ cần khi bạn muốn đưa thiết kế thành app thật; lúc đó xuất HTML/React hoặc đưa prompt cho người làm.</p></details>
+        <details><summary>Thiết kế của tôi có bị người khác thấy không?</summary><p>Chỉ khi bạn để công khai hoặc đăng lên thư viện mẫu. Deck slide riêng tư cần gói Pro trở lên.</p></details>
+        <details><summary>Hết hạn gói thì sao?</summary><p>Tài khoản quay về Free. Không thiết kế hay deck nào bị xoá; phần vượt hạn mức của gói Free chỉ xem được cho tới khi bạn nâng cấp lại.</p></details>
+        <details><summary>Slide Studio khác gì PowerPoint?</summary><p>Thao tác gần giống: chữ, ảnh, hình, bảng, biểu đồ, hiệu ứng, trình chiếu. Khác ở chỗ chạy trên trình duyệt, lưu tự động, chèn thẳng thiết kế từ Canvas và có AI dựng deck theo chủ đề. Trình soạn dựa trên PPTist (mã nguồn mở AGPL-3.0).</p></details>
+        <details><summary>Thanh toán thế nào?</summary><p>Chọn gói ở <code>/pricing</code>, quét QR ngân hàng qua payOS. Gói có hiệu lực ngay khi thanh toán được xác nhận.</p></details>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="wrap">PickMe3D · Tài liệu giới thiệu sản phẩm, viết theo các tính năng đang có trong mã nguồn tháng 10/2026.</div>
+</footer>
+</body>
+</html>
