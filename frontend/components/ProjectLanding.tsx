@@ -61,6 +61,7 @@ export default function ProjectLanding() {
           <a href="#about" onClick={() => setMenuOpen(false)}>About</a>
           <a href="#features" onClick={() => setMenuOpen(false)}>Features</a>
           <Link href="/templates/">Template <Arrow/></Link>
+          <Link href="/ui-marketplace/">UI Marketplace <Arrow/></Link>
           {authenticated ? <><Link href="/profile/" className={styles.account} title={name}>{name || "Account"}</Link><button onClick={logout} className={styles.logout}>Sign out</button></> : <Link className={styles.login} href="/login/">Sign in <Arrow/></Link>}
         </nav>
       </header>
@@ -92,6 +93,6 @@ export default function ProjectLanding() {
     </section>
 
     <section className={`${styles.section} ${styles.finalCta}`} aria-labelledby="cta-title"><div><p className={styles.eyebrow}>YOUR NEXT CREATIVE CHAPTER</p><h2 id="cta-title">Let’s create<br/>something different.</h2><p>Your next idea is waiting.<br/>Open a canvas and start today.</p><Link href={startHref} className={styles.button}>Start designing <Arrow/></Link></div><div className={styles.ctaImage}><img src={`${basePath}/hero/card-kinetic.png`} alt="Creative energy in motion" loading="lazy"/></div></section>
-    <footer className={styles.footer}><Link href="/" aria-label="PickMe3D — Home"><Brand/></Link><p>A space for original ideas.</p><nav aria-label="Footer links"><Link href="/templates/">Template library</Link><Link href={authenticated ? "/profile/" : "/login/"}>{authenticated ? "My designs" : "Sign in"}</Link><a href="#top">Back to top ↑</a></nav><span>© {new Date().getFullYear()} PickMe3D</span></footer>
+    <footer className={styles.footer}><Link href="/" aria-label="PickMe3D — Home"><Brand/></Link><p>A space for original ideas.</p><nav aria-label="Footer links"><Link href="/templates/">Template library</Link><Link href="/ui-marketplace/">UI Marketplace</Link><Link href={authenticated ? "/profile/" : "/login/"}>{authenticated ? "My designs" : "Sign in"}</Link><a href="#top">Back to top ↑</a></nav><span>© {new Date().getFullYear()} PickMe3D</span></footer>
   </main>;
 }

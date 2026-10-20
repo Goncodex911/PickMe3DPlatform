@@ -685,6 +685,18 @@ export function PartInspector({
           </>,
         )}
       {(kind === "searchBar" || kind === "listItem" || isField(kind) || kind === "divider") && sizeSection(widthRows())}
+      {kind === "animation" &&
+        sizeSection(
+          <>
+            {heightRow([
+              { key: "56", value: 56 },
+              { key: "78", value: 78 },
+              { key: "120", value: 120 },
+              { key: "200", value: 200 },
+            ])}
+            {widthRows()}
+          </>,
+        )}
       {kind === "switch" && sizeSection(widthRows(true))}
       {kind === "card" &&
         sizeSection(

@@ -290,6 +290,7 @@ export default function ProfilePage() {
         <nav className={styles.nav} aria-label="Main navigation">
           <Link href="/">Home</Link>
           <Link href="/templates/">Template</Link>
+          <Link href="/ui-marketplace/">UI Marketplace</Link>
           <div className={styles.shared}>
             <NotificationBell />
           </div>
@@ -797,7 +798,10 @@ export default function ProfilePage() {
       <footer className={styles.footer}>
         <Link href="/">PickMe3D</Link>
         <p>A space for original ideas.</p>
-        <Link href="/editor/">Start designing ↗</Link>
+        <div style={{ display: "flex", gap: "24px", alignItems: "center" }}>
+          <Link href="/ui-marketplace/">UI Marketplace ↗</Link>
+          <Link href="/editor/">Start designing ↗</Link>
+        </div>
         <span>© {new Date().getFullYear()} PickMe3D</span>
       </footer>
     </div>
