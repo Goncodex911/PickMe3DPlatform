@@ -106,6 +106,33 @@ body {
   opacity: 1;
 }
 
+/* parts palette animation cards: smooth spring hover and micro-glow */
+.m3-anim-card {
+  transition: transform 180ms cubic-bezier(0.34, 1.45, 0.64, 1), box-shadow 180ms ease, border-color 160ms ease, background 160ms ease;
+  user-select: none;
+  transform: translateZ(0);
+}
+.m3-anim-card:hover {
+  transform: translateY(-2px) translateZ(0);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+.m3-anim-card:active {
+  transform: scale(0.97) translateZ(0);
+}
+.m3-anim-card .m3-anim-badge {
+  transition: transform 220ms cubic-bezier(0.34, 1.45, 0.64, 1), box-shadow 220ms ease;
+}
+.m3-anim-card:hover .m3-anim-badge {
+  transform: scale(1.08) rotate(4deg);
+}
+
+/* Vô hiệu hóa pointer-events trên iframe khi đang kéo thả hoặc pan canvas để thao tác 100% mượt mà không bị khựng */
+.app-root[data-dragging="true"] iframe,
+.app-root[data-panning="true"] iframe,
+.app-root[data-resizing="true"] iframe {
+  pointer-events: none !important;
+}
+
 /* a button that changes M3 size grows into the new one: the box, the padding it keeps
    around its content and the type and icon inside it all travel together, over the same
    340ms the canvas uses to settle a part. The hidden measuring copy carries the class too,
