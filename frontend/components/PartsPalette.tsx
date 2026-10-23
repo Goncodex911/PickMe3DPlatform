@@ -6,8 +6,96 @@ import { CATEGORIES, KIND_ORDER, KIND_SPEC, PALETTE_HIDDEN, Category, Kind, Pale
 import { Icon } from "./M3Node";
 import { KIND_TEXT, t, useLang } from "@/lib/i18n";
 import { Field, Section, Tile } from "./ui";
-import { UITemplate } from "@/lib/ui-marketplace-data";
+import { UITemplate, getCategoryLabel, translateTemplateSource } from "@/lib/ui-marketplace-data";
 import { getPurchasedTemplates, subscribePurchasedTemplates } from "@/lib/purchased-animations";
+
+function AnimationAvatar({ template, primaryColor }: { template: UITemplate; primaryColor: string }) {
+  const srcDoc = useMemo(() => {
+    if (!template.html) return "";
+    const { html } = translateTemplateSource(template);
+    return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+:root {
+  --ux-mint: #119C72;
+  --ux-spring: cubic-bezier(.34,1.45,.64,1);
+  --ux-ease: cubic-bezier(.2,.8,.2,1);
+  --ux-page: transparent;
+  --ux-surface: #1e1e24;
+  --ux-ink: #f4f0e8;
+  --ux-accent: #6A57F2;
+  --ux-danger: #D93A55;
+  --blob: linear-gradient(135deg, #8B6CFF, #4F8DFF 60%, #2FC7B4);
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent !important;
+  overflow: hidden !important;
+  user-select: none;
+  pointer-events: none;
+}
+::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
+* { scrollbar-width: none !important; -ms-overflow-style: none !important; }
+.ux {
+  transform: scale(0.19);
+  transform-origin: center center;
+  pointer-events: none;
+}
+.u001-blobs { display: none !important; }
+</style>
+</head>
+<body>
+${html}
+</body>
+</html>`;
+  }, [template]);
+
+  return (
+    <div
+      style={{
+        width: 44,
+        height: 44,
+        borderRadius: 10,
+        background: `linear-gradient(135deg, ${template.hue || "#181824"}, ${template.hue2 || "#262438"})`,
+        border: `1px solid color-mix(in srgb, ${primaryColor} 35%, rgba(255,255,255,0.12))`,
+        overflow: "hidden",
+        position: "relative",
+        flexShrink: 0,
+        display: "grid",
+        placeItems: "center",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+      }}
+    >
+      {srcDoc ? (
+        <iframe
+          srcDoc={srcDoc}
+          sandbox="allow-scripts"
+          scrolling="no"
+          tabIndex={-1}
+          style={{
+            width: 220,
+            height: 160,
+            border: "none",
+            pointerEvents: "none",
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            overflow: "hidden",
+          }}
+          title={template.titleEn || template.title}
+        />
+      ) : (
+        <span className="msr" style={{ fontSize: 20, color: "#34d399" }}>auto_awesome</span>
+      )}
+    </div>
+  );
+}
 
 const CATEGORY_TEXT = {
   ja: { actions: "操作", navigation: "ナビゲーション", containment: "コンテナ", inputs: "入力", content: "コンテンツ", progress: "進捗" },
@@ -89,6 +177,7 @@ export function PartsPalette({
   const renderAnimationCard = (tmpl: UITemplate) => (
     <div
       key={tmpl.id}
+      className="m3-anim-card"
       onPointerDown={(e) => onAnimationPointerDown && onAnimationPointerDown(e, tmpl)}
       onClick={() => onAddAnimation && onAddAnimation(tmpl)}
       style={{
@@ -100,33 +189,28 @@ export function PartsPalette({
         borderRadius: 12,
         border: `1px solid ${p.outlineVariant}`,
         cursor: "grab",
-        userSelect: "none",
-        transition: "border-color 150ms, transform 150ms",
       }}
-      title="Nhấp hoặc kéo để đưa vào màn hình giao diện"
+      title="Nhấp để thêm hoặc kéo thả vào màn hình canvas"
     >
-      <div
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 8,
-          background: "#16161c",
-          border: "1px solid rgba(255,255,255,0.08)",
-          display: "grid",
-          placeItems: "center",
-          flexShrink: 0,
-          color: "#34d399",
-        }}
-      >
-        <span className="msr" style={{ fontSize: 20 }}>animation</span>
-      </div>
+      <AnimationAvatar template={tmpl} primaryColor={p.primary} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
           <span style={{ fontSize: 10, fontFamily: "monospace", color: p.primary, fontWeight: 700 }}>
             #{tmpl.id}
           </span>
-          <span style={{ fontSize: 9, color: p.onSurfaceVariant, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-            {tmpl.category}
+          <span
+            style={{
+              fontSize: 9,
+              color: p.onSecondaryContainer,
+              background: p.secondaryContainer,
+              padding: "1px 6px",
+              borderRadius: 6,
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
+              fontWeight: 600,
+            }}
+          >
+            {getCategoryLabel(tmpl.category)}
           </span>
         </div>
         <div style={{ fontSize: 12, fontWeight: 600, color: p.onSurface, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -135,25 +219,26 @@ export function PartsPalette({
       </div>
       <button
         type="button"
+        className="m3-press"
         onClick={(e) => {
           e.stopPropagation();
           onAddAnimation && onAddAnimation(tmpl);
         }}
         style={{
-          width: 28,
-          height: 28,
+          width: 30,
+          height: 30,
           borderRadius: 8,
           border: `1px solid ${p.outlineVariant}`,
           background: p.surfaceContainerHigh,
-          color: p.onSurface,
+          color: p.primary,
           display: "grid",
           placeItems: "center",
           cursor: "pointer",
           flexShrink: 0,
         }}
-        title="Thêm vào màn hình"
+        title="Thêm nhanh vào màn hình"
       >
-        <span className="msr" style={{ fontSize: 16 }}>add</span>
+        <span className="msr" style={{ fontSize: 18 }}>add</span>
       </button>
     </div>
   );

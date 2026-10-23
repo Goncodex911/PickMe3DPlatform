@@ -1735,6 +1735,12 @@ export type Item = {
   animationId?: string;
   animationHtml?: string;
   animationJs?: string;
+  animationText?: string;
+  animationColor?: string;
+  animationSpeed?: number;
+  animationInteractive?: boolean;
+  animationGlow?: boolean;
+  animationDemo?: unknown[];
   /** runtime-only: the editor is showing this FAB's menu open. Never written to JSON. */
   [fabOpen]?: boolean;
   /** runtime-only: the menu rises out of the part's top rather than dropping below it. */

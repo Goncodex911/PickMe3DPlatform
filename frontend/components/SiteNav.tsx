@@ -78,6 +78,7 @@ export default function SiteNav() {
       <nav id="site-nav" className={`${styles.nav} ${menuOpen ? styles.navOpen : ""}`} aria-label="Main navigation">
         <Link href="/" aria-current={pathname === "/" || pathname === "/landing/" ? "page" : undefined} onClick={() => setMenuOpen(false)}>Home</Link>
         <Link href="/templates/" aria-current={current("/templates") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Templates</Link>
+        <Link href="/blueprint-3d/" aria-current={current("/blueprint-3d") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Bản Vẽ 3D</Link>
         <Link href="/ui-marketplace/" aria-current={current("/ui-marketplace") ? "page" : undefined} onClick={() => setMenuOpen(false)}>UI Marketplace</Link>
         <Link href={authenticated ? "/slides/" : "/login/"} aria-current={current("/slides") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Slides</Link>
         <Link href="/pricing/" aria-current={current("/pricing") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Pricing</Link>

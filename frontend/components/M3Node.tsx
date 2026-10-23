@@ -71,6 +71,8 @@ import { CarouselBody, DatePickerBody, TimePickerBody } from "./Pickers";
 import { t, useLang } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
 import { railSelectedLabelColor } from "@/lib/color";
+import { DEMO_RUNNER_CODE } from "@/lib/ui-marketplace-data";
+import { getPurchasedTemplates } from "@/lib/purchased-animations";
 
 /** weight of a heading or label: heavier under the emphasized type setting */
 const useWeight = () => {
@@ -876,7 +878,7 @@ function FabMenuContent({ item, p, shown = true }: { item: Item; p: Palette; sho
   );
 }
 
-function Body({ item, p, tabScroll, menuShown, interactive }: { item: Item; p: Palette; tabScroll?: number; menuShown?: boolean; interactive?: boolean }) {
+function Body({ item, p, tabScroll, menuShown, interactive, dragging }: { item: Item; p: Palette; tabScroll?: number; menuShown?: boolean; interactive?: boolean; dragging?: boolean }) {
   const lang = useLang();
   const w = useWeight();
   const hasLabel = item.label.trim().length > 0;
@@ -888,22 +890,117 @@ function Body({ item, p, tabScroll, menuShown, interactive }: { item: Item; p: P
   switch (item.kind) {
     case "animation": {
       const title = item.label || "Animation Component";
-      const cat = item.supporting || "UI Motion";
-      const html = item.animationHtml || "";
-      const js = item.animationJs || "";
-      const isButton =
-        cat === "버튼" ||
-        cat.toLowerCase().includes("button") ||
-        title.toLowerCase().includes("button") ||
-        item.animationId === "001";
+      const cat = item.supporting || "Buttons";
+      let html = item.animationHtml || "";
+      let js = item.animationJs || "";
+      const isSingleButton =
+        item.animationId === "001" ||
+        item.animationId === "002" ||
+        (item.animationId !== "003" && item.animationId !== "004" && item.animationId !== "005" && (cat.toLowerCase().includes("button") || title.toLowerCase().includes("button")));
       const isDark = p.key?.toLowerCase().includes("dark") || p.surface === "#141218" || p.surface === "#000000";
       const themeAttr = isDark ? "dark" : "light";
+      const customColor = item.animationColor || p.primary;
+      const customLabel = item.animationText || item.label || "";
+      const speed = item.animationSpeed ?? 1;
+      const glow = item.animationGlow !== false;
+      const isInteractiveOnCanvas = Boolean(item.animationInteractive);
+
+      // Siêu mượt: Khi đang kéo thả (dragging), hiển thị bản xem trước GPU cực nhẹ không tải lại iframe để đảm bảo 120 FPS
+      if (dragging) {
+        return (
+          <div
+            style={{
+              width: "100%",
+              height: "100%",
+              borderRadius: isSingleButton ? 28 : 16,
+              background: `linear-gradient(135deg, ${customColor}, color-mix(in srgb, ${customColor} 65%, #38bdf8))`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 10,
+              padding: "0 18px",
+              color: "#ffffff",
+              boxShadow: `0 14px 34px color-mix(in srgb, ${customColor} 50%, transparent)`,
+              border: "1.5px solid rgba(255,255,255,0.45)",
+              fontFamily: "system-ui, sans-serif",
+              fontWeight: 700,
+              fontSize: 14,
+              letterSpacing: "0.2px",
+              transform: "translateZ(0)",
+              willChange: "transform",
+            }}
+          >
+            <span className="msr" style={{ fontSize: 20 }}>auto_awesome</span>
+            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {customLabel || title}
+            </span>
+          </div>
+        );
+      }
+
+      // Dịch tất cả các chuỗi tiếng Hàn còn sót lại sang tiếng Anh
+      const KR_REPLACEMENTS: [string | RegExp, string][] = [
+        [/프로젝트 시작하기/g, "Start a project"],
+        [/준비됐어요/g, "You’re all set"],
+        [/계속하기/g, "Continue"],
+        [/저장했어요/g, "Saved"],
+        [/저장하는 중/g, "Saving"],
+        [/길게 눌러 브랜드 시안 v3\.fig 삭제/g, "Hold to delete Brand concept v3.fig"],
+        [/브랜드 시안 v3\.fig/g, "Brand concept v3.fig"],
+        [/48\.2 MB · 어제 수정/g, "48.2 MB · Edited yesterday"],
+        [/길게 눌러 삭제/g, "Hold to delete"],
+        [/파일을 삭제했어요/g, "File deleted"],
+        [/되돌리기/g, "Undo"],
+        [/삭제하려면 길게 누르세요/g, "Hold to delete"],
+        [/삭제됨/g, "Deleted"],
+        [/2026 분기 리포트 다운로드/g, "Download the 2026 quarterly report"],
+        [/2026 분기 리포트\.pdf/g, "2026 quarterly report.pdf"],
+        [/다운로드/g, "Download"],
+        [/남은 시간 계산 중/g, "Estimating time left"],
+        [/다운로드 폴더에 저장됨/g, "Saved to Downloads"],
+        [/다운로드 시작/g, "Download started"],
+        [/다운로드 완료/g, "Download complete"],
+        [/다운로드를 취소했어요/g, "Download canceled"],
+        [/보내기/g, "Send"],
+        [/전송 중/g, "Sending"],
+        [/보내는 중/g, "Sending"],
+        [/전송됨/g, "Sent"],
+        [/전송 완료/g, "Sent"],
+        [/민지/g, "Minji"],
+        [/지금 활동 중/g, "Active now"],
+        [/사진 보내 줄 수 있어\?/g, "Can you send me the photo?"],
+        [/구독하기/g, "Subscribe"],
+        [/구독 중/g, "Subscribed"],
+        [/복사됨/g, "Copied"],
+        [/복사/g, "Copy"],
+        [/재생/g, "Play"],
+        [/일시정지/g, "Pause"],
+        [/버튼/g, "Button"],
+        [/LUCIAN/g, "HIẾU THUẬN"],
+        [/LucianLabs/gi, "Hiếu Thuận"],
+        [/Lucian/g, "Hiếu Thuận"],
+      ];
+      for (const [from, to] of KR_REPLACEMENTS) {
+        html = html.replace(from, to);
+        js = js.replace(from, to);
+      }
+
+      // Demo sequence to showcase animation continuously (same as UI Marketplace)
+      const demoData = item.animationDemo && item.animationDemo.length > 0
+        ? item.animationDemo
+        : (item.animationId ? getPurchasedTemplates().find((t) => t.id === item.animationId)?.demo : null);
+
+      const demoScript = Array.isArray(demoData) && demoData.length > 0
+        ? `<script>window.__UX_DEMO__ = ${JSON.stringify(demoData)};<\/script><script>${DEMO_RUNNER_CODE}<\/script>`
+        : "";
+
       const srcDoc = html
         ? `<!DOCTYPE html>
 <html data-theme="${themeAttr}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="/ux-tokens.css">
 <script>
 (function() {
   try {
@@ -921,7 +1018,27 @@ function Body({ item, p, tabScroll, menuShown, interactive }: { item: Item; p: P
 })();
 <\/script>
 <style>
-*, *::before, *::after { box-sizing: border-box; }
+:root {
+  --anim-speed: ${speed};
+  --ux-spring: cubic-bezier(.34, 1.45, .64, 1);
+  --ux-ease: cubic-bezier(.2, .8, .2, 1);
+  --ux-mint: #119C72;
+  --ux-ink: ${isDark ? "#F4F0E8" : "#16151B"};
+  --ux-ink-2: ${isDark ? "rgba(244,240,232,.68)" : "#57535F"};
+  --ux-ink-3: ${isDark ? "rgba(244,240,232,.42)" : "#8E8A97"};
+  --ux-line: ${isDark ? "rgba(255,255,255,.08)" : "rgba(22,21,27,.09)"};
+  --ux-line-2: ${isDark ? "rgba(255,255,255,.16)" : "rgba(22,21,27,.17)"};
+  --ux-surface: ${isDark ? "#13141C" : "#FFFFFF"};
+  --ux-surface-2: ${isDark ? "#1A1B25" : "#F5F3EF"};
+  --ux-page: transparent;
+  --ux-accent: ${customColor} !important;
+  --color-primary: ${customColor} !important;
+  --blob: linear-gradient(135deg, ${customColor}, color-mix(in srgb, ${customColor} 60%, #38bdf8)) !important;
+  --ux-grad: linear-gradient(135deg, ${customColor}, color-mix(in srgb, ${customColor} 60%, #38bdf8)) !important;
+}
+*, *::before, *::after {
+  box-sizing: border-box;
+}
 html, body {
   margin: 0;
   padding: 0;
@@ -932,18 +1049,33 @@ html, body {
   justify-content: center;
   background: transparent !important;
   color: ${p.onSurface};
-  font-family: system-ui, -apple-system, sans-serif;
-  overflow: visible;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow: hidden !important;
   user-select: none;
+  -webkit-font-smoothing: antialiased;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+* {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 .ux {
   transform-origin: center center;
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 ${
-  isButton
+  isSingleButton
     ? `
 .ux {
   width: 100% !important;
@@ -956,16 +1088,36 @@ ${
   margin: 0 !important;
   padding: 0 !important;
 }
-/* Hide the outer gallery showcase blobs so only the button itself is displayed */
-.u001-blobs, .u002-glow {
+.u001-blobs {
   display: none !important;
 }
-@keyframes u001-shimmer {
-  0%, 25% { transform: translateX(-150%) skewX(-12deg); }
-  65%, 100% { transform: translateX(350%) skewX(-12deg); }
+.u001-float {
+  animation: u001-float-anim calc(4.5s / ${speed}) cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 .u001-sheen {
-  animation: u001-shimmer 4.5s ease-in-out infinite;
+  animation: u001-shimmer-anim calc(3.8s / ${speed}) cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+.u001-btn {
+  --g1: color-mix(in srgb, ${customColor} 25%, rgba(255,255,255,0.85));
+  --g2: color-mix(in srgb, ${customColor} 45%, rgba(255,255,255,0.55));
+  --g3: color-mix(in srgb, ${customColor} 65%, rgba(255,255,255,0.7));
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,.8), inset 0 -12px 20px -14px rgba(255,255,255,.8), inset 0 0 0 1px rgba(255,255,255,.45), 0 20px 36px -16px color-mix(in srgb, ${customColor} ${glow ? "45%" : "20%"}, transparent) !important;
+  transition: transform 0.2s cubic-bezier(0.34, 1.45, 0.64, 1), box-shadow 0.2s ease !important;
+  will-change: transform, box-shadow;
+}
+.u002-glow {
+  opacity: 0.55 !important;
+  animation: u002-glow-pulse calc(3.5s / ${speed}) cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
+  background: linear-gradient(135deg, ${customColor}, color-mix(in srgb, ${customColor} 60%, #38bdf8)) !important;
+  will-change: transform, opacity, filter;
+  backface-visibility: hidden;
+}
+.u002-fill {
+  background: linear-gradient(135deg, ${customColor}, color-mix(in srgb, ${customColor} 60%, #38bdf8)) !important;
 }
 `
     : ""
@@ -975,37 +1127,61 @@ ${
 <body>
 ${html}
 <script>${js}<\/script>
+${demoScript}
 <script>
 (function() {
+  // Cập nhật chữ tùy chỉnh vào nút nếu có
+  var customText = ${JSON.stringify(customLabel)};
+  if (customText) {
+    function applyCustomText() {
+      var u002 = document.querySelector('.u002-txt');
+      if (u002) {
+        var s1 = u002.querySelector('span:first-child');
+        if (s1) { s1.textContent = customText; return; }
+      }
+      var u001 = document.querySelector('.u001-txt');
+      if (u001) {
+        u001.textContent = customText;
+        return;
+      }
+      var txtEl = document.querySelector('[class*="-txt"], button > span:not([class*="orb"]):not([class*="icon"]):not([class*="spin"]):not([class*="sheen"]), button');
+      if (txtEl) {
+        var inner = txtEl.querySelector('span:first-child');
+        if (inner) inner.textContent = customText;
+        else txtEl.textContent = customText;
+      }
+    }
+    applyCustomText();
+    setTimeout(applyCustomText, 50);
+  }
+
+  // Tự động scale cho vừa vặn container, tuyệt đối không bao giờ xuất hiện thanh cuộn
   function fit() {
     var el = document.querySelector('.ux');
     if (!el) return;
     ${
-      isButton
+      isSingleButton
         ? `
-    el.style.width = '100%';
-    el.style.height = '100%';
     var btn = el.querySelector('button') || el;
     var btnW = btn.offsetWidth || 252;
     var btnH = btn.offsetHeight || 78;
-    var winW = window.innerWidth || 252;
-    var winH = window.innerHeight || 78;
+    var winW = window.innerWidth;
+    var winH = window.innerHeight;
     var s = Math.min(1, winW / Math.max(btnW, 1), winH / Math.max(btnH, 1));
     if (s < 0.98) {
-      el.style.transform = 'scale(' + s.toFixed(3) + ')';
+      el.style.transform = 'translate3d(0, 0, 0) scale(' + s.toFixed(3) + ')';
     } else {
-      el.style.transform = 'none';
+      el.style.transform = 'translate3d(0, 0, 0)';
     }
     el.style.transformOrigin = 'center center';
     `
         : `
-    var w = el.offsetWidth || 340;
-    var h = el.offsetHeight || 240;
-    var winW = window.innerWidth || 340;
-    var winH = window.innerHeight || 240;
-    var pad = 8;
-    var s = Math.min(1, (winW - pad) / Math.max(w, 1), (winH - pad) / Math.max(h, 1));
-    el.style.transform = 'scale(' + s.toFixed(3) + ')';
+    var w = el.offsetWidth || 300;
+    var h = el.offsetHeight || 170;
+    var winW = window.innerWidth;
+    var winH = window.innerHeight;
+    var s = Math.min(1, winW / Math.max(w, 1), winH / Math.max(h, 1));
+    el.style.transform = 'translate3d(0, 0, 0) scale(' + s.toFixed(3) + ')';
     el.style.transformOrigin = 'center center';
     `
     }
@@ -1029,23 +1205,43 @@ ${html}
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            overflow: "visible",
+            overflow: "hidden",
           }}
         >
           {srcDoc ? (
-            <iframe
-              srcDoc={srcDoc}
-              sandbox="allow-scripts allow-same-origin"
-              tabIndex={-1}
-              style={{
-                width: "100%",
-                height: "100%",
-                border: "none",
-                pointerEvents: interactive ? "none" : "auto",
-                background: "transparent",
-              }}
-              title={title}
-            />
+            <>
+              <iframe
+                srcDoc={srcDoc}
+                scrolling="no"
+                sandbox="allow-scripts allow-same-origin"
+                tabIndex={-1}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  border: "none",
+                  overflow: "hidden",
+                  pointerEvents: (!interactive || isInteractiveOnCanvas) ? "auto" : "none",
+                  background: "transparent",
+                  willChange: "transform",
+                  transform: "translateZ(0)",
+                }}
+                title={title}
+              />
+              {/* Overlay trong suốt khi ở chế độ canvas edit để nhấp chọn và kéo thả node mượt mà không bị iframe nuốt con trỏ */}
+              {interactive && !isInteractiveOnCanvas && (
+                <div
+                  aria-hidden
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    cursor: "grab",
+                    zIndex: 2,
+                    background: "transparent",
+                  }}
+                  title="Nhấp để chọn • Kéo để di chuyển"
+                />
+              )}
+            </>
           ) : (
             <div style={{ display: "grid", placeItems: "center", height: "100%", color: p.onSurfaceVariant, fontSize: 12 }}>
               Animation #{item.animationId || ""}
@@ -2108,7 +2304,7 @@ export function M3Node({
       }}
     >
       <RippleCtx.Provider value={{ list: shown, color: contentColor(drawn, palette) }}>
-        <Body item={drawn} p={palette} tabScroll={tabScroll} menuShown={menu.open} interactive={interactive} />
+        <Body item={drawn} p={palette} tabScroll={tabScroll} menuShown={menu.open} interactive={interactive} dragging={dragging} />
         {/* a part drawn as one shape is lit through its own box; one made of several -- a split
             button -- carries the light inside each of them instead */}
         {(lights || !!carried) && item.kind !== "splitButton" && <RippleShape part={null} />}
