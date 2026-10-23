@@ -1,6 +1,6 @@
 "use client";
 
-import { UITemplate } from "./ui-marketplace-data";
+import { UITemplate, translateTemplateSource, getCategoryLabel } from "./ui-marketplace-data";
 
 const STORAGE_KEY = "pickme3d_purchased_templates";
 const EVENT_KEY = "pickme3d_purchased_updated";
@@ -12,7 +12,30 @@ export function getPurchasedTemplates(): UITemplate[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const list = JSON.parse(raw);
-    return Array.isArray(list) ? list : [];
+    if (!Array.isArray(list)) return [];
+    let updatedNeeded = false;
+    const translatedList = list.map((item: UITemplate) => {
+      const { html, js } = translateTemplateSource(item);
+      const cat = getCategoryLabel(item.category);
+      const cleanTitle = item.titleEn || item.title;
+      if (html !== item.html || js !== item.js || item.category !== cat || item.title !== cleanTitle) {
+        updatedNeeded = true;
+      }
+      return {
+        ...item,
+        category: cat,
+        title: cleanTitle,
+        titleEn: cleanTitle,
+        html,
+        js,
+      };
+    });
+    if (updatedNeeded) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(translatedList));
+      } catch {}
+    }
+    return translatedList;
   } catch (err) {
     console.error("Failed to read purchased templates:", err);
     return [];
@@ -34,13 +57,24 @@ export function isTemplatePurchased(id: string): boolean {
 export function purchaseTemplate(template: UITemplate): boolean {
   if (typeof window === "undefined" || !template || !template.id) return false;
   try {
+    const { html, js } = translateTemplateSource(template);
+    const cat = getCategoryLabel(template.category);
+    const cleanTitle = template.titleEn || template.title;
+    const translatedTemplate = {
+      ...template,
+      category: cat,
+      title: cleanTitle,
+      titleEn: cleanTitle,
+      html,
+      js,
+    };
     const current = getPurchasedTemplates();
     if (current.some((t) => t.id === template.id)) {
       return true; // already purchased
     }
-    const updated = [template, ...current];
+    const updated = [translatedTemplate, ...current];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    window.dispatchEvent(new CustomEvent(EVENT_KEY, { detail: { template } }));
+    window.dispatchEvent(new CustomEvent(EVENT_KEY, { detail: { template: translatedTemplate } }));
     return true;
   } catch (err) {
     console.error("Failed to save purchased template:", err);

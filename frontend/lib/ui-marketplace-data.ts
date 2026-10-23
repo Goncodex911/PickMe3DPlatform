@@ -41,6 +41,14 @@ export const CATEGORIES = [
   { id: "작업·시스템", label: "Ops & System", icon: "settings" },
 ];
 
+export function getCategoryLabel(category: string): string {
+  if (!category) return "Button";
+  const found = CATEGORIES.find((c) => c.id === category);
+  if (found && found.id !== "all") return found.label;
+  if (category === "버튼") return "Buttons";
+  return category;
+}
+
 /** Translate template HTML & JS using its embedded translation map */
 export function translateTemplateSource(template: UITemplate): { html: string; js: string } {
   let html = template.html || "";
@@ -81,7 +89,7 @@ export function translateTemplateSource(template: UITemplate): { html: string; j
 }
 
 /** Demo runner that drives automated interactions */
-const DEMO_RUNNER_CODE = `
+export const DEMO_RUNNER_CODE = `
 (function() {
   var demo = window.__UX_DEMO__;
   if (!Array.isArray(demo) || demo.length === 0) return;

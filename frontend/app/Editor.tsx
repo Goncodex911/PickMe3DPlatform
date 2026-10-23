@@ -161,7 +161,7 @@ import ImportTemplateModal from "@/components/ImportTemplateModal";
 import EmbedModal from "@/components/EmbedModal";
 import { DeviceConfig, findDeviceById } from "@/constants/devices";
 import { TemplateFile } from "@/types/template-file";
-import { UITemplate } from "@/lib/ui-marketplace-data";
+import { UITemplate, translateTemplateSource, getCategoryLabel } from "@/lib/ui-marketplace-data";
 
 /** the screens while a model drafts: primary, tertiary and primary container, drifting */
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
@@ -578,6 +578,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
   const [gesture, setGesture] = useState<Gesture | null>(null);
   const [widths, setWidths] = useState<Record<string, number>>({});
   const [resizing, setResizing] = useState<"left" | "right" | null>(null);
+  const panRaf = useRef<number | null>(null);
   const [, bumpHistory] = useState(0);
   /* ---------- tidy and ai ---------- */
   /** the groups before and after the last tidy; "undo" is offered only while the after-state is still current */
@@ -732,7 +733,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
         x: margin,
         y: 270,
         axis: "x",
-        items: tags.map((t) => ({
+        items: tags.map((t: string) => ({
           ...makeItem("chip"),
           id: sid(),
           label: t,
@@ -746,7 +747,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
         { name: "Mặt Kính Sapphire & UI", type: "mesh" },
         { name: "Dây đeo Silicon Thể thao", type: "mesh" },
       ];
-      const layerItems = rawLayers.map((lay, idx) => ({
+      const layerItems = rawLayers.map((lay: any, idx: number) => ({
         ...makeItem("listItem"),
         id: sid(),
         label: lay.name,
@@ -1404,24 +1405,52 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     };
   }, []);
 
-  /* wheel: pan, or zoom with ctrl / pinch */
+  /* wheel: silky-smooth rAF-coalesced pan, or zoom with ctrl / pinch */
   useEffect(() => {
     const el = canvasRef.current;
     if (!el) return;
+    let rafId: number | null = null;
+    let pendingDx = 0;
+    let pendingDy = 0;
+    let pendingZoom: { z: number; clientX: number; clientY: number } | null = null;
+
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       if (e.ctrlKey || e.metaKey) {
-        setZoomAt(
-          viewRef.current.z * Math.exp(-e.deltaY * 0.0022),
-          e.clientX,
-          e.clientY,
-        );
+        const factor = Math.exp(-e.deltaY * 0.0022);
+        const currentTargetZ = pendingZoom ? pendingZoom.z : viewRef.current.z;
+        pendingZoom = {
+          z: currentTargetZ * factor,
+          clientX: e.clientX,
+          clientY: e.clientY,
+        };
       } else {
-        setView((v) => ({ ...v, x: v.x - e.deltaX, y: v.y - e.deltaY }));
+        pendingDx += e.deltaX;
+        pendingDy += e.deltaY;
+      }
+
+      if (rafId === null) {
+        rafId = requestAnimationFrame(() => {
+          rafId = null;
+          if (pendingZoom) {
+            setZoomAt(pendingZoom.z, pendingZoom.clientX, pendingZoom.clientY);
+            pendingZoom = null;
+          }
+          if (pendingDx !== 0 || pendingDy !== 0) {
+            const dx = pendingDx;
+            const dy = pendingDy;
+            pendingDx = 0;
+            pendingDy = 0;
+            setView((v) => ({ ...v, x: v.x - dx, y: v.y - dy }));
+          }
+        });
       }
     };
     el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel);
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+    };
   }, [setZoomAt]);
 
   /* ---------- rest positions and the magnet ---------- */
@@ -1694,21 +1723,50 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     e.preventDefault();
     e.stopPropagation();
     flushPending();
-    const isButton =
-      template.category === "버튼" ||
-      template.category?.toLowerCase().includes("button") ||
+    const cleanTitle = template.titleEn || template.title;
+    const cat = getCategoryLabel(template.category);
+    const { html, js } = translateTemplateSource(template);
+
+    const isSingleButton =
       template.id === "001" ||
-      template.titleEn?.toLowerCase().includes("button");
+      template.id === "002" ||
+      (template.id !== "003" && template.id !== "004" && template.id !== "005" && (cat.toLowerCase().includes("button") || cleanTitle.toLowerCase().includes("button")));
+
+    let defaultW = 280;
+    let defaultH = 170;
+
+    if (template.id === "001" || template.id === "002") {
+      defaultW = 260;
+      defaultH = 80;
+    } else if (template.id === "003") {
+      defaultW = 280;
+      defaultH = 170;
+    } else if (template.id === "004") {
+      defaultW = 280;
+      defaultH = 150;
+    } else if (template.shape === "tall") {
+      defaultW = Math.min(320, PHONE_W - 32);
+      defaultH = 280;
+    } else if (isSingleButton) {
+      defaultW = 260;
+      defaultH = 80;
+    } else {
+      defaultW = Math.min(320, PHONE_W - 32);
+      defaultH = 190;
+    }
+
     const item: Item = {
       ...makeItem("animation"),
       id: uid(),
-      label: template.titleEn || template.title,
-      supporting: template.category,
+      label: cleanTitle,
+      animationText: cleanTitle,
+      supporting: cat,
       animationId: template.id,
-      animationHtml: template.html,
-      animationJs: template.js,
-      size: isButton ? 252 : Math.min(320, PHONE_W - 32),
-      size2: isButton ? 78 : template.shape === "tall" ? 280 : 200,
+      animationHtml: html,
+      animationJs: js,
+      animationDemo: template.demo || [],
+      size: defaultW,
+      size2: defaultH,
     };
     const pt = toWorld(e.clientX, e.clientY);
     const sz = sizeOf(item, widthsRef.current);
@@ -1744,21 +1802,50 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
 
   const onAddAnimation = (template: UITemplate) => {
     flushPending();
-    const isButton =
-      template.category === "버튼" ||
-      template.category?.toLowerCase().includes("button") ||
+    const cleanTitle = template.titleEn || template.title;
+    const cat = getCategoryLabel(template.category);
+    const { html, js } = translateTemplateSource(template);
+
+    const isSingleButton =
       template.id === "001" ||
-      template.titleEn?.toLowerCase().includes("button");
+      template.id === "002" ||
+      (template.id !== "003" && template.id !== "004" && template.id !== "005" && (cat.toLowerCase().includes("button") || cleanTitle.toLowerCase().includes("button")));
+
+    let defaultW = 280;
+    let defaultH = 170;
+
+    if (template.id === "001" || template.id === "002") {
+      defaultW = 260;
+      defaultH = 80;
+    } else if (template.id === "003") {
+      defaultW = 280;
+      defaultH = 170;
+    } else if (template.id === "004") {
+      defaultW = 280;
+      defaultH = 150;
+    } else if (template.shape === "tall") {
+      defaultW = Math.min(320, PHONE_W - 32);
+      defaultH = 280;
+    } else if (isSingleButton) {
+      defaultW = 260;
+      defaultH = 80;
+    } else {
+      defaultW = Math.min(320, PHONE_W - 32);
+      defaultH = 190;
+    }
+
     const item: Item = {
       ...makeItem("animation"),
       id: uid(),
-      label: template.titleEn || template.title,
-      supporting: template.category,
+      label: cleanTitle,
+      animationText: cleanTitle,
+      supporting: cat,
       animationId: template.id,
-      animationHtml: template.html,
-      animationJs: template.js,
-      size: isButton ? 252 : Math.min(320, PHONE_W - 32),
-      size2: isButton ? 78 : template.shape === "tall" ? 280 : 200,
+      animationHtml: html,
+      animationJs: js,
+      animationDemo: template.demo || [],
+      size: defaultW,
+      size2: defaultH,
     };
     const sz = sizeOf(item, widthsRef.current);
     const f = selectedFrameId
@@ -2337,11 +2424,13 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
       const g = gestureRef.current;
       if (!g) return;
       if (g.kind === "pan") {
-        setView((v) => ({
-          ...v,
-          x: g.vx + (e.clientX - g.sx),
-          y: g.vy + (e.clientY - g.sy),
-        }));
+        const nextX = g.vx + (e.clientX - g.sx);
+        const nextY = g.vy + (e.clientY - g.sy);
+        if (panRaf.current !== null) cancelAnimationFrame(panRaf.current);
+        panRaf.current = requestAnimationFrame(() => {
+          panRaf.current = null;
+          setView((v) => (v.x === nextX && v.y === nextY ? v : { ...v, x: nextX, y: nextY }));
+        });
         return;
       }
       if (g.kind === "group") {
@@ -2426,6 +2515,10 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
       setGesture({ ...g });
     };
     const up = (e: PointerEvent) => {
+      if (panRaf.current !== null) {
+        cancelAnimationFrame(panRaf.current);
+        panRaf.current = null;
+      }
       const g = gestureRef.current;
       gestureRef.current = null;
       setGesture(null);
@@ -2439,6 +2532,10 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     window.addEventListener("pointerup", up);
     window.addEventListener("pointercancel", up);
     return () => {
+      if (panRaf.current !== null) {
+        cancelAnimationFrame(panRaf.current);
+        panRaf.current = null;
+      }
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
       window.removeEventListener("pointercancel", up);
@@ -4429,6 +4526,9 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
       <ThemeContext.Provider value={theme}>
         <div
           className={`app-root${revealing ? " m3e-reveal" : ""}${widthDragId || sizeEditId ? " m3-size-now" : ""}`}
+          data-dragging={drag?.active ? "true" : undefined}
+          data-panning={panning ? "true" : undefined}
+          data-resizing={resizing ? "true" : undefined}
           /* the preview sits outside this tree and owns the keyboard while it is up */
           inert={editAccess !== "editable" || previewId !== null}
           aria-hidden={editAccess !== "editable" || previewId !== null}
@@ -4757,7 +4857,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                   position: "absolute",
                   left: 0,
                   top: 0,
-                  transform: `translate(${view.x}px, ${view.y}px) scale(${view.z})`,
+                  transform: `translate3d(${view.x}px, ${view.y}px, 0) scale(${view.z})`,
                   transformOrigin: "0 0",
                   transition: cameraEasing ? `transform ${SETTLE_MS}ms cubic-bezier(0.2, 0, 0, 1)` : undefined,
                   willChange: "transform",
