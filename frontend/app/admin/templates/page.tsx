@@ -267,10 +267,10 @@ export default function AdminTemplatesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold font-serif text-white tracking-tight">
             Quản Lý Mẫu & Tài Sản 3D
           </h1>
-          <p className="text-neutral-400 text-sm mt-1">
+          <p className="text-neutral-400 text-xs sm:text-sm mt-1">
             Quản lý mẫu hệ thống chính thức và kiểm duyệt toàn bộ tài nguyên thiết kế 3D cộng đồng.
           </p>
         </div>
@@ -281,7 +281,7 @@ export default function AdminTemplatesPage() {
             setCreateModalOpen(true);
             setModalError(null);
           }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold transition-all shadow-md shadow-indigo-600/20"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 hover:from-red-500 hover:via-rose-400 hover:to-amber-400 text-white text-xs sm:text-sm font-semibold transition-all shadow-lg shadow-red-950/40"
         >
           <span className="material-symbols-rounded text-lg">add_box</span>
           Tạo Mẫu Hệ Thống Mới
@@ -289,13 +289,13 @@ export default function AdminTemplatesPage() {
       </div>
 
       {/* Tab Switcher: 3D Templates vs Slide Presentations */}
-      <div className="flex items-center gap-2 border-b border-neutral-800 pb-3">
+      <div className="flex items-center gap-2 border-b border-white/10 pb-3">
         <button
           onClick={() => setActiveTab("templates")}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
             activeTab === "templates"
-              ? "bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 shadow-sm"
-              : "text-neutral-400 hover:text-white hover:bg-neutral-800/50"
+              ? "bg-rose-500/15 text-rose-300 border border-rose-500/30 shadow-sm"
+              : "text-neutral-400 hover:text-white hover:bg-white/5 border border-transparent"
           }`}
         >
           <span className="material-symbols-rounded text-base">view_in_ar</span>
@@ -309,8 +309,8 @@ export default function AdminTemplatesPage() {
           }}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
             activeTab === "presentations"
-              ? "bg-purple-600/20 text-purple-300 border border-purple-500/30 shadow-sm"
-              : "text-neutral-400 hover:text-white hover:bg-neutral-800/50"
+              ? "bg-amber-500/15 text-amber-300 border border-amber-500/30 shadow-sm"
+              : "text-neutral-400 hover:text-white hover:bg-white/5 border border-transparent"
           }`}
         >
           <span className="material-symbols-rounded text-base">slideshow</span>
@@ -321,7 +321,7 @@ export default function AdminTemplatesPage() {
       {activeTab === "presentations" ? (
         <div className="space-y-6">
           {/* Presentations Filters */}
-          <div className="p-4 rounded-2xl bg-[#141824] border border-neutral-800/80 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+          <div className="p-4 rounded-2xl bg-[#0d131f] border border-white/10 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between shadow-xl shadow-black/40">
             <div className="flex-1 flex items-center gap-2">
               <div className="relative flex-1">
                 <span className="material-symbols-rounded absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-xl">
@@ -335,13 +335,13 @@ export default function AdminTemplatesPage() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") loadPresentations(1);
                   }}
-                  className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-[#1b2030] border border-neutral-700/60 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-purple-500"
+                  className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-[#060911] border border-white/10 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-red-500/60 transition-colors"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => loadPresentations(1)}
-                className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold"
+                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/10 transition-colors"
               >
                 Tìm
               </button>
@@ -355,7 +355,7 @@ export default function AdminTemplatesPage() {
                   setPresPublicFilter(e.target.value);
                   setTimeout(() => loadPresentations(1), 0);
                 }}
-                className="bg-[#1b2030] border border-neutral-700/60 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                className="bg-[#060911] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-red-500/60"
               >
                 <option value="all">Tất cả</option>
                 <option value="true">Công khai</option>
@@ -367,11 +367,11 @@ export default function AdminTemplatesPage() {
           {/* Presentations Grid */}
           {loadingPresentations ? (
             <div className="p-16 text-center text-neutral-400 text-sm">
-              <div className="w-8 h-8 rounded-full border-2 border-purple-500 border-t-transparent animate-spin mx-auto mb-3" />
+              <div className="w-8 h-8 rounded-full border-2 border-rose-500 border-t-transparent animate-spin mx-auto mb-3" />
               Đang tải danh sách bài trình chiếu...
             </div>
           ) : presentations.length === 0 ? (
-            <div className="p-16 text-center text-neutral-400 bg-[#141824] border border-neutral-800 rounded-3xl">
+            <div className="p-16 text-center text-neutral-400 bg-[#0d131f] border border-white/10 rounded-3xl">
               <span className="material-symbols-rounded text-4xl text-neutral-600 block mb-2">slideshow</span>
               <p className="font-medium text-white text-sm">Không có bản trình chiếu nào</p>
               <p className="text-xs text-neutral-500 mt-1">Người dùng tạo slide trong Slide Studio sẽ xuất hiện tại đây.</p>
@@ -379,8 +379,8 @@ export default function AdminTemplatesPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {presentations.map((p) => (
-                <div key={p._id} className="rounded-2xl bg-[#141824] border border-neutral-800/80 overflow-hidden hover:border-neutral-700 transition-all flex flex-col">
-                  <div className="aspect-video bg-neutral-900 relative overflow-hidden flex items-center justify-center">
+                <div key={p._id} className="rounded-2xl bg-[#0d131f] border border-white/10 overflow-hidden hover:border-white/20 transition-all flex flex-col shadow-lg shadow-black/40">
+                  <div className="aspect-video bg-[#060911] relative overflow-hidden flex items-center justify-center border-b border-white/5">
                     {p.thumbnail ? (
                       <img src={p.thumbnail} alt="" className="w-full h-full object-cover" />
                     ) : (
@@ -389,10 +389,10 @@ export default function AdminTemplatesPage() {
                         <span className="text-[10px] mt-1">Chưa có thumbnail</span>
                       </div>
                     )}
-                    <span className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                    <span className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-bold border backdrop-blur-md ${
                       p.isPublic
                         ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
-                        : "bg-neutral-800 text-neutral-400 border-neutral-700"
+                        : "bg-black/60 text-neutral-400 border-white/10"
                     }`}>
                       {p.isPublic ? "Công khai" : "Riêng tư"}
                     </span>
@@ -411,10 +411,10 @@ export default function AdminTemplatesPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-3 mt-3 border-t border-neutral-800">
+                    <div className="flex items-center justify-between pt-3 mt-3 border-t border-white/5">
                       <button
                         onClick={() => handleTogglePresVisibility(p)}
-                        className="text-xs text-neutral-300 hover:text-white flex items-center gap-1"
+                        className="text-xs text-neutral-300 hover:text-white flex items-center gap-1 transition-colors"
                       >
                         <span className="material-symbols-rounded text-sm">
                           {p.isPublic ? "visibility_off" : "visibility"}
@@ -424,7 +424,7 @@ export default function AdminTemplatesPage() {
 
                       <button
                         onClick={() => handleDeletePresentation(p._id)}
-                        className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1"
+                        className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 transition-colors"
                       >
                         <span className="material-symbols-rounded text-sm">delete</span>
                         <span>Xóa</span>
@@ -439,7 +439,7 @@ export default function AdminTemplatesPage() {
       ) : (
         <>
       {/* Filters Bar */}
-      <div className="p-4 rounded-2xl bg-[#141824] border border-neutral-800/80 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+      <div className="p-4 rounded-2xl bg-[#0d131f] border border-white/10 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between shadow-xl shadow-black/40">
         <form onSubmit={handleSearchSubmit} className="flex-1 flex items-center gap-2">
           <div className="relative flex-1">
             <span className="material-symbols-rounded absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-xl">
@@ -450,12 +450,12 @@ export default function AdminTemplatesPage() {
               placeholder="Tìm theo tiêu đề, tác giả, mô tả hoặc tag..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-[#1b2030] border border-neutral-700/60 rounded-xl text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-indigo-500 transition-colors"
+              className="w-full pl-10 pr-4 py-2.5 bg-[#060911] border border-white/10 rounded-xl text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-red-500/60 transition-colors"
             />
           </div>
           <button
             type="submit"
-            className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-xs font-semibold text-white transition-colors border border-neutral-700/50"
+            className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold text-white transition-colors border border-white/10"
           >
             Tìm
           </button>
@@ -468,7 +468,7 @@ export default function AdminTemplatesPage() {
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="bg-[#1b2030] border border-neutral-700/60 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+              className="bg-[#060911] border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-red-500/60"
             >
               {CATEGORIES.map((cat) => (
                 <option key={cat} value={cat === "Tất cả" ? "all" : cat}>
@@ -484,7 +484,7 @@ export default function AdminTemplatesPage() {
             <select
               value={isSystem}
               onChange={(e) => setIsSystem(e.target.value)}
-              className="bg-[#1b2030] border border-neutral-700/60 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+              className="bg-[#060911] border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-red-500/60"
             >
               <option value="all">Tất cả nguồn</option>
               <option value="true">Chính thức (System)</option>
@@ -498,7 +498,7 @@ export default function AdminTemplatesPage() {
             <select
               value={isPublic}
               onChange={(e) => setIsPublic(e.target.value)}
-              className="bg-[#1b2030] border border-neutral-700/60 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+              className="bg-[#060911] border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-red-500/60"
             >
               <option value="all">Tất cả</option>
               <option value="true">Công khai</option>
@@ -510,16 +510,16 @@ export default function AdminTemplatesPage() {
 
       {/* Templates Grid */}
       {loading ? (
-        <div className="p-16 text-center text-neutral-400 text-sm bg-[#141824] rounded-2xl border border-neutral-800">
-          <div className="w-8 h-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin mx-auto mb-3" />
+        <div className="p-16 text-center text-neutral-400 text-sm bg-[#0d131f] rounded-2xl border border-white/10">
+          <div className="w-8 h-8 rounded-full border-2 border-rose-500 border-t-transparent animate-spin mx-auto mb-3" />
           Đang tải danh sách mẫu thiết kế...
         </div>
       ) : error ? (
-        <div className="p-8 text-center text-red-400 text-sm bg-[#141824] rounded-2xl border border-red-500/20">
+        <div className="p-8 text-center text-rose-400 text-sm bg-[#0d131f] rounded-2xl border border-rose-500/20">
           {error}
         </div>
       ) : templates.length === 0 ? (
-        <div className="p-16 text-center text-neutral-400 text-sm bg-[#141824] rounded-2xl border border-neutral-800">
+        <div className="p-16 text-center text-neutral-400 text-sm bg-[#0d131f] rounded-2xl border border-white/10">
           Không tìm thấy mẫu thiết kế nào phù hợp.
         </div>
       ) : (
@@ -527,11 +527,11 @@ export default function AdminTemplatesPage() {
           {templates.map((t) => (
             <div
               key={t._id}
-              className="rounded-2xl bg-[#141824] border border-neutral-800/80 hover:border-neutral-700/80 overflow-hidden flex flex-col justify-between transition-all group shadow-sm"
+              className="rounded-2xl bg-[#0d131f] border border-white/10 hover:border-white/20 overflow-hidden flex flex-col justify-between transition-all group shadow-xl shadow-black/40"
             >
               <div>
                 {/* Thumbnail Preview Area */}
-                <div className="h-44 bg-[#0f121d] relative overflow-hidden flex items-center justify-center border-b border-neutral-800">
+                <div className="h-44 bg-[#060911] relative overflow-hidden flex items-center justify-center border-b border-white/5">
                   {t.thumbnailUrl ? (
                     <img
                       src={t.thumbnailUrl}
@@ -550,12 +550,12 @@ export default function AdminTemplatesPage() {
                   {/* System & Featured Badges */}
                   <div className="absolute top-2.5 left-2.5 flex flex-col gap-1">
                     {t.isSystem && (
-                      <span className="px-2 py-0.5 rounded-md bg-indigo-600/90 text-white font-bold text-[10px] uppercase tracking-wider backdrop-blur-sm shadow">
+                      <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-bold text-[10px] uppercase tracking-wider backdrop-blur-md shadow">
                         Hệ thống
                       </span>
                     )}
                     {t.isFeatured && (
-                      <span className="px-2 py-0.5 rounded-md bg-amber-500/90 text-white font-bold text-[10px] uppercase tracking-wider backdrop-blur-sm shadow">
+                      <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white font-bold text-[10px] uppercase tracking-wider backdrop-blur-md shadow">
                         Nổi bật
                       </span>
                     )}
@@ -564,10 +564,10 @@ export default function AdminTemplatesPage() {
                   {/* Visibility Badge */}
                   <div className="absolute top-2.5 right-2.5">
                     <span
-                      className={`px-2 py-0.5 rounded-md text-[10px] font-semibold backdrop-blur-sm ${
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-semibold backdrop-blur-md border ${
                         t.isPublic
-                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
-                          : "bg-neutral-800/90 text-neutral-300 border border-neutral-700"
+                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                          : "bg-black/60 text-neutral-300 border-white/10"
                       }`}
                     >
                       {t.isPublic ? "Công khai" : "Riêng tư"}
@@ -577,8 +577,8 @@ export default function AdminTemplatesPage() {
 
                 {/* Content */}
                 <div className="p-4 space-y-2">
-                  <div className="flex items-center justify-between text-[11px] text-neutral-500">
-                    <span className="font-semibold text-indigo-400">{t.category}</span>
+                  <div className="flex items-center justify-between text-[11px] text-neutral-400">
+                    <span className="font-semibold text-rose-400">{t.category}</span>
                     <span>{new Date(t.createdAt).toLocaleDateString("vi-VN")}</span>
                   </div>
 
@@ -597,17 +597,17 @@ export default function AdminTemplatesPage() {
                   </div>
 
                   {/* Stats */}
-                  <div className="flex items-center gap-3 pt-2 text-[11px] text-neutral-400 border-t border-neutral-800/80">
+                  <div className="flex items-center gap-3 pt-2 text-[11px] text-neutral-400 border-t border-white/5">
                     <span className="flex items-center gap-1">
-                      <span className="material-symbols-rounded text-sm text-red-400">favorite</span>
+                      <span className="material-symbols-rounded text-sm text-rose-400">favorite</span>
                       {t.likesCount || 0}
                     </span>
                     <span className="flex items-center gap-1">
-                      <span className="material-symbols-rounded text-sm text-blue-400">visibility</span>
+                      <span className="material-symbols-rounded text-sm text-sky-400">visibility</span>
                       {t.viewsCount || 0}
                     </span>
                     <span className="flex items-center gap-1">
-                      <span className="material-symbols-rounded text-sm text-purple-400">fork_right</span>
+                      <span className="material-symbols-rounded text-sm text-amber-400">fork_right</span>
                       {t.forksCount || 0}
                     </span>
                   </div>
@@ -615,17 +615,17 @@ export default function AdminTemplatesPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="p-3 bg-[#161a28] border-t border-neutral-800 flex items-center justify-end gap-1.5">
+              <div className="p-3 bg-[#060911] border-t border-white/5 flex items-center justify-end gap-1.5">
                 <button
                   onClick={() => openEditModal(t)}
-                  className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold flex items-center gap-1 transition-colors"
+                  className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-200 text-xs font-semibold flex items-center gap-1 transition-colors"
                 >
                   <span className="material-symbols-rounded text-sm">edit</span>
                   Sửa
                 </button>
                 <button
                   onClick={() => setDeleteModalTemplate(t)}
-                  className="px-2.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-semibold flex items-center gap-1 transition-colors"
+                  className="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold flex items-center gap-1 transition-colors"
                 >
                   <span className="material-symbols-rounded text-sm">delete</span>
                   Xóa
@@ -638,7 +638,7 @@ export default function AdminTemplatesPage() {
 
       {/* Pagination Footer */}
       {pagination.pages > 1 && (
-        <div className="p-4 border border-neutral-800 rounded-2xl flex items-center justify-between text-xs text-neutral-400 bg-[#141824]">
+        <div className="p-4 border border-white/10 rounded-2xl flex items-center justify-between text-xs text-neutral-400 bg-[#0d131f]">
           <div>
             Trang <span className="font-semibold text-white">{pagination.page}</span> /{" "}
             {pagination.pages} (Tổng {pagination.total} mẫu)
@@ -647,14 +647,14 @@ export default function AdminTemplatesPage() {
             <button
               disabled={pagination.page <= 1}
               onClick={() => loadTemplates(pagination.page - 1)}
-              className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 disabled:opacity-40 disabled:pointer-events-none text-white font-medium transition-colors"
+              className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-40 disabled:pointer-events-none text-white font-medium transition-colors"
             >
               Trước
             </button>
             <button
               disabled={pagination.page >= pagination.pages}
               onClick={() => loadTemplates(pagination.page + 1)}
-              className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 disabled:opacity-40 disabled:pointer-events-none text-white font-medium transition-colors"
+              className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-40 disabled:pointer-events-none text-white font-medium transition-colors"
             >
               Sau
             </button>
@@ -667,58 +667,58 @@ export default function AdminTemplatesPage() {
 
       {/* ── MODAL: CREATE SYSTEM TEMPLATE ── */}
       {createModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-[#161b29] border border-neutral-700 rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-lg bg-[#0d131f] border border-white/10 rounded-3xl p-6 shadow-2xl shadow-black/80 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <span className="material-symbols-rounded text-indigo-400">add_box</span>
+                <span className="material-symbols-rounded text-rose-400">add_box</span>
                 Tạo Mẫu Hệ Thống 3D Mới
               </h3>
               <button
                 onClick={() => setCreateModalOpen(false)}
-                className="text-neutral-400 hover:text-white"
+                className="text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-white/5 transition-colors"
               >
                 <span className="material-symbols-rounded">close</span>
               </button>
             </div>
 
             {modalError && (
-              <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+              <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs">
                 {modalError}
               </div>
             )}
 
             <form onSubmit={handleCreateSubmit} className="space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-neutral-300 mb-1">Tiêu đề mẫu *</label>
+                <label className="block font-semibold text-neutral-300 mb-1.5">Tiêu đề mẫu *</label>
                 <input
                   type="text"
                   required
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
                   placeholder="Ví dụ: Áo Khoác Cyberpunk 3D Nam"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#1b2030] border border-neutral-700 text-white text-sm focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#060911] border border-white/10 text-white text-sm focus:outline-none focus:border-red-500/60 placeholder:text-neutral-600"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-neutral-300 mb-1">Mô tả chi tiết</label>
+                <label className="block font-semibold text-neutral-300 mb-1.5">Mô tả chi tiết</label>
                 <textarea
                   rows={3}
                   value={formDesc}
                   onChange={(e) => setFormDesc(e.target.value)}
                   placeholder="Mô tả phong cách, chất liệu, hướng dẫn phối trang phục..."
-                  className="w-full px-3.5 py-2 rounded-xl bg-[#1b2030] border border-neutral-700 text-white focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#060911] border border-white/10 text-white focus:outline-none focus:border-red-500/60 placeholder:text-neutral-600"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-neutral-300 mb-1">Danh mục</label>
+                  <label className="block font-semibold text-neutral-300 mb-1.5">Danh mục</label>
                   <select
                     value={formCategory}
                     onChange={(e) => setFormCategory(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#1b2030] border border-neutral-700 text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-2 rounded-xl bg-[#060911] border border-white/10 text-white focus:outline-none focus:border-red-500/60"
                   >
                     {CATEGORIES.filter((c) => c !== "Tất cả").map((c) => (
                       <option key={c} value={c}>
@@ -729,7 +729,7 @@ export default function AdminTemplatesPage() {
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-neutral-300 mb-1">
+                  <label className="block font-semibold text-neutral-300 mb-1.5">
                     Tags (cách nhau dấu phẩy)
                   </label>
                   <input
@@ -737,13 +737,13 @@ export default function AdminTemplatesPage() {
                     value={formTags}
                     onChange={(e) => setFormTags(e.target.value)}
                     placeholder="streetwear, 3d, jacket"
-                    className="w-full px-3 py-2 rounded-xl bg-[#1b2030] border border-neutral-700 text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-2 rounded-xl bg-[#060911] border border-white/10 text-white focus:outline-none focus:border-red-500/60 placeholder:text-neutral-600"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-neutral-300 mb-1">
+                <label className="block font-semibold text-neutral-300 mb-1.5">
                   Đường dẫn ảnh Thumbnail (URL)
                 </label>
                 <input
@@ -751,7 +751,7 @@ export default function AdminTemplatesPage() {
                   value={formThumbnail}
                   onChange={(e) => setFormThumbnail(e.target.value)}
                   placeholder="https://images.unsplash.com/..."
-                  className="w-full px-3.5 py-2 rounded-xl bg-[#1b2030] border border-neutral-700 text-white focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#060911] border border-white/10 text-white focus:outline-none focus:border-red-500/60 placeholder:text-neutral-600"
                 />
               </div>
 
@@ -761,7 +761,7 @@ export default function AdminTemplatesPage() {
                     type="checkbox"
                     checked={formIsFeatured}
                     onChange={(e) => setFormIsFeatured(e.target.checked)}
-                    className="rounded text-indigo-600 focus:ring-0"
+                    className="rounded accent-rose-500 focus:ring-0"
                   />
                   <span>Đặt làm mẫu Nổi bật (Featured)</span>
                 </label>
@@ -771,24 +771,24 @@ export default function AdminTemplatesPage() {
                     type="checkbox"
                     checked={formIsPublic}
                     onChange={(e) => setFormIsPublic(e.target.checked)}
-                    className="rounded text-indigo-600 focus:ring-0"
+                    className="rounded accent-rose-500 focus:ring-0"
                   />
                   <span>Công khai trong thư viện</span>
                 </label>
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-3 border-t border-neutral-800">
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-white/10">
                 <button
                   type="button"
                   onClick={() => setCreateModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-semibold"
+                  className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 font-semibold transition-colors"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={actionBusy}
-                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold shadow-md shadow-indigo-600/30"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 hover:from-red-500 hover:via-rose-400 hover:to-amber-400 disabled:opacity-50 text-white font-semibold shadow-lg shadow-red-950/40 transition-all"
                 >
                   {actionBusy ? "Đang tạo..." : "Lưu Mẫu Hệ Thống"}
                 </button>
@@ -800,56 +800,56 @@ export default function AdminTemplatesPage() {
 
       {/* ── MODAL: EDIT TEMPLATE ── */}
       {editModalTemplate && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-[#161b29] border border-neutral-700 rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-lg bg-[#0d131f] border border-white/10 rounded-3xl p-6 shadow-2xl shadow-black/80 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <span className="material-symbols-rounded text-indigo-400">edit</span>
+                <span className="material-symbols-rounded text-rose-400">edit</span>
                 Chỉnh Sửa Thuộc Tính Mẫu
               </h3>
               <button
                 onClick={() => setEditModalTemplate(null)}
-                className="text-neutral-400 hover:text-white"
+                className="text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-white/5 transition-colors"
               >
                 <span className="material-symbols-rounded">close</span>
               </button>
             </div>
 
             {modalError && (
-              <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+              <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs">
                 {modalError}
               </div>
             )}
 
             <form onSubmit={handleEditSubmit} className="space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-neutral-300 mb-1">Tiêu đề mẫu *</label>
+                <label className="block font-semibold text-neutral-300 mb-1.5">Tiêu đề mẫu *</label>
                 <input
                   type="text"
                   required
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#1b2030] border border-neutral-700 text-white text-sm focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#060911] border border-white/10 text-white text-sm focus:outline-none focus:border-red-500/60"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-neutral-300 mb-1">Mô tả</label>
+                <label className="block font-semibold text-neutral-300 mb-1.5">Mô tả</label>
                 <textarea
                   rows={3}
                   value={formDesc}
                   onChange={(e) => setFormDesc(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-[#1b2030] border border-neutral-700 text-white focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#060911] border border-white/10 text-white focus:outline-none focus:border-red-500/60"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-neutral-300 mb-1">Danh mục</label>
+                  <label className="block font-semibold text-neutral-300 mb-1.5">Danh mục</label>
                   <select
                     value={formCategory}
                     onChange={(e) => setFormCategory(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#1b2030] border border-neutral-700 text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-2 rounded-xl bg-[#060911] border border-white/10 text-white focus:outline-none focus:border-red-500/60"
                   >
                     {CATEGORIES.filter((c) => c !== "Tất cả").map((c) => (
                       <option key={c} value={c}>
@@ -860,23 +860,23 @@ export default function AdminTemplatesPage() {
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-neutral-300 mb-1">Tags</label>
+                  <label className="block font-semibold text-neutral-300 mb-1.5">Tags</label>
                   <input
                     type="text"
                     value={formTags}
                     onChange={(e) => setFormTags(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#1b2030] border border-neutral-700 text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-2 rounded-xl bg-[#060911] border border-white/10 text-white focus:outline-none focus:border-red-500/60"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-neutral-300 mb-1">Ảnh Thumbnail (URL)</label>
+                <label className="block font-semibold text-neutral-300 mb-1.5">Ảnh Thumbnail (URL)</label>
                 <input
                   type="url"
                   value={formThumbnail}
                   onChange={(e) => setFormThumbnail(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-[#1b2030] border border-neutral-700 text-white focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#060911] border border-white/10 text-white focus:outline-none focus:border-red-500/60"
                 />
               </div>
 
@@ -886,7 +886,7 @@ export default function AdminTemplatesPage() {
                     type="checkbox"
                     checked={formIsSystem}
                     onChange={(e) => setFormIsSystem(e.target.checked)}
-                    className="rounded text-indigo-600 focus:ring-0"
+                    className="rounded accent-rose-500 focus:ring-0"
                   />
                   <span>Mẫu Hệ Thống (System)</span>
                 </label>
@@ -896,7 +896,7 @@ export default function AdminTemplatesPage() {
                     type="checkbox"
                     checked={formIsFeatured}
                     onChange={(e) => setFormIsFeatured(e.target.checked)}
-                    className="rounded text-indigo-600 focus:ring-0"
+                    className="rounded accent-rose-500 focus:ring-0"
                   />
                   <span>Nổi bật (Featured)</span>
                 </label>
@@ -906,24 +906,24 @@ export default function AdminTemplatesPage() {
                     type="checkbox"
                     checked={formIsPublic}
                     onChange={(e) => setFormIsPublic(e.target.checked)}
-                    className="rounded text-indigo-600 focus:ring-0"
+                    className="rounded accent-rose-500 focus:ring-0"
                   />
                   <span>Công khai</span>
                 </label>
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-3 border-t border-neutral-800">
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-white/10">
                 <button
                   type="button"
                   onClick={() => setEditModalTemplate(null)}
-                  className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-semibold"
+                  className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 font-semibold transition-colors"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={actionBusy}
-                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold shadow-md shadow-indigo-600/30"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 hover:from-red-500 hover:via-rose-400 hover:to-amber-400 disabled:opacity-50 text-white font-semibold shadow-lg shadow-red-950/40 transition-all"
                 >
                   {actionBusy ? "Đang lưu..." : "Cập Nhật"}
                 </button>
@@ -935,10 +935,10 @@ export default function AdminTemplatesPage() {
 
       {/* ── MODAL: DELETE CONFIRMATION ── */}
       {deleteModalTemplate && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-[#161b29] border border-neutral-700 rounded-3xl p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-[#0d131f] border border-white/10 rounded-3xl p-6 shadow-2xl shadow-black/80">
             <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
-              <span className="material-symbols-rounded text-red-400">warning</span>
+              <span className="material-symbols-rounded text-rose-400">warning</span>
               Xóa Mẫu Thiết Kế
             </h3>
 
@@ -947,7 +947,7 @@ export default function AdminTemplatesPage() {
               <span className="font-bold text-white">{deleteModalTemplate.title}</span>?
             </p>
 
-            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs mb-4 space-y-1">
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs mb-4 space-y-1">
               <div>⚠️ Kiểm tra phụ thuộc:</div>
               <p className="text-neutral-300 text-[11px] leading-relaxed">
                 Thao tác này sẽ xóa vĩnh viễn mẫu thiết kế, gỡ bỏ mẫu khỏi các bộ sưu tập liên quan và xóa tất cả bình luận đính kèm. Thao tác không thể hoàn tác.
@@ -958,7 +958,7 @@ export default function AdminTemplatesPage() {
               <button
                 type="button"
                 onClick={() => setDeleteModalTemplate(null)}
-                className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-semibold"
+                className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 text-xs font-semibold transition-colors"
               >
                 Hủy
               </button>
@@ -966,7 +966,7 @@ export default function AdminTemplatesPage() {
                 type="button"
                 disabled={actionBusy}
                 onClick={handleDeleteSubmit}
-                className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-semibold shadow-md shadow-red-600/30"
+                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-lg shadow-rose-950/40 transition-all"
               >
                 {actionBusy ? "Đang xóa..." : "Xác Nhận Xóa"}
               </button>
