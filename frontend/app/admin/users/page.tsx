@@ -12,6 +12,8 @@ import {
   PaginationMeta,
 } from "@/lib/adminService";
 
+const SOLE_ADMIN_EMAIL = "phantrongquy23032005@gmail.com";
+
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta>({ total: 0, page: 1, pages: 1, limit: 10 });
@@ -151,16 +153,13 @@ export default function AdminUsersPage() {
   // 3. Update Role
   const handleRoleSubmit = async () => {
     if (!roleModalUser) return;
-    setActionBusy(true);
-    const nextRole = roleModalUser.role === "admin" ? "user" : "admin";
-    const res = await updateUserRoleApi(roleModalUser._id, nextRole);
-    if (res.success) {
+    if (roleModalUser.email === SOLE_ADMIN_EMAIL) {
+      alert("Tài khoản Phan Trọng Quý là Quản trị viên cố định duy nhất của hệ thống, không thể thay đổi vai trò.");
       setRoleModalUser(null);
-      loadUsers(pagination.page);
-    } else {
-      alert("Lỗi: " + res.message);
+      return;
     }
-    setActionBusy(false);
+    alert("Hệ thống chỉ duy nhất có 1 Quản trị viên cố định (Phan Trọng Quý). Không thể phân quyền Quản trị viên cho tài khoản khác.");
+    setRoleModalUser(null);
   };
 
   // 4. Batch Import Users
@@ -394,15 +393,16 @@ export default function AdminUsersPage() {
 
                     {/* Role */}
                     <td className="py-3 px-4">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider ${
-                          u.role === "admin"
-                            ? "bg-red-500/15 text-red-400 border border-red-500/30"
-                            : "bg-white/5 text-slate-400 border border-white/10"
-                        }`}
-                      >
-                        {u.role === "admin" ? "Quản trị viên" : "Người dùng"}
-                      </span>
+                      {u.email?.toLowerCase().trim() === SOLE_ADMIN_EMAIL ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider bg-gradient-to-r from-red-600/20 via-rose-500/20 to-amber-500/20 text-rose-300 border border-rose-500/40 shadow-sm">
+                          <span className="material-symbols-rounded text-xs text-amber-400">shield_person</span>
+                          Quản Trị Viên (Cố Định)
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-semibold text-[10px] uppercase tracking-wider bg-white/5 text-slate-400 border border-white/10">
+                          Người Dùng
+                        </span>
+                      )}
                     </td>
 
                     {/* Subscription Plan */}
@@ -466,56 +466,81 @@ export default function AdminUsersPage() {
 
                     {/* Actions */}
                     <td className="py-3 px-4 text-right">
-                      <div className="inline-flex items-center gap-1.5">
-                        {/* View Detail */}
-                        <button
-                          onClick={() => setDetailModalUser(u)}
-                          className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
-                          title="Xem chi tiết"
-                        >
-                          <span className="material-symbols-rounded text-base">visibility</span>
-                        </button>
+                      {(() => {
+                        const isSoleAdmin = u.email?.toLowerCase().trim() === SOLE_ADMIN_EMAIL;
+                        return (
+                          <div className="inline-flex items-center gap-1.5">
+                            {/* View Detail */}
+                            <button
+                              onClick={() => setDetailModalUser(u)}
+                              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
+                              title="Xem chi tiết"
+                            >
+                              <span className="material-symbols-rounded text-base">visibility</span>
+                            </button>
 
-                        {/* Change Plan */}
-                        <button
-                          onClick={() => {
-                            setPlanModalUser(u);
-                            setSelectedPlan(u.plan || "free");
-                            setPlanMonths(1);
-                          }}
-                          className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-amber-400 hover:text-amber-300 border border-white/10 transition-colors cursor-pointer"
-                          title="Cập nhật gói cước (Free / Pro / Studio)"
-                        >
-                          <span className="material-symbols-rounded text-base">workspace_premium</span>
-                        </button>
+                            {/* Change Plan */}
+                            <button
+                              onClick={() => {
+                                setPlanModalUser(u);
+                                setSelectedPlan(u.plan || "free");
+                                setPlanMonths(1);
+                              }}
+                              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-amber-400 hover:text-amber-300 border border-white/10 transition-colors cursor-pointer"
+                              title="Cập nhật gói cước (Free / Pro / Studio)"
+                            >
+                              <span className="material-symbols-rounded text-base">workspace_premium</span>
+                            </button>
 
-                        {/* Change Role */}
-                        <button
-                          onClick={() => setRoleModalUser(u)}
-                          className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-rose-400 hover:text-rose-300 border border-white/10 transition-colors cursor-pointer"
-                          title="Thay đổi vai trò"
-                        >
-                          <span className="material-symbols-rounded text-base">manage_accounts</span>
-                        </button>
+                            {/* Change Role */}
+                            {isSoleAdmin ? (
+                              <button
+                                disabled
+                                className="p-1.5 rounded-lg bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed opacity-40"
+                                title="Quản trị viên Phan Trọng Quý là tài khoản cố định duy nhất"
+                              >
+                                <span className="material-symbols-rounded text-base">manage_accounts</span>
+                              </button>
+                            ) : (
+                              <button
+                                disabled
+                                className="p-1.5 rounded-lg bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed opacity-40"
+                                title="Hệ thống chỉ có duy nhất 1 Quản trị viên: Phan Trọng Quý (Tài khoản fix cứng)"
+                              >
+                                <span className="material-symbols-rounded text-base">manage_accounts</span>
+                              </button>
+                            )}
 
-                        {/* Ban / Unban */}
-                        <button
-                          onClick={() => {
-                            setStatusModalUser(u);
-                            setBanReason(u.bannedReason || "");
-                          }}
-                          className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
-                            u.status === "banned"
-                              ? "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/20"
-                              : "bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border-rose-500/20"
-                          }`}
-                          title={u.status === "banned" ? "Mở khóa tài khoản" : "Khóa tài khoản"}
-                        >
-                          <span className="material-symbols-rounded text-base">
-                            {u.status === "banned" ? "lock_open" : "lock"}
-                          </span>
-                        </button>
-                      </div>
+                            {/* Ban / Unban */}
+                            {isSoleAdmin ? (
+                              <button
+                                disabled
+                                className="p-1.5 rounded-lg bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed opacity-40"
+                                title="Quản trị viên Phan Trọng Quý là tài khoản cố định, không thể khóa"
+                              >
+                                <span className="material-symbols-rounded text-base">lock</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setStatusModalUser(u);
+                                  setBanReason(u.bannedReason || "");
+                                }}
+                                className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
+                                  u.status === "banned"
+                                    ? "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/20"
+                                    : "bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border-rose-500/20"
+                                }`}
+                                title={u.status === "banned" ? "Mở khóa tài khoản" : "Khóa tài khoản"}
+                              >
+                                <span className="material-symbols-rounded text-base">
+                                  {u.status === "banned" ? "lock_open" : "lock"}
+                                </span>
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
                   </tr>
                 ))}
@@ -619,14 +644,13 @@ export default function AdminUsersPage() {
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
                     Vai trò
                   </label>
-                  <select
-                    value={newRole}
-                    onChange={(e) => setNewRole(e.target.value as any)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#060911] border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-red-500/60"
-                  >
-                    <option value="user">User (Người dùng)</option>
-                    <option value="admin">Admin (Quản trị viên)</option>
-                  </select>
+                  <div className="w-full px-3.5 py-2.5 rounded-xl bg-[#060911]/60 border border-white/10 text-xs sm:text-sm text-slate-300 flex items-center justify-between">
+                    <span>Người dùng (User)</span>
+                    <span className="text-[10px] text-amber-400 font-medium">Mặc định</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    * Quản trị viên cố định duy nhất: Phan Trọng Quý
+                  </p>
                 </div>
               </div>
 
@@ -852,39 +876,40 @@ export default function AdminUsersPage() {
           <div className="w-full max-w-md bg-[#0d131f] border border-white/10 rounded-3xl p-6 shadow-2xl shadow-black/80">
             <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
               <span className="material-symbols-rounded text-rose-400">shield_person</span>
-              Thay Đổi Vai Trò: {roleModalUser.name}
+              Vai Trò: {roleModalUser.name}
             </h3>
 
-            <p className="text-xs text-neutral-400 mb-4 leading-relaxed">
-              Bạn đang chuyển đổi vai trò của người dùng từ{" "}
-              <span className="font-semibold text-white">{roleModalUser.role}</span> sang{" "}
-              <span className="font-semibold text-rose-400">
-                {roleModalUser.role === "admin" ? "user (Người dùng thường)" : "admin (Quản trị viên)"}
-              </span>
-              .
-            </p>
-
-            {roleModalUser.role === "admin" && (
-              <div className="mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs">
-                ⚠️ Lưu ý: Hệ thống được bảo vệ và sẽ từ chối nếu đây là Quản trị viên cuối cùng.
-              </div>
-            )}
+            <div className="mb-5 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs leading-relaxed space-y-2">
+              {roleModalUser.email === SOLE_ADMIN_EMAIL ? (
+                <>
+                  <div className="font-semibold text-amber-200 flex items-center gap-1.5 text-sm">
+                    <span className="material-symbols-rounded text-base">verified_user</span>
+                    Quản Trị Viên Cố Định Duy Nhất
+                  </div>
+                  <p className="text-slate-300">
+                    Tài khoản <strong>{roleModalUser.email}</strong> (Phan Trọng Quý) là Quản trị viên cố định duy nhất của nền tảng PickMe3D. Vai trò này được bảo vệ cố định và không thể thay đổi hay hạ cấp.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="font-semibold text-amber-200 flex items-center gap-1.5 text-sm">
+                    <span className="material-symbols-rounded text-base">lock</span>
+                    Chính Sách Quản Trị Viên Cố Định
+                  </div>
+                  <p className="text-slate-300">
+                    Hệ thống chỉ duy nhất có 1 Quản trị viên cố định là <strong>Phan Trọng Quý</strong> ({SOLE_ADMIN_EMAIL}). Toàn bộ tài khoản khác được chỉ định cố định vai trò Người dùng (User) và không thể nâng cấp.
+                  </p>
+                </>
+              )}
+            </div>
 
             <div className="flex justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => setRoleModalUser(null)}
-                className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 text-xs font-semibold transition-colors"
+                className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-white text-xs font-semibold transition-colors"
               >
-                Hủy
-              </button>
-              <button
-                type="button"
-                disabled={actionBusy}
-                onClick={handleRoleSubmit}
-                className="px-5 py-2 rounded-xl bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 hover:from-red-500 hover:via-rose-400 hover:to-amber-400 text-white text-xs font-semibold shadow-lg shadow-red-950/40 transition-all"
-              >
-                {actionBusy ? "Đang xử lý..." : "Xác Nhận Thay Đổi"}
+                Đã hiểu & Đóng
               </button>
             </div>
           </div>
@@ -935,7 +960,9 @@ export default function AdminUsersPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 rounded-xl bg-[#060911] border border-white/10">
                   <span className="text-neutral-500 block mb-1">Vai trò</span>
-                  <span className="font-semibold text-white capitalize">{detailModalUser.role}</span>
+                  <span className={`font-semibold ${detailModalUser.email === SOLE_ADMIN_EMAIL ? "text-rose-400" : "text-white"}`}>
+                    {detailModalUser.email === SOLE_ADMIN_EMAIL ? "Quản Trị Viên (Cố Định)" : "Người Dùng"}
+                  </span>
                 </div>
                 <div className="p-3 rounded-xl bg-[#060911] border border-white/10">
                   <span className="text-neutral-500 block mb-1">Trạng thái</span>

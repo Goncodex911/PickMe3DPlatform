@@ -178,24 +178,20 @@ exports.googleLogin = async (req, res, next) => {
 exports.adminLogin = async (req, res, next) => {
   try {
     const adminEmail = (process.env.ADMIN_EMAIL || 'phantrongquy23032005@gmail.com').toLowerCase().trim();
-    const inputEmail = (req.body?.email || req.body?.adminEmail || '').toLowerCase().trim();
-    const inputUsername = (req.body?.username || '').trim();
+    const inputEmail = (req.body?.email || req.body?.adminEmail || req.body?.username || '').toLowerCase().trim();
 
-    // Admin logs in via email without password
-    const isMatchingEmail = inputEmail === adminEmail;
-    const isMatchingUsername = inputUsername && inputUsername === (process.env.ADMIN_USERNAME || 'admin123');
-
-    if (!isMatchingEmail && !isMatchingUsername) {
+    // Sole admin is Phan Trọng Quý
+    if (inputEmail !== adminEmail) {
       return res.status(401).json({
         success: false,
-        message: `Email '${inputEmail || inputUsername}' không phải là email quản trị viên. Email quản trị viên hợp lệ là: ${adminEmail}`,
+        message: `Hệ thống chỉ có duy nhất 1 Quản trị viên: Phan Trọng Quý (${adminEmail})`,
       });
     }
 
     let userObj = {
       id: 'admin-root',
       _id: 'admin-root',
-      name: 'Admin Phan Trọng Quý',
+      name: 'Phan Trọng Quý',
       email: adminEmail,
       picture: '',
       role: 'admin',
@@ -210,7 +206,7 @@ exports.adminLogin = async (req, res, next) => {
 
         if (!adminUser) {
           adminUser = await User.create({
-            name: 'Admin Phan Trọng Quý',
+            name: 'Phan Trọng Quý',
             email: adminEmail,
             role: 'admin',
             status: 'active',
