@@ -135,9 +135,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // 1. Loading State
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0d0f17] text-white flex flex-col items-center justify-center p-6">
-        <div className="w-12 h-12 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin mb-4" />
-        <p className="text-neutral-400 text-sm font-medium">Đang xác thực quyền Quản trị viên...</p>
+      <div className="min-h-[calc(100vh-68px)] bg-[#090d16] text-white flex flex-col items-center justify-center p-6">
+        <div className="w-12 h-12 rounded-full border-2 border-red-500/20 border-t-red-500 animate-spin mb-4" />
+        <p className="text-slate-400 text-xs font-mono tracking-widest uppercase">Đang xác thực quyền Quản trị viên...</p>
       </div>
     );
   }
@@ -145,19 +145,34 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // 2. Unauthorized State -> Displays Admin Email / Google Login Form
   if (!isAuthorized) {
     return (
-      <div className="min-h-screen bg-[#0b0d14] text-white flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-[#151926] border border-neutral-800 rounded-3xl p-8 shadow-2xl">
-          <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 mx-auto flex items-center justify-center mb-5">
-            <span className="material-symbols-rounded text-3xl">admin_panel_settings</span>
+      <div className="min-h-[calc(100vh-68px)] bg-[#090d16] text-white flex items-center justify-center p-6 relative overflow-hidden">
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "radial-gradient(circle at 50% 25%, rgba(229, 43, 43, 0.12), transparent 60%)",
+          }}
+        />
+
+        <div className="max-w-md w-full bg-[#0d131f] border border-white/10 rounded-[32px] p-8 sm:p-10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9),0_0_40px_rgba(229,43,43,0.18)] relative z-10 text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-6 border border-white/10 bg-white/5">
+            <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]" />
+            <span className="text-[10px] tracking-widest text-slate-300 font-mono uppercase">
+              Pick Me 3D Admin Portal
+            </span>
           </div>
 
-          <h2 className="text-2xl font-bold mb-1 text-center">Cổng Quản Trị Viên</h2>
-          <p className="text-neutral-400 text-xs leading-relaxed mb-6 text-center">
-            Đăng nhập bằng email quản trị: <b className="text-indigo-400 font-medium">phantrongquy23032005@gmail.com</b>
+          <h2
+            className="text-3xl sm:text-4xl font-normal text-white mb-2"
+            style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic" }}
+          >
+            Cổng Quản Trị Viên
+          </h2>
+          <p className="text-slate-400 text-xs leading-relaxed mb-6">
+            Đăng nhập để điều hành hệ thống: <b className="text-red-400 font-medium">phantrongquy23032005@gmail.com</b>
           </p>
 
           {currentUser && currentUser.role !== "admin" && (
-            <div className="mb-5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between gap-2">
+            <div className="mb-5 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between gap-2">
               <span>Đang đăng nhập: <b>{currentUser.email}</b> (Không có quyền admin)</span>
               <button
                 onClick={handleLogout}
@@ -169,40 +184,42 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           )}
 
           {loginError && (
-            <div className="mb-5 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-              <span className="material-symbols-rounded text-sm">error</span>
+            <div className="mb-5 p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2 text-left">
+              <span className="material-symbols-rounded text-sm text-rose-400">error</span>
               <span>{loginError}</span>
             </div>
           )}
 
           <div className="space-y-4">
             {/* Google OAuth Login */}
-            <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-[#0e111a] border border-neutral-800">
-              <span className="text-[11px] text-neutral-400 mb-3 font-medium">
+            <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-[#060911] border border-white/10">
+              <span className="text-[11px] text-slate-400 mb-3 font-medium">
                 Đăng nhập tài khoản Google Quản trị
               </span>
-              <GoogleSignInButton
-                onSuccess={handleGoogleSuccess}
-                onError={() => setLoginError("Đăng nhập Google không thành công. Vui lòng thử lại.")}
-              />
+              <div className="p-1 rounded-full border border-white/20 hover:border-red-500/60 transition-all">
+                <GoogleSignInButton
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => setLoginError("Đăng nhập Google không thành công. Vui lòng thử lại.")}
+                />
+              </div>
             </div>
 
             <div className="relative flex items-center justify-center my-3">
-              <div className="border-t border-neutral-800 w-full" />
-              <span className="bg-[#151926] px-3 text-[11px] text-neutral-500 font-medium uppercase tracking-wider">
-                hoặc xác thực nhanh bằng email
+              <div className="border-t border-white/10 w-full" />
+              <span className="bg-[#0d131f] px-3 text-[10px] text-slate-500 font-mono uppercase tracking-wider">
+                hoặc xác thực nhanh
               </span>
-              <div className="border-t border-neutral-800 w-full" />
+              <div className="border-t border-white/10 w-full" />
             </div>
 
             {/* Direct Email Login */}
             <form onSubmit={handleAdminEmailLogin} className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-neutral-300 mb-1.5 text-left">
+              <div className="text-left">
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
                   Email Quản Trị Viên
                 </label>
                 <div className="relative">
-                  <span className="material-symbols-rounded absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 text-sm">
+                  <span className="material-symbols-rounded absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm">
                     mail
                   </span>
                   <input
@@ -210,7 +227,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     value={adminEmail}
                     onChange={(e) => setAdminEmail(e.target.value)}
                     placeholder="phantrongquy23032005@gmail.com"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#0e111a] border border-neutral-700/80 text-xs text-white placeholder-neutral-500 outline-none focus:border-indigo-500"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#060911] border border-white/15 text-xs text-white placeholder-slate-500 outline-none focus:border-red-500/70 transition-colors"
                     required
                   />
                 </div>
@@ -219,18 +236,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <button
                 type="submit"
                 disabled={loginLoading}
-                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 font-semibold text-xs text-white transition-all shadow-lg shadow-indigo-600/30 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3 px-4 rounded-full bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 hover:opacity-95 font-bold text-xs text-white tracking-wider shadow-[0_0_25px_rgba(229,43,43,0.45)] hover:shadow-[0_0_35px_rgba(229,43,43,0.7)] transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
               >
                 <span className="material-symbols-rounded text-base">login</span>
-                <span>{loginLoading ? "Đang xác thực..." : "Xác Nhận Đăng Nhập Với Email"}</span>
+                <span>{loginLoading ? "Đang xác thực..." : "Xác Nhận Đăng Nhập Admin"}</span>
               </button>
             </form>
           </div>
 
-          <div className="mt-6 pt-5 border-t border-neutral-800 text-center">
+          <div className="mt-6 pt-5 border-t border-white/10 text-center">
             <Link
               href="/"
-              className="text-xs text-neutral-400 hover:text-white transition-colors flex items-center justify-center gap-1"
+              className="text-xs text-slate-400 hover:text-white transition-colors inline-flex items-center gap-1"
             >
               <span className="material-symbols-rounded text-sm">arrow_back</span>
               <span>Về trang chủ PickMe3D</span>
@@ -242,84 +259,65 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   // 3. Authorized Admin Layout
+  const activeItem = NAV_ITEMS.find((item) =>
+    item.exact ? pathname === item.href : pathname.startsWith(item.href)
+  );
+
   return (
-    <div className="min-h-screen bg-[#0b0d14] text-neutral-200 flex flex-col font-sans antialiased selection:bg-indigo-500 selection:text-white">
-      {/* Top Navigation Bar */}
-      <header className="h-16 bg-[#121624]/90 backdrop-blur-md border-b border-neutral-800/80 sticky top-0 z-40 px-4 sm:px-6 flex items-center justify-between">
+    <div className="min-h-[calc(100vh-68px)] bg-[#090d16] text-neutral-200 flex flex-col font-sans antialiased selection:bg-red-500 selection:text-white">
+      {/* Admin Contextual Sub-Control Bar (under SiteNav) */}
+      <header className="h-14 bg-[#0d131f]/90 backdrop-blur-xl border-b border-white/[0.08] sticky top-0 z-30 px-4 sm:px-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 rounded-xl hover:bg-neutral-800/80 text-neutral-400 hover:text-white transition-colors"
-            title="Toggle Sidebar"
+            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 transition-colors"
+            title="Thu gọn / Mở rộng Menu"
+            aria-label="Toggle Sidebar"
           >
-            <span className="material-symbols-rounded text-xl">
+            <span className="material-symbols-rounded text-lg">
               {sidebarOpen ? "menu_open" : "menu"}
             </span>
           </button>
 
-          <Link href="/admin" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-indigo-500/20">
-              3D
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-base text-white tracking-tight">PickMe3D</span>
-              <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 rounded-md">
-                Admin Console
-              </span>
-            </div>
-          </Link>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]" />
+            <span className="font-bold text-xs sm:text-sm text-white tracking-wide">
+              Admin Console
+            </span>
+            <span className="hidden sm:inline-block text-slate-600">•</span>
+            <span className="hidden sm:inline-block text-xs text-slate-400 font-medium">
+              {activeItem?.label || "Bảng điều khiển"}
+            </span>
+            <span className="px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider bg-red-500/15 text-red-400 border border-red-500/30 rounded-full font-bold ml-1">
+              Super Admin
+            </span>
+          </div>
         </div>
 
-        {/* Right Header Actions */}
-        <div className="flex items-center gap-3">
+        {/* Right Action Shortcuts */}
+        <div className="flex items-center gap-2.5">
+          <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-400 font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span>Core v1.0 • Atlas Connected</span>
+          </div>
+
           <Link
             href="/editor"
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-800/60 hover:bg-neutral-800 text-xs font-medium text-neutral-300 transition-colors border border-neutral-700/50"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-xs font-medium text-slate-300 hover:text-white transition-all border border-white/10"
+            title="Mở trình chỉnh sửa Canvas 3D"
           >
-            <span className="material-symbols-rounded text-base text-indigo-400">palette</span>
-            Mở 3D Editor
+            <span className="material-symbols-rounded text-sm text-amber-400">palette</span>
+            <span className="hidden sm:inline">3D Canvas</span>
           </Link>
 
           <Link
             href="/templates"
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-800/60 hover:bg-neutral-800 text-xs font-medium text-neutral-300 transition-colors border border-neutral-700/50"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-xs font-medium text-slate-300 hover:text-white transition-all border border-white/10"
+            title="Xem thư viện mẫu giao diện"
           >
-            <span className="material-symbols-rounded text-base text-purple-400">category</span>
-            Xem Thư viện
+            <span className="material-symbols-rounded text-sm text-rose-400">category</span>
+            <span className="hidden sm:inline">Thư viện</span>
           </Link>
-
-          <div className="h-5 w-[1px] bg-neutral-800 hidden sm:block mx-1" />
-
-          {/* Admin User Badge */}
-          <div className="flex items-center gap-2 pl-1">
-            {currentUser?.picture ? (
-              <img
-                src={currentUser.picture}
-                alt={currentUser.name}
-                className="w-8 h-8 rounded-full border border-indigo-500/40 object-cover"
-              />
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">
-                {currentUser?.name?.charAt(0) || "A"}
-              </div>
-            )}
-            <div className="hidden md:flex flex-col text-left">
-              <span className="text-xs font-medium text-white leading-tight">
-                {currentUser?.name || "Administrator"}
-              </span>
-              <span className="text-[10px] text-indigo-400 font-semibold leading-tight">
-                Super Admin
-              </span>
-            </div>
-          </div>
-
-          <button
-            onClick={handleLogout}
-            className="p-2 rounded-xl text-neutral-400 hover:text-red-400 hover:bg-red-500/10 transition-colors ml-1"
-            title="Đăng xuất"
-          >
-            <span className="material-symbols-rounded text-xl">logout</span>
-          </button>
         </div>
       </header>
 
@@ -328,11 +326,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <aside
           className={`${
             sidebarOpen ? "w-64" : "w-20"
-          } shrink-0 bg-[#0f121d] border-r border-neutral-800/80 transition-all duration-200 flex flex-col justify-between hidden md:flex`}
+          } shrink-0 bg-[#0d131f]/95 backdrop-blur-md border-r border-white/[0.08] transition-all duration-200 flex flex-col justify-between hidden md:flex select-none`}
         >
-          <div className="p-3 space-y-1">
-            <div className={`px-3 py-2 text-[11px] font-semibold text-neutral-500 uppercase tracking-wider ${!sidebarOpen && "text-center"}`}>
-              {sidebarOpen ? "Hệ thống quản trị" : "Menu"}
+          <div className="p-3 space-y-1.5">
+            <div className={`px-3 py-2 text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest ${!sidebarOpen && "text-center"}`}>
+              {sidebarOpen ? "Mục Quản Trị" : "•••"}
             </div>
 
             {NAV_ITEMS.map((item) => {
@@ -341,17 +339,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all group relative ${
                     active
-                      ? "bg-indigo-600/15 text-indigo-400 border border-indigo-500/30 font-semibold shadow-sm"
-                      : "text-neutral-400 hover:bg-neutral-800/50 hover:text-neutral-200 border border-transparent"
+                      ? "bg-gradient-to-r from-red-500/15 via-rose-500/10 to-transparent text-white border-l-2 border-red-500 shadow-[inset_0_0_20px_rgba(239,68,68,0.06)] font-semibold"
+                      : "text-slate-400 hover:bg-white/5 hover:text-white border-l-2 border-transparent"
                   } ${!sidebarOpen && "justify-center"}`}
                   title={item.label}
                 >
-                  <span className={`material-symbols-rounded text-xl ${active ? "text-indigo-400" : "text-neutral-500"}`}>
+                  <span
+                    className={`material-symbols-rounded text-xl transition-colors ${
+                      active ? "text-red-400" : "text-slate-500 group-hover:text-slate-300"
+                    }`}
+                  >
                     {item.icon}
                   </span>
                   {sidebarOpen && <span className="truncate">{item.label}</span>}
+                  {active && sidebarOpen && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 ml-auto shadow-[0_0_6px_#ef4444]" />
+                  )}
                 </Link>
               );
             })}
@@ -359,20 +364,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           {/* Sidebar Footer */}
           {sidebarOpen && (
-            <div className="p-4 m-3 rounded-2xl bg-[#151926] border border-neutral-800 text-xs text-neutral-400">
-              <div className="flex items-center gap-2 mb-1.5 text-neutral-300 font-semibold">
+            <div className="p-4 m-3 rounded-2xl bg-white/[0.02] border border-white/[0.06] text-xs text-slate-400">
+              <div className="flex items-center gap-2 mb-1.5 text-slate-200 font-semibold text-[11px]">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                PickMe3D Core API
+                PickMe3D Core Platform
               </div>
-              <p className="text-[11px] text-neutral-500 leading-relaxed">
-                Máy chủ hoạt động bình thường trên MongoDB Atlas & Node.js.
+              <p className="text-[10px] text-slate-500 leading-relaxed font-mono">
+                Cơ sở dữ liệu Atlas MongoDB & PayOS Gateway hoạt động ổn định.
               </p>
             </div>
           )}
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto bg-[#0b0d14] p-4 sm:p-6 lg:p-8">
+        <main
+          className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8"
+          style={{
+            background:
+              "radial-gradient(circle at 50% 0%, rgba(229, 43, 43, 0.03), transparent 50%), #090d16",
+          }}
+        >
           <div className="max-w-7xl mx-auto">{children}</div>
         </main>
       </div>

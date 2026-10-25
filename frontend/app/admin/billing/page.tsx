@@ -95,11 +95,11 @@ export default function AdminBillingPage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
-            <span className="material-symbols-rounded text-indigo-400 text-3xl">payments</span>
+          <h1 className="text-2xl sm:text-3xl font-bold font-serif text-white tracking-tight flex items-center gap-3">
+            <span className="material-symbols-rounded text-rose-400 text-3xl">payments</span>
             Quản Trị Doanh Thu & Gói Cước
           </h1>
-          <p className="text-neutral-400 text-sm mt-1">
+          <p className="text-neutral-400 text-xs sm:text-sm mt-1">
             Theo dõi giao dịch qua cổng PayOS, quản lý đơn hàng đăng ký Pro/Studio và đối soát doanh thu.
           </p>
         </div>
@@ -108,14 +108,14 @@ export default function AdminBillingPage() {
           <button
             onClick={handleExportCsv}
             disabled={exporting}
-            className="px-4 py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 border border-neutral-700/80 text-xs font-semibold text-neutral-200 hover:text-white transition-all flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
+            className="px-4 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-neutral-200 hover:text-white transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-black/40 disabled:opacity-50"
           >
             <span className="material-symbols-rounded text-base text-emerald-400">download</span>
             <span>{exporting ? "Đang xuất..." : "Xuất CSV Đơn Hàng"}</span>
           </button>
           <button
             onClick={() => loadData()}
-            className="p-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 border border-neutral-700/80 text-neutral-300 hover:text-white transition-all cursor-pointer"
+            className="p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 hover:text-white transition-all cursor-pointer shadow-lg shadow-black/40"
             title="Làm mới dữ liệu"
           >
             <span className="material-symbols-rounded text-base">refresh</span>
@@ -126,13 +126,13 @@ export default function AdminBillingPage() {
       {/* KPI Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Revenue */}
-        <div className="p-5 rounded-2xl bg-[#141824] border border-neutral-800/80 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
+        <div className="p-5 rounded-2xl bg-[#0d131f] border border-white/10 flex items-center gap-4 shadow-xl shadow-black/40">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
             <span className="material-symbols-rounded text-2xl">monetization_on</span>
           </div>
           <div>
             <p className="text-xs text-neutral-400 font-medium">Tổng Doanh Thu Đã Thu</p>
-            <p className="text-xl font-bold text-white mt-0.5">
+            <p className="text-2xl font-serif font-normal text-white mt-0.5">
               {formatCurrency(stats?.billing?.totalRevenue || orderSummary.totalRevenue || 0)}
             </p>
             <p className="text-[11px] text-emerald-400 font-semibold mt-0.5">
@@ -142,27 +142,27 @@ export default function AdminBillingPage() {
         </div>
 
         {/* Pro Subscribers */}
-        <div className="p-5 rounded-2xl bg-[#141824] border border-neutral-800/80 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center flex-shrink-0">
+        <div className="p-5 rounded-2xl bg-[#0d131f] border border-white/10 flex items-center gap-4 shadow-xl shadow-black/40">
+          <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center flex-shrink-0">
             <span className="material-symbols-rounded text-2xl">workspace_premium</span>
           </div>
           <div>
             <p className="text-xs text-neutral-400 font-medium">Người Dùng Gói Pro</p>
-            <p className="text-xl font-bold text-white mt-0.5">
+            <p className="text-2xl font-serif font-normal text-white mt-0.5">
               {stats?.plans?.pro ?? 0}
             </p>
-            <p className="text-[11px] text-indigo-400 font-semibold mt-0.5">99.000 ₫ / tháng</p>
+            <p className="text-[11px] text-rose-400 font-semibold mt-0.5">99.000 ₫ / tháng</p>
           </div>
         </div>
 
         {/* Studio Subscribers */}
-        <div className="p-5 rounded-2xl bg-[#141824] border border-neutral-800/80 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0">
+        <div className="p-5 rounded-2xl bg-[#0d131f] border border-white/10 flex items-center gap-4 shadow-xl shadow-black/40">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0">
             <span className="material-symbols-rounded text-2xl">diamond</span>
           </div>
           <div>
             <p className="text-xs text-neutral-400 font-medium">Người Dùng Gói Studio</p>
-            <p className="text-xl font-bold text-white mt-0.5">
+            <p className="text-2xl font-serif font-normal text-white mt-0.5">
               {stats?.plans?.studio ?? 0}
             </p>
             <p className="text-[11px] text-amber-400 font-semibold mt-0.5">199.000 ₫ / tháng</p>
@@ -170,22 +170,22 @@ export default function AdminBillingPage() {
         </div>
 
         {/* Free Plan Accounts */}
-        <div className="p-5 rounded-2xl bg-[#141824] border border-neutral-800/80 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-slate-500/10 border border-slate-500/20 text-slate-400 flex items-center justify-center flex-shrink-0">
+        <div className="p-5 rounded-2xl bg-[#0d131f] border border-white/10 flex items-center gap-4 shadow-xl shadow-black/40">
+          <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 text-neutral-400 flex items-center justify-center flex-shrink-0">
             <span className="material-symbols-rounded text-2xl">person</span>
           </div>
           <div>
             <p className="text-xs text-neutral-400 font-medium">Người Dùng Gói Free</p>
-            <p className="text-xl font-bold text-white mt-0.5">
+            <p className="text-2xl font-serif font-normal text-white mt-0.5">
               {stats?.plans?.free ?? stats?.users?.total ?? 0}
             </p>
-            <p className="text-[11px] text-neutral-400 font-semibold mt-0.5">Tài nguyên tiêu chuẩn</p>
+            <p className="text-[11px] text-neutral-500 font-semibold mt-0.5">Tài nguyên tiêu chuẩn</p>
           </div>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="p-4 rounded-2xl bg-[#141824] border border-neutral-800/80 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+      <div className="p-4 rounded-2xl bg-[#0d131f] border border-white/10 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 shadow-xl shadow-black/40">
         <div className="flex flex-wrap items-center gap-3">
           {/* Status Filter */}
           <div className="flex items-center gap-2">
@@ -196,7 +196,7 @@ export default function AdminBillingPage() {
                 setStatusFilter(e.target.value);
                 setPage(1);
               }}
-              className="bg-[#0f121d] border border-neutral-700/80 text-xs text-neutral-200 rounded-xl px-3 py-2 outline-none focus:border-indigo-500"
+              className="bg-[#060911] border border-white/10 text-xs text-neutral-200 rounded-xl px-3 py-2 outline-none focus:border-red-500/60"
             >
               <option value="all">Tất cả</option>
               <option value="PAID">Đã thanh toán (PAID)</option>
@@ -214,7 +214,7 @@ export default function AdminBillingPage() {
                 setPlanFilter(e.target.value);
                 setPage(1);
               }}
-              className="bg-[#0f121d] border border-neutral-700/80 text-xs text-neutral-200 rounded-xl px-3 py-2 outline-none focus:border-indigo-500"
+              className="bg-[#060911] border border-white/10 text-xs text-neutral-200 rounded-xl px-3 py-2 outline-none focus:border-red-500/60"
             >
               <option value="all">Tất cả gói</option>
               <option value="pro">Pro Plan</option>
@@ -225,7 +225,7 @@ export default function AdminBillingPage() {
 
         {/* Search by Order Code */}
         <div className="relative min-w-[260px]">
-          <span className="material-symbols-rounded absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-sm">
+          <span className="material-symbols-rounded absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 text-sm">
             search
           </span>
           <input
@@ -236,16 +236,16 @@ export default function AdminBillingPage() {
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="w-full pl-9 pr-4 py-2 bg-[#0f121d] border border-neutral-700/80 rounded-xl text-xs text-neutral-200 placeholder-neutral-500 outline-none focus:border-indigo-500"
+            className="w-full pl-9 pr-4 py-2 bg-[#060911] border border-white/10 rounded-xl text-xs text-neutral-200 placeholder-neutral-500 outline-none focus:border-red-500/60 transition-colors"
           />
         </div>
       </div>
 
       {/* Orders Table */}
-      <div className="rounded-2xl bg-[#141824] border border-neutral-800/80 overflow-hidden shadow-sm">
+      <div className="rounded-2xl bg-[#0d131f] border border-white/10 overflow-hidden shadow-xl shadow-black/40">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#10131f] text-neutral-400 font-semibold border-b border-neutral-800 uppercase tracking-wider text-[11px]">
+            <thead className="bg-[#060911] text-neutral-400 font-semibold border-b border-white/10 uppercase tracking-wider text-[11px]">
               <tr>
                 <th className="py-3.5 px-4">Mã Đơn</th>
                 <th className="py-3.5 px-4">Khách Hàng</th>
@@ -257,12 +257,12 @@ export default function AdminBillingPage() {
                 <th className="py-3.5 px-4">Ngày Tạo</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-800/60 text-neutral-300">
+            <tbody className="divide-y divide-white/5 text-neutral-300">
               {loading ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-neutral-400">
                     <div className="flex items-center justify-center gap-2">
-                      <span className="w-4 h-4 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+                      <span className="w-4 h-4 rounded-full border-2 border-rose-500 border-t-transparent animate-spin" />
                       <span>Đang tải danh sách đơn hàng...</span>
                     </div>
                   </td>
@@ -294,10 +294,10 @@ export default function AdminBillingPage() {
                           <img
                             src={order.userPicture}
                             alt=""
-                            className="w-7 h-7 rounded-full object-cover border border-neutral-700"
+                            className="w-7 h-7 rounded-full object-cover border border-white/10"
                           />
                         ) : (
-                          <div className="w-7 h-7 rounded-full bg-indigo-600/20 text-indigo-300 font-bold flex items-center justify-center text-[10px] border border-indigo-500/30">
+                          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-red-500/20 to-amber-500/20 text-rose-300 font-bold flex items-center justify-center text-[10px] border border-white/10">
                             {order.userName ? order.userName[0].toUpperCase() : "U"}
                           </div>
                         )}
@@ -315,7 +315,7 @@ export default function AdminBillingPage() {
                           Studio Plan
                         </span>
                       ) : (
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 uppercase tracking-wider">
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30 uppercase tracking-wider">
                           Pro Plan
                         </span>
                       )}
@@ -371,7 +371,7 @@ export default function AdminBillingPage() {
 
         {/* Pagination Bar */}
         {pagination && pagination.pages > 1 && (
-          <div className="p-4 bg-[#10131f] border-t border-neutral-800 flex items-center justify-between">
+          <div className="p-4 bg-[#060911] border-t border-white/10 flex items-center justify-between">
             <span className="text-xs text-neutral-400">
               Trang <span className="font-bold text-white">{pagination.page}</span> / {pagination.pages} ({pagination.total} đơn)
             </span>
@@ -379,14 +379,14 @@ export default function AdminBillingPage() {
               <button
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold disabled:opacity-40 transition-colors"
+                className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-200 text-xs font-semibold disabled:opacity-40 transition-colors"
               >
                 Trước
               </button>
               <button
                 disabled={page >= pagination.pages}
                 onClick={() => setPage((p) => p + 1)}
-                className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold disabled:opacity-40 transition-colors"
+                className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-200 text-xs font-semibold disabled:opacity-40 transition-colors"
               >
                 Tiếp
               </button>
@@ -396,15 +396,15 @@ export default function AdminBillingPage() {
       </div>
 
       {/* Gateway & Webhook Technical Info */}
-      <div className="p-5 rounded-2xl bg-[#141824] border border-neutral-800/80 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="p-5 rounded-2xl bg-[#0d131f] border border-white/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl shadow-black/40">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center flex-shrink-0">
             <span className="material-symbols-rounded text-xl">hub</span>
           </div>
           <div>
             <h3 className="text-xs font-bold text-white">Tích Hợp Cổng Thanh Toán PayOS</h3>
             <p className="text-[11px] text-neutral-400 mt-0.5">
-              Webhook nhận thanh toán tự động tại: <code className="text-indigo-300 font-mono">/api/payments/webhook</code>. Khi khách quét mã QR VietQR, đơn hàng sẽ chuyển sang PAID và kích hoạt gói ngay lập tức.
+              Webhook nhận thanh toán tự động tại: <code className="text-rose-300 font-mono bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">/api/payments/webhook</code>. Khi khách quét mã QR VietQR, đơn hàng sẽ chuyển sang PAID và kích hoạt gói ngay lập tức.
             </p>
           </div>
         </div>
@@ -412,7 +412,7 @@ export default function AdminBillingPage() {
         <Link
           href="/pricing"
           target="_blank"
-          className="px-3.5 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white text-xs font-semibold transition-colors flex items-center gap-1.5 flex-shrink-0"
+          className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 hover:text-white text-xs font-semibold transition-colors flex items-center gap-1.5 flex-shrink-0"
         >
           <span>Xem Bảng Giá Khách Hàng</span>
           <span className="material-symbols-rounded text-sm">open_in_new</span>

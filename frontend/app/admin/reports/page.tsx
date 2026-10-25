@@ -100,13 +100,13 @@ export default function AdminReportsPage() {
   const getPriorityBadge = (p: string) => {
     switch (p) {
       case "critical":
-        return "bg-red-500/15 text-red-400 border-red-500/30";
+        return "bg-rose-500/20 text-rose-300 border-rose-500/40";
       case "high":
-        return "bg-orange-500/15 text-orange-400 border-orange-500/30";
+        return "bg-orange-500/20 text-orange-300 border-orange-500/40";
       case "medium":
-        return "bg-amber-500/15 text-amber-400 border-amber-500/30";
+        return "bg-amber-500/20 text-amber-300 border-amber-500/40";
       default:
-        return "bg-blue-500/15 text-blue-400 border-blue-500/30";
+        return "bg-white/10 text-neutral-300 border-white/10";
     }
   };
 
@@ -115,9 +115,9 @@ export default function AdminReportsPage() {
       case "resolved":
         return "bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
       case "investigating":
-        return "bg-indigo-500/15 text-indigo-400 border-indigo-500/30";
+        return "bg-rose-500/15 text-rose-300 border-rose-500/30";
       case "dismissed":
-        return "bg-neutral-800 text-neutral-400 border-neutral-700";
+        return "bg-white/5 text-neutral-400 border-white/10";
       default:
         return "bg-amber-500/15 text-amber-400 border-amber-500/30";
     }
@@ -128,10 +128,10 @@ export default function AdminReportsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold font-serif text-white tracking-tight">
             Quản Lý Sự Cố & Báo Cáo Vi Phạm
           </h1>
-          <p className="text-neutral-400 text-sm mt-1">
+          <p className="text-neutral-400 text-xs sm:text-sm mt-1">
             Xử lý phản ánh từ người dùng, kiểm duyệt vi phạm bản quyền, nội dung không phù hợp hoặc sự cố hệ thống.
           </p>
         </div>
@@ -139,15 +139,15 @@ export default function AdminReportsPage() {
         <button
           onClick={handleExportCsv}
           disabled={downloadingCsv}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs sm:text-sm font-semibold transition-all disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-neutral-200 hover:text-white border border-white/10 text-xs sm:text-sm font-semibold transition-all shadow-lg shadow-black/40 disabled:opacity-50"
         >
-          <span className="material-symbols-rounded text-lg">download</span>
+          <span className="material-symbols-rounded text-lg text-emerald-400">download</span>
           {downloadingCsv ? "Đang xuất..." : "Xuất Báo Cáo CSV"}
         </button>
       </div>
 
       {/* Filter Bar */}
-      <div className="p-4 rounded-2xl bg-[#141824] border border-neutral-800/80 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+      <div className="p-4 rounded-2xl bg-[#0d131f] border border-white/10 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between shadow-xl shadow-black/40">
         <form onSubmit={handleSearchSubmit} className="flex-1 flex items-center gap-2">
           <div className="relative flex-1">
             <span className="material-symbols-rounded absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-xl">
@@ -158,12 +158,12 @@ export default function AdminReportsPage() {
               placeholder="Tìm theo nội dung, đối tượng hoặc người báo cáo..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-[#1b2030] border border-neutral-700/60 rounded-xl text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-indigo-500 transition-colors"
+              className="w-full pl-10 pr-4 py-2.5 bg-[#060911] border border-white/10 rounded-xl text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-red-500/60 transition-colors"
             />
           </div>
           <button
             type="submit"
-            className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-xs font-semibold text-white transition-colors border border-neutral-700/50"
+            className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold text-white transition-colors border border-white/10"
           >
             Tìm
           </button>
@@ -176,7 +176,7 @@ export default function AdminReportsPage() {
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="bg-[#1b2030] border border-neutral-700/60 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+              className="bg-[#060911] border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-red-500/60"
             >
               <option value="all">Tất cả</option>
               <option value="pending">Chờ xử lý (Pending)</option>
@@ -192,7 +192,7 @@ export default function AdminReportsPage() {
             <select
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
-              className="bg-[#1b2030] border border-neutral-700/60 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+              className="bg-[#060911] border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-red-500/60"
             >
               <option value="all">Tất cả</option>
               <option value="critical">Khẩn cấp (Critical)</option>
@@ -208,7 +208,7 @@ export default function AdminReportsPage() {
             <select
               value={targetType}
               onChange={(e) => setTargetType(e.target.value)}
-              className="bg-[#1b2030] border border-neutral-700/60 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+              className="bg-[#060911] border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-red-500/60"
             >
               <option value="all">Tất cả</option>
               <option value="template">Mẫu thiết kế</option>
@@ -221,14 +221,14 @@ export default function AdminReportsPage() {
       </div>
 
       {/* Reports Table */}
-      <div className="bg-[#141824] border border-neutral-800/80 rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-[#0d131f] border border-white/10 rounded-2xl overflow-hidden shadow-xl shadow-black/40">
         {loading ? (
           <div className="p-12 text-center text-neutral-400 text-sm">
-            <div className="w-8 h-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin mx-auto mb-3" />
+            <div className="w-8 h-8 rounded-full border-2 border-rose-500 border-t-transparent animate-spin mx-auto mb-3" />
             Đang tải dữ liệu sự cố và báo cáo...
           </div>
         ) : error ? (
-          <div className="p-8 text-center text-red-400 text-sm">{error}</div>
+          <div className="p-8 text-center text-rose-400 text-sm">{error}</div>
         ) : reports.length === 0 ? (
           <div className="p-12 text-center text-neutral-400 text-sm">
             Không có báo cáo sự cố nào phù hợp.
@@ -236,7 +236,7 @@ export default function AdminReportsPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#191f30] text-neutral-400 uppercase font-semibold tracking-wider border-b border-neutral-800">
+              <thead className="bg-[#060911] text-neutral-400 uppercase font-semibold tracking-wider border-b border-white/10 text-[11px]">
                 <tr>
                   <th className="py-3.5 px-4">Đối tượng phản ánh</th>
                   <th className="py-3.5 px-4">Lý do</th>
@@ -247,9 +247,9 @@ export default function AdminReportsPage() {
                   <th className="py-3.5 px-4 text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-800/60 text-neutral-300">
+              <tbody className="divide-y divide-white/5 text-neutral-300">
                 {reports.map((r) => (
-                  <tr key={r._id} className="hover:bg-[#191e2e]/50 transition-colors">
+                  <tr key={r._id} className="hover:bg-white/[0.02] transition-colors">
                     {/* Target */}
                     <td className="py-3 px-4">
                       <div className="font-semibold text-white truncate max-w-xs" title={r.targetTitle || r.targetId}>
@@ -281,7 +281,7 @@ export default function AdminReportsPage() {
                     {/* Priority */}
                     <td className="py-3 px-4">
                       <span
-                        className={`inline-flex px-2 py-0.5 rounded border font-semibold text-[10px] uppercase tracking-wider ${getPriorityBadge(
+                        className={`inline-flex px-2 py-0.5 rounded-full border font-semibold text-[10px] uppercase tracking-wider ${getPriorityBadge(
                           r.priority
                         )}`}
                       >
@@ -292,7 +292,7 @@ export default function AdminReportsPage() {
                     {/* Status */}
                     <td className="py-3 px-4">
                       <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md font-semibold text-[11px] border ${getStatusBadge(
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-semibold text-[11px] border ${getStatusBadge(
                           r.status
                         )}`}
                       >
@@ -301,7 +301,7 @@ export default function AdminReportsPage() {
                             r.status === "resolved"
                               ? "bg-emerald-400"
                               : r.status === "investigating"
-                              ? "bg-indigo-400"
+                              ? "bg-rose-400"
                               : r.status === "dismissed"
                               ? "bg-neutral-500"
                               : "bg-amber-400"
@@ -323,7 +323,7 @@ export default function AdminReportsPage() {
                     <td className="py-3 px-4 text-right">
                       <button
                         onClick={() => openResolutionModal(r)}
-                        className="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 hover:text-indigo-300 font-semibold text-xs border border-indigo-500/30 transition-colors"
+                        className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-rose-300 hover:text-white font-semibold text-xs border border-white/10 transition-colors"
                       >
                         Xử lý
                       </button>
@@ -337,7 +337,7 @@ export default function AdminReportsPage() {
 
         {/* Pagination Footer */}
         {pagination.pages > 1 && (
-          <div className="py-3 px-4 border-t border-neutral-800 flex items-center justify-between text-xs text-neutral-400 bg-[#161a28]">
+          <div className="py-3 px-4 border-t border-white/10 flex items-center justify-between text-xs text-neutral-400 bg-[#060911]">
             <div>
               Trang <span className="font-semibold text-white">{pagination.page}</span> /{" "}
               {pagination.pages} (Tổng {pagination.total} báo cáo)
@@ -346,14 +346,14 @@ export default function AdminReportsPage() {
               <button
                 disabled={pagination.page <= 1}
                 onClick={() => loadReports(pagination.page - 1)}
-                className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 disabled:opacity-40 disabled:pointer-events-none text-white font-medium transition-colors"
+                className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-40 disabled:pointer-events-none text-white font-medium transition-colors"
               >
                 Trước
               </button>
               <button
                 disabled={pagination.page >= pagination.pages}
                 onClick={() => loadReports(pagination.page + 1)}
-                className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 disabled:opacity-40 disabled:pointer-events-none text-white font-medium transition-colors"
+                className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-40 disabled:pointer-events-none text-white font-medium transition-colors"
               >
                 Sau
               </button>
@@ -364,29 +364,29 @@ export default function AdminReportsPage() {
 
       {/* ── MODAL: RESOLVE / UPDATE REPORT ── */}
       {detailReport && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-[#161b29] border border-neutral-700 rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-lg bg-[#0d131f] border border-white/10 rounded-3xl p-6 shadow-2xl shadow-black/80 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <span className="material-symbols-rounded text-indigo-400">gavel</span>
+                <span className="material-symbols-rounded text-rose-400">gavel</span>
                 Xử Lý Báo Cáo Vi Phạm
               </h3>
               <button
                 onClick={() => setDetailReport(null)}
-                className="text-neutral-400 hover:text-white"
+                className="text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-white/5 transition-colors"
               >
                 <span className="material-symbols-rounded">close</span>
               </button>
             </div>
 
             <div className="space-y-3.5 text-xs mb-5">
-              <div className="p-3.5 rounded-xl bg-[#1b2030] border border-neutral-700/60 space-y-2">
+              <div className="p-3.5 rounded-2xl bg-[#060911] border border-white/10 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold uppercase text-indigo-400">
+                  <span className="text-[11px] font-semibold uppercase text-rose-400">
                     {detailReport.targetType}
                   </span>
                   <span className="text-neutral-500">
-                    ID: <code className="text-neutral-300 font-mono">{detailReport.targetId}</code>
+                    ID: <code className="text-neutral-300 font-mono bg-white/5 px-1.5 py-0.5 rounded">{detailReport.targetId}</code>
                   </span>
                 </div>
                 <div className="text-sm font-bold text-white">
@@ -397,7 +397,7 @@ export default function AdminReportsPage() {
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-[#1b2030] border border-neutral-700/60 space-y-1">
+              <div className="p-3.5 rounded-2xl bg-[#060911] border border-white/10 space-y-1">
                 <span className="font-semibold text-neutral-400 block">Nội dung phản ánh từ người dùng:</span>
                 <p className="text-neutral-200 leading-relaxed whitespace-pre-wrap">
                   {detailReport.description}
@@ -416,14 +416,14 @@ export default function AdminReportsPage() {
               )}
             </div>
 
-            <form onSubmit={handleStatusSubmit} className="space-y-4 text-xs border-t border-neutral-800 pt-4">
+            <form onSubmit={handleStatusSubmit} className="space-y-4 text-xs border-t border-white/10 pt-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-neutral-300 mb-1">Cập nhật trạng thái</label>
+                  <label className="block font-semibold text-neutral-300 mb-1.5">Cập nhật trạng thái</label>
                   <select
                     value={editStatus}
                     onChange={(e) => setEditStatus(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#1b2030] border border-neutral-700 text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#060911] border border-white/10 text-white focus:outline-none focus:border-red-500/60"
                   >
                     <option value="pending">Chờ xử lý (Pending)</option>
                     <option value="investigating">Đang điều tra (Investigating)</option>
@@ -433,11 +433,11 @@ export default function AdminReportsPage() {
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-neutral-300 mb-1">Mức độ ưu tiên</label>
+                  <label className="block font-semibold text-neutral-300 mb-1.5">Mức độ ưu tiên</label>
                   <select
                     value={editPriority}
                     onChange={(e) => setEditPriority(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#1b2030] border border-neutral-700 text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#060911] border border-white/10 text-white focus:outline-none focus:border-red-500/60"
                   >
                     <option value="low">Thấp (Low)</option>
                     <option value="medium">Trung bình (Medium)</option>
@@ -448,7 +448,7 @@ export default function AdminReportsPage() {
               </div>
 
               <div>
-                <label className="block font-semibold text-neutral-300 mb-1">
+                <label className="block font-semibold text-neutral-300 mb-1.5">
                   Ghi chú giải quyết của Quản trị viên
                 </label>
                 <textarea
@@ -456,7 +456,7 @@ export default function AdminReportsPage() {
                   value={resolutionNotes}
                   onChange={(e) => setResolutionNotes(e.target.value)}
                   placeholder="Ví dụ: Đã xóa mẫu vi phạm bản quyền và cảnh cáo người dùng..."
-                  className="w-full px-3 py-2 rounded-xl bg-[#1b2030] border border-neutral-700 text-white focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#060911] border border-white/10 text-white focus:outline-none focus:border-red-500/60 placeholder:text-neutral-600"
                 />
               </div>
 
@@ -464,14 +464,14 @@ export default function AdminReportsPage() {
                 <button
                   type="button"
                   onClick={() => setDetailReport(null)}
-                  className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-semibold"
+                  className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 font-semibold transition-colors"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={actionBusy}
-                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold shadow-md shadow-indigo-600/30"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 hover:from-red-500 hover:via-rose-400 hover:to-amber-400 disabled:opacity-50 text-white font-semibold shadow-lg shadow-red-950/40 transition-all"
                 >
                   {actionBusy ? "Đang lưu..." : "Lưu Kết Quả Xử Lý"}
                 </button>
