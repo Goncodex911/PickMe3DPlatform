@@ -9,6 +9,9 @@ const Order = require('../models/Order');
 const Presentation = require('../models/Presentation');
 const { logAdminAction } = require('../helpers/auditLogger');
 
+// Fixed sole administrator of the system
+const SOLE_ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'phantrongquy23032005@gmail.com').toLowerCase().trim();
+
 // ==========================================
 // A. DASHBOARD & SYSTEM OVERVIEW
 // ==========================================
@@ -230,10 +233,18 @@ exports.createAdminUser = async (req, res, next) => {
       }
     }
 
+    // Safety rule: Only Phan Trọng Quý can have the admin role
+    if (role === 'admin' && email.toLowerCase().trim() !== SOLE_ADMIN_EMAIL) {
+      return res.status(400).json({
+        success: false,
+        message: 'Hệ thống chỉ cho phép duy nhất một Quản trị viên cố định: Phan Trọng Quý (phantrongquy23032005@gmail.com)',
+      });
+    }
+
     const newUser = await User.create({
       name: name.trim(),
       email: email.toLowerCase().trim(),
-      role: role === 'admin' ? 'admin' : 'user',
+      role: email.toLowerCase().trim() === SOLE_ADMIN_EMAIL ? 'admin' : 'user',
       jobRole: jobRole.trim(),
       bio: bio.trim(),
       username: username ? username.toLowerCase().trim() : undefined,
@@ -278,6 +289,14 @@ exports.updateUserStatus = async (req, res, next) => {
     // Safety rule: Admin cannot ban themselves
     if (req.user._id.toString() === targetUser._id.toString()) {
       return res.status(400).json({ success: false, message: 'Không thể tự khóa tài khoản của chính mình' });
+    }
+
+    // Safety rule: Cannot ban Phan Trọng Quý (Sole fixed administrator)
+    if (targetUser.email && targetUser.email.toLowerCase().trim() === SOLE_ADMIN_EMAIL && status === 'banned') {
+      return res.status(400).json({
+        success: false,
+        message: 'Không thể khóa tài khoản của Quản trị viên cố định Phan Trọng Quý',
+      });
     }
 
     // Safety rule: Cannot ban the last active admin
@@ -335,6 +354,22 @@ exports.updateUserRole = async (req, res, next) => {
     const targetUser = await User.findById(id);
     if (!targetUser) {
       return res.status(404).json({ success: false, message: 'Không tìm thấy người dùng' });
+    }
+
+    // Safety rule: Cannot demote Phan Trọng Quý (Sole fixed administrator)
+    if (targetUser.email && targetUser.email.toLowerCase().trim() === SOLE_ADMIN_EMAIL && role !== 'admin') {
+      return res.status(400).json({
+        success: false,
+        message: 'Không thể thay đổi vai trò của Quản trị viên cố định Phan Trọng Quý',
+      });
+    }
+
+    // Safety rule: Nobody else can be promoted to admin
+    if (role === 'admin' && targetUser.email?.toLowerCase().trim() !== SOLE_ADMIN_EMAIL) {
+      return res.status(400).json({
+        success: false,
+        message: 'Hệ thống chỉ cho phép duy nhất một Quản trị viên cố định: Phan Trọng Quý (phantrongquy23032005@gmail.com)',
+      });
     }
 
     // Safety rule: Prevent demoting the last active admin
