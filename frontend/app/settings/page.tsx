@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import UserAvatar from "@/components/UserAvatar";
+import { fetchMyProfileApi, mergeCurrentUserProfile } from "@/lib/userService";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -17,6 +19,7 @@ export default function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    let active = true;
     const u = localStorage.getItem("pickme3d_user");
     if (!u) {
       router.push("/");
@@ -25,7 +28,18 @@ export default function SettingsPage() {
       setUser(parsedUser);
       setNewName(parsedUser.name);
       setLoading(false);
+
+      void fetchMyProfileApi().then((profile) => {
+        if (!active || !profile) return;
+        const refreshedUser = mergeCurrentUserProfile(parsedUser, profile);
+        setUser(refreshedUser);
+        setNewName(refreshedUser.name || "");
+        localStorage.setItem("pickme3d_user", JSON.stringify(refreshedUser));
+        window.dispatchEvent(new Event("storage"));
+      });
     }
+
+    return () => { active = false; };
   }, [router]);
 
   const handleSaveName = async () => {
@@ -48,6 +62,7 @@ export default function SettingsPage() {
       if (data.success) {
         setUser(data.data);
         localStorage.setItem("pickme3d_user", JSON.stringify(data.data));
+        window.dispatchEvent(new Event("storage"));
         setIsEditingName(false);
       } else {
         alert(data.message || "Lỗi khi cập nhật tên");
@@ -88,6 +103,7 @@ export default function SettingsPage() {
         if (data.success) {
           setUser(data.data);
           localStorage.setItem("pickme3d_user", JSON.stringify(data.data));
+          window.dispatchEvent(new Event("storage"));
         } else {
           alert(data.message || "Lỗi khi cập nhật ảnh");
         }
@@ -123,6 +139,7 @@ export default function SettingsPage() {
       if (data.success) {
         setUser(data.data);
         localStorage.setItem("pickme3d_user", JSON.stringify(data.data));
+        window.dispatchEvent(new Event("storage"));
       } else {
         alert(data.message || "Lỗi khi xoá ảnh");
       }
@@ -147,6 +164,7 @@ export default function SettingsPage() {
       if (data.success) {
         setUser(data.data);
         localStorage.setItem("pickme3d_user", JSON.stringify(data.data));
+        window.dispatchEvent(new Event("storage"));
       } else {
         alert(data.message || "Lỗi khi cập nhật vai trò");
       }
@@ -296,13 +314,7 @@ export default function SettingsPage() {
             onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#f3f4f6")}
             onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
           >
-            {user.picture ? (
-              <img src={user.picture} alt="Avatar" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover" }} />
-            ) : (
-              <div style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "#e5e7eb", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span className="material-symbols-rounded" style={{ color: "#9ca3af" }}>person</span>
-              </div>
-            )}
+            <UserAvatar picture={user.picture} googlePicture={user.googlePicture} name={user.name} email={user.email} size={40} alt="Avatar" />
             <div style={{ flex: 1, overflow: "hidden" }}>
               <div style={{ fontSize: 14, fontWeight: 600, color: "#111827", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>
                 {user.name}
@@ -398,13 +410,7 @@ export default function SettingsPage() {
             {/* Avatar Section */}
             <div style={{ padding: "24px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #e5e7eb" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                {user.picture ? (
-                  <img src={user.picture} alt="Avatar" style={{ width: 72, height: 72, borderRadius: "50%", objectFit: "cover" }} />
-                ) : (
-                  <div style={{ width: 72, height: 72, borderRadius: "50%", backgroundColor: "#e5e7eb", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span className="material-symbols-rounded" style={{ fontSize: 40, color: "#9ca3af" }}>person</span>
-                  </div>
-                )}
+                <UserAvatar picture={user.picture} googlePicture={user.googlePicture} name={user.name} email={user.email} size={72} alt="Avatar" />
                 <span style={{ fontSize: 15, fontWeight: 600, color: "#374151" }}>Ảnh hồ sơ</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>

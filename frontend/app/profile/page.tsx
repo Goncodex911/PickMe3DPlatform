@@ -1,753 +1,427 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  TemplateItem,
-  fetchMyDesignsApi,
-  updateDesignApi,
-  deleteDesignApi,
-  prepareEditorSession,
-} from "@/lib/templateService";
-import NotificationBell from "@/components/NotificationBell";
-import { CollectionCard } from "@/components/CollectionManager";
-import {
-  CollectionItem,
-  fetchMyCollectionsApi,
-  deleteCollectionApi,
-} from "@/lib/collectionService";
-import { updateMyProfileApi } from "@/lib/userService";
+import type { TemplateItem } from "@/lib/templateService";
+import { fetchMyDesignsApi, updateDesignApi, deleteDesignApi, prepareEditorSession } from "@/lib/templateService";
+import { CollectionItem, fetchMyCollectionsApi, deleteCollectionApi } from "@/lib/collectionService";
+import { fetchMyProfileApi, mergeCurrentUserProfile, updateMyProfileApi } from "@/lib/userService";
+import UserAvatar from "@/components/UserAvatar";
 import styles from "./page.module.css";
+
+type ProfileTab = "overview" | "designs" | "collections";
+type DesignFilter = "all" | "public" | "private";
+
+function formatDate(value?: string | Date | null) {
+  if (!value) return "Chưa cập nhật";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? "Chưa cập nhật"
+    : new Intl.DateTimeFormat("vi-VN", { day: "numeric", month: "long", year: "numeric" }).format(date);
+}
+
+function formatCompact(value: number) {
+  return new Intl.NumberFormat("vi-VN", { notation: value > 999 ? "compact" : "standard", maximumFractionDigits: 1 }).format(value || 0);
+}
 
 export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [designs, setDesigns] = useState<TemplateItem[]>([]);
+  const [collections, setCollections] = useState<CollectionItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterMode, setFilterMode] = useState<"all" | "public" | "private">("all");
+  const [loadingCollections, setLoadingCollections] = useState(false);
+  const [tab, setTab] = useState<ProfileTab>("overview");
+  const [filterMode, setFilterMode] = useState<DesignFilter>("all");
   const [searchTag, setSearchTag] = useState("");
   const [editingTagId, setEditingTagId] = useState<string | null>(null);
   const [newTagInput, setNewTagInput] = useState("");
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-
-  // Edit profile modal/state
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState("");
-  const [savingProfile, setSavingProfile] = useState(false);
-
-  // Bio & Username editing
   const [editBio, setEditBio] = useState("");
   const [editUsername, setEditUsername] = useState("");
   const [isEditingBio, setIsEditingBio] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
   const [savingBio, setSavingBio] = useState(false);
 
-  // Profile tab: designs | collections
-  const [profileTab, setProfileTab] = useState<"designs" | "collections">("designs");
-  const [collections, setCollections] = useState<CollectionItem[]>([]);
-  const [loadingCollections, setLoadingCollections] = useState(false);
+  const showToast = useCallback((message: string) => {
+    setToastMessage(message);
+    window.setTimeout(() => setToastMessage(null), 3000);
+  }, []);
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
-  };
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem("pickme3d_user");
-    if (!storedUser) {
-      router.push("/");
-      return;
-    }
-    const u = JSON.parse(storedUser);
-    setUser(u);
-    setEditName(u.name || "");
-    setEditBio(u.bio || "");
-    setEditUsername(u.username || "");
-
-    loadDesigns();
-    loadCollections();
-  }, [router]);
-
-  const loadDesigns = async () => {
+  const loadDesigns = useCallback(async () => {
     setLoading(true);
     const list = await fetchMyDesignsApi();
     setDesigns(list);
     setLoading(false);
-  };
+  }, []);
 
-  // Toggle Public / Private
-  const handleTogglePrivacy = async (design: TemplateItem) => {
-    const id = (design._id || design.id)!;
-    const newStatus = !design.isPublic;
+  const loadCollections = useCallback(async () => {
+    setLoadingCollections(true);
+    const list = await fetchMyCollectionsApi();
+    setCollections(list);
+    setLoadingCollections(false);
+  }, []);
 
-    // Optimistic UI update
-    setDesigns((prev) =>
-      prev.map((d) =>
-        ((d._id || d.id) === id ? { ...d, isPublic: newStatus } : d)
-      )
-    );
-
-    const res = await updateDesignApi(id, { isPublic: newStatus });
-    if (res.success) {
-      showToast(
-        newStatus
-          ? "Đã công khai thiết kế lên Bộ sưu tập mẫu! 🌐"
-          : "Đã chuyển thiết kế sang chế độ riêng tư 🔒"
-      );
-    } else {
-      showToast("Đã lưu trạng thái (chế độ cục bộ)!");
-    }
-  };
-
-  // Add hashtag to design
-  const handleAddTag = async (designId: string) => {
-    if (!newTagInput.trim()) return;
-    const cleanTag = newTagInput.trim().replace(/^#/, "");
-    const design = designs.find((d) => (d._id || d.id) === designId);
-    if (!design) return;
-
-    if (design.tags?.includes(cleanTag)) {
-      setNewTagInput("");
-      setEditingTagId(null);
-      return;
+  useEffect(() => {
+    let active = true;
+    const storedUser = localStorage.getItem("pickme3d_user");
+    if (!storedUser) {
+      router.push("/");
+      return () => { active = false; };
     }
 
-    const updatedTags = [...(design.tags || []), cleanTag];
-    setDesigns((prev) =>
-      prev.map((d) =>
-        ((d._id || d.id) === designId ? { ...d, tags: updatedTags } : d)
-      )
-    );
+    const cachedUser = JSON.parse(storedUser);
+    setUser(cachedUser);
+    setEditName(cachedUser.name || "");
+    setEditBio(cachedUser.bio || "");
+    setEditUsername(cachedUser.username || "");
+    void loadDesigns();
+    void loadCollections();
 
-    setNewTagInput("");
-    setEditingTagId(null);
+    void fetchMyProfileApi().then((profile) => {
+      if (!active || !profile) return;
+      const refreshedUser = mergeCurrentUserProfile(cachedUser, profile);
+      setUser(refreshedUser);
+      setEditName(refreshedUser.name || "");
+      setEditBio(refreshedUser.bio || "");
+      setEditUsername(refreshedUser.username || "");
+      localStorage.setItem("pickme3d_user", JSON.stringify(refreshedUser));
+      window.dispatchEvent(new Event("storage"));
+    });
 
-    await updateDesignApi(designId, { tags: updatedTags });
-    showToast(`Đã thêm hashtag #${cleanTag}!`);
-  };
+    return () => { active = false; };
+  }, [loadCollections, loadDesigns, router]);
 
-  // Remove hashtag
-  const handleRemoveTag = async (designId: string, tagToRemove: string) => {
-    const design = designs.find((d) => (d._id || d.id) === designId);
-    if (!design) return;
+  const publicCount = designs.filter((design) => design.isPublic).length;
+  const privateCount = designs.length - publicCount;
+  const totalViews = designs.reduce((sum, design) => sum + (design.viewsCount || 0), 0);
+  const totalLikes = designs.reduce((sum, design) => sum + (design.likesCount || 0), 0);
+  const latestDesign = useMemo(
+    () => [...designs].sort((a, b) => new Date(b.updatedAt || b.createdAt || 0).getTime() - new Date(a.updatedAt || a.createdAt || 0).getTime())[0],
+    [designs],
+  );
+  const recentActivity = latestDesign?.updatedAt || latestDesign?.createdAt || user?.updatedAt || user?.createdAt;
 
-    const updatedTags = (design.tags || []).filter((t) => t !== tagToRemove);
-    setDesigns((prev) =>
-      prev.map((d) =>
-        ((d._id || d.id) === designId ? { ...d, tags: updatedTags } : d)
-      )
-    );
-
-    await updateDesignApi(designId, { tags: updatedTags });
-    showToast(`Đã xóa hashtag #${tagToRemove}`);
-  };
-
-  const handleEditDesign = (design: TemplateItem) => {
-    prepareEditorSession(design, true);
-    const designId = (design._id || design.id)!;
-    router.push(`/editor?editId=${designId}`);
-  };
-
-  // Delete design
-  const handleDeleteDesign = async (id: string) => {
-    await deleteDesignApi(id);
-    setDesigns((prev) => prev.filter((d) => (d._id || d.id) !== id));
-    setDeleteConfirmId(null);
-    showToast("Đã xóa thiết kế thành công!");
-  };
-
-  // Save profile name
   const handleSaveProfileName = async () => {
-    if (!editName.trim() || editName === user.name) {
+    if (!editName.trim() || editName.trim() === user.name) {
       setIsEditingName(false);
       return;
     }
     setSavingProfile(true);
-    try {
-      const token = localStorage.getItem("pickme3d_token");
-      if (token) {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api"}/users/profile`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ name: editName.trim() }),
-          }
-        );
-        const data = await res.json();
-        if (data.success) {
-          setUser(data.data);
-          localStorage.setItem("pickme3d_user", JSON.stringify(data.data));
-          showToast("Đã cập nhật tên tài khoản!");
-        }
-      } else {
-        const updated = { ...user, name: editName.trim() };
-        setUser(updated);
-        localStorage.setItem("pickme3d_user", JSON.stringify(updated));
-        showToast("Đã lưu tên tài khoản!");
-      }
-    } catch {
-      showToast("Không thể cập nhật tên lúc này.");
-    } finally {
-      setSavingProfile(false);
-      setIsEditingName(false);
+    const result = await updateMyProfileApi({ name: editName.trim() });
+    if (result.success && result.data) {
+      const updated = mergeCurrentUserProfile(user, result.data);
+      setUser(updated);
+      localStorage.setItem("pickme3d_user", JSON.stringify(updated));
+      window.dispatchEvent(new Event("storage"));
+      showToast("Đã cập nhật tên tài khoản.");
+    } else {
+      showToast(result.message || "Không thể cập nhật tên lúc này.");
     }
+    setSavingProfile(false);
+    setIsEditingName(false);
   };
 
-  // Save bio and username
   const handleSaveBio = async () => {
     setSavingBio(true);
     const updates: Record<string, string> = {};
     if (editBio !== (user.bio || "")) updates.bio = editBio.trim();
     if (editUsername !== (user.username || "")) updates.username = editUsername.trim();
-
-    if (Object.keys(updates).length === 0) {
+    if (!Object.keys(updates).length) {
       setIsEditingBio(false);
       setSavingBio(false);
       return;
     }
 
-    const res = await updateMyProfileApi(updates);
-    if (res.success && res.data) {
-      setUser(res.data);
-      localStorage.setItem("pickme3d_user", JSON.stringify(res.data));
-      showToast("Đã cập nhật hồ sơ!");
+    const result = await updateMyProfileApi(updates);
+    if (result.success && result.data) {
+      const updated = mergeCurrentUserProfile(user, result.data);
+      setUser(updated);
+      localStorage.setItem("pickme3d_user", JSON.stringify(updated));
+      window.dispatchEvent(new Event("storage"));
+      showToast("Đã cập nhật hồ sơ.");
     } else {
-      showToast(res.message || "Không thể cập nhật hồ sơ.");
+      showToast(result.message || "Không thể cập nhật hồ sơ.");
     }
     setSavingBio(false);
     setIsEditingBio(false);
   };
 
-  // Load collections
-  const loadCollections = async () => {
-    setLoadingCollections(true);
-    const cols = await fetchMyCollectionsApi();
-    setCollections(cols);
-    setLoadingCollections(false);
+  const handleTogglePrivacy = async (design: TemplateItem) => {
+    const id = (design._id || design.id)!;
+    const isPublic = !design.isPublic;
+    setDesigns((current) => current.map((item) => (item._id || item.id) === id ? { ...item, isPublic } : item));
+    const result = await updateDesignApi(id, { isPublic });
+    showToast(result.success ? (isPublic ? "Thiết kế đã được công khai." : "Thiết kế đã chuyển sang riêng tư.") : "Đã cập nhật trạng thái trong phiên này.");
   };
 
-  // Delete collection
+  const handleAddTag = async (designId: string) => {
+    const tag = newTagInput.trim().replace(/^#/, "");
+    const design = designs.find((item) => (item._id || item.id) === designId);
+    if (!design || !tag) return;
+    if (design.tags?.some((item) => item.toLowerCase() === tag.toLowerCase())) {
+      setNewTagInput("");
+      setEditingTagId(null);
+      return;
+    }
+    const tags = [...(design.tags || []), tag];
+    setDesigns((current) => current.map((item) => (item._id || item.id) === designId ? { ...item, tags } : item));
+    setNewTagInput("");
+    setEditingTagId(null);
+    await updateDesignApi(designId, { tags });
+    showToast(`Đã thêm #${tag}.`);
+  };
+
+  const handleRemoveTag = async (designId: string, tag: string) => {
+    const design = designs.find((item) => (item._id || item.id) === designId);
+    if (!design) return;
+    const tags = (design.tags || []).filter((item) => item !== tag);
+    setDesigns((current) => current.map((item) => (item._id || item.id) === designId ? { ...item, tags } : item));
+    await updateDesignApi(designId, { tags });
+    showToast(`Đã xóa #${tag}.`);
+  };
+
+  const handleEditDesign = (design: TemplateItem) => {
+    prepareEditorSession(design, true);
+    router.push(`/editor?editId=${design._id || design.id}`);
+  };
+
+  const handleDeleteDesign = async (id: string) => {
+    await deleteDesignApi(id);
+    setDesigns((current) => current.filter((design) => (design._id || design.id) !== id));
+    setDeleteConfirmId(null);
+    showToast("Đã xóa thiết kế.");
+  };
+
   const handleDeleteCollection = async (id: string) => {
-    const ok = await deleteCollectionApi(id);
-    if (ok) {
-      setCollections((prev) => prev.filter((c) => c._id !== id));
-      showToast("Đã xóa bộ sưu tập!");
+    if (await deleteCollectionApi(id)) {
+      setCollections((current) => current.filter((collection) => collection._id !== id));
+      showToast("Đã xóa bộ sưu tập.");
     } else {
       showToast("Không thể xóa bộ sưu tập.");
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("pickme3d_token");
-    localStorage.removeItem("pickme3d_user");
-    router.push("/");
-  };
 
-  // Filtered designs
-  const filteredDesigns = designs.filter((item) => {
-    if (filterMode === "public" && !item.isPublic) return false;
-    if (filterMode === "private" && item.isPublic) return false;
-    if (searchTag.trim()) {
-      const q = searchTag.trim().toLowerCase().replace(/^#/, "");
-      const matchTitle = item.title.toLowerCase().includes(q);
-      const matchTag = item.tags?.some((t) => t.toLowerCase().includes(q));
-      return matchTitle || matchTag;
-    }
-    return true;
+
+  const filteredDesigns = designs.filter((design) => {
+    if (filterMode === "public" && !design.isPublic) return false;
+    if (filterMode === "private" && design.isPublic) return false;
+    const query = searchTag.trim().toLowerCase().replace(/^#/, "");
+    if (!query) return true;
+    return design.title.toLowerCase().includes(query) || design.tags?.some((tag) => tag.toLowerCase().includes(query));
   });
-
-  const publicCount = designs.filter((d) => d.isPublic).length;
-  const privateCount = designs.filter((d) => !d.isPublic).length;
 
   if (!user) return null;
 
   return (
-    <div className={styles.page} lang="en">
-      {/* Toast Notification */}
+    <div className={styles.page}>
       {toastMessage && (
         <div className={styles.toast} role="status">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10" />
-            <path d="m9 12 2 2 4-4" />
-          </svg>
-          <span>{toastMessage}</span>
+          <span className="material-symbols-rounded">check_circle</span>
+          {toastMessage}
         </div>
       )}
 
-      {/* Header */}
-      <header className={styles.header}>
-        <Link href="/" className={styles.brand} aria-label="PickMe3D — Home">
-          <svg viewBox="0 0 40 44" fill="currentColor" aria-hidden="true">
-            <path d="M20 1 38 11.5 20 22 2 11.5 20 1ZM2 15l16 9.5V43L2 33V15ZM22 24.5 38 15v18L22 43V24.5Z" />
-          </svg>
-          <span>PickMe3D</span>
-        </Link>
-        <nav className={styles.nav} aria-label="Main navigation">
-          <Link href="/">Home</Link>
-          <Link href="/templates/">Template</Link>
-          <div className={styles.shared}>
-            <NotificationBell />
-          </div>
-          <Link href="/profile/" aria-current="page" className={`${styles.activeNav} ${styles.profileName}`}>
-            {user.name || "Profile"}
-          </Link>
-{user?.role === "admin" && (
-            <Link
-              href="/admin"
-              className="px-3 py-1.5 rounded-full bg-indigo-600/30 hover:bg-indigo-600/40 border border-indigo-500/50 text-xs font-bold text-indigo-300 transition-all flex items-center gap-1.5 shadow-[0_0_15px_rgba(99,102,241,0.3)]"
-            >
-              <span className="material-symbols-rounded text-sm text-indigo-400">admin_panel_settings</span>
-              <span>Admin Console</span>
-            </Link>
-          )}
-          <button onClick={handleLogout} className={styles.logoutBtn} title="Sign out">
-            Sign out
-          </button>
-          <Link href="/editor/" className={styles.primary}>
-            Open Canvas <span aria-hidden="true">↗</span>
-          </Link>
-        </nav>
-      </header>
 
-      {/* Main Container */}
+
+
       <main className={styles.main}>
-        {/* User Profile Hero */}
-        <section className={styles.hero} aria-labelledby="creator-title">
-          <div className={styles.heroLeft}>
-            <div className={styles.avatarWrap}>
-              {user.picture ? (
-                <img src={user.picture} alt={user.name} className={styles.avatarImg} />
-              ) : (
-                <div className={styles.avatarFallback}>{user.name ? user.name[0] : "P"}</div>
-              )}
-              <span className={styles.onlineBadge} title="Online" />
+        <section className={styles.profileCard} aria-labelledby="profile-name">
+          <div className={styles.profileMain}>
+            <UserAvatar
+              picture={user.picture}
+              googlePicture={user.googlePicture}
+              name={user.name}
+              email={user.email}
+              size={152}
+              alt={user.name || "Ảnh đại diện"}
+              className={styles.avatar}
+              style={{ width: "clamp(88px, 14vw, 152px)", height: "clamp(88px, 14vw, 152px)", borderRadius: 14 }}
+            />
+
+            <div className={styles.identity}>
+              <div className={styles.identityTitle}>
+                {isEditingName ? (
+                  <div className={styles.nameEditor}>
+                    <input autoFocus value={editName} onChange={(event) => setEditName(event.target.value)} aria-label="Tên hiển thị" />
+                    <button className={styles.smallPrimary} onClick={handleSaveProfileName} disabled={savingProfile}>{savingProfile ? "Đang lưu" : "Lưu"}</button>
+                    <button className={styles.smallButton} onClick={() => { setEditName(user.name || ""); setIsEditingName(false); }}>Hủy</button>
+                  </div>
+                ) : <h1 id="profile-name">{user.name || "Nhà thiết kế PickMe3D"}</h1>}
+                <span className={styles.roleBadge}>{user.role === "admin" ? "Quản trị viên" : "Nhà sáng tạo"}</span>
+              </div>
+
+              <div className={styles.metaRow}>
+                {user.email && <span><i className="material-symbols-rounded">mail</i>{user.email}</span>}
+                <span><i className="material-symbols-rounded">work</i>{user.jobRole || "Nhà thiết kế số"}</span>
+                <span><i className="material-symbols-rounded">calendar_month</i>Tham gia {formatDate(user.createdAt)}</span>
+              </div>
+
+              {!isEditingBio && <p className={styles.bioPreview}>{user.bio || "Thêm vài dòng giới thiệu để cộng đồng biết thêm về bạn và những ý tưởng bạn đang thực hiện."}</p>}
+              {user.username && <Link className={styles.publicLink} href={`/creator/${user.username}`}><span className="material-symbols-rounded">open_in_new</span>pickme3d.com/creator/{user.username}</Link>}
             </div>
 
-            <div className={styles.heroDetails}>
-              <p className={styles.eyebrow}>YOUR CREATIVE WORKSPACE</p>
-
-              <div className={styles.nameRow}>
-                {isEditingName ? (
-                  <div className={styles.inlineForm}>
-                    <input
-                      type="text"
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      className={styles.textInput}
-                      autoFocus
-                    />
-                    <button
-                      onClick={handleSaveProfileName}
-                      disabled={savingProfile}
-                      className={styles.smallPrimaryBtn}
-                    >
-                      {savingProfile ? "Saving…" : "Save"}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setEditName(user.name);
-                        setIsEditingName(false);
-                      }}
-                      className={styles.smallGhostBtn}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <h1 id="creator-title" className={styles.userName}>
-                      {user.name}
-                    </h1>
-                    <button
-                      onClick={() => setIsEditingName(true)}
-                      className={styles.editNameBtn}
-                      title="Edit name"
-                      aria-label="Edit name"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                      </svg>
-                    </button>
-                  </>
-                )}
-                <span className={styles.roleBadge}>
-                  {user.role === "admin" ? "ADMIN CREATOR" : user.jobRole || "FASHION CREATOR"}
-                </span>
-              </div>
-
-              <p className={styles.userEmail}>{user.email}</p>
-
-              {/* Bio & Username */}
-              <div className={styles.userBioWrap}>
-                {isEditingBio ? (
-                  <div className={styles.bioForm}>
-                    <label>
-                      Username
-                      <input
-                        type="text"
-                        value={editUsername}
-                        onChange={(e) =>
-                          setEditUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))
-                        }
-                        placeholder="e.g. fashionista_99"
-                        className={styles.textInput}
-                        maxLength={30}
-                      />
-                    </label>
-                    <label>
-                      Bio & Introduction
-                      <textarea
-                        value={editBio}
-                        onChange={(e) => setEditBio(e.target.value)}
-                        placeholder="Share a few words about your creative style..."
-                        className={styles.bioTextarea}
-                        rows={3}
-                        maxLength={500}
-                      />
-                    </label>
-                    <div className={styles.bioBtnRow}>
-                      <button
-                        onClick={handleSaveBio}
-                        disabled={savingBio}
-                        className={styles.smallPrimaryBtn}
-                      >
-                        {savingBio ? "Saving…" : "Save profile"}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setEditBio(user.bio || "");
-                          setEditUsername(user.username || "");
-                          setIsEditingBio(false);
-                        }}
-                        className={styles.smallGhostBtn}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    {user.username && <p className={styles.userHandle}>@{user.username}</p>}
-                    {user.bio ? (
-                      <p className={styles.bioText}>{user.bio}</p>
-                    ) : (
-                      <p className={styles.bioText} style={{ color: "#777", fontStyle: "italic" }}>
-                        Chưa có phần giới thiệu. Thêm thông tin cá nhân để cộng đồng biết thêm về bạn.
-                      </p>
-                    )}
-                    <div className={styles.bioActions}>
-                      <button onClick={() => setIsEditingBio(true)} className={styles.editBioBtn}>
-                        {user.bio ? "Chỉnh sửa bio & username" : "Thêm bio & username"}
-                      </button>
-                      {user.username && (
-                        <Link href={`/creator/${user.username}`} className={styles.publicProfileLink}>
-                          <span>Xem hồ sơ công khai</span>
-                          <span aria-hidden="true">↗</span>
-                        </Link>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
+            <div className={styles.profileActions}>
+              {user.role === "admin" && (
+                <Link
+                  className={styles.editButton}
+                  href="/admin"
+                  style={{
+                    background: "linear-gradient(135deg, #4f46e5, #6366f1)",
+                    color: "#fff",
+                    border: "none",
+                    boxShadow: "0 4px 14px rgba(79, 70, 229, 0.4)",
+                  }}
+                  title="Truy cập Bảng Quản trị Admin"
+                >
+                  <span className="material-symbols-rounded">admin_panel_settings</span>
+                  <span>Admin Console</span>
+                </Link>
+              )}
+              <button className={styles.outlineButton} onClick={() => window.print()}><span className="material-symbols-rounded">print</span><span>In hồ sơ</span></button>
+              <button className={styles.editButton} onClick={() => { setIsEditingName(true); setIsEditingBio(true); }}><span className="material-symbols-rounded">edit</span><span>Chỉnh sửa</span></button>
             </div>
           </div>
 
-          {/* Quick Stats Group */}
-          <div className={styles.statsGroup}>
-            <div className={styles.statCard}>
-              <span className={styles.statNumber}>{designs.length}</span>
-              <span className={styles.statLabel}>Thiết kế</span>
-            </div>
-            <div className={styles.statCard}>
-              <span className={styles.statNumber} style={{ color: "#34d399" }}>
-                {publicCount}
-              </span>
-              <span className={styles.statLabel}>Công khai</span>
-            </div>
-            <div className={styles.statCard}>
-              <span className={styles.statNumber} style={{ color: "#fbbf24" }}>
-                {collections.length}
-              </span>
-              <span className={styles.statLabel}>Bộ sưu tập</span>
-            </div>
+          <div className={styles.profileFacts}>
+            <div><span>Vai trò</span><strong>{user.jobRole || "Nhà thiết kế số"}</strong></div>
+            <div><span>Tên người dùng</span><strong>{user.username ? `@${user.username}` : "Chưa thiết lập"}</strong></div>
+            <div><span>Thiết kế công khai</span><strong>{publicCount} tác phẩm</strong></div>
+            <div><span>Bộ sưu tập</span><strong>{collections.length} bộ sưu tập</strong></div>
           </div>
         </section>
 
-        {/* Tab Switcher: Designs | Collections */}
-        <div className={styles.tabRow} role="tablist">
-          <button
-            role="tab"
-            aria-selected={profileTab === "designs"}
-            onClick={() => setProfileTab("designs")}
-            className={styles.tabBtn}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
-              <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
-              <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
-              <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
-              <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2Z" />
-            </svg>
-            <span>Thiết kế ({designs.length})</span>
-          </button>
-          <button
-            role="tab"
-            aria-selected={profileTab === "collections"}
-            onClick={() => setProfileTab("collections")}
-            className={styles.tabBtn}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
-            </svg>
-            <span>Bộ sưu tập ({collections.length})</span>
-          </button>
+        <div className={styles.updatedLine}>
+          <span />
+          <p><i className="material-symbols-rounded">visibility</i>Hoạt động gần đây: {formatDate(recentActivity)}</p>
+          <span />
         </div>
 
-        {/* Section: Designs */}
-        {profileTab === "designs" && (
-          <section aria-labelledby="designs-heading">
-            <div className={styles.sectionHeader}>
-              <div>
-                <h2 id="designs-heading" className={styles.sectionTitle}>
-                  Các mẫu đã chỉnh sửa ({designs.length})
-                </h2>
-                <p className={styles.sectionDesc}>
-                  Quản lý quyền công khai/riêng tư và gắn hashtag cho từng thiết kế của bạn.
-                </p>
+        <nav className={styles.tabs} aria-label="Các mục hồ sơ">
+          <button className={tab === "overview" ? styles.activeTab : ""} onClick={() => setTab("overview")} aria-current={tab === "overview" ? "page" : undefined}>
+            <span>Tổng quan</span><strong>Hồ sơ</strong>
+          </button>
+          <button className={tab === "designs" ? styles.activeTab : ""} onClick={() => setTab("designs")} aria-current={tab === "designs" ? "page" : undefined}>
+            <span>Thiết kế</span><strong>{designs.length}</strong>
+          </button>
+          <button className={tab === "collections" ? styles.activeTab : ""} onClick={() => setTab("collections")} aria-current={tab === "collections" ? "page" : undefined}>
+            <span>Bộ sưu tập</span><strong>{collections.length}</strong>
+          </button>
+        </nav>
+
+        {tab === "overview" && (
+          <section className={styles.overviewGrid}>
+            <article className={styles.panel}>
+              <div className={styles.panelHeader}>
+                <div><h2>Thông tin hồ sơ</h2><p>Thông tin hiển thị trong không gian sáng tạo của bạn.</p></div>
+                {!isEditingBio && <button className={styles.textButton} onClick={() => setIsEditingBio(true)}><span className="material-symbols-rounded">edit</span>Chỉnh sửa</button>}
               </div>
-
-              {/* Filters & Actions */}
-              <div className={styles.controlsRow}>
-                <div className={styles.filtersGroup} role="group" aria-label="Lọc trạng thái">
-                  <button
-                    aria-pressed={filterMode === "all"}
-                    onClick={() => setFilterMode("all")}
-                    className={styles.filterBtn}
-                  >
-                    Tất cả ({designs.length})
-                  </button>
-                  <button
-                    aria-pressed={filterMode === "public"}
-                    onClick={() => setFilterMode("public")}
-                    className={styles.filterBtn}
-                  >
-                    Công khai ({publicCount})
-                  </button>
-                  <button
-                    aria-pressed={filterMode === "private"}
-                    onClick={() => setFilterMode("private")}
-                    className={styles.filterBtn}
-                  >
-                    Riêng tư ({privateCount})
-                  </button>
+              {isEditingBio ? (
+                <div className={styles.formGrid}>
+                  <label>Tên người dùng
+                    <input value={editUsername} onChange={(event) => setEditUsername(event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))} placeholder="ten_nguoi_dung" maxLength={30} />
+                  </label>
+                  <label className={styles.fullField}>Giới thiệu
+                    <textarea value={editBio} onChange={(event) => setEditBio(event.target.value)} placeholder="Chia sẻ một chút về phong cách và ý tưởng của bạn..." rows={5} maxLength={500} />
+                    <small>{editBio.length}/500</small>
+                  </label>
+                  <div className={styles.formActions}>
+                    <button className={styles.editButton} onClick={handleSaveBio} disabled={savingBio}>{savingBio ? "Đang lưu..." : "Lưu thay đổi"}</button>
+                    <button className={styles.outlineButton} onClick={() => { setEditBio(user.bio || ""); setEditUsername(user.username || ""); setIsEditingBio(false); }}>Hủy</button>
+                  </div>
                 </div>
-
-                <div className={styles.searchBox}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="m21 21-4.3-4.3" />
-                  </svg>
-                  <input
-                    type="search"
-                    placeholder="Lọc theo hashtag/tên..."
-                    value={searchTag}
-                    onChange={(e) => setSearchTag(e.target.value)}
-                  />
-                  {searchTag && (
-                    <button onClick={() => setSearchTag("")} aria-label="Xóa tìm kiếm">
-                      ×
-                    </button>
-                  )}
+              ) : (
+                <div className={styles.detailGrid}>
+                  <div><span>Họ tên</span><strong>{user.name || "Chưa cập nhật"}</strong></div>
+                  <div><span>Email</span><strong>{user.email || "Chưa cập nhật"}</strong></div>
+                  <div><span>Tên người dùng</span><strong>{user.username ? `@${user.username}` : "Chưa thiết lập"}</strong></div>
+                  <div><span>Lĩnh vực</span><strong>{user.jobRole || "Nhà thiết kế số"}</strong></div>
+                  <div className={styles.fullField}><span>Giới thiệu</span><p>{user.bio || "Chưa có phần giới thiệu."}</p></div>
                 </div>
+              )}
+            </article>
 
-                <Link href="/editor/" className={styles.newDesignBtn}>
-                  <span>+ Tạo mới</span>
-                </Link>
-              </div>
+            <div className={styles.sidePanels}>
+              <article className={styles.panel}>
+                <div className={styles.panelHeader}><div><h2>Hoạt động sáng tạo</h2><p>Tổng quan các thiết kế của bạn.</p></div><span className={`material-symbols-rounded ${styles.panelIcon}`}>insights</span></div>
+                <div className={styles.metricsGrid}>
+                  <div><span className="material-symbols-rounded">dashboard</span><strong>{designs.length}</strong><small>Thiết kế</small></div>
+                  <div><span className="material-symbols-rounded">public</span><strong>{publicCount}</strong><small>Công khai</small></div>
+                  <div><span className="material-symbols-rounded">visibility</span><strong>{formatCompact(totalViews)}</strong><small>Lượt xem</small></div>
+                  <div><span className="material-symbols-rounded">favorite</span><strong>{formatCompact(totalLikes)}</strong><small>Lượt thích</small></div>
+                </div>
+              </article>
+
+              <article className={styles.panel}>
+                <div className={styles.panelHeader}><div><h2>Thiết kế gần đây</h2><p>Tiếp tục hoàn thiện ý tưởng của bạn.</p></div></div>
+                {latestDesign ? (
+                  <button className={styles.recentDesign} onClick={() => handleEditDesign(latestDesign)}>
+                    <img src={latestDesign.thumbnailUrl || "/hero/card-couture.png"} alt="" />
+                    <span><strong>{latestDesign.title}</strong><small>Cập nhật {formatDate(latestDesign.updatedAt || latestDesign.createdAt)}</small></span>
+                    <i className="material-symbols-rounded">arrow_forward</i>
+                  </button>
+                ) : <p className={styles.noRecent}>Thiết kế đã lưu sẽ xuất hiện ở đây.</p>}
+                <Link href="/editor/" className={styles.inlineLink}>Mở Canvas Editor <span className="material-symbols-rounded">arrow_outward</span></Link>
+              </article>
+            </div>
+          </section>
+        )}
+
+        {tab === "designs" && (
+          <section className={styles.contentPanel}>
+            <div className={styles.sectionHeading}>
+              <div><h2>Thiết kế của tôi</h2><p>Quản lý thiết kế, quyền hiển thị và hashtag.</p></div>
+              <Link href="/editor/" className={styles.editButton}><span className="material-symbols-rounded">add</span>Tạo thiết kế</Link>
             </div>
 
-            {/* Grid */}
+            <div className={styles.designTools}>
+              <div className={styles.filterGroup} aria-label="Lọc thiết kế">
+                {(["all", "public", "private"] as DesignFilter[]).map((filter) => (
+                  <button key={filter} className={filterMode === filter ? styles.selectedFilter : ""} onClick={() => setFilterMode(filter)}>
+                    {filter === "all" ? `Tất cả ${designs.length}` : filter === "public" ? `Công khai ${publicCount}` : `Riêng tư ${privateCount}`}
+                  </button>
+                ))}
+              </div>
+              <label className={styles.searchBox}><span className="material-symbols-rounded">search</span><input value={searchTag} onChange={(event) => setSearchTag(event.target.value)} placeholder="Tìm theo tên hoặc hashtag" /></label>
+            </div>
+
             {loading ? (
-              <div className={styles.loadingState}>
-                <span className={styles.spinner} />
-                <p style={{ color: "#aaa", fontSize: 13 }}>Đang tải danh sách thiết kế của bạn…</p>
-              </div>
+              <div className={styles.loadingState}><span className={styles.spinner} /><p>Đang tải thiết kế...</p></div>
             ) : filteredDesigns.length === 0 ? (
-              <div className={styles.emptyState}>
-                <p className={styles.eyebrow}>YOUR CANVAS IS READY</p>
-                <h3>{searchTag ? "Không tìm thấy thiết kế phù hợp." : "Chưa có thiết kế nào được lưu."}</h3>
-                <p>
-                  {searchTag
-                    ? "Hãy thử tìm với từ khóa hoặc hashtag khác."
-                    : "Mở Canvas Editor để tạo tác phẩm đầu tiên và lưu vào thư viện cá nhân của bạn."}
-                </p>
-                <Link href="/editor/" className={styles.primary}>
-                  Bắt đầu thiết kế <span aria-hidden="true">↗</span>
-                </Link>
-              </div>
+              <div className={styles.emptyState}><span className="material-symbols-rounded">palette</span><h3>{searchTag ? "Không tìm thấy thiết kế" : "Chưa có thiết kế nào"}</h3><p>{searchTag ? "Thử một tên hoặc hashtag khác." : "Lưu thiết kế đầu tiên từ Canvas Editor để quản lý tại đây."}</p><Link href="/editor/" className={styles.editButton}>Mở Canvas Editor</Link></div>
             ) : (
-              <div className={styles.grid}>
+              <div className={styles.designGrid}>
                 {filteredDesigns.map((design) => {
-                  const designId = (design._id || design.id)!;
-
+                  const id = (design._id || design.id)!;
                   return (
-                    <article key={designId} className={styles.card}>
-                      {/* Preview Image */}
-                      <div className={styles.cardPreview}>
-                        <img
-                          src={design.thumbnailUrl || "/hero/card-couture.png"}
-                          alt={design.title}
-                          loading="lazy"
-                        />
-
-                        {/* Public / Private toggle badge */}
-                        <button
-                          type="button"
-                          onClick={() => handleTogglePrivacy(design)}
-                          className={styles.privacyBadge}
-                          data-public={design.isPublic ? "true" : "false"}
-                          title={
-                            design.isPublic
-                              ? "Nhấn để chuyển sang Riêng tư (Private)"
-                              : "Nhấn để Công khai lên Thư viện mẫu (Public)"
-                          }
-                        >
-                          <span>{design.isPublic ? "🌐 Công khai" : "🔒 Riêng tư"}</span>
-                          <span aria-hidden="true" style={{ opacity: 0.7 }}>⇄</span>
+                    <article className={styles.designCard} key={id}>
+                      <div className={styles.designImage}>
+                        <img src={design.thumbnailUrl || "/hero/card-couture.png"} alt={design.title} />
+                        <button className={`${styles.visibilityBadge} ${design.isPublic ? styles.publicBadge : ""}`} onClick={() => handleTogglePrivacy(design)} title="Đổi quyền hiển thị">
+                          <span className="material-symbols-rounded">{design.isPublic ? "public" : "lock"}</span>{design.isPublic ? "Công khai" : "Riêng tư"}
                         </button>
-
-                        {/* Category badge */}
-                        <span className={styles.categoryBadge}>
-                          {design.category || "Outfit"}
-                        </span>
+                        <span className={styles.categoryBadge}>{design.category || "Thiết kế"}</span>
                       </div>
-
-                      {/* Card Body */}
-                      <div className={styles.cardBody}>
-                        <h3 className={styles.cardTitle} title={design.title}>
-                          {design.title}
-                        </h3>
-                        <p className={styles.cardDesc}>
-                          {design.description || "Bản thiết kế thời trang từ PickMe3D Canvas Editor."}
-                        </p>
-
-                        {/* Hashtags */}
-                        <div className={styles.tagsSection}>
-                          <div className={styles.tagsHeader}>
-                            <span># HASHTAGS</span>
-                            {editingTagId !== designId && (
-                              <button
-                                onClick={() => {
-                                  setEditingTagId(designId);
-                                  setNewTagInput("");
-                                }}
-                                className={styles.addTagTrigger}
-                              >
-                                + Thêm tag
-                              </button>
-                            )}
+                      <div className={styles.designBody}>
+                        <div><h3 title={design.title}>{design.title}</h3><p>{design.description || "Một thiết kế được tạo bằng PickMe3D Canvas Editor."}</p></div>
+                        <div className={styles.designStats}><span><i className="material-symbols-rounded">visibility</i>{formatCompact(design.viewsCount || 0)}</span><span><i className="material-symbols-rounded">favorite</i>{formatCompact(design.likesCount || 0)}</span><span>{formatDate(design.updatedAt || design.createdAt)}</span></div>
+                        <div className={styles.tagsBlock}>
+                          <div className={styles.tagsHeading}><span>Hashtag</span>{editingTagId !== id && <button onClick={() => { setEditingTagId(id); setNewTagInput(""); }}>+ Thêm tag</button>}</div>
+                          <div className={styles.tagsList}>
+                            {(design.tags || []).map((tag) => <span className={styles.tag} key={tag}>#{tag}<button onClick={() => handleRemoveTag(id, tag)} aria-label={`Xóa hashtag ${tag}`}>×</button></span>)}
+                            {!(design.tags || []).length && <small>Chưa có hashtag</small>}
                           </div>
-
-                          <div className={styles.tagPills}>
-                            {design.tags && design.tags.length > 0 ? (
-                              design.tags.map((tag, idx) => (
-                                <span key={idx} className={styles.tagPill}>
-                                  <span>#{tag}</span>
-                                  <button
-                                    onClick={() => handleRemoveTag(designId, tag)}
-                                    className={styles.tagRemoveBtn}
-                                    title={`Xóa #${tag}`}
-                                    aria-label={`Xóa #${tag}`}
-                                  >
-                                    ×
-                                  </button>
-                                </span>
-                              ))
-                            ) : (
-                              <span className={styles.emptyTags}>Chưa gắn hashtag</span>
-                            )}
-                          </div>
-
-                          {editingTagId === designId && (
-                            <div className={styles.inlineTagInput}>
-                              <input
-                                type="text"
-                                placeholder="Nhập tag (VD: couture)..."
-                                value={newTagInput}
-                                onChange={(e) => setNewTagInput(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") handleAddTag(designId);
-                                  if (e.key === "Escape") setEditingTagId(null);
-                                }}
-                                autoFocus
-                              />
-                              <button onClick={() => handleAddTag(designId)}>Thêm</button>
-                              <button onClick={() => setEditingTagId(null)}>Hủy</button>
-                            </div>
-                          )}
+                          {editingTagId === id && <form className={styles.tagForm} onSubmit={(event) => { event.preventDefault(); void handleAddTag(id); }}><input autoFocus value={newTagInput} onChange={(event) => setNewTagInput(event.target.value)} placeholder="Tên hashtag" /><button type="submit">Thêm</button><button type="button" onClick={() => setEditingTagId(null)}>Hủy</button></form>}
                         </div>
-
-                        {/* Bottom Actions */}
-                        <div className={styles.cardActions}>
-                          <button
-                            type="button"
-                            onClick={() => handleEditDesign(design)}
-                            className={styles.editActionBtn}
-                            title="Tải thiết kế vào Canvas Editor để chỉnh sửa"
-                          >
-                            <span>Chỉnh sửa tiếp</span>
-                            <span aria-hidden="true">↗</span>
-                          </button>
-
-                          {design.isPublic && (
-                            <Link
-                              href={`/templates/${designId}`}
-                              className={styles.iconActionBtn}
-                              title="Xem trang chi tiết công khai"
-                              aria-label="Xem chi tiết"
-                            >
-                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                                <circle cx="12" cy="12" r="3" />
-                              </svg>
-                            </Link>
-                          )}
-
-                          {deleteConfirmId === designId ? (
-                            <div className={styles.deleteConfirmGroup}>
-                              <button
-                                onClick={() => handleDeleteDesign(designId)}
-                                className={styles.confirmDeleteBtn}
-                                title="Xác nhận xóa"
-                              >
-                                Xóa?
-                              </button>
-                              <button
-                                onClick={() => setDeleteConfirmId(null)}
-                                className={styles.cancelDeleteBtn}
-                              >
-                                Hủy
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => setDeleteConfirmId(designId)}
-                              className={styles.iconActionBtn}
-                              title="Xóa thiết kế này"
-                              aria-label="Xóa thiết kế"
-                            >
-                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M3 6h18" />
-                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                              </svg>
-                            </button>
-                          )}
+                        <div className={styles.designActions}>
+                          <button className={styles.continueButton} onClick={() => handleEditDesign(design)}><span className="material-symbols-rounded">edit</span>Chỉnh sửa tiếp</button>
+                          {design.isPublic && <Link className={styles.squareAction} href={`/templates/${id}`} title="Xem thiết kế công khai"><span className="material-symbols-rounded">open_in_new</span></Link>}
+                          {deleteConfirmId === id ? <div className={styles.confirmActions}><button onClick={() => void handleDeleteDesign(id)}>Xóa</button><button onClick={() => setDeleteConfirmId(null)}>Hủy</button></div> : <button className={styles.squareAction} onClick={() => setDeleteConfirmId(id)} title="Xóa thiết kế"><span className="material-symbols-rounded">delete</span></button>}
                         </div>
                       </div>
                     </article>
@@ -758,57 +432,26 @@ export default function ProfilePage() {
           </section>
         )}
 
-        {/* Section: Collections */}
-        {profileTab === "collections" && (
-          <section aria-labelledby="collections-heading">
-            <div className={styles.sectionHeader}>
-              <div>
-                <h2 id="collections-heading" className={styles.sectionTitle}>
-                  Bộ Sưu Tập Của Tôi ({collections.length})
-                </h2>
-                <p className={styles.sectionDesc}>
-                  Quản lý các bộ sưu tập thiết kế và thư mục mẫu đã ghim của bạn.
-                </p>
-              </div>
-            </div>
-
+        {tab === "collections" && (
+          <section className={styles.contentPanel}>
+            <div className={styles.sectionHeading}><div><h2>Bộ sưu tập của tôi</h2><p>Các nhóm thiết kế bạn đã lưu và sắp xếp.</p></div><Link href="/templates/" className={styles.outlineButton}><span className="material-symbols-rounded">explore</span>Khám phá mẫu</Link></div>
             {loadingCollections ? (
-              <div className={styles.loadingState}>
-                <span className={styles.spinner} />
-                <p style={{ color: "#aaa", fontSize: 13 }}>Đang tải bộ sưu tập…</p>
-              </div>
+              <div className={styles.loadingState}><span className={styles.spinner} /><p>Đang tải bộ sưu tập...</p></div>
             ) : collections.length === 0 ? (
-              <div className={styles.emptyState}>
-                <p className={styles.eyebrow}>CURATE YOUR FAVORITES</p>
-                <h3>Bạn chưa tạo bộ sưu tập nào.</h3>
-                <p>Khám phá các thiết kế mẫu từ cộng đồng và lưu vào bộ sưu tập cá nhân của bạn.</p>
-                <Link href="/templates/" className={styles.primary}>
-                  Khám phá mẫu thiết kế <span aria-hidden="true">↗</span>
-                </Link>
-              </div>
+              <div className={styles.emptyState}><span className="material-symbols-rounded">collections_bookmark</span><h3>Chưa có bộ sưu tập</h3><p>Lưu những thiết kế yêu thích vào bộ sưu tập để tìm lại dễ dàng.</p><Link href="/templates/" className={styles.editButton}>Khám phá thiết kế</Link></div>
             ) : (
-              <div className={styles.grid}>
-                {collections.map((col) => (
-                  <CollectionCard
-                    key={col._id}
-                    collection={col}
-                    isOwner={true}
-                    onDelete={handleDeleteCollection}
-                  />
+              <div className={styles.collectionGrid}>
+                {collections.map((collection) => (
+                  <article className={styles.collectionCard} key={collection._id}>
+                    <div className={styles.collectionCover}>{collection.coverImage ? <img src={collection.coverImage} alt="" /> : <span className="material-symbols-rounded">collections_bookmark</span>}<span className={styles.collectionVisibility}>{collection.isPublic ? "Công khai" : "Riêng tư"}</span></div>
+                    <div className={styles.collectionInfo}><div><h3>{collection.name}</h3><p>{collection.templates.length} thiết kế · Tạo {formatDate(collection.createdAt)}</p>{collection.description && <small>{collection.description}</small>}</div><button className={styles.squareAction} onClick={() => void handleDeleteCollection(collection._id)} title="Xóa bộ sưu tập"><span className="material-symbols-rounded">delete</span></button></div>
+                  </article>
                 ))}
               </div>
             )}
           </section>
         )}
       </main>
-
-      {/* Footer */}
-      <footer className={styles.footer}>
-        <Link href="/">PickMe3D</Link>
-        <p>A space for original ideas.</p>
-        <Link href="/editor/">Start designing ↗</Link>
-        <span>© {new Date().getFullYear()} PickMe3D</span>
-      </footer>
     </div>
   );
 }

@@ -178,6 +178,9 @@ export function MotionPanel({ p, theme, onChange }: { p: Palette; theme: Theme; 
       </div>
       <Hint p={p}>{t("motionHint", lang)}</Hint>
 
+      <div style={{ fontSize: 12, fontWeight: 700, color: p.onSurfaceVariant, padding: "8px 4px 0" }}>
+        Interactive Motion Test
+      </div>
       <button
         onClick={() => setTick((n) => n + 1)}
         className="m3-press"
@@ -185,35 +188,64 @@ export function MotionPanel({ p, theme, onChange }: { p: Palette; theme: Theme; 
         aria-label={t("tryIt", lang)}
         style={{
           position: "relative",
-          height: 96,
-          borderRadius: 16,
-          border: "none",
+          height: 104,
+          borderRadius: 20,
+          border: `1px solid ${p.outlineVariant}`,
           background: p.surfaceContainerLow,
           cursor: "pointer",
           overflow: "hidden",
           padding: 0,
-          display: "grid",
-          placeItems: "center",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-around",
+          boxShadow: "inset 0 1px 3px rgba(0,0,0,0.04)",
         }}
       >
+        {/* Animated ball */}
         <motion.span
-          key={`${theme.motion}:${tick}`}
-          initial={{ x: -110, scale: 0.8, rotate: -20 }}
+          key={`ball:${theme.motion}:${tick}`}
+          initial={{ x: -60, scale: 0.6, rotate: -45 }}
           animate={{ x: 0, scale: 1, rotate: 0 }}
           transition={transition}
           style={{
-            width: 48,
-            height: 48,
-            borderRadius: expressive ? 14 : 24,
+            width: 44,
+            height: 44,
+            borderRadius: expressive ? 14 : 22,
             background: p.primary,
             display: "grid",
             placeItems: "center",
             color: p.onPrimary,
+            boxShadow: `0 8px 20px color-mix(in srgb, ${p.primary} 40%, transparent)`,
           }}
         >
-          <Icon name="arrow_forward" size={24} />
+          <Icon name="arrow_forward" size={22} />
+        </motion.span>
+
+        {/* Pulse chip */}
+        <motion.span
+          key={`chip:${theme.motion}:${tick}`}
+          initial={{ scale: 0.7, opacity: 0.4 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={transition}
+          style={{
+            padding: "8px 14px",
+            borderRadius: 999,
+            background: p.secondaryContainer,
+            color: p.onSecondaryContainer,
+            fontSize: 12,
+            fontWeight: 700,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          <Icon name="auto_awesome" size={16} />
+          <span>{expressive ? "Spring 120fps" : "Cubic Ease"}</span>
         </motion.span>
       </button>
+      <div style={{ fontSize: 11, color: p.onSurfaceVariant, textAlign: "center", padding: "0 4px" }}>
+        Click the playground to test elasticity and physics
+      </div>
     </div>
   );
 }

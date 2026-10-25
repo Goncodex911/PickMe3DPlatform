@@ -6,6 +6,8 @@ import { Palette } from "@/lib/tokens";
 import { LANGS, Lang, t, useLang } from "@/lib/i18n";
 import { IconBtn } from "./ui";
 import { Icon } from "./M3Node";
+import UserAvatar from "./UserAvatar";
+import { fetchMyProfileApi, mergeCurrentUserProfile } from "@/lib/userService";
 
 const EASE = [0.2, 0, 0, 1] as const;
 
@@ -125,10 +127,25 @@ export function ProfileMenu({ p, size = 40, side = "down" }: { p: Palette; size?
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
+    let active = true;
+    let cachedUser: any = null;
     try {
-      const u = JSON.parse(localStorage.getItem("pickme3d_user") || "null");
-      setUser(u);
+      cachedUser = JSON.parse(localStorage.getItem("pickme3d_user") || "null");
+      setUser(cachedUser);
     } catch { }
+
+    void fetchMyProfileApi().then((profile) => {
+      if (!active || !profile) return;
+      let latestCachedUser = cachedUser || {};
+      try {
+        latestCachedUser = JSON.parse(localStorage.getItem("pickme3d_user") || "null") || latestCachedUser;
+      } catch { }
+      const refreshedUser = mergeCurrentUserProfile(latestCachedUser, profile);
+      localStorage.setItem("pickme3d_user", JSON.stringify(refreshedUser));
+      setUser(refreshedUser);
+    });
+
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -180,11 +197,14 @@ export function ProfileMenu({ p, size = 40, side = "down" }: { p: Palette; size?
             overflow: "hidden",
           }}
         >
-          {user?.picture ? (
-            <img src={user.picture} alt="Avatar" style={{ width: size - 4, height: size - 4, borderRadius: "50%", objectFit: "cover" }} />
-          ) : (
-            <Icon name="account_circle" size={size - 4} color={p.onSurfaceVariant} />
-          )}
+          <UserAvatar
+            picture={user?.picture}
+            googlePicture={user?.googlePicture}
+            name={user?.name}
+            email={user?.email}
+            size={size - 4}
+            alt="Avatar"
+          />
         </button>
         <AnimatePresence>
           {open && (
@@ -260,6 +280,56 @@ export function ProfileMenu({ p, size = 40, side = "down" }: { p: Palette; size?
               >
                 <Icon name="person" size={18} />
                 Hồ sơ cá nhân
+              </button>
+              <button
+                onClick={() => {
+                  window.location.href = "/ui-marketplace/";
+                }}
+                className="m3-press"
+                style={{
+                  width: "100%",
+                  height: 40,
+                  padding: "0 14px",
+                  borderRadius: 12,
+                  border: "none",
+                  background: "transparent",
+                  color: p.onSurface,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  marginBottom: 2,
+                }}
+              >
+                <Icon name="storefront" size={18} />
+                UI Marketplace
+              </button>
+              <button
+                onClick={() => {
+                  window.location.href = "/templates/";
+                }}
+                className="m3-press"
+                style={{
+                  width: "100%",
+                  height: 40,
+                  padding: "0 14px",
+                  borderRadius: 12,
+                  border: "none",
+                  background: "transparent",
+                  color: p.onSurface,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  marginBottom: 2,
+                }}
+              >
+                <Icon name="category" size={18} />
+                Bộ sưu tập mẫu
               </button>
               <button
                 onClick={handleLogout}

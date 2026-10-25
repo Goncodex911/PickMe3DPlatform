@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion, useSpring } from "motion/react";
 import { toPng, toJpeg } from "html-to-image";
 import JSZip from "jszip";
@@ -160,6 +161,7 @@ import ImportTemplateModal from "@/components/ImportTemplateModal";
 import EmbedModal from "@/components/EmbedModal";
 import { DeviceConfig, findDeviceById } from "@/constants/devices";
 import { TemplateFile } from "@/types/template-file";
+import { UITemplate, translateTemplateSource, getCategoryLabel } from "@/lib/ui-marketplace-data";
 
 /** the screens while a model drafts: primary, tertiary and primary container, drifting */
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
@@ -562,8 +564,6 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
   const [rightOpen, setRightOpen] = useState(true);
   const [leftW, setLeftW] = useState(RAIL_W + 268);
   const [leftTab, setLeftTab] = useState<LeftTab>("parts");
-  /** pointer over the collapsed rail: the logo becomes the open button */
-  const [railHover, setRailHover] = useState(false);
   /** the screen whose layers are listed when nothing on a screen is selected */
   const [layersFrameId, setLayersFrameId] = useState<string | null>(null);
   const [rightW, setRightW] = useState(320);
@@ -578,6 +578,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
   const [gesture, setGesture] = useState<Gesture | null>(null);
   const [widths, setWidths] = useState<Record<string, number>>({});
   const [resizing, setResizing] = useState<"left" | "right" | null>(null);
+  const panRaf = useRef<number | null>(null);
   const [, bumpHistory] = useState(0);
   /* ---------- tidy and ai ---------- */
   /** the groups before and after the last tidy; "undo" is offered only while the after-state is still current */
@@ -732,7 +733,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
         x: margin,
         y: 270,
         axis: "x",
-        items: tags.map((t) => ({
+        items: tags.map((t: string) => ({
           ...makeItem("chip"),
           id: sid(),
           label: t,
@@ -746,7 +747,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
         { name: "Mặt Kính Sapphire & UI", type: "mesh" },
         { name: "Dây đeo Silicon Thể thao", type: "mesh" },
       ];
-      const layerItems = rawLayers.map((lay, idx) => ({
+      const layerItems = rawLayers.map((lay: any, idx: number) => ({
         ...makeItem("listItem"),
         id: sid(),
         label: lay.name,
@@ -1404,24 +1405,52 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     };
   }, []);
 
-  /* wheel: pan, or zoom with ctrl / pinch */
+  /* wheel: silky-smooth rAF-coalesced pan, or zoom with ctrl / pinch */
   useEffect(() => {
     const el = canvasRef.current;
     if (!el) return;
+    let rafId: number | null = null;
+    let pendingDx = 0;
+    let pendingDy = 0;
+    let pendingZoom: { z: number; clientX: number; clientY: number } | null = null;
+
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       if (e.ctrlKey || e.metaKey) {
-        setZoomAt(
-          viewRef.current.z * Math.exp(-e.deltaY * 0.0022),
-          e.clientX,
-          e.clientY,
-        );
+        const factor = Math.exp(-e.deltaY * 0.0022);
+        const currentTargetZ = pendingZoom ? pendingZoom.z : viewRef.current.z;
+        pendingZoom = {
+          z: currentTargetZ * factor,
+          clientX: e.clientX,
+          clientY: e.clientY,
+        };
       } else {
-        setView((v) => ({ ...v, x: v.x - e.deltaX, y: v.y - e.deltaY }));
+        pendingDx += e.deltaX;
+        pendingDy += e.deltaY;
+      }
+
+      if (rafId === null) {
+        rafId = requestAnimationFrame(() => {
+          rafId = null;
+          if (pendingZoom) {
+            setZoomAt(pendingZoom.z, pendingZoom.clientX, pendingZoom.clientY);
+            pendingZoom = null;
+          }
+          if (pendingDx !== 0 || pendingDy !== 0) {
+            const dx = pendingDx;
+            const dy = pendingDy;
+            pendingDx = 0;
+            pendingDy = 0;
+            setView((v) => ({ ...v, x: v.x - dx, y: v.y - dy }));
+          }
+        });
       }
     };
     el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel);
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+    };
   }, [setZoomAt]);
 
   /* ---------- rest positions and the magnet ---------- */
@@ -1687,6 +1716,165 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     };
     dragRef.current = d;
     setDrag({ ...d });
+  };
+
+  const onAnimationPointerDown = (e: React.PointerEvent, template: UITemplate) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    flushPending();
+    const cleanTitle = template.titleEn || template.title;
+    const cat = getCategoryLabel(template.category);
+    const { html, js } = translateTemplateSource(template);
+
+    const isSingleButton =
+      template.id === "001" ||
+      template.id === "002" ||
+      (template.id !== "003" && template.id !== "004" && template.id !== "005" && (cat.toLowerCase().includes("button") || cleanTitle.toLowerCase().includes("button")));
+
+    let defaultW = 280;
+    let defaultH = 170;
+
+    if (template.id === "001" || template.id === "002") {
+      defaultW = 260;
+      defaultH = 80;
+    } else if (template.id === "003") {
+      defaultW = 280;
+      defaultH = 170;
+    } else if (template.id === "004") {
+      defaultW = 280;
+      defaultH = 150;
+    } else if (template.shape === "tall") {
+      defaultW = Math.min(320, PHONE_W - 32);
+      defaultH = 280;
+    } else if (isSingleButton) {
+      defaultW = 260;
+      defaultH = 80;
+    } else {
+      defaultW = Math.min(320, PHONE_W - 32);
+      defaultH = 190;
+    }
+
+    const item: Item = {
+      ...makeItem("animation"),
+      id: uid(),
+      label: cleanTitle,
+      animationText: cleanTitle,
+      supporting: cat,
+      animationId: template.id,
+      animationHtml: html,
+      animationJs: js,
+      animationDemo: template.demo || [],
+      size: defaultW,
+      size2: defaultH,
+    };
+    const pt = toWorld(e.clientX, e.clientY);
+    const sz = sizeOf(item, widthsRef.current);
+    const offX = Math.min(sz.w / 2, 90);
+    const offY = Math.min(sz.h / 2, 40);
+    sx.jump(pt.x - offX);
+    sy.jump(pt.y - offY);
+    setSelectedIds([item.id]);
+    setRightTab("edit");
+    setDragLit({ x: offX, y: offY, at: performance.now() });
+    const d: DragState = {
+      item,
+      base: item,
+      baseOffX: offX,
+      baseOffY: offY,
+      offX,
+      offY,
+      startX: pt.x,
+      startY: pt.y,
+      px: pt.x,
+      py: pt.y,
+      active: true,
+      fromPalette: true,
+      overBin: false,
+      snap: null,
+      settling: false,
+      vanishing: false,
+      guide: null,
+    };
+    dragRef.current = d;
+    setDrag({ ...d });
+  };
+
+  const onAddAnimation = (template: UITemplate) => {
+    flushPending();
+    const cleanTitle = template.titleEn || template.title;
+    const cat = getCategoryLabel(template.category);
+    const { html, js } = translateTemplateSource(template);
+
+    const isSingleButton =
+      template.id === "001" ||
+      template.id === "002" ||
+      (template.id !== "003" && template.id !== "004" && template.id !== "005" && (cat.toLowerCase().includes("button") || cleanTitle.toLowerCase().includes("button")));
+
+    let defaultW = 280;
+    let defaultH = 170;
+
+    if (template.id === "001" || template.id === "002") {
+      defaultW = 260;
+      defaultH = 80;
+    } else if (template.id === "003") {
+      defaultW = 280;
+      defaultH = 170;
+    } else if (template.id === "004") {
+      defaultW = 280;
+      defaultH = 150;
+    } else if (template.shape === "tall") {
+      defaultW = Math.min(320, PHONE_W - 32);
+      defaultH = 280;
+    } else if (isSingleButton) {
+      defaultW = 260;
+      defaultH = 80;
+    } else {
+      defaultW = Math.min(320, PHONE_W - 32);
+      defaultH = 190;
+    }
+
+    const item: Item = {
+      ...makeItem("animation"),
+      id: uid(),
+      label: cleanTitle,
+      animationText: cleanTitle,
+      supporting: cat,
+      animationId: template.id,
+      animationHtml: html,
+      animationJs: js,
+      animationDemo: template.demo || [],
+      size: defaultW,
+      size2: defaultH,
+    };
+    const sz = sizeOf(item, widthsRef.current);
+    const f = selectedFrameId
+      ? framesRef.current.find((x) => x.id === selectedFrameId) || framesRef.current[0]
+      : framesRef.current[0];
+    const { w, h } = f ? frameSizeOf(f) : { w: PHONE_W, h: PHONE_H };
+    let x = f ? f.x + Math.max(16, Math.round((w - sz.w) / 2)) : 100;
+    let y = f ? f.y + 120 : 100;
+    if (f) {
+      const taken = (yy: number) =>
+        itemRects().some((o) => o.l < x + sz.w && o.r > x && o.t < yy + sz.h && o.b > yy);
+      let tries = 0;
+      while (taken(y) && y + sz.h < f.y + h - 20 && tries++ < 10) {
+        y += sz.h + 12;
+      }
+    }
+    snapshot();
+    setGroups((gs) => [
+      ...gs,
+      {
+        id: uid(),
+        x: Math.round(x),
+        y: Math.round(y),
+        axis: "x",
+        items: [item],
+      },
+    ]);
+    setSelectedIds([item.id]);
+    setSelectedFrameId(f ? f.id : null);
   };
 
   /** the in-flight size drag on a lone button's edge handle */
@@ -2236,11 +2424,13 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
       const g = gestureRef.current;
       if (!g) return;
       if (g.kind === "pan") {
-        setView((v) => ({
-          ...v,
-          x: g.vx + (e.clientX - g.sx),
-          y: g.vy + (e.clientY - g.sy),
-        }));
+        const nextX = g.vx + (e.clientX - g.sx);
+        const nextY = g.vy + (e.clientY - g.sy);
+        if (panRaf.current !== null) cancelAnimationFrame(panRaf.current);
+        panRaf.current = requestAnimationFrame(() => {
+          panRaf.current = null;
+          setView((v) => (v.x === nextX && v.y === nextY ? v : { ...v, x: nextX, y: nextY }));
+        });
         return;
       }
       if (g.kind === "group") {
@@ -2325,6 +2515,10 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
       setGesture({ ...g });
     };
     const up = (e: PointerEvent) => {
+      if (panRaf.current !== null) {
+        cancelAnimationFrame(panRaf.current);
+        panRaf.current = null;
+      }
       const g = gestureRef.current;
       gestureRef.current = null;
       setGesture(null);
@@ -2338,6 +2532,10 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     window.addEventListener("pointerup", up);
     window.addEventListener("pointercancel", up);
     return () => {
+      if (panRaf.current !== null) {
+        cancelAnimationFrame(panRaf.current);
+        panRaf.current = null;
+      }
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
       window.removeEventListener("pointercancel", up);
@@ -4328,6 +4526,9 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
       <ThemeContext.Provider value={theme}>
         <div
           className={`app-root${revealing ? " m3e-reveal" : ""}${widthDragId || sizeEditId ? " m3-size-now" : ""}`}
+          data-dragging={drag?.active ? "true" : undefined}
+          data-panning={panning ? "true" : undefined}
+          data-resizing={resizing ? "true" : undefined}
           /* the preview sits outside this tree and owns the keyboard while it is up */
           inert={editAccess !== "editable" || previewId !== null}
           aria-hidden={editAccess !== "editable" || previewId !== null}
@@ -4476,8 +4677,6 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                 </div>
               )}
               <div
-                onPointerEnter={() => setRailHover(true)}
-                onPointerLeave={() => setRailHover(false)}
                 onClick={(e) => {
                   // a click on the rail's empty background opens the panel
                   if (!leftOpen && e.target === e.currentTarget) setLeftOpen(true);
@@ -4494,16 +4693,11 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                   cursor: leftOpen ? undefined : "pointer",
                 }}
               >
-                {!leftOpen && railHover ? (
-                  <IconBtn icon="left_panel_open" p={p} on onClick={() => setLeftOpen(true)} title={t("openPanel", lang)} size={40} />
-                ) : (
-                  <div
-                    onClick={() => !leftOpen && setLeftOpen(true)}
-                    style={{ width: 40, height: 40, display: "grid", placeItems: "center", cursor: leftOpen ? "default" : "pointer" }}
-                  >
-                    <Logo size={32} color={p.primary} glyph={p.onPrimary} />
-                  </div>
-                )}
+                <Link href="/" aria-label="PickMe3D — Home" title="Back to home"
+                  style={{ width: 44, height: 44, display: "grid", placeItems: "center", borderRadius: 12 }}>
+                  <Logo size={32} color={p.onSurface} />
+                </Link>
+                {!leftOpen && <IconBtn icon="left_panel_open" p={p} onClick={() => setLeftOpen(true)} title={t("openPanel", lang)} size={44} />}
                 <div style={{ height: 6 }} />
                 {LEFT_TABS.map((tab, i) => (
                   <div key={tab.key} style={{ marginTop: i === 2 || i === 6 ? 10 : 0 }}>
@@ -4562,6 +4756,8 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                           )
                         }
                         onPartPointerDown={onPartPointerDown}
+                        onAddAnimation={onAddAnimation}
+                        onAnimationPointerDown={onAnimationPointerDown}
                       />
                     ) : leftTab === "color" ? (
                       <ColorPanel
@@ -4661,7 +4857,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                   position: "absolute",
                   left: 0,
                   top: 0,
-                  transform: `translate(${view.x}px, ${view.y}px) scale(${view.z})`,
+                  transform: `translate3d(${view.x}px, ${view.y}px, 0) scale(${view.z})`,
                   transformOrigin: "0 0",
                   transition: cameraEasing ? `transform ${SETTLE_MS}ms cubic-bezier(0.2, 0, 0, 1)` : undefined,
                   willChange: "transform",
@@ -5385,7 +5581,13 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                     ]}
                     value={rightTab}
                     onChange={setRightTab}
-                    p={p}
+                    p={{
+                      ...p,
+                      primary: p.surfaceContainerHigh,
+                      onPrimary: p.onSurface,
+                      secondaryContainer: p.surfaceContainerHigh,
+                      onSecondaryContainer: p.onSurface,
+                    }}
                     height={40}
                   />
                 </div>

@@ -362,6 +362,104 @@ function RailRows({ item, onChange, p, standalone }: { item: Item; onChange: Cha
   );
 }
 
+const PRESET_ANIMATION_COLORS = [
+  { label: "Theme", value: "" },
+  { label: "Violet", value: "#6A57F2" },
+  { label: "Blue", value: "#3B82F6" },
+  { label: "Emerald", value: "#10B981" },
+  { label: "Rose", value: "#F43F5E" },
+  { label: "Amber", value: "#F59E0B" },
+  { label: "Cyan", value: "#06B6D4" },
+  { label: "Dark", value: "#1E1B4B" },
+];
+
+function AnimationColorPicker({
+  value,
+  onChange,
+  p,
+  lang,
+}: {
+  value: string;
+  onChange: (hex: string | undefined) => void;
+  p: Palette;
+  lang: any;
+}) {
+  const currentColor = value || p.primary;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {PRESET_ANIMATION_COLORS.map((c) => {
+          const col = c.value || p.primary;
+          const isSelected = (c.value === "" && !value) || value === c.value;
+          return (
+            <button
+              key={c.label}
+              type="button"
+              onClick={() => onChange(c.value ? c.value : undefined)}
+              title={c.label}
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: "50%",
+                background: col,
+                border: isSelected ? `2.5px solid ${p.onSurface}` : `1px solid rgba(255,255,255,0.2)`,
+                outline: isSelected ? `2px solid ${p.primary}` : "none",
+                outlineOffset: 1,
+                cursor: "pointer",
+                padding: 0,
+                boxShadow: isSelected ? "0 2px 8px rgba(0,0,0,0.25)" : "none",
+                transition: "transform 0.15s ease",
+              }}
+            />
+          );
+        })}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <input
+          type="color"
+          value={currentColor.startsWith("#") && currentColor.length === 7 ? currentColor : "#6A57F2"}
+          onChange={(e) => onChange(e.target.value)}
+          style={{
+            width: 36,
+            height: 36,
+            padding: 2,
+            border: `1px solid ${p.outlineVariant}`,
+            borderRadius: 8,
+            cursor: "pointer",
+            background: p.surfaceContainerHigh,
+          }}
+          title="Color picker"
+        />
+        <Field
+          value={value || ""}
+          onChange={(val) => onChange(val || undefined)}
+          placeholder={p.primary}
+          p={p}
+          grow
+        />
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange(undefined)}
+            style={{
+              padding: "6px 10px",
+              borderRadius: 8,
+              border: `1px solid ${p.outlineVariant}`,
+              background: "transparent",
+              color: p.onSurfaceVariant,
+              fontSize: 11,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Reset
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function PartInspector({
   ai,
   item,
@@ -497,6 +595,18 @@ export function PartInspector({
           <TextRows item={item} onChange={onChange} p={p} labelKey="message" supportingKey="action" />
         </Section>
       )}
+      {kind === "animation" && (
+        <Section id="part-text" icon="short_text" title="Text & Label" p={p}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <Field
+              value={item.animationText ?? item.label ?? ""}
+              onChange={(txt) => onChange({ label: txt, animationText: txt })}
+              placeholder="Animation label / title..."
+              p={p}
+            />
+          </div>
+        </Section>
+      )}
       {kind === "card" && (
         /* the words themselves; where they sit is set on the drawing of the card below */
         <Section id="part-text" icon="short_text" title={t("text", lang)} p={p}>
@@ -506,6 +616,18 @@ export function PartInspector({
       {(isChoice(kind) || kind === "text") && (
         <Section id="part-text" icon="short_text" title={t("text", lang)} p={p}>
           <TextRows item={item} onChange={onChange} p={p} bold={kind === "text"} />
+        </Section>
+      )}
+      {kind === "animation" && (
+        <Section id="part-text" icon="short_text" title={t("text", lang)} p={p}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <Field
+              value={item.animationText ?? item.label ?? ""}
+              onChange={(val) => onChange({ animationText: val, label: val })}
+              placeholder={t("label", lang)}
+              p={p}
+            />
+          </div>
         </Section>
       )}
 
@@ -633,6 +755,60 @@ export function PartInspector({
           <FillRun value={item.fill ?? "surfaceContainerLow"} onChange={(fill) => onChange({ fill })} p={p} />
         </Section>
       )}
+      {kind === "animation" && (
+        <>
+          <Section id="part-style" icon="palette" title={t("style", lang)} p={p}>
+            <AnimationColorPicker
+              value={item.animationColor ?? ""}
+              onChange={(color) => onChange({ animationColor: color })}
+              p={p}
+              lang={lang}
+            />
+          </Section>
+          <Section id="animation-motion" icon="speed" title="Motion & Effects" p={p}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: p.onSurfaceVariant }}>
+                  Animation Speed
+                </div>
+                <Segmented<string>
+                  options={[
+                    { key: "0.5", label: "0.5x", title: "0.5x Slow" },
+                    { key: "0.75", label: "0.75x", title: "0.75x" },
+                    { key: "1", label: "1.0x", title: "1.0x Normal" },
+                    { key: "1.5", label: "1.5x", title: "1.5x Smooth Fast" },
+                    { key: "2", label: "2.0x", title: "2.0x Ultra Fast" },
+                  ]}
+                  value={String(item.animationSpeed ?? 1)}
+                  onChange={(v) => onChange({ animationSpeed: parseFloat(v) })}
+                  p={p}
+                />
+              </div>
+              <Toggle
+                on={item.animationGlow !== false}
+                onChange={(animationGlow) => onChange({ animationGlow })}
+                p={p}
+                icon="auto_awesome"
+                label="Glow & Shadow Depth"
+                grow
+              />
+              <Toggle
+                on={item.animationInteractive ?? false}
+                onChange={(animationInteractive) => onChange({ animationInteractive })}
+                p={p}
+                icon="touch_app"
+                label="Direct Canvas Interact"
+                grow
+              />
+              <div style={{ fontSize: 11, color: p.onSurfaceVariant, lineHeight: 1.45, padding: "0 4px" }}>
+                {item.animationInteractive
+                  ? "Interactive mode active: click & test buttons directly inside canvas."
+                  : "Canvas edit mode: click to select, drag to reposition smoothly."}
+              </div>
+            </div>
+          </Section>
+        </>
+      )}
 
       {/* ---------- state ---------- */}
       {kind === "navRail" && (
@@ -685,6 +861,18 @@ export function PartInspector({
           </>,
         )}
       {(kind === "searchBar" || kind === "listItem" || isField(kind) || kind === "divider") && sizeSection(widthRows())}
+      {kind === "animation" &&
+        sizeSection(
+          <>
+            {heightRow([
+              { key: "56", value: 56 },
+              { key: "78", value: 78 },
+              { key: "120", value: 120 },
+              { key: "200", value: 200 },
+            ])}
+            {widthRows()}
+          </>,
+        )}
       {kind === "switch" && sizeSection(widthRows(true))}
       {kind === "card" &&
         sizeSection(
@@ -720,6 +908,17 @@ export function PartInspector({
           heightRow(CAROUSEL_HEIGHTS),
         )}
       {(kind === "datePicker" || kind === "timePicker") && sizeSection(widthRows())}
+      {kind === "animation" &&
+        sizeSection(
+          <>
+            {widthRows()}
+            {heightRow([
+              { key: "btn", value: 78 },
+              { key: "card", value: 160 },
+              { key: "tall", value: 240 },
+            ])}
+          </>
+        )}
       {kind === "slider" &&
         sizeSection(
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

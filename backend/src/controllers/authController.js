@@ -55,6 +55,8 @@ exports.googleLogin = async (req, res, next) => {
     
     const payload = ticket.getPayload();
     const { sub, email, name, picture } = payload;
+    const googlePicture = typeof picture === 'string' ? picture : '';
+    const isGooglePicture = (value) => /^https:\/\/(?:lh\d+\.)?googleusercontent\.com\//i.test(value || '');
     
     const adminEmail = (process.env.ADMIN_EMAIL || 'phantrongquy23032005@gmail.com').toLowerCase().trim();
     const isAdmin = Boolean(email && email.toLowerCase().trim() === adminEmail);
@@ -63,7 +65,8 @@ exports.googleLogin = async (req, res, next) => {
       id: sub,
       name: name || (isAdmin ? 'Admin Phan Trọng Quý' : 'Creator'),
       email,
-      picture: picture || '',
+      picture: googlePicture || picture || '',
+      googlePicture,
       role: isAdmin ? 'admin' : 'designer',
       jobRole: isAdmin ? 'Platform Administrator' : 'Fashion Designer',
       status: 'active',
@@ -87,7 +90,8 @@ exports.googleLogin = async (req, res, next) => {
             googleId: sub,
             email,
             name: name || (isAdmin ? 'Admin Phan Trọng Quý' : 'Creator'),
-            picture,
+            picture: googlePicture || picture || '',
+            googlePicture,
             role: isAdmin ? 'admin' : 'designer',
             jobRole: isAdmin ? 'Platform Administrator' : 'Fashion Designer',
             status: 'active',
@@ -99,9 +103,17 @@ exports.googleLogin = async (req, res, next) => {
             user.googleId = sub;
             updated = true;
           }
-          if (picture && user.picture !== picture) {
-            user.picture = picture;
+          if (googlePicture && user.googlePicture !== googlePicture) {
+            user.googlePicture = googlePicture;
             updated = true;
+          }
+          // Refresh a missing or outdated Google photo while preserving uploaded profile photos.
+          if (!user.picture || isGooglePicture(user.picture)) {
+            const nextPic = googlePicture || picture || user.picture;
+            if (nextPic && user.picture !== nextPic) {
+              user.picture = nextPic;
+              updated = true;
+            }
           }
           if (name && !user.name) {
             user.name = name;
@@ -130,7 +142,8 @@ exports.googleLogin = async (req, res, next) => {
           _id: user._id.toString(),
           name: user.name,
           email: user.email,
-          picture: user.picture || picture || '',
+          picture: user.picture || googlePicture || picture || '',
+          googlePicture: user.googlePicture || googlePicture,
           role: isAdmin ? 'admin' : user.role,
           jobRole: user.jobRole || (isAdmin ? 'Platform Administrator' : 'Fashion Designer'),
           status: user.status || 'active',
