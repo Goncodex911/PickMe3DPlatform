@@ -616,6 +616,7 @@ export const KIND_TEXT: Record<
     carousel: { noun: "カルーセル" },
     datePicker: { noun: "日付ピッカー", label: "3月17日（月）" },
     timePicker: { noun: "時刻ピッカー" },
+    animation: { noun: "アニメーション", label: "アニメーション" },
   },
   en: {
     box: { noun: "box" },
@@ -654,6 +655,7 @@ export const KIND_TEXT: Record<
     carousel: { noun: "carousel" },
     datePicker: { noun: "date picker", label: "Mon, Mar 17" },
     timePicker: { noun: "time picker" },
+    animation: { noun: "Animation", label: "Animation" },
   },
   zh: {
     box: { noun: "容器框" },
@@ -692,6 +694,7 @@ export const KIND_TEXT: Record<
     carousel: { noun: "轮播" },
     datePicker: { noun: "日期选择器", label: "3月17日 周一" },
     timePicker: { noun: "时间选择器" },
+    animation: { noun: "动画", label: "动画" },
   },
   ko: {
     box: { noun: "상자" },
@@ -730,6 +733,7 @@ export const KIND_TEXT: Record<
     carousel: { noun: "캐러셀" },
     datePicker: { noun: "날짜 선택기", label: "3월 17일 (월)" },
     timePicker: { noun: "시간 선택기" },
+    animation: { noun: "애니메이션", label: "애니메이션" },
   },
 };
 

@@ -6,7 +6,6 @@ import { TemplateItem, fetchTemplatesApi } from "@/lib/templateService";
 import TemplateCard from "@/components/TemplateCard";
 import TemplateDetailModal from "@/components/TemplateDetailModal";
 import AdvancedSearchFilters from "@/components/AdvancedSearchFilters";
-import NotificationBell from "@/components/NotificationBell";
 import styles from "./page.module.css";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
@@ -84,18 +83,7 @@ export default function TemplatesPage() {
 
   return (
     <div className={styles.page} lang="en">
-      <header className={styles.header}>
-        <Link href="/" className={styles.brand} aria-label="PickMe3D — Home">
-          <svg viewBox="0 0 40 44" fill="currentColor" aria-hidden="true"><path d="M20 1 38 11.5 20 22 2 11.5 20 1ZM2 15l16 9.5V43L2 33V15ZM22 24.5 38 15v18L22 43V24.5Z" /></svg>
-          <span>PickMe3D</span>
-        </Link>
-        <nav className={styles.nav} aria-label="Main navigation">
-          <Link href="/" className={styles.homeLink}>Home</Link>
-          <Link href="/templates/" aria-current="page" className={styles.activeNav}>Template</Link>
-          {currentUser ? <><div className={styles.shared}><NotificationBell /></div><Link href="/profile/" className={styles.profile}>{currentUser.name || "Profile"}</Link></> : <Link href="/login/">Sign in</Link>}
-          <Link href={editorHref} className={styles.primary}>Open Canvas <span aria-hidden="true">↗</span></Link>
-        </nav>
-      </header>
+
 
       <main>
         <section className={styles.hero} aria-labelledby="templates-title">
@@ -156,7 +144,15 @@ export default function TemplatesPage() {
           setTemplates((prev) => prev.map((item) => ((item._id || item.id) === (updated._id || updated.id) ? updated : item)));
         }} />
       </div>
-      <footer className={styles.footer}><Link href="/">PickMe3D</Link><p>A space for original ideas.</p><Link href={editorHref}>Start designing ↗</Link><span>© {new Date().getFullYear()} PickMe3D</span></footer>
+      <footer className={styles.footer}>
+        <Link href="/">PickMe3D</Link>
+        <p>A space for original ideas.</p>
+        <div style={{ display: "flex", gap: "24px", alignItems: "center" }}>
+          <Link href="/ui-marketplace/">UI Marketplace ↗</Link>
+          <Link href={editorHref}>Start designing ↗</Link>
+        </div>
+        <span>© {new Date().getFullYear()} PickMe3D</span>
+      </footer>
     </div>
   );
 }

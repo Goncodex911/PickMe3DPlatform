@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import styles from "@/app/landing/page.module.css";
-import SiteNav, { Brand, useAuthState } from "@/components/SiteNav";
+import { Brand, useAuthState } from "@/components/SiteNav";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const features = [
@@ -24,13 +25,33 @@ function Arrow() { return <span aria-hidden="true">↗</span>; }
 export default function ProjectLanding() {
   const auth = useAuthState();
   const { authenticated } = auth;
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("pickme3d_landing_theme");
+      setTheme(saved === "light" || saved === "dark" ? saved : window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+    } catch {}
+  }, []);
+
+  function toggleTheme() {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    try { localStorage.setItem("pickme3d_landing_theme", next); } catch {}
+  }
   const startHref = authenticated ? "/editor/" : "/login/";
 
-  return <main className={styles.page} lang="en" id="top">
+  return <main className={styles.page} data-theme={theme} lang="en" id="top">
     <section className={styles.hero} aria-labelledby="hero-title">
       <video className={styles.heroVideo} src={`${basePath}/landing/pickme3d-story.mp4`} poster={`${basePath}/hero/hero-portrait.png`} autoPlay muted loop playsInline preload="auto" aria-label="PickMe3D creative workspace demo" />
       <div className={styles.heroShade}/>
-      <SiteNav variant="overlay" auth={auth}/>
+      <div style={{ position: "absolute", top: 104, right: "6.25%", zIndex: 1 }}>
+        <button className={styles.themeToggle} onClick={toggleTheme} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+            {theme === "dark" ? <><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></> : <path d="M20.5 14A8.5 8.5 0 0 1 10 3.5 8.5 8.5 0 1 0 20.5 14Z"/>}
+          </svg>
+        </button>
+      </div>
       <div className={styles.heroContent}>
         <p className={styles.eyebrow}>YOUR IDEAS. YOUR CANVAS.</p>
         <h1 id="hero-title">Your ideas.<br/>No limits.</h1>
