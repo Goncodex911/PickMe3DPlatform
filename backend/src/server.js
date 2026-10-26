@@ -1,13 +1,11 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
-const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const routes = require('./routes');
 const errorHandler = require('./middlewares/errorHandler');
-
-// Load environment variables
-dotenv.config();
 
 // Connect to MongoDB Atlas
 if (process.env.MONGODB_URI) {
