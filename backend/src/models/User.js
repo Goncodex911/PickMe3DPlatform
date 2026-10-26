@@ -49,6 +49,21 @@ const userSchema = new mongoose.Schema(
       trim: true,
       maxlength: [500, 'Bio cannot exceed 500 characters'],
     },
+    status: {
+      type: String,
+      enum: ['active', 'banned'],
+      default: 'active',
+      index: true,
+    },
+    bannedAt: {
+      type: Date,
+      default: null,
+    },
+    bannedReason: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     plan: {
       type: String,
       enum: ['free', 'pro', 'studio'],
@@ -71,6 +86,5 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
-
 
 module.exports = mongoose.model('User', userSchema);

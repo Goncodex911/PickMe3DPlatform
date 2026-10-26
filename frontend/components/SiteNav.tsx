@@ -18,6 +18,7 @@ function Arrow() { return <span aria-hidden="true">↗</span>; }
 export interface AuthState {
   authenticated: boolean;
   name: string;
+  role: string;
   logout: () => void;
 }
 
@@ -26,13 +27,20 @@ export function useAuthState(): AuthState {
   const pathname = usePathname();
   const [authenticated, setAuthenticated] = useState(false);
   const [name, setName] = useState("");
+  const [role, setRole] = useState("");
 
   useEffect(() => {
     function syncAuth() {
       const token = localStorage.getItem("pickme3d_token");
       setAuthenticated(Boolean(token));
-      try { const user = JSON.parse(localStorage.getItem("pickme3d_user") ?? "null"); setName(typeof user?.name === "string" ? user.name : "Account"); }
-      catch { setName("Account"); }
+      try {
+        const user = JSON.parse(localStorage.getItem("pickme3d_user") ?? "null");
+        setName(typeof user?.name === "string" ? user.name : "Account");
+        setRole(typeof user?.role === "string" ? user.role : "");
+      } catch {
+        setName("Account");
+        setRole("");
+      }
     }
     syncAuth();
     window.addEventListener("storage", syncAuth);
@@ -48,17 +56,18 @@ export function useAuthState(): AuthState {
     localStorage.removeItem("pickme3d_user");
     setAuthenticated(false);
     setName("");
+    setRole("");
     window.dispatchEvent(new Event("storage"));
   }
 
-  return { authenticated, name, logout };
+  return { authenticated, name, role, logout };
 }
 
 export default function SiteNav() {
   const pathname = usePathname();
   const router = useRouter();
   const ownAuth = useAuthState();
-  const { authenticated, name, logout } = ownAuth;
+  const { authenticated, name, role, logout } = ownAuth;
   const [menuOpen, setMenuOpen] = useState(false);
   const isLanding = pathname === "/" || pathname === "/landing" || pathname === "/landing/";
   const [scrolled, setScrolled] = useState(false);
@@ -82,6 +91,23 @@ export default function SiteNav() {
         <Link href="/ui-marketplace/" aria-current={current("/ui-marketplace") ? "page" : undefined} onClick={() => setMenuOpen(false)}>UI Marketplace</Link>
         <Link href={authenticated ? "/slides/" : "/login/"} aria-current={current("/slides") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Slides</Link>
         <Link href="/pricing/" aria-current={current("/pricing") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Pricing</Link>
+        {authenticated && role === "admin" && (
+          <Link
+            href="/admin"
+            aria-current={current("/admin") ? "page" : undefined}
+            onClick={() => setMenuOpen(false)}
+            style={{
+              color: "#a5b4fc",
+              fontWeight: 600,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            <span className="material-symbols-rounded" style={{ fontSize: 16 }}>admin_panel_settings</span>
+            Admin
+          </Link>
+        )}
         {authenticated && <NotificationBell />}
         {authenticated
           ? <><Link href="/profile/" aria-current={current("/profile") ? "page" : undefined} className={styles.account} title={name}>{name || "Account"}</Link><button onClick={() => { logout(); setMenuOpen(false); router.push("/"); router.refresh(); }} className={styles.logout}>Sign out</button></>

@@ -229,6 +229,7 @@ export default function ProfilePage() {
 
 
 
+
       <main className={styles.main}>
         <section className={styles.profileCard} aria-labelledby="profile-name">
           <div className={styles.profileMain}>
@@ -266,6 +267,22 @@ export default function ProfilePage() {
             </div>
 
             <div className={styles.profileActions}>
+              {user.role === "admin" && (
+                <Link
+                  className={styles.editButton}
+                  href="/admin"
+                  style={{
+                    background: "linear-gradient(135deg, #4f46e5, #6366f1)",
+                    color: "#fff",
+                    border: "none",
+                    boxShadow: "0 4px 14px rgba(79, 70, 229, 0.4)",
+                  }}
+                  title="Truy cập Bảng Quản trị Admin"
+                >
+                  <span className="material-symbols-rounded">admin_panel_settings</span>
+                  <span>Admin Console</span>
+                </Link>
+              )}
               <button className={styles.outlineButton} onClick={() => window.print()}><span className="material-symbols-rounded">print</span><span>In hồ sơ</span></button>
               <button className={styles.editButton} onClick={() => { setIsEditingName(true); setIsEditingBio(true); }}><span className="material-symbols-rounded">edit</span><span>Chỉnh sửa</span></button>
             </div>
