@@ -76,24 +76,22 @@ export default function AdminAuditLogsPage() {
     }
   };
 
-  const getActionBadgeColor = (act: string) => {
-    if (act.includes("BAN")) return "bg-rose-500/15 text-rose-300 border-rose-500/30";
-    if (act.includes("ROLE")) return "bg-purple-500/15 text-purple-300 border-purple-500/30";
-    if (act.includes("CREATE")) return "bg-emerald-500/15 text-emerald-300 border-emerald-500/30";
-    if (act.includes("DELETE")) return "bg-rose-500/15 text-rose-400 border-rose-500/30";
-    if (act.includes("REPORT")) return "bg-amber-500/15 text-amber-300 border-amber-500/30";
-    return "bg-white/10 text-neutral-300 border-white/10";
+  const getActionBadgeColor = (_act: string) => {
+    return "bg-zinc-800/80 text-zinc-300 border-white/10";
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-white/10">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold font-serif text-white tracking-tight">
+          <p className="text-[11px] font-mono tracking-widest uppercase text-zinc-500 mb-2">
+            Audit Trails & Security
+          </p>
+          <h1 className="text-3xl sm:text-4xl font-semibold text-white tracking-tight">
             Nhật Ký Kiểm Toán (Audit Logs)
           </h1>
-          <p className="text-neutral-400 text-xs sm:text-sm mt-1">
+          <p className="text-zinc-400 text-xs sm:text-sm mt-1">
             Ghi nhận bất biến toàn bộ hành động quản trị viên: thay đổi quyền, khóa tài khoản, can thiệp tài nguyên và xử lý sự cố.
           </p>
         </div>
@@ -101,18 +99,18 @@ export default function AdminAuditLogsPage() {
         <button
           onClick={handleExportCsv}
           disabled={downloading}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-neutral-200 hover:text-white border border-white/10 text-xs sm:text-sm font-semibold transition-all shadow-lg shadow-black/40 disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-semibold tracking-wide transition-all disabled:opacity-50 cursor-pointer shadow-sm"
         >
-          <span className="material-symbols-rounded text-lg text-emerald-400">download</span>
-          {downloading ? "Đang xuất..." : "Xuất Nhật Ký CSV"}
+          <span className="material-symbols-rounded text-base text-black">download</span>
+          <span>{downloading ? "Đang xuất..." : "Xuất Nhật Ký CSV"}</span>
         </button>
       </div>
 
       {/* Filter Bar */}
-      <div className="p-4 rounded-2xl bg-[#0d131f] border border-white/10 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between shadow-xl shadow-black/40">
+      <div className="p-4 rounded-2xl bg-zinc-900/50 border border-white/10 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
         <form onSubmit={handleSearchSubmit} className="flex-1 flex items-center gap-2">
           <div className="relative flex-1">
-            <span className="material-symbols-rounded absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-xl">
+            <span className="material-symbols-rounded absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 text-lg">
               search
             </span>
             <input
@@ -120,12 +118,12 @@ export default function AdminAuditLogsPage() {
               placeholder="Tìm theo tên admin, email hoặc đối tượng thao tác..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-[#060911] border border-white/10 rounded-xl text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-red-500/60 transition-colors"
+              className="w-full pl-10 pr-4 py-2 bg-zinc-950 border border-white/10 rounded-xl text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-colors"
             />
           </div>
           <button
             type="submit"
-            className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold text-white transition-colors border border-white/10"
+            className="px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-xs font-medium text-white transition-colors border border-white/10"
           >
             Tìm
           </button>
@@ -133,12 +131,12 @@ export default function AdminAuditLogsPage() {
 
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Action Filter */}
-          <div className="flex items-center gap-1.5 text-xs text-neutral-400">
+          <div className="flex items-center gap-1.5 text-xs text-zinc-400">
             <span>Hành động:</span>
             <select
               value={action}
               onChange={(e) => setAction(e.target.value)}
-              className="bg-[#060911] border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-red-500/60"
+              className="bg-zinc-950 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-white/30"
             >
               {ACTION_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -149,12 +147,12 @@ export default function AdminAuditLogsPage() {
           </div>
 
           {/* Target Type Filter */}
-          <div className="flex items-center gap-1.5 text-xs text-neutral-400">
+          <div className="flex items-center gap-1.5 text-xs text-zinc-400">
             <span>Đối tượng:</span>
             <select
               value={targetType}
               onChange={(e) => setTargetType(e.target.value)}
-              className="bg-[#060911] border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-red-500/60"
+              className="bg-zinc-950 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-white/30"
             >
               <option value="all">Tất cả</option>
               <option value="user">User (Người dùng)</option>
@@ -167,22 +165,22 @@ export default function AdminAuditLogsPage() {
       </div>
 
       {/* Logs Table */}
-      <div className="bg-[#0d131f] border border-white/10 rounded-2xl overflow-hidden shadow-xl shadow-black/40">
+      <div className="bg-zinc-900/50 border border-white/10 rounded-2xl overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-neutral-400 text-sm">
-            <div className="w-8 h-8 rounded-full border-2 border-rose-500 border-t-transparent animate-spin mx-auto mb-3" />
+          <div className="p-12 text-center text-zinc-400 text-sm">
+            <div className="w-6 h-6 rounded-full border-2 border-white/20 border-t-white animate-spin mx-auto mb-3" />
             Đang tải dữ liệu nhật ký kiểm toán...
           </div>
         ) : error ? (
-          <div className="p-8 text-center text-rose-400 text-sm">{error}</div>
+          <div className="p-8 text-center text-zinc-400 text-sm">{error}</div>
         ) : logs.length === 0 ? (
-          <div className="p-12 text-center text-neutral-400 text-sm">
+          <div className="p-12 text-center text-zinc-400 text-sm">
             Chưa có bản ghi nhật ký kiểm toán nào phù hợp.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#060911] text-neutral-400 uppercase font-semibold tracking-wider border-b border-white/10 text-[11px]">
+              <thead className="bg-zinc-950 text-zinc-400 uppercase font-medium tracking-wider border-b border-white/10 text-[11px]">
                 <tr>
                   <th className="py-3.5 px-4">Thời gian</th>
                   <th className="py-3.5 px-4">Quản trị viên</th>
@@ -193,11 +191,11 @@ export default function AdminAuditLogsPage() {
                   <th className="py-3.5 px-4 text-right">Chi tiết</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5 text-neutral-300 font-mono">
+              <tbody className="divide-y divide-white/5 text-zinc-300 font-mono">
                 {logs.map((log) => (
                   <tr key={log._id} className="hover:bg-white/[0.02] transition-colors">
                     {/* Time */}
-                    <td className="py-3 px-4 font-sans text-neutral-400 text-[11px] whitespace-nowrap">
+                    <td className="py-3 px-4 font-sans text-zinc-400 text-[11px] whitespace-nowrap">
                       {new Date(log.createdAt).toLocaleDateString("vi-VN", {
                         hour: "2-digit",
                         minute: "2-digit",
@@ -207,14 +205,14 @@ export default function AdminAuditLogsPage() {
 
                     {/* Actor */}
                     <td className="py-3 px-4 font-sans">
-                      <div className="font-semibold text-white">{log.actorName}</div>
-                      <div className="text-[11px] text-neutral-400">{log.actorEmail}</div>
+                      <div className="font-medium text-white">{log.actorName}</div>
+                      <div className="text-[11px] text-zinc-400">{log.actorEmail}</div>
                     </td>
 
                     {/* Action */}
                     <td className="py-3 px-4">
                       <span
-                        className={`inline-flex px-2 py-0.5 rounded-full border font-semibold text-[10px] ${getActionBadgeColor(
+                        className={`inline-flex px-2 py-0.5 rounded-full border text-[10px] ${getActionBadgeColor(
                           log.action
                         )}`}
                       >
@@ -224,22 +222,22 @@ export default function AdminAuditLogsPage() {
 
                     {/* Target */}
                     <td className="py-3 px-4 font-sans">
-                      <div className="font-medium text-neutral-200 truncate max-w-xs" title={log.targetLabel || log.targetId}>
+                      <div className="font-medium text-zinc-200 truncate max-w-xs" title={log.targetLabel || log.targetId}>
                         {log.targetLabel || log.targetId || "—"}
                       </div>
-                      <div className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold">
+                      <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">
                         {log.targetType}
                       </div>
                     </td>
 
                     {/* IP */}
-                    <td className="py-3 px-4 text-neutral-400 text-[11px]">
+                    <td className="py-3 px-4 text-zinc-400 text-[11px]">
                       {log.ipAddress || "local"}
                     </td>
 
                     {/* Status */}
                     <td className="py-3 px-4 font-sans">
-                      <span className="text-emerald-400 font-semibold text-[11px]">
+                      <span className="text-zinc-300 font-medium text-[11px]">
                         ✓ Thành công
                       </span>
                     </td>
@@ -248,7 +246,7 @@ export default function AdminAuditLogsPage() {
                     <td className="py-3 px-4 text-right font-sans">
                       <button
                         onClick={() => setDetailLog(log)}
-                        className="px-2.5 py-1 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white text-xs border border-white/10 transition-colors"
+                        className="px-2.5 py-1 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white text-xs border border-white/10 transition-colors"
                       >
                         Xem JSON
                       </button>
@@ -262,7 +260,7 @@ export default function AdminAuditLogsPage() {
 
         {/* Pagination Footer */}
         {pagination.pages > 1 && (
-          <div className="py-3 px-4 border-t border-white/10 flex items-center justify-between text-xs text-neutral-400 bg-[#060911]">
+          <div className="py-3 px-4 border-t border-white/10 flex items-center justify-between text-xs text-zinc-400 bg-zinc-950">
             <div>
               Trang <span className="font-semibold text-white">{pagination.page}</span> /{" "}
               {pagination.pages} (Tổng {pagination.total} bản ghi)
@@ -271,14 +269,14 @@ export default function AdminAuditLogsPage() {
               <button
                 disabled={pagination.page <= 1}
                 onClick={() => loadLogs(pagination.page - 1)}
-                className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-40 disabled:pointer-events-none text-white font-medium transition-colors"
+                className="px-3.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 disabled:opacity-40 disabled:pointer-events-none text-white font-medium transition-colors"
               >
                 Trước
               </button>
               <button
                 disabled={pagination.page >= pagination.pages}
                 onClick={() => loadLogs(pagination.page + 1)}
-                className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-40 disabled:pointer-events-none text-white font-medium transition-colors"
+                className="px-3.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 disabled:opacity-40 disabled:pointer-events-none text-white font-medium transition-colors"
               >
                 Sau
               </button>
@@ -290,45 +288,45 @@ export default function AdminAuditLogsPage() {
       {/* ── MODAL: LOG DETAILS ── */}
       {detailLog && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-[#0d131f] border border-white/10 rounded-3xl p-6 shadow-2xl shadow-black/80">
+          <div className="w-full max-w-lg bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <span className="material-symbols-rounded text-rose-400">data_object</span>
+              <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                <span className="material-symbols-rounded text-zinc-400 text-lg">data_object</span>
                 Chi Tiết Payload Nhật Ký
               </h3>
               <button
                 onClick={() => setDetailLog(null)}
-                className="text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-white/5 transition-colors"
+                className="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-zinc-800 transition-colors"
               >
-                <span className="material-symbols-rounded">close</span>
+                <span className="material-symbols-rounded text-lg">close</span>
               </button>
             </div>
 
             <div className="space-y-3 text-xs mb-4">
-              <div className="grid grid-cols-2 gap-2 p-3.5 rounded-2xl bg-[#060911] border border-white/10 text-neutral-300">
+              <div className="grid grid-cols-2 gap-2 p-3.5 rounded-xl bg-zinc-950 border border-white/10 text-zinc-300">
                 <div>
-                  <span className="text-neutral-500 block">Thao tác:</span>
-                  <span className="font-bold text-white">{detailLog.action}</span>
+                  <span className="text-zinc-500 block">Thao tác:</span>
+                  <span className="font-semibold text-white">{detailLog.action}</span>
                 </div>
                 <div>
-                  <span className="text-neutral-500 block">Quản trị viên:</span>
-                  <span className="font-bold text-white">{detailLog.actorName}</span>
+                  <span className="text-zinc-500 block">Quản trị viên:</span>
+                  <span className="font-semibold text-white">{detailLog.actorName}</span>
                 </div>
                 <div>
-                  <span className="text-neutral-500 block">Đối tượng:</span>
+                  <span className="text-zinc-500 block">Đối tượng:</span>
                   <span>{detailLog.targetLabel || detailLog.targetId}</span>
                 </div>
                 <div>
-                  <span className="text-neutral-500 block">Thời gian:</span>
+                  <span className="text-zinc-500 block">Thời gian:</span>
                   <span>{new Date(detailLog.createdAt).toLocaleString("vi-VN")}</span>
                 </div>
               </div>
 
               <div>
-                <span className="text-neutral-400 font-semibold block mb-1.5">
+                <span className="text-zinc-400 font-medium block mb-1.5">
                   Dữ liệu chi tiết đã được làm sạch (Sanitized JSON):
                 </span>
-                <pre className="p-3.5 rounded-2xl bg-[#060911] border border-white/10 text-rose-300 font-mono text-[11px] overflow-x-auto max-h-60 leading-relaxed">
+                <pre className="p-3.5 rounded-xl bg-zinc-950 border border-white/10 text-zinc-300 font-mono text-[11px] overflow-x-auto max-h-60 leading-relaxed">
                   {JSON.stringify(detailLog.details || {}, null, 2)}
                 </pre>
               </div>
@@ -337,7 +335,7 @@ export default function AdminAuditLogsPage() {
             <div className="flex justify-end pt-2">
               <button
                 onClick={() => setDetailLog(null)}
-                className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 font-semibold text-xs transition-colors"
+                className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-white/10 text-zinc-200 font-medium text-xs transition-colors"
               >
                 Đóng
               </button>

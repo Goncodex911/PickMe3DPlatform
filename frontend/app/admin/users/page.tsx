@@ -212,21 +212,15 @@ export default function AdminUsersPage() {
   return (
     <div className="space-y-6">
       {/* Header & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-white/10">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-2 border border-white/10 bg-white/5">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_6px_#ef4444]" />
-            <span className="text-[10px] tracking-widest text-slate-300 font-mono uppercase">
-              PickMe3D Membership & RBAC
-            </span>
-          </div>
-          <h1
-            className="text-2xl sm:text-3xl font-normal text-white tracking-wide"
-            style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic" }}
-          >
+          <p className="text-[11px] font-mono tracking-widest uppercase text-zinc-500 mb-2">
+            PickMe3D Membership & RBAC
+          </p>
+          <h1 className="text-3xl sm:text-4xl font-semibold text-white tracking-tight">
             Quản Lý Tài Khoản Người Dùng
           </h1>
-          <p className="text-slate-400 text-xs sm:text-sm mt-1">
+          <p className="text-zinc-400 text-xs sm:text-sm mt-1">
             Xem danh sách, tìm kiếm, phân quyền Quản trị viên, khóa/mở khóa tài khoản an toàn.
           </p>
         </div>
@@ -239,9 +233,9 @@ export default function AdminUsersPage() {
               setModalError(null);
               setImportText("");
             }}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs sm:text-sm font-semibold transition-all cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 text-xs sm:text-sm font-medium transition-all cursor-pointer"
           >
-            <span className="material-symbols-rounded text-base">upload_file</span>
+            <span className="material-symbols-rounded text-base text-zinc-400">upload_file</span>
             <span>Import CSV</span>
           </button>
 
@@ -250,9 +244,9 @@ export default function AdminUsersPage() {
               setCreateModalOpen(true);
               setModalError(null);
             }}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 hover:opacity-95 text-white text-xs sm:text-sm font-bold tracking-wider shadow-[0_0_20px_rgba(229,43,43,0.35)] transition-all cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs sm:text-sm font-semibold tracking-wide transition-all shadow-sm cursor-pointer"
           >
-            <span className="material-symbols-rounded text-base">person_add</span>
+            <span className="material-symbols-rounded text-base text-black">person_add</span>
             <span>Tạo Tài Khoản</span>
           </button>
         </div>
@@ -270,12 +264,12 @@ export default function AdminUsersPage() {
               placeholder="Tìm theo tên, email hoặc username..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-[#060911] border border-white/10 rounded-xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-red-500/60 transition-colors"
+              className="w-full pl-10 pr-4 py-2 bg-zinc-900 border border-white/10 rounded-xl text-xs sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-colors"
             />
           </div>
           <button
             type="submit"
-            className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-slate-200 hover:text-white transition-colors border border-white/10 cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-medium text-zinc-200 hover:text-white transition-colors border border-white/10 cursor-pointer"
           >
             Tìm
           </button>
@@ -283,12 +277,12 @@ export default function AdminUsersPage() {
 
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Role Filter */}
-          <div className="flex items-center gap-1.5 text-xs text-slate-400">
+          <div className="flex items-center gap-1.5 text-xs text-zinc-400">
             <span>Vai trò:</span>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="bg-[#060911] border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-red-500/60"
+              className="bg-zinc-900 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-white/30"
             >
               <option value="all">Tất cả</option>
               <option value="user">User</option>
@@ -297,12 +291,12 @@ export default function AdminUsersPage() {
           </div>
 
           {/* Status Filter */}
-          <div className="flex items-center gap-1.5 text-xs text-slate-400">
+          <div className="flex items-center gap-1.5 text-xs text-zinc-400">
             <span>Trạng thái:</span>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="bg-[#060911] border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-red-500/60"
+              className="bg-zinc-900 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-white/30"
             >
               <option value="all">Tất cả</option>
               <option value="active">Hoạt động</option>
@@ -311,12 +305,12 @@ export default function AdminUsersPage() {
           </div>
 
           {/* Plan Filter */}
-          <div className="flex items-center gap-1.5 text-xs text-slate-400">
+          <div className="flex items-center gap-1.5 text-xs text-zinc-400">
             <span>Gói cước:</span>
             <select
               value={plan}
               onChange={(e) => setPlan(e.target.value)}
-              className="bg-[#060911] border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-red-500/60"
+              className="bg-zinc-900 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-white/30"
             >
               <option value="all">Tất cả gói</option>
               <option value="free">Free</option>
@@ -328,14 +322,14 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Users Table */}
-      <div className="rounded-3xl bg-[#0d131f] border border-white/[0.08] shadow-xl overflow-hidden">
+      <div className="rounded-2xl bg-zinc-900/40 border border-white/10 overflow-hidden">
         {loading ? (
           <div className="py-20 text-center">
-            <div className="w-8 h-8 rounded-full border-2 border-red-500 border-t-transparent animate-spin mx-auto mb-3" />
-            <p className="text-xs text-slate-500 font-mono">Đang tải danh sách tài khoản...</p>
+            <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white animate-spin mx-auto mb-3" />
+            <p className="text-xs text-zinc-500 font-mono">Đang tải danh sách tài khoản...</p>
           </div>
         ) : error ? (
-          <div className="py-12 text-center text-rose-400 text-sm">
+          <div className="py-12 text-center text-zinc-400 text-sm">
             <span className="material-symbols-rounded text-3xl mb-1">error</span>
             <p>{error}</p>
           </div>
@@ -394,12 +388,12 @@ export default function AdminUsersPage() {
                     {/* Role */}
                     <td className="py-3 px-4">
                       {u.email?.toLowerCase().trim() === SOLE_ADMIN_EMAIL ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider bg-gradient-to-r from-red-600/20 via-rose-500/20 to-amber-500/20 text-rose-300 border border-rose-500/40 shadow-sm">
-                          <span className="material-symbols-rounded text-xs text-amber-400">shield_person</span>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-medium text-[10px] uppercase tracking-wider bg-white/10 text-white border border-white/20">
+                          <span className="material-symbols-rounded text-xs text-white">shield_person</span>
                           Quản Trị Viên (Cố Định)
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-semibold text-[10px] uppercase tracking-wider bg-white/5 text-slate-400 border border-white/10">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-medium text-[10px] uppercase tracking-wider bg-white/5 text-zinc-400 border border-white/10">
                           Người Dùng
                         </span>
                       )}
@@ -409,28 +403,28 @@ export default function AdminUsersPage() {
                     <td className="py-3 px-4">
                       {u.plan === "studio" ? (
                         <div>
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r from-red-500/20 to-rose-500/20 text-rose-300 border border-rose-500/30 uppercase tracking-wider">
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-white/15 text-white border border-white/20 uppercase tracking-wider">
                             Studio
                           </span>
                           {u.planExpiresAt && (
-                            <div className="text-[10px] text-slate-500 mt-0.5 font-mono">
+                            <div className="text-[10px] text-zinc-500 mt-0.5 font-mono">
                               Hết hạn: {new Date(u.planExpiresAt).toLocaleDateString("vi-VN")}
                             </div>
                           )}
                         </div>
                       ) : u.plan === "pro" ? (
                         <div>
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 uppercase tracking-wider">
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-zinc-800 text-zinc-300 border border-white/10 uppercase tracking-wider">
                             Pro
                           </span>
                           {u.planExpiresAt && (
-                            <div className="text-[10px] text-slate-500 mt-0.5 font-mono">
+                            <div className="text-[10px] text-zinc-500 mt-0.5 font-mono">
                               Hết hạn: {new Date(u.planExpiresAt).toLocaleDateString("vi-VN")}
                             </div>
                           )}
                         </div>
                       ) : (
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-white/5 text-slate-400 border border-white/10">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-white/5 text-zinc-400 border border-white/10">
                           Free
                         </span>
                       )}
@@ -439,15 +433,15 @@ export default function AdminUsersPage() {
                     {/* Status */}
                     <td className="py-3 px-4">
                       <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-semibold text-[10px] ${
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-medium text-[10px] ${
                           u.status === "banned"
-                            ? "bg-rose-500/15 text-rose-400 border border-rose-500/30"
-                            : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                            ? "bg-zinc-900 text-zinc-400 border border-zinc-700"
+                            : "bg-zinc-800 text-zinc-200 border border-white/10"
                         }`}
                       >
                         <span
                           className={`w-1.5 h-1.5 rounded-full ${
-                            u.status === "banned" ? "bg-rose-400" : "bg-emerald-400"
+                            u.status === "banned" ? "bg-zinc-500" : "bg-white"
                           }`}
                         />
                         {u.status === "banned" ? "Đã khóa" : "Hoạt động"}
@@ -455,12 +449,12 @@ export default function AdminUsersPage() {
                     </td>
 
                     {/* Designs count */}
-                    <td className="py-3 px-4 font-semibold text-slate-200">
+                    <td className="py-3 px-4 font-semibold text-zinc-200">
                       {u.templatesCount || 0}
                     </td>
 
                     {/* Created date */}
-                    <td className="py-3 px-4 text-slate-400 text-[11px] font-mono">
+                    <td className="py-3 px-4 text-zinc-400 text-[11px] font-mono">
                       {new Date(u.createdAt).toLocaleDateString("vi-VN")}
                     </td>
 
@@ -473,7 +467,7 @@ export default function AdminUsersPage() {
                             {/* View Detail */}
                             <button
                               onClick={() => setDetailModalUser(u)}
-                              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
                               title="Xem chi tiết"
                             >
                               <span className="material-symbols-rounded text-base">visibility</span>
@@ -486,7 +480,7 @@ export default function AdminUsersPage() {
                                 setSelectedPlan(u.plan || "free");
                                 setPlanMonths(1);
                               }}
-                              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-amber-400 hover:text-amber-300 border border-white/10 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
                               title="Cập nhật gói cước (Free / Pro / Studio)"
                             >
                               <span className="material-symbols-rounded text-base">workspace_premium</span>
@@ -496,7 +490,7 @@ export default function AdminUsersPage() {
                             {isSoleAdmin ? (
                               <button
                                 disabled
-                                className="p-1.5 rounded-lg bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed opacity-40"
+                                className="p-1.5 rounded-lg bg-white/5 text-zinc-600 border border-white/5 cursor-not-allowed opacity-40"
                                 title="Quản trị viên Phan Trọng Quý là tài khoản cố định duy nhất"
                               >
                                 <span className="material-symbols-rounded text-base">manage_accounts</span>
@@ -504,7 +498,7 @@ export default function AdminUsersPage() {
                             ) : (
                               <button
                                 disabled
-                                className="p-1.5 rounded-lg bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed opacity-40"
+                                className="p-1.5 rounded-lg bg-white/5 text-zinc-600 border border-white/5 cursor-not-allowed opacity-40"
                                 title="Hệ thống chỉ có duy nhất 1 Quản trị viên: Phan Trọng Quý (Tài khoản fix cứng)"
                               >
                                 <span className="material-symbols-rounded text-base">manage_accounts</span>
@@ -515,7 +509,7 @@ export default function AdminUsersPage() {
                             {isSoleAdmin ? (
                               <button
                                 disabled
-                                className="p-1.5 rounded-lg bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed opacity-40"
+                                className="p-1.5 rounded-lg bg-white/5 text-zinc-600 border border-white/5 cursor-not-allowed opacity-40"
                                 title="Quản trị viên Phan Trọng Quý là tài khoản cố định, không thể khóa"
                               >
                                 <span className="material-symbols-rounded text-base">lock</span>
@@ -526,11 +520,7 @@ export default function AdminUsersPage() {
                                   setStatusModalUser(u);
                                   setBanReason(u.bannedReason || "");
                                 }}
-                                className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
-                                  u.status === "banned"
-                                    ? "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/20"
-                                    : "bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border-rose-500/20"
-                                }`}
+                                className="p-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white transition-colors cursor-pointer"
                                 title={u.status === "banned" ? "Mở khóa tài khoản" : "Khóa tài khoản"}
                               >
                                 <span className="material-symbols-rounded text-base">
@@ -579,29 +569,29 @@ export default function AdminUsersPage() {
       {/* ── MODAL: CREATE USER ── */}
       {createModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-[#0d131f] border border-white/15 rounded-3xl p-6 sm:p-8 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9),0_0_40px_rgba(229,43,43,0.18)]">
+          <div className="w-full max-w-lg bg-zinc-950 border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <span className="material-symbols-rounded text-red-400">person_add</span>
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <span className="material-symbols-rounded text-zinc-400">person_add</span>
                 Thêm Người Dùng Mới
               </h3>
               <button
                 onClick={() => setCreateModalOpen(false)}
-                className="text-slate-400 hover:text-white cursor-pointer"
+                className="text-zinc-400 hover:text-white cursor-pointer"
               >
                 <span className="material-symbols-rounded">close</span>
               </button>
             </div>
 
             {modalError && (
-              <div className="mb-4 p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs">
+              <div className="mb-4 p-3 rounded-xl bg-zinc-900 border border-white/10 text-zinc-300 text-xs">
                 {modalError}
               </div>
             )}
 
             <form onSubmit={handleCreateUser} className="space-y-4 text-left">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-zinc-300 mb-1">
                   Họ và tên *
                 </label>
                 <input
@@ -609,71 +599,71 @@ export default function AdminUsersPage() {
                   required
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#060911] border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-red-500/60"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-white/30"
                   placeholder="Ví dụ: Nguyễn Văn A"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Email *</label>
+                <label className="block text-xs font-medium text-zinc-300 mb-1">Email *</label>
                 <input
                   type="email"
                   required
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#060911] border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-red-500/60"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-white/30"
                   placeholder="name@example.com"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <label className="block text-xs font-medium text-zinc-300 mb-1">
                     Username
                   </label>
                   <input
                     type="text"
                     value={newUsername}
                     onChange={(e) => setNewUsername(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#060911] border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-red-500/60"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-white/30"
                     placeholder="nguyenvana"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <label className="block text-xs font-medium text-zinc-300 mb-1">
                     Vai trò
                   </label>
-                  <div className="w-full px-3.5 py-2.5 rounded-xl bg-[#060911]/60 border border-white/10 text-xs sm:text-sm text-slate-300 flex items-center justify-between">
+                  <div className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900/60 border border-white/10 text-xs sm:text-sm text-zinc-300 flex items-center justify-between">
                     <span>Người dùng (User)</span>
-                    <span className="text-[10px] text-amber-400 font-medium">Mặc định</span>
+                    <span className="text-[10px] text-zinc-400 font-medium">Mặc định</span>
                   </div>
-                  <p className="text-[10px] text-slate-500 mt-1">
+                  <p className="text-[10px] text-zinc-500 mt-1">
                     * Quản trị viên cố định duy nhất: Phan Trọng Quý
                   </p>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-zinc-300 mb-1">
                   Nghề nghiệp / Chức vụ
                 </label>
                 <input
                   type="text"
                   value={newJobRole}
                   onChange={(e) => setNewJobRole(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#060911] border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-red-500/60"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-white/30"
                   placeholder="3D Designer, Fashion Creator..."
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Tiểu sử</label>
+                <label className="block text-xs font-medium text-zinc-300 mb-1">Tiểu sử</label>
                 <textarea
                   rows={2}
                   value={newBio}
                   onChange={(e) => setNewBio(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-[#060911] border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-red-500/60"
+                  className="w-full px-3.5 py-2 rounded-xl bg-zinc-900 border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-white/30"
                   placeholder="Mô tả ngắn về người dùng..."
                 />
               </div>
@@ -682,14 +672,14 @@ export default function AdminUsersPage() {
                 <button
                   type="button"
                   onClick={() => setCreateModalOpen(false)}
-                  className="px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs font-semibold cursor-pointer"
+                  className="px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 text-xs font-medium cursor-pointer transition-colors"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={actionBusy}
-                  className="px-5 py-2 rounded-full bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 hover:opacity-95 disabled:opacity-50 text-white text-xs font-bold shadow-[0_0_20px_rgba(229,43,43,0.35)] cursor-pointer"
+                  className="px-5 py-2 rounded-lg bg-white text-black hover:bg-zinc-200 disabled:opacity-50 text-xs font-medium cursor-pointer transition-colors"
                 >
                   {actionBusy ? "Đang tạo..." : "Tạo Tài Khoản"}
                 </button>
@@ -699,73 +689,72 @@ export default function AdminUsersPage() {
         </div>
       )}
 
-      
       {/* ── MODAL: UPDATE USER PLAN ── */}
       {planModalUser && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-[#0d131f] border border-white/10 rounded-3xl p-6 shadow-2xl shadow-black/80 space-y-4">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <span className="material-symbols-rounded text-amber-400">workspace_premium</span>
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-zinc-950 border border-white/10 rounded-2xl p-6 shadow-2xl space-y-4">
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <span className="material-symbols-rounded text-zinc-400">workspace_premium</span>
               Cập Nhật Gói Cước
             </h3>
-            <p className="text-xs text-neutral-400">
+            <p className="text-xs text-zinc-400">
               Điều chỉnh gói dịch vụ của người dùng: <span className="font-semibold text-white">{planModalUser.name}</span> ({planModalUser.email}).
             </p>
 
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-neutral-300 mb-1.5">
+                <label className="block text-xs font-medium text-zinc-300 mb-1.5">
                   Chọn Gói Thuê Bao
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setSelectedPlan("free")}
-                    className={`p-3 rounded-2xl border text-center transition-all ${
+                    className={`p-3 rounded-xl border text-center transition-all ${
                       selectedPlan === "free"
-                        ? "bg-white/10 border-white/30 text-white font-bold"
-                        : "bg-[#060911] border-white/5 text-neutral-400 hover:text-white"
+                        ? "bg-white/15 border-white/30 text-white font-medium"
+                        : "bg-zinc-900 border-white/10 text-zinc-400 hover:text-white"
                     }`}
                   >
                     <div className="text-xs">Free</div>
-                    <div className="text-[10px] text-neutral-500 mt-0.5">Tiêu chuẩn</div>
+                    <div className="text-[10px] text-zinc-500 mt-0.5">Tiêu chuẩn</div>
                   </button>
                   <button
                     type="button"
                     onClick={() => setSelectedPlan("pro")}
-                    className={`p-3 rounded-2xl border text-center transition-all ${
+                    className={`p-3 rounded-xl border text-center transition-all ${
                       selectedPlan === "pro"
-                        ? "bg-rose-500/15 border-rose-500/50 text-rose-300 font-bold shadow-sm"
-                        : "bg-[#060911] border-white/5 text-neutral-400 hover:text-white"
+                        ? "bg-white/15 border-white/30 text-white font-medium"
+                        : "bg-zinc-900 border-white/10 text-zinc-400 hover:text-white"
                     }`}
                   >
                     <div className="text-xs">Pro</div>
-                    <div className="text-[10px] text-rose-400/80 mt-0.5">99k / tháng</div>
+                    <div className="text-[10px] text-zinc-400 mt-0.5">99k / tháng</div>
                   </button>
                   <button
                     type="button"
                     onClick={() => setSelectedPlan("studio")}
-                    className={`p-3 rounded-2xl border text-center transition-all ${
+                    className={`p-3 rounded-xl border text-center transition-all ${
                       selectedPlan === "studio"
-                        ? "bg-amber-500/15 border-amber-500/50 text-amber-300 font-bold shadow-sm"
-                        : "bg-[#060911] border-white/5 text-neutral-400 hover:text-white"
+                        ? "bg-white/15 border-white/30 text-white font-medium"
+                        : "bg-zinc-900 border-white/10 text-zinc-400 hover:text-white"
                     }`}
                   >
                     <div className="text-xs">Studio</div>
-                    <div className="text-[10px] text-amber-400/80 mt-0.5">199k / tháng</div>
+                    <div className="text-[10px] text-zinc-400 mt-0.5">199k / tháng</div>
                   </button>
                 </div>
               </div>
 
               {selectedPlan !== "free" && (
                 <div>
-                  <label className="block text-xs font-semibold text-neutral-300 mb-1.5">
+                  <label className="block text-xs font-medium text-zinc-300 mb-1.5">
                     Thời Hạn Gia Hạn (Tháng)
                   </label>
                   <select
                     value={planMonths}
                     onChange={(e) => setPlanMonths(Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#060911] border border-white/10 text-xs text-white outline-none focus:border-red-500/60"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white outline-none focus:border-white/30"
                   >
                     <option value={1}>1 tháng (+30 ngày)</option>
                     <option value={3}>3 tháng (+90 ngày)</option>
@@ -776,8 +765,8 @@ export default function AdminUsersPage() {
               )}
 
               {planModalUser.planExpiresAt && (
-                <div className="p-3 rounded-xl bg-[#060911] border border-white/5 text-[11px] text-neutral-400">
-                  Thời hạn hiện tại: <span className="text-neutral-200">{new Date(planModalUser.planExpiresAt).toLocaleDateString("vi-VN")}</span>
+                <div className="p-3 rounded-xl bg-zinc-900 border border-white/5 text-[11px] text-zinc-400">
+                  Thời hạn hiện tại: <span className="text-zinc-200">{new Date(planModalUser.planExpiresAt).toLocaleDateString("vi-VN")}</span>
                 </div>
               )}
             </div>
@@ -786,7 +775,7 @@ export default function AdminUsersPage() {
               <button
                 type="button"
                 onClick={() => setPlanModalUser(null)}
-                className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 text-xs font-semibold transition-colors"
+                className="px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-300 text-xs font-medium transition-colors"
               >
                 Hủy
               </button>
@@ -794,7 +783,7 @@ export default function AdminUsersPage() {
                 type="button"
                 disabled={actionBusy}
                 onClick={handlePlanSubmit}
-                className="px-5 py-2 rounded-xl bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 hover:from-red-500 hover:via-rose-400 hover:to-amber-400 disabled:opacity-50 text-white text-xs font-semibold shadow-lg shadow-red-950/40 transition-all"
+                className="px-5 py-2 rounded-lg bg-white text-black hover:bg-zinc-200 disabled:opacity-50 text-xs font-medium transition-colors"
               >
                 {actionBusy ? "Đang lưu..." : "Xác Nhận Cập Nhật"}
               </button>
@@ -805,14 +794,10 @@ export default function AdminUsersPage() {
 
       {/* ── MODAL: BAN / UNBAN USER ── */}
       {statusModalUser && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-[#0d131f] border border-white/10 rounded-3xl p-6 shadow-2xl shadow-black/80">
-            <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
-              <span
-                className={`material-symbols-rounded ${
-                  statusModalUser.status === "active" ? "text-rose-400" : "text-emerald-400"
-                }`}
-              >
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-zinc-950 border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
+              <span className="material-symbols-rounded text-zinc-400">
                 {statusModalUser.status === "active" ? "block" : "lock_open"}
               </span>
               {statusModalUser.status === "active"
@@ -820,7 +805,7 @@ export default function AdminUsersPage() {
                 : `Mở Khóa Tài Khoản: ${statusModalUser.name}`}
             </h3>
 
-            <p className="text-xs text-neutral-400 mb-4 leading-relaxed">
+            <p className="text-xs text-zinc-400 mb-4 leading-relaxed">
               {statusModalUser.status === "active"
                 ? "Người dùng này sẽ không thể đăng nhập hoặc thực hiện bất kỳ thao tác nào. Tất cả mẫu thiết kế và bình luận của họ vẫn được giữ nguyên vẹn trên hệ thống."
                 : "Người dùng này sẽ được khôi phục quyền đăng nhập và tiếp tục sử dụng nền tảng PickMe3D."}
@@ -828,7 +813,7 @@ export default function AdminUsersPage() {
 
             {statusModalUser.status === "active" && (
               <div className="mb-4">
-                <label className="block text-xs font-semibold text-neutral-300 mb-1.5">
+                <label className="block text-xs font-medium text-zinc-300 mb-1.5">
                   Lý do khóa tài khoản:
                 </label>
                 <textarea
@@ -836,7 +821,7 @@ export default function AdminUsersPage() {
                   value={banReason}
                   onChange={(e) => setBanReason(e.target.value)}
                   placeholder="Ví dụ: Đăng tải nội dung vi phạm bản quyền hoặc spam..."
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#060911] border border-white/10 text-xs text-white focus:outline-none focus:border-rose-500/60 placeholder:text-neutral-600"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white focus:outline-none focus:border-white/30 placeholder:text-zinc-600"
                 />
               </div>
             )}
@@ -845,7 +830,7 @@ export default function AdminUsersPage() {
               <button
                 type="button"
                 onClick={() => setStatusModalUser(null)}
-                className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 text-xs font-semibold transition-colors"
+                className="px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-300 text-xs font-medium transition-colors"
               >
                 Hủy
               </button>
@@ -853,11 +838,7 @@ export default function AdminUsersPage() {
                 type="button"
                 disabled={actionBusy}
                 onClick={handleStatusSubmit}
-                className={`px-5 py-2 rounded-xl text-xs font-semibold text-white shadow-lg transition-all ${
-                  statusModalUser.status === "active"
-                    ? "bg-rose-600 hover:bg-rose-500 shadow-rose-950/40"
-                    : "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-950/40"
-                }`}
+                className="px-5 py-2 rounded-lg bg-white text-black hover:bg-zinc-200 text-xs font-medium transition-colors"
               >
                 {actionBusy
                   ? "Đang lưu..."
@@ -872,31 +853,31 @@ export default function AdminUsersPage() {
 
       {/* ── MODAL: CHANGE ROLE ── */}
       {roleModalUser && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-[#0d131f] border border-white/10 rounded-3xl p-6 shadow-2xl shadow-black/80">
-            <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
-              <span className="material-symbols-rounded text-rose-400">shield_person</span>
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-zinc-950 border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
+              <span className="material-symbols-rounded text-zinc-400">shield_person</span>
               Vai Trò: {roleModalUser.name}
             </h3>
 
-            <div className="mb-5 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs leading-relaxed space-y-2">
+            <div className="mb-5 p-4 rounded-xl bg-zinc-900 border border-white/10 text-zinc-300 text-xs leading-relaxed space-y-2">
               {roleModalUser.email === SOLE_ADMIN_EMAIL ? (
                 <>
-                  <div className="font-semibold text-amber-200 flex items-center gap-1.5 text-sm">
-                    <span className="material-symbols-rounded text-base">verified_user</span>
+                  <div className="font-semibold text-white flex items-center gap-1.5 text-sm">
+                    <span className="material-symbols-rounded text-base text-zinc-400">verified_user</span>
                     Quản Trị Viên Cố Định Duy Nhất
                   </div>
-                  <p className="text-slate-300">
+                  <p className="text-zinc-400">
                     Tài khoản <strong>{roleModalUser.email}</strong> (Phan Trọng Quý) là Quản trị viên cố định duy nhất của nền tảng PickMe3D. Vai trò này được bảo vệ cố định và không thể thay đổi hay hạ cấp.
                   </p>
                 </>
               ) : (
                 <>
-                  <div className="font-semibold text-amber-200 flex items-center gap-1.5 text-sm">
-                    <span className="material-symbols-rounded text-base">lock</span>
+                  <div className="font-semibold text-white flex items-center gap-1.5 text-sm">
+                    <span className="material-symbols-rounded text-base text-zinc-400">lock</span>
                     Chính Sách Quản Trị Viên Cố Định
                   </div>
-                  <p className="text-slate-300">
+                  <p className="text-zinc-400">
                     Hệ thống chỉ duy nhất có 1 Quản trị viên cố định là <strong>Phan Trọng Quý</strong> ({SOLE_ADMIN_EMAIL}). Toàn bộ tài khoản khác được chỉ định cố định vai trò Người dùng (User) và không thể nâng cấp.
                   </p>
                 </>
@@ -907,7 +888,7 @@ export default function AdminUsersPage() {
               <button
                 type="button"
                 onClick={() => setRoleModalUser(null)}
-                className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-white text-xs font-semibold transition-colors"
+                className="px-5 py-2 rounded-lg bg-white text-black hover:bg-zinc-200 text-xs font-medium transition-colors"
               >
                 Đã hiểu & Đóng
               </button>
@@ -918,39 +899,39 @@ export default function AdminUsersPage() {
 
       {/* ── MODAL: USER DETAILS ── */}
       {detailModalUser && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-[#0d131f] border border-white/10 rounded-3xl p-6 shadow-2xl shadow-black/80">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-lg bg-zinc-950 border border-white/10 rounded-2xl p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <span className="material-symbols-rounded text-rose-400">badge</span>
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <span className="material-symbols-rounded text-zinc-400">badge</span>
                 Thông Tin Chi Tiết Tài Khoản
               </h3>
               <button
                 onClick={() => setDetailModalUser(null)}
-                className="text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-white/5 transition-colors"
+                className="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-white/5 transition-colors"
               >
                 <span className="material-symbols-rounded">close</span>
               </button>
             </div>
 
             <div className="space-y-3.5 text-xs">
-              <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-[#060911] border border-white/10">
+              <div className="flex items-center gap-3 p-3.5 rounded-xl bg-zinc-900 border border-white/10">
                 {detailModalUser.picture ? (
                   <img
                     src={detailModalUser.picture}
                     alt={detailModalUser.name}
-                    className="w-12 h-12 rounded-full object-cover ring-2 ring-white/10"
+                    className="w-12 h-12 rounded-full object-cover ring-1 ring-white/20"
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-500/20 to-amber-500/20 border border-white/10 font-bold text-sm flex items-center justify-center text-rose-300">
+                  <div className="w-12 h-12 rounded-full bg-zinc-800 border border-white/10 font-bold text-sm flex items-center justify-center text-white">
                     {detailModalUser.name?.charAt(0)}
                   </div>
                 )}
                 <div>
-                  <div className="text-sm font-bold text-white">{detailModalUser.name}</div>
-                  <div className="text-neutral-400">{detailModalUser.email}</div>
+                  <div className="text-sm font-semibold text-white">{detailModalUser.name}</div>
+                  <div className="text-zinc-400">{detailModalUser.email}</div>
                   {detailModalUser.username && (
-                    <div className="text-rose-400 font-mono text-[11px]">
+                    <div className="text-zinc-500 font-mono text-[11px]">
                       @{detailModalUser.username}
                     </div>
                   )}
@@ -958,48 +939,44 @@ export default function AdminUsersPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-xl bg-[#060911] border border-white/10">
-                  <span className="text-neutral-500 block mb-1">Vai trò</span>
-                  <span className={`font-semibold ${detailModalUser.email === SOLE_ADMIN_EMAIL ? "text-rose-400" : "text-white"}`}>
+                <div className="p-3 rounded-xl bg-zinc-900 border border-white/10">
+                  <span className="text-zinc-500 block mb-1">Vai trò</span>
+                  <span className="font-medium text-white">
                     {detailModalUser.email === SOLE_ADMIN_EMAIL ? "Quản Trị Viên (Cố Định)" : "Người Dùng"}
                   </span>
                 </div>
-                <div className="p-3 rounded-xl bg-[#060911] border border-white/10">
-                  <span className="text-neutral-500 block mb-1">Trạng thái</span>
-                  <span
-                    className={`font-semibold ${
-                      detailModalUser.status === "banned" ? "text-rose-400" : "text-emerald-400"
-                    }`}
-                  >
+                <div className="p-3 rounded-xl bg-zinc-900 border border-white/10">
+                  <span className="text-zinc-500 block mb-1">Trạng thái</span>
+                  <span className="font-medium text-white">
                     {detailModalUser.status === "banned" ? "Đã khóa" : "Hoạt động"}
                   </span>
                 </div>
               </div>
 
               {detailModalUser.status === "banned" && (
-                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300">
-                  <span className="font-semibold block mb-0.5">Lý do khóa:</span>
+                <div className="p-3 rounded-xl bg-zinc-900 border border-white/10 text-zinc-300">
+                  <span className="font-semibold block mb-0.5 text-white">Lý do khóa:</span>
                   {detailModalUser.bannedReason || "Không có ghi chú"}
                 </div>
               )}
 
-              <div className="p-3 rounded-xl bg-[#060911] border border-white/10">
-                <span className="text-neutral-500 block mb-1">Nghề nghiệp</span>
+              <div className="p-3 rounded-xl bg-zinc-900 border border-white/10">
+                <span className="text-zinc-500 block mb-1">Nghề nghiệp</span>
                 <span className="text-white">{detailModalUser.jobRole || "Chưa cập nhật"}</span>
               </div>
 
-              <div className="p-3 rounded-xl bg-[#060911] border border-white/10">
-                <span className="text-neutral-500 block mb-1">Tiểu sử</span>
+              <div className="p-3 rounded-xl bg-zinc-900 border border-white/10">
+                <span className="text-zinc-500 block mb-1">Tiểu sử</span>
                 <span className="text-white">{detailModalUser.bio || "Chưa có tiểu sử"}</span>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 text-neutral-400">
-                <div className="p-3 rounded-xl bg-[#060911] border border-white/10">
-                  <span className="text-neutral-500 block mb-0.5">Số mẫu thiết kế</span>
+              <div className="grid grid-cols-2 gap-3 text-zinc-400">
+                <div className="p-3 rounded-xl bg-zinc-900 border border-white/10">
+                  <span className="text-zinc-500 block mb-0.5">Số mẫu thiết kế</span>
                   <span className="font-semibold text-white">{detailModalUser.templatesCount || 0}</span>
                 </div>
-                <div className="p-3 rounded-xl bg-[#060911] border border-white/10">
-                  <span className="text-neutral-500 block mb-0.5">Ngày tham gia</span>
+                <div className="p-3 rounded-xl bg-zinc-900 border border-white/10">
+                  <span className="text-zinc-500 block mb-0.5">Ngày tham gia</span>
                   <span className="font-semibold text-white">
                     {new Date(detailModalUser.createdAt).toLocaleDateString("vi-VN")}
                   </span>
@@ -1011,7 +988,7 @@ export default function AdminUsersPage() {
               <button
                 type="button"
                 onClick={() => setDetailModalUser(null)}
-                className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 text-xs font-semibold transition-colors"
+                className="px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-300 text-xs font-medium transition-colors"
               >
                 Đóng
               </button>
@@ -1022,48 +999,48 @@ export default function AdminUsersPage() {
 
       {/* ── MODAL: BATCH CSV IMPORT ── */}
       {importModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-xl bg-[#0d131f] border border-white/10 rounded-3xl p-6 shadow-2xl shadow-black/80">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-xl bg-zinc-950 border border-white/10 rounded-2xl p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <span className="material-symbols-rounded text-rose-400">upload_file</span>
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <span className="material-symbols-rounded text-zinc-400">upload_file</span>
                 Import Danh Sách Người Dùng (CSV)
               </h3>
               <button
                 onClick={() => setImportModalOpen(false)}
-                className="text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-white/5 transition-colors"
+                className="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-white/5 transition-colors"
               >
                 <span className="material-symbols-rounded">close</span>
               </button>
             </div>
 
-            <p className="text-xs text-neutral-400 mb-3 leading-relaxed">
+            <p className="text-xs text-zinc-400 mb-3 leading-relaxed">
               Dán dữ liệu CSV theo định dạng:{" "}
-              <code className="text-rose-300 bg-rose-500/10 px-1.5 py-0.5 rounded font-mono border border-rose-500/20">
+              <code className="text-zinc-200 bg-zinc-900 px-1.5 py-0.5 rounded font-mono border border-white/10">
                 Tên, Email, Nghề nghiệp, Tiểu sử
               </code>
               . <br />
-              <span className="text-amber-400">
+              <span className="text-zinc-400">
                 Quy tắc bảo mật: Mọi tài khoản import luôn mặc định là vai trò 'user', không thể tự ý cấp quyền Admin.
               </span>
             </p>
 
             {modalError && (
-              <div className="mb-3 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs">
+              <div className="mb-3 p-3 rounded-xl bg-zinc-900 border border-white/10 text-zinc-300 text-xs">
                 {modalError}
               </div>
             )}
 
             {importSummary && (
-              <div className="mb-4 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs space-y-2">
-                <div className="font-bold text-emerald-400 flex items-center gap-1.5">
-                  <span className="material-symbols-rounded text-base">check_circle</span>
+              <div className="mb-4 p-4 rounded-xl bg-zinc-900 border border-white/10 text-xs space-y-2">
+                <div className="font-semibold text-white flex items-center gap-1.5">
+                  <span className="material-symbols-rounded text-base text-zinc-400">check_circle</span>
                   Kết quả: Đã import thành công {importSummary.imported}/{importSummary.total} tài khoản!
                 </div>
                 {importSummary.errors?.length > 0 && (
-                  <div className="text-amber-400 space-y-1 mt-2">
-                    <span className="font-semibold">Hàng bị bỏ qua ({importSummary.errors.length}):</span>
-                    <ul className="list-disc list-inside space-y-0.5 text-[11px] text-neutral-300">
+                  <div className="text-zinc-400 space-y-1 mt-2">
+                    <span className="font-medium text-zinc-300">Hàng bị bỏ qua ({importSummary.errors.length}):</span>
+                    <ul className="list-disc list-inside space-y-0.5 text-[11px] text-zinc-400">
                       {importSummary.errors.slice(0, 5).map((err: any, idx: number) => (
                         <li key={idx}>
                           Dòng {err.row}: {err.email ? `[${err.email}] ` : ""}{err.error}
@@ -1080,7 +1057,7 @@ export default function AdminUsersPage() {
               value={importText}
               onChange={(e) => setImportText(e.target.value)}
               placeholder={`Nguyễn Văn A, a@example.com, Fashion Designer, Yêu thích 3D\nTrần Thị B, b@example.com, 3D Artist, Chuyên gia trang phục`}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-[#060911] border border-white/10 text-xs text-white font-mono focus:outline-none focus:border-red-500/60 placeholder:text-neutral-600 mb-4"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white font-mono focus:outline-none focus:border-white/30 placeholder:text-zinc-600 mb-4"
             />
 
             <div className="flex justify-between items-center">
@@ -1091,7 +1068,7 @@ export default function AdminUsersPage() {
                     `Nguyễn Văn A, a@example.com, Fashion Designer, Yêu thích 3D\nTrần Thị B, b@example.com, 3D Artist, Chuyên gia trang phục`
                   )
                 }
-                className="text-xs text-rose-400 hover:text-rose-300 font-medium"
+                className="text-xs text-zinc-400 hover:text-white underline underline-offset-2"
               >
                 Điền mẫu ví dụ
               </button>
@@ -1100,7 +1077,7 @@ export default function AdminUsersPage() {
                 <button
                   type="button"
                   onClick={() => setImportModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 text-xs font-semibold transition-colors"
+                  className="px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-300 text-xs font-medium transition-colors"
                 >
                   Đóng
                 </button>
@@ -1108,7 +1085,7 @@ export default function AdminUsersPage() {
                   type="button"
                   disabled={actionBusy}
                   onClick={handleImportSubmit}
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 hover:from-red-500 hover:via-rose-400 hover:to-amber-400 disabled:opacity-50 text-white text-xs font-semibold shadow-lg shadow-red-950/40 transition-all"
+                  className="px-5 py-2 rounded-lg bg-white text-black hover:bg-zinc-200 disabled:opacity-50 text-xs font-medium transition-colors"
                 >
                   {actionBusy ? "Đang xử lý..." : "Tiến Hành Import"}
                 </button>
