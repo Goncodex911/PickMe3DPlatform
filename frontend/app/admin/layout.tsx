@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
+import { trackEvent } from "@/lib/gtag";
 
 interface AdminUserSession {
   id?: string;
@@ -60,6 +61,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }
       localStorage.setItem("pickme3d_token", data.token);
       localStorage.setItem("pickme3d_user", JSON.stringify(data.user));
+      trackEvent.login("admin", data.user?.email || adminEmail);
       setCurrentUser(data.user);
       setIsAuthorized(true);
     } catch (err: any) {

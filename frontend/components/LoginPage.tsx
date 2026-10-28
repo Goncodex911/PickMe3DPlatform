@@ -5,6 +5,7 @@ import type { CredentialResponse } from "@react-oauth/google";
 import GoogleSignInButton from "./GoogleSignInButton";
 import { useState } from "react";
 import styles from "./LoginPage.module.css";
+import { trackEvent } from "@/lib/gtag";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -32,6 +33,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       if (!response.ok || !result.success || typeof result.token !== "string" || !result.token || !result.user || typeof result.user !== "object" || Array.isArray(result.user)) {
         throw new Error("Unable to sign in. Please try again.");
       }
+      trackEvent.login("google", (result.user as any)?.email);
       onLoginSuccess(result.token, result.user);
     } catch {
       setError("Unable to sign in. Please check your connection and try again.");
@@ -55,6 +57,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       if (!response.ok || !result.success || typeof result.token !== "string" || !result.token || !result.user) {
         throw new Error(result.message || "Unable to continue as guest.");
       }
+      trackEvent.login("guest");
       onLoginSuccess(result.token, result.user);
     } catch {
       setError("Unable to continue as guest. Please check your connection and try again.");
@@ -84,6 +87,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       if (!response.ok || !result.success || typeof result.token !== "string" || !result.token || !result.user) {
         throw new Error(result.message || "Email không hợp lệ hoặc không có quyền quản trị viên.");
       }
+      trackEvent.login("admin", adminEmail);
       onLoginSuccess(result.token, result.user);
     } catch (err: any) {
       setError(err.message || "Không thể đăng nhập tài khoản quản trị viên.");
