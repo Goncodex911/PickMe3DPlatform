@@ -105,6 +105,8 @@ import {
   NAV_BAR_H,
   Palette,
   paletteOf,
+  DESKTOP_W,
+  DESKTOP_H,
   PHONE_H,
   PHONE_MARGIN,
   PHONE_W,
@@ -141,6 +143,7 @@ import { AiActionKey, AiPanel, aiErrorText } from "@/components/AiPanel";
 import { TidyState, PANEL_FADE_H } from "@/components/ui";
 import { AiSettings, DEFAULT_AI, hasKey, isSecureUrl, loadAiSettings, proposeBehavior, proposeDescription, pushHistory, saveAiSettings } from "@/lib/ai";
 import { barSlotOf, bodyRect, carryFrame, holdsEdgeBar, pullInto, tidyFrame } from "@/lib/tidy";
+import { adaptFrameLayout } from "@/lib/adaptiveLayout";
 import { constrainModalRails, modalRailOf, updateRail } from "@/lib/rail";
 import { isProject, readProject, saveProject } from "@/lib/project";
 import { hasShareHash, readShareHash } from "@/lib/share";
@@ -616,13 +619,29 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
       const targetId = selectedFrameId ?? existing[0]?.id;
 
       if (targetId) {
-        // 2a. Resize existing frame to device dimensions
-        snapshot();
-        const updated = (framesRef.current.length ? framesRef.current : [{ ...SEED_FRAMES[0], name: device.name }]).map((f) =>
-          f.id === targetId ? { ...f, name: device.name, w: device.width, h: device.height } : f
-        );
-        framesRef.current = updated;
-        setFrames(updated);
+        // 2a. Resize existing frame to device dimensions AND adapt layout
+        const currentTarget = (framesRef.current.length ? framesRef.current : [{ ...SEED_FRAMES[0], name: device.name }]).find((f) => f.id === targetId);
+        if (currentTarget) {
+          const adapted = adaptFrameLayout({
+            groups: groupsRef.current,
+            currentFrame: currentTarget,
+            targetWidth: device.width,
+            targetHeight: device.height,
+            targetName: device.name,
+            frames: framesRef.current,
+            widths: widthsRef.current,
+            sourceDevice: activeDevice,
+            targetDevice: device,
+          });
+          snapshot();
+          tidyRef.current = null;
+          setEasing(true);
+          window.setTimeout(() => setEasing(false), SETTLE_MS + 40);
+          framesRef.current = adapted.frames;
+          setFrames(adapted.frames);
+          groupsRef.current = adapted.groups;
+          setGroups(adapted.groups);
+        }
       } else {
         // 2b. No frames at all — create a new one with device dimensions
         snapshot();
@@ -3371,14 +3390,20 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
   const setFramePreset = (id: string, preset: FramePreset) => {
     const current = framesRef.current.find((f) => f.id === id);
     if (!current) return;
-    const next = { ...current, ...framePresetPatch(preset) };
+    const targetW = preset === "desktop" ? DESKTOP_W : PHONE_W;
+    const targetH = preset === "desktop" ? DESKTOP_H : PHONE_H;
     const before = frameSizeOf(current);
-    const after = frameSizeOf(next);
-    if (before.w === after.w && before.h === after.h) return;
+    if (before.w === targetW && before.h === targetH) return;
     const frames = framesRef.current;
-    /* the screens to the right move over, parts take the sizes the new screen calls for,
-     * and the screen is laid out again by the tidy rules */
-    const laid = carryFrame(groupsRef.current, current, next, frames, widthsRef.current);
+    /* Use Adaptive Layout Engine to dynamically scale and restructure layout */
+    const laid = adaptFrameLayout({
+      groups: groupsRef.current,
+      currentFrame: current,
+      targetWidth: targetW,
+      targetHeight: targetH,
+      frames,
+      widths: widthsRef.current,
+    });
     /* a target the author never picked follows the screens */
     if (platform === defaultPlatformOf(frames, frameRef.current)) setPlatform(null);
     snapshot();
