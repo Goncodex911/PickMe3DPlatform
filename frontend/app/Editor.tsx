@@ -161,6 +161,7 @@ import { ConfirmDialog, IconBtn, Segmented } from "@/components/ui";
 import { Lang, LangContext, SEED_TEXT, getLang, setGlobalLang, t, translateDefaultFrameName, translateDefaultText } from "@/lib/i18n";
 import DeviceSelector from "@/components/DeviceSelector";
 import ImportTemplateModal from "@/components/ImportTemplateModal";
+import ImportConflictModal from "@/components/ImportConflictModal";
 import EmbedModal from "@/components/EmbedModal";
 import { DeviceConfig, findDeviceById } from "@/constants/devices";
 import { TemplateFile } from "@/types/template-file";
@@ -534,6 +535,14 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
   const [platform, setPlatform] = useState<Platform | null>(null);
   /** a project file waiting for the author to confirm replacing the canvas */
   const [pendingImport, setPendingImport] = useState<Doc | null>(null);
+  /** pending import payload awaiting confirmation when workspace has active design */
+  const [pendingImportItem, setPendingImportItem] = useState<{
+    type: "templateFile" | "projectDoc";
+    file?: TemplateFile;
+    doc?: Doc;
+    title: string;
+    subtitle?: string;
+  } | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [saveDesignOpen, setSaveDesignOpen] = useState(false);
   const [editingDesign, setEditingDesign] = useState<TemplateItem | null>(null);
@@ -663,173 +672,497 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     }
   };
 
-  /** Handle successful template file import — apply docData if present, or extract layers into UI */
-  const handleImportSuccess = (file: TemplateFile) => {
-    // 1. Activate device preset if specified in file
-    const preset = file.devicePresetId ? findDeviceById(file.devicePresetId) : null;
-    if (preset) {
-      setActiveDevice(preset);
-      setActiveDeviceId(preset.id);
-      if (frameRef.current !== "phone") {
-        setFrame("phone");
-        frameRef.current = "phone";
-      }
-    }
+  /** Helper to calculate X position of next frame */
+  const calcNextFrameX = (currentFrames: Frame[]) =>
+    currentFrames.length
+      ? Math.max(...currentFrames.map((f) => frameRect(f).r)) + FRAME_GAP
+      : 0;
 
-    const targetW = preset?.width ?? 440;
-    const targetH = preset?.height ?? 956;
-    const fallbackFrameId = "imported-frame-" + uid();
-    const fallbackFrame: Frame = {
-      id: fallbackFrameId,
-      name: file.metadata?.title || (preset ? preset.name : "Screen 1"),
-      x: 0,
-      y: 0,
-      w: targetW,
-      h: targetH,
-    };
+  /**
+   * Helper: Extract 3D layers and metadata from TemplateFile into editable Canvas UI components
+   */
+  const extractTemplateGroups = (
+    file: TemplateFile,
+    frameX: number,
+    frameY: number,
+    targetW: number,
+    targetH: number
+  ): Group[] => {
+    const sid = () => `imp_${uid()}`;
+    const margin = 20;
+    const groups: Group[] = [];
 
-    if (file.docData && typeof file.docData === "object") {
-      try {
-        const docPartial = file.docData as Partial<Doc>;
-        snapshot(true);
-        if (!docPartial.frames || docPartial.frames.length === 0) {
-          docPartial.frames = [fallbackFrame];
-        }
-        applyDoc(docPartial, false);
-        framesRef.current = docPartial.frames;
-        setSelectedFrameId(docPartial.frames[0]?.id ?? fallbackFrameId);
-        showToast(`Đã nhập "${file.metadata?.title ?? "Mẫu"}"`, 2200, "check");
-        setTimeout(() => fitRef.current?.(), 100);
-        return;
-      } catch (err) {
-        console.error("Error applying docData from file:", err);
-      }
-    }
-
-    // 2. Fallback: Automatically extract 3D layers and metadata into editable Canvas UI components!
-    try {
-      snapshot(true);
-      const sid = () => `imp_${uid()}`;
-      const margin = 20;
-      const groups: Group[] = [];
-
-      // Top app bar
-      groups.push({
-        id: sid(),
-        x: 0,
-        y: 0,
-        axis: "x",
-        items: [{
+    // Top app bar
+    groups.push({
+      id: sid(),
+      x: frameX,
+      y: frameY,
+      axis: "x",
+      items: [
+        {
           ...makeItem("topAppBar"),
           id: sid(),
           label: file.metadata?.title ?? "Mẫu 3D SmartWatch Pro",
           icon: "arrow_back",
-        }],
-      });
+        },
+      ],
+    });
 
-      // 3D Showcase Card
-      groups.push({
-        id: sid(),
-        x: margin,
-        y: 80,
-        axis: "x",
-        items: [{
+    // 3D Showcase Card
+    groups.push({
+      id: sid(),
+      x: frameX + margin,
+      y: frameY + 80,
+      axis: "x",
+      items: [
+        {
           ...makeItem("card"),
           id: sid(),
           label: "Mô hình 3D - " + (file.metadata?.title ?? "SmartWatch"),
-          supporting: file.metadata?.description ?? "Khung Titanium 3D & Kính Sapphire cao cấp",
+          supporting:
+            file.metadata?.description ?? "Khung Titanium 3D & Kính Sapphire cao cấp",
           icon: "view_in_ar",
           size: targetW - margin * 2,
-        }],
-      });
+        },
+      ],
+    });
 
-      // Tag chips
-      const tags = file.metadata?.tags && file.metadata.tags.length > 0
+    // Tag chips
+    const tags =
+      file.metadata?.tags && file.metadata.tags.length > 0
         ? file.metadata.tags
         : ["Khung Titanium", "Kính Sapphire", "Chống nước 50M"];
-      groups.push({
+    groups.push({
+      id: sid(),
+      x: frameX + margin,
+      y: frameY + 270,
+      axis: "x",
+      items: tags.map((t: string) => ({
+        ...makeItem("chip"),
         id: sid(),
-        x: margin,
-        y: 270,
-        axis: "x",
-        items: tags.map((t: string) => ({
-          ...makeItem("chip"),
+        label: t,
+        icon: "verified",
+      })),
+    });
+
+    // Extracted layer items from file.layers
+    const rawLayers =
+      file.layers && file.layers.length > 0
+        ? file.layers
+        : [
+            { name: "Khung Titanium 3D", type: "mesh" },
+            { name: "Mặt Kính Sapphire & UI", type: "mesh" },
+            { name: "Dây đeo Silicon Thể thao", type: "mesh" },
+          ];
+    const layerItems = rawLayers.map((lay: any, idx: number) => ({
+      ...makeItem("listItem"),
+      id: sid(),
+      label: lay.name,
+      supporting:
+        lay.type === "mesh"
+          ? `Layer 3D Mesh | Tùy biến vật liệu`
+          : `Layer ${lay.type}`,
+      icon: idx === 0 ? "layers" : idx === 1 ? "diamond" : "watch",
+    }));
+    groups.push({
+      id: sid(),
+      x: frameX + margin,
+      y: frameY + 330,
+      axis: "y",
+      items: layerItems,
+    });
+
+    // Action buttons
+    groups.push({
+      id: sid(),
+      x: frameX + margin,
+      y: frameY + 550,
+      axis: "x",
+      items: [
+        {
+          ...makeItem("button"),
           id: sid(),
-          label: t,
-          icon: "verified",
-        })),
-      });
+          label: "Xoay 3D 360°",
+          icon: "3d_rotation",
+          variant: "tonal",
+        },
+        {
+          ...makeItem("button"),
+          id: sid(),
+          label: "Tùy biến vật liệu",
+          icon: "palette",
+          variant: "filled",
+        },
+      ],
+    });
 
-      // Extracted layer items from file.layers
-      const rawLayers = file.layers && file.layers.length > 0 ? file.layers : [
-        { name: "Khung Titanium 3D", type: "mesh" },
-        { name: "Mặt Kính Sapphire & UI", type: "mesh" },
-        { name: "Dây đeo Silicon Thể thao", type: "mesh" },
-      ];
-      const layerItems = rawLayers.map((lay: any, idx: number) => ({
-        ...makeItem("listItem"),
-        id: sid(),
-        label: lay.name,
-        supporting: lay.type === "mesh" ? `Layer 3D Mesh | Tùy biến vật liệu` : `Layer ${lay.type}`,
-        icon: idx === 0 ? "layers" : idx === 1 ? "diamond" : "watch",
-      }));
-      groups.push({
-        id: sid(),
-        x: margin,
-        y: 330,
-        axis: "y",
-        items: layerItems,
-      });
-
-      // Action buttons
-      groups.push({
-        id: sid(),
-        x: margin,
-        y: 550,
-        axis: "x",
-        items: [
-          {
-            ...makeItem("button"),
-            id: sid(),
-            label: "Xoay 3D 360°",
-            icon: "3d_rotation",
-            variant: "tonal",
-          },
-          {
-            ...makeItem("button"),
-            id: sid(),
-            label: "Tùy biến vật liệu",
-            icon: "palette",
-            variant: "filled",
-          },
-        ],
-      });
-
-      // Bottom Nav
-      groups.push({
-        id: sid(),
-        x: 0,
-        y: targetH - KIND_SPEC.bottomNav.h,
-        axis: "x",
-        items: [{
+    // Bottom Nav
+    groups.push({
+      id: sid(),
+      x: frameX,
+      y: frameY + targetH - KIND_SPEC.bottomNav.h,
+      axis: "x",
+      items: [
+        {
           ...makeItem("bottomNav"),
           id: sid(),
           label: "Điều hướng",
-        }],
-      });
+        },
+      ],
+    });
 
-      // Commit frame and groups to canvas
-      framesRef.current = [fallbackFrame];
-      setFrames([fallbackFrame]);
-      setSelectedFrameId(fallbackFrame.id);
-      setGroups(groups);
-      groupsRef.current = groups;
+    return groups;
+  };
 
-      showToast(`Đã bóc tách "${file.metadata?.title ?? "Mẫu"}" lên Canvas!`, 2500, "check");
-      setTimeout(() => fitRef.current?.(), 100);
-    } catch (err) {
-      console.error("Error generating canvas UI from layers:", err);
-      showToast("Không thể nạp dữ liệu lên canvas.", 3000, "error");
+  /**
+   * Determine whether the workspace has an active design being edited
+   * Returns true if there are user components/items on the canvas or an existing design loaded.
+   */
+  const isWorkspaceActive = () => {
+    if (editingDesign !== null) return true;
+    if (groupsRef.current.length === 0) return false;
+    return groupsRef.current.some((g) => g.items && g.items.length > 0);
+  };
+
+  /**
+   * Execute import either by replacing the entire workspace ("replace")
+   * or by adding the imported screens as separate artboards/layers beside existing ones ("keep")
+   */
+  const executeImport = (
+    item: {
+      type: "templateFile" | "projectDoc";
+      file?: TemplateFile;
+      doc?: Doc;
+      title: string;
+      subtitle?: string;
+    },
+    mode: "replace" | "keep"
+  ) => {
+    snapshot(true);
+
+    if (mode === "replace") {
+      setDraftBefore(null);
+      setQuickUndo(false);
+      setEditingDesign(null);
+
+      if (item.type === "templateFile" && item.file) {
+        const file = item.file;
+        const preset = file.devicePresetId ? findDeviceById(file.devicePresetId) : null;
+        if (preset) {
+          setActiveDevice(preset);
+          setActiveDeviceId(preset.id);
+          if (frameRef.current !== "phone") {
+            setFrame("phone");
+            frameRef.current = "phone";
+          }
+        }
+
+        const targetW = preset?.width ?? 440;
+        const targetH = preset?.height ?? 956;
+        const fallbackFrameId = "imported-frame-" + uid();
+        const fallbackFrame: Frame = {
+          id: fallbackFrameId,
+          name: file.metadata?.title || (preset ? preset.name : "Screen 1"),
+          x: 0,
+          y: 0,
+          w: targetW,
+          h: targetH,
+        };
+
+        if (file.docData && typeof file.docData === "object") {
+          try {
+            const docPartial = file.docData as Partial<Doc>;
+            if (!docPartial.frames || docPartial.frames.length === 0) {
+              docPartial.frames = [fallbackFrame];
+            }
+            applyDoc(docPartial, true);
+            framesRef.current = docPartial.frames;
+            setSelectedFrameId(docPartial.frames[0]?.id ?? fallbackFrameId);
+            setSelectedIds([]);
+            showToast(`Đã thay thế bằng "${item.title}"`, 2500, "check");
+            setTimeout(() => fitRef.current?.(), 100);
+            return;
+          } catch (err) {
+            console.error("Error applying docData from file:", err);
+          }
+        }
+
+        // Fallback: Extract 3D layers and metadata into UI components
+        try {
+          const groups = extractTemplateGroups(file, 0, 0, targetW, targetH);
+          framesRef.current = [fallbackFrame];
+          setFrames([fallbackFrame]);
+          setSelectedFrameId(fallbackFrame.id);
+          setGroups(groups);
+          groupsRef.current = groups;
+          setSelectedIds([]);
+
+          showToast(`Đã thay thế bằng "${item.title}"!`, 2500, "check");
+          setTimeout(() => fitRef.current?.(), 100);
+        } catch (err) {
+          console.error("Error generating canvas UI from layers:", err);
+          showToast("Không thể nạp dữ liệu lên canvas.", 3000, "error");
+        }
+      } else if (item.type === "projectDoc" && item.doc) {
+        importDoc(item.doc);
+        showToast(`Đã thay thế bằng "${item.title}"!`, 2500, "check");
+      }
+    } else {
+      // ─────────────────────────────────────────────────────────────────────────
+      // MODE: KEEP & IMPORT (Giữ nguyên tiến độ hiện tại, thêm Artboard mới bên cạnh)
+      // ─────────────────────────────────────────────────────────────────────────
+      const startX = calcNextFrameX(framesRef.current);
+      const baseFrame = framesRef.current[0];
+      const startY = baseFrame?.y ?? 80;
+
+      if (item.type === "templateFile" && item.file) {
+        const file = item.file;
+        const preset = file.devicePresetId ? findDeviceById(file.devicePresetId) : null;
+        const targetW = preset?.width ?? 440;
+        const targetH = preset?.height ?? 956;
+
+        if (file.docData && typeof file.docData === "object") {
+          try {
+            const docPartial = file.docData as Partial<Doc>;
+            const incomingFrames: Frame[] =
+              docPartial.frames && docPartial.frames.length > 0
+                ? docPartial.frames
+                : [
+                    {
+                      id: uid(),
+                      name: file.metadata?.title || "Screen",
+                      x: 0,
+                      y: 0,
+                      w: targetW,
+                      h: targetH,
+                    },
+                  ];
+
+            const minX = Math.min(...incomingFrames.map((f) => f.x));
+            const minY = Math.min(...incomingFrames.map((f) => f.y));
+            const dx = startX - minX;
+            const dy = startY - minY;
+
+            const frameIdMap = new Map<string, string>();
+            const remappedFrames: Frame[] = incomingFrames.map((f, i) => {
+              const newId = uid();
+              frameIdMap.set(f.id, newId);
+              return {
+                ...f,
+                id: newId,
+                name:
+                  f.name ||
+                  `${file.metadata?.title ?? "Artboard"} ${
+                    framesRef.current.length + i + 1
+                  }`,
+                x: Math.round(f.x + dx),
+                y: Math.round(f.y + dy),
+              };
+            });
+
+            remappedFrames.forEach((f) => {
+              if (f.swipe) {
+                const remappedSwipe: any = {};
+                for (const [dir, targetId] of Object.entries(f.swipe)) {
+                  if (targetId && frameIdMap.has(targetId)) {
+                    remappedSwipe[dir] = frameIdMap.get(targetId);
+                  }
+                }
+                f.swipe = remappedSwipe;
+              }
+            });
+
+            const incomingGroups: Group[] = docPartial.groups || [];
+            const remappedGroups: Group[] = incomingGroups.map((g) => ({
+              ...g,
+              id: uid(),
+              x: Math.round(g.x + dx),
+              y: Math.round(g.y + dy),
+              items: g.items.map((it) => ({
+                ...it,
+                id: uid(),
+              })),
+            }));
+
+            setFrames((fs) => [...fs, ...remappedFrames]);
+            setGroups((gs) => [...gs, ...remappedGroups]);
+            framesRef.current = [...framesRef.current, ...remappedFrames];
+            groupsRef.current = [...groupsRef.current, ...remappedGroups];
+            setSelectedFrameId(remappedFrames[0]?.id ?? null);
+            setSelectedIds([]);
+
+            showToast(
+              `Đã thêm Artboard "${item.title}" vào workspace!`,
+              3000,
+              "success"
+            );
+            setTimeout(() => fitRef.current?.(), 120);
+            return;
+          } catch (err) {
+            console.error("Error importing docData with keep:", err);
+          }
+        }
+
+        // Fallback: Extract 3D layers into a new side-by-side Artboard
+        try {
+          const newFrameId = "artboard_" + uid();
+          const newFrame: Frame = {
+            id: newFrameId,
+            name:
+              file.metadata?.title ||
+              (preset
+                ? preset.name
+                : `Artboard ${framesRef.current.length + 1}`),
+            x: startX,
+            y: startY,
+            w: targetW,
+            h: targetH,
+          };
+
+          const groups = extractTemplateGroups(
+            file,
+            startX,
+            startY,
+            targetW,
+            targetH
+          );
+
+          setFrames((fs) => [...fs, newFrame]);
+          setGroups((gs) => [...gs, ...groups]);
+          framesRef.current = [...framesRef.current, newFrame];
+          groupsRef.current = [...groupsRef.current, ...groups];
+          setSelectedFrameId(newFrame.id);
+          setSelectedIds([]);
+
+          showToast(
+            `Đã thêm Artboard "${item.title}" vào workspace!`,
+            3000,
+            "success"
+          );
+          setTimeout(() => fitRef.current?.(), 120);
+        } catch (err) {
+          console.error(
+            "Error generating canvas UI from layers for keep mode:",
+            err
+          );
+          showToast("Không thể thêm artboard vào canvas.", 3000, "error");
+        }
+      } else if (item.type === "projectDoc" && item.doc) {
+        const incomingFrames: Frame[] =
+          item.doc.frames && item.doc.frames.length > 0
+            ? item.doc.frames
+            : [
+                {
+                  id: uid(),
+                  name: item.title || `Artboard ${framesRef.current.length + 1}`,
+                  x: 0,
+                  y: 0,
+                  w: PHONE_W,
+                  h: PHONE_H,
+                },
+              ];
+
+        const minX = Math.min(...incomingFrames.map((f) => f.x));
+        const minY = Math.min(...incomingFrames.map((f) => f.y));
+        const dx = startX - minX;
+        const dy = startY - minY;
+
+        const frameIdMap = new Map<string, string>();
+        const remappedFrames: Frame[] = incomingFrames.map((f, i) => {
+          const newId = uid();
+          frameIdMap.set(f.id, newId);
+          return {
+            ...f,
+            id: newId,
+            name:
+              f.name ||
+              `${item.title} ${framesRef.current.length + i + 1}`,
+            x: Math.round(f.x + dx),
+            y: Math.round(f.y + dy),
+          };
+        });
+
+        remappedFrames.forEach((f) => {
+          if (f.swipe) {
+            const remappedSwipe: any = {};
+            for (const [dir, targetId] of Object.entries(f.swipe)) {
+              if (targetId && frameIdMap.has(targetId)) {
+                remappedSwipe[dir] = frameIdMap.get(targetId);
+              }
+            }
+            f.swipe = remappedSwipe;
+          }
+        });
+
+        const incomingGroups: Group[] = item.doc.groups || [];
+        const remappedGroups: Group[] = incomingGroups.map((g) => ({
+          ...g,
+          id: uid(),
+          x: Math.round(g.x + dx),
+          y: Math.round(g.y + dy),
+          items: g.items.map((it) => ({
+            ...it,
+            id: uid(),
+          })),
+        }));
+
+        setFrames((fs) => [...fs, ...remappedFrames]);
+        setGroups((gs) => [...gs, ...remappedGroups]);
+        framesRef.current = [...framesRef.current, ...remappedFrames];
+        groupsRef.current = [...groupsRef.current, ...remappedGroups];
+        setSelectedFrameId(remappedFrames[0]?.id ?? null);
+        setSelectedIds([]);
+
+        showToast(
+          `Đã thêm ${remappedFrames.length} Artboard vào workspace!`,
+          3000,
+          "success"
+        );
+        setTimeout(() => fitRef.current?.(), 120);
+      }
+    }
+  };
+
+  /**
+   * Handle successful template file (.json, .pickme3d) parse from ImportTemplateModal
+   */
+  const handleImportSuccess = (file: TemplateFile) => {
+    const preset = file.devicePresetId ? findDeviceById(file.devicePresetId) : null;
+    const item = {
+      type: "templateFile" as const,
+      file,
+      title: file.metadata?.title || (preset ? preset.name : "Mẫu thiết kế"),
+      subtitle: `${file.layers?.length || 0} layers 3D • ${preset?.name ?? "Thiết bị"}`,
+    };
+
+    if (!isWorkspaceActive()) {
+      // Workspace is empty: directly import without asking!
+      executeImport(item, "replace");
+    } else {
+      // Workspace has an active design: prompt user with modal
+      setPendingImportItem(item);
+    }
+  };
+
+  /**
+   * Handle project doc file from Toolbar / file input
+   */
+  const handleProjectDocImport = (nextDoc: Doc, filename?: string) => {
+    const item = {
+      type: "projectDoc" as const,
+      doc: nextDoc,
+      title: nextDoc.title || filename || "Thiết kế PickMe3D",
+      subtitle: `${nextDoc.frames?.length || 1} khung màn hình • ${
+        nextDoc.groups?.length || 0
+      } nhóm đối tượng`,
+    };
+
+    if (!isWorkspaceActive()) {
+      // Workspace is empty: directly import without asking!
+      executeImport(item, "replace");
+    } else {
+      // Workspace has an active design: prompt user with modal
+      setPendingImportItem(item);
     }
   };
 
@@ -3984,7 +4317,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
           t.isContentEditable);
       if (typing) return;
       // dialogs, the preview and the prompt's full-screen cover own the keyboard while they are up
-      if (confirmClear || pendingImport !== null || shareOpen || saveDesignOpen || previewId !== null || promptCoverUp) return;
+      if (confirmClear || pendingImport !== null || pendingImportItem !== null || shareOpen || saveDesignOpen || previewId !== null || promptCoverUp) return;
       const mod = e.ctrlKey || e.metaKey;
       if (mod && e.key.toLowerCase() === "s") {
         e.preventDefault();
@@ -4091,6 +4424,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     deleteFrame,
     confirmClear,
     pendingImport,
+    pendingImportItem,
     shareOpen,
     saveDesignOpen,
     previewId,
@@ -5721,21 +6055,34 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
             onChange={(e) => {
               const file = e.target.files?.[0];
               e.target.value = "";
-              if (file) void readProject(file).then((next) => (next ? setPendingImport(next) : showToast(t("invalidProject", lang), 3000, "error")));
+              if (file) {
+                void readProject(file).then((next) => {
+                  if (next) {
+                    handleProjectDocImport(next, file.name);
+                  } else {
+                    showToast(t("invalidProject", lang), 3000, "error");
+                  }
+                });
+              }
             }}
           />
 
-          <ConfirmDialog
-            open={pendingImport !== null}
-            icon="file_open"
-            title={t("replaceProjectTitle", lang)}
-            body={t("replaceProject", lang)}
-            p={p}
-            onCancel={() => setPendingImport(null)}
-            onConfirm={() => {
-              if (pendingImport) importDoc(pendingImport);
-              setPendingImport(null);
+          {/* Unified Import Conflict Confirmation Modal */}
+          <ImportConflictModal
+            open={pendingImportItem !== null}
+            importedTitle={pendingImportItem?.title ?? "Tệp thiết kế"}
+            importedSubtitle={pendingImportItem?.subtitle}
+            activeDesignTitle={editingDesign?.title || (frames[0]?.name ?? undefined)}
+            palette={p}
+            onReplace={() => {
+              if (pendingImportItem) executeImport(pendingImportItem, "replace");
+              setPendingImportItem(null);
             }}
+            onKeepAndImport={() => {
+              if (pendingImportItem) executeImport(pendingImportItem, "keep");
+              setPendingImportItem(null);
+            }}
+            onCancel={() => setPendingImportItem(null)}
           />
 
           <ShareDialog
