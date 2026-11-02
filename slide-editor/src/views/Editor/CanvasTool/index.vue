@@ -226,9 +226,25 @@ const {
   createShapeElement,
 } = useCreateElement()
 
-const insertImageElement = (files: FileList) => {
+const insertImageElement = async (files: FileList) => {
   const imageFile = files[0]
   if (!imageFile) return
+  try {
+    const formData = new FormData()
+    formData.append('file', imageFile)
+    formData.append('folder', 'pickme3d/slides')
+    const res = await fetch('http://localhost:5001/api/upload', {
+      method: 'POST',
+      body: formData,
+    })
+    const json = await res.json()
+    if (json.success && json.data?.url) {
+      createImageElement(json.data.url)
+      return
+    }
+  } catch (err) {
+    console.warn('Upload image to Cloudinary fallback:', err)
+  }
   getImageDataURL(imageFile).then(dataURL => createImageElement(dataURL))
 }
 

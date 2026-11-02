@@ -2,6 +2,7 @@ const billing = require('../services/billingStore');
 const { getPlan } = require('../config/plans');
 const { generateDeck } = require('../services/slideAi');
 const { buildPptx } = require('../services/pptx');
+const { uploadIfBase64 } = require('../services/cloudinaryService');
 
 function owns(deck, user) {
   return Boolean(deck && user && String(deck.userId) === String(user.id));
@@ -116,9 +117,19 @@ exports.update = async (req, res) => {
   if (Array.isArray(req.body?.slides)) patch.slides = req.body.slides;
   if (req.body?.theme && typeof req.body.theme === 'object') {
     patch.theme = { ...req.body.theme };
-    if (!plan.brandKit) delete patch.theme.brandLogo;
+    if (!plan.brandKit) {
+      delete patch.theme.brandLogo;
+    } else if (patch.theme.brandLogo && patch.theme.brandLogo.startsWith('data:')) {
+      patch.theme.brandLogo = await uploadIfBase64(patch.theme.brandLogo, 'pickme3d/brand');
+    }
   }
-  if (typeof req.body?.thumbnail === 'string') patch.thumbnail = req.body.thumbnail.slice(0, 400000);
+  if (typeof req.body?.thumbnail === 'string') {
+    if (req.body.thumbnail.startsWith('data:')) {
+      patch.thumbnail = await uploadIfBase64(req.body.thumbnail, 'pickme3d/presentations');
+    } else {
+      patch.thumbnail = req.body.thumbnail;
+    }
+  }
   if (typeof req.body?.isPublic === 'boolean') {
     if (req.body.isPublic === false && !plan.privateDeck) {
       return res.status(403).json({ success: false, code: 'UPGRADE_REQUIRED', message: 'Private decks require the Pro plan' });

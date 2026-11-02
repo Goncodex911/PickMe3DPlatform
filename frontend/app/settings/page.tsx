@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import UserAvatar from "@/components/UserAvatar";
 import { fetchMyProfileApi, mergeCurrentUserProfile } from "@/lib/userService";
+import { uploadFileToCloudinary } from "@/lib/mediaUpload";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function SettingsPage() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState("");
   const [savingName, setSavingName] = useState(false);
+  const [uploadingPicture, setUploadingPicture] = useState(false);
 
   // File input ref
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -74,48 +76,46 @@ export default function SettingsPage() {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check size (e.g., max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      alert("Kích thước ảnh quá lớn, vui lòng chọn ảnh dưới 2MB.");
+    // Check size (e.g., max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Kích thước ảnh quá lớn, vui lòng chọn ảnh dưới 10MB.");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const base64Image = event.target?.result as string;
-      if (!base64Image) return;
+    setUploadingPicture(true);
+    try {
+      // 1. Upload directly to Cloudinary
+      const cloudinaryUrl = await uploadFileToCloudinary(file, "pickme3d/avatars");
 
-      try {
-        const token = localStorage.getItem("pickme3d_token");
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/profile`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ picture: base64Image }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          setUser(data.data);
-          localStorage.setItem("pickme3d_user", JSON.stringify(data.data));
-          window.dispatchEvent(new Event("storage"));
-        } else {
-          alert(data.message || "Lỗi khi cập nhật ảnh");
-        }
-      } catch (error) {
-        alert("Lỗi kết nối");
+      // 2. Save Cloudinary URL to user profile
+      const token = localStorage.getItem("pickme3d_token");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/profile`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ picture: cloudinaryUrl }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setUser(data.data);
+        localStorage.setItem("pickme3d_user", JSON.stringify(data.data));
+        window.dispatchEvent(new Event("storage"));
+      } else {
+        alert(data.message || "Lỗi khi cập nhật ảnh");
       }
-    };
-    reader.readAsDataURL(file);
-
-    // Reset input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+    } catch (error: any) {
+      alert(error?.message || "Lỗi khi tải ảnh lên Cloudinary");
+    } finally {
+      setUploadingPicture(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -437,21 +437,32 @@ export default function SettingsPage() {
                 </button>
                 <button
                   onClick={handleChangePictureClick}
+                  disabled={uploadingPicture}
                   style={{
-                    background: "white",
+                    background: uploadingPicture ? "#f3f4f6" : "white",
                     border: "1px solid #d1d5db",
                     borderRadius: 6,
-                    color: "#111827",
+                    color: uploadingPicture ? "#9ca3af" : "#111827",
                     fontSize: 14,
                     fontWeight: 600,
-                    cursor: "pointer",
+                    cursor: uploadingPicture ? "wait" : "pointer",
                     padding: "8px 16px",
                     transition: "background 0.2s",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
                   }}
-                  onMouseOver={(e) => (e.currentTarget.style.background = "#f9fafb")}
-                  onMouseOut={(e) => (e.currentTarget.style.background = "white")}
+                  onMouseOver={(e) => (!uploadingPicture ? (e.currentTarget.style.background = "#f9fafb") : null)}
+                  onMouseOut={(e) => (!uploadingPicture ? (e.currentTarget.style.background = "white") : null)}
                 >
-                  Thay đổi ảnh
+                  {uploadingPicture ? (
+                    <>
+                      <span className="material-symbols-rounded animate-spin" style={{ fontSize: 16 }}>progress_activity</span>
+                      <span>Đang lưu lên Cloudinary...</span>
+                    </>
+                  ) : (
+                    "Thay đổi ảnh"
+                  )}
                 </button>
               </div>
             </div>

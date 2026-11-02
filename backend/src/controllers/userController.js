@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Template = require('../models/Template');
+const { uploadIfBase64 } = require('../services/cloudinaryService');
 
 // @desc    Get all users
 // @route   GET /api/users
@@ -50,7 +51,13 @@ exports.updateUserProfile = async (req, res, next) => {
     // Only allow updating specific fields
     const { name, picture, jobRole, bio, username } = req.body;
     if (name !== undefined) user.name = name;
-    if (picture !== undefined) user.picture = picture;
+    if (picture !== undefined) {
+      if (picture && picture.startsWith('data:')) {
+        user.picture = await uploadIfBase64(picture, 'pickme3d/avatars');
+      } else {
+        user.picture = picture;
+      }
+    }
     if (jobRole !== undefined) user.jobRole = jobRole;
     if (bio !== undefined) user.bio = bio;
     if (username !== undefined) {
