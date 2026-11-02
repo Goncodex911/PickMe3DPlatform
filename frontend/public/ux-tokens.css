@@ -88,7 +88,7 @@
 /* :where()로 명시도를 0으로 둬서, 요소 클래스가 버튼·입력의 색과 글꼴을 덮어쓸 수 있게 합니다 */
 :where(.ux) :is(button,input,textarea,select){font:inherit;color:inherit}
 :where(.ux) button{cursor:pointer}
-.ux :focus-visible{outline:2px solid var(--ux-accent);outline-offset:3px}
+.ux :is(button,a,[role="button"],[role="tab"],[role="menuitem"],[role="option"]):focus-visible{outline:2px solid var(--ux-accent);outline-offset:3px}
 .ux [hidden]{display:none!important}
 /* 모션 줄이기: 전환은 즉시 끝나고, 무한 반복은 한 번으로 줄여 최종 상태가 보이게 합니다 */
 @media (prefers-reduced-motion:reduce){

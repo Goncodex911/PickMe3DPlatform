@@ -163,6 +163,11 @@ function plainOrder(order) {
     planId: o.planId,
     months: o.months,
     amount: o.amount,
+    subtotal: o.subtotal ?? o.amount,
+    discount: o.discount || 0,
+    promoCode: o.promoCode || '',
+    customer: o.customer || null,
+    createdAt: o.createdAt || null,
     status: o.status,
     paidAt: o.paidAt || null,
   };
@@ -174,7 +179,7 @@ async function createOrder(input) {
     const created = await Order.create(input);
     return plainOrder(created);
   }
-  const order = { ...input, paidAt: null, raw: null };
+  const order = { ...input, createdAt: new Date().toISOString(), paidAt: null, raw: null };
   memory.orders.set(order.orderCode, order);
   return plainOrder(order);
 }
@@ -220,6 +225,8 @@ async function listOrders(userId) {
   }
   return [...memory.orders.values()]
     .filter((order) => String(order.userId) === String(userId))
+    .sort((a, b) => b.orderCode - a.orderCode)
+    .slice(0, 20)
     .map(plainOrder);
 }
 

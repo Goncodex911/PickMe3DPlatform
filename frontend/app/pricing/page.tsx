@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import PromoCheckout from "@/components/PromoCheckout";
 import StudioShell, { Arrow, Icon } from "@/components/slides/StudioShell";
 import s from "@/components/slides/studio.module.css";
 import { formatDate } from "@/lib/deckFormat";
@@ -40,11 +41,11 @@ export default function PricingPage() {
     fetchAccount().then(setAccount).catch(() => setAccount(null));
   }, []);
 
-  const buy = async (planId: "pro" | "studio") => {
+  const buy = async (planId: "pro" | "studio", promoCode: string) => {
     setError("");
     setBuying(planId);
     try {
-      const order = await checkout(planId, 1);
+      const order = await checkout(planId, 1, promoCode);
       window.location.href = order.checkoutUrl;
     } catch (err) {
       setBuying("");
@@ -102,15 +103,7 @@ export default function PricingPage() {
                     </>
                   ) : higher ? (
                     <>
-                      <button
-                        type="button"
-                        className={`${s.btn} ${plan.id === "pro" ? s.primary : ""}`}
-                        disabled={Boolean(buying)}
-                        onClick={() => buy(plan.id as "pro" | "studio")}
-                      >
-                        {buying === plan.id ? "Creating order…" : `Upgrade to ${plan.name}`} <Arrow />
-                      </button>
-                      <p>Pay {formatVnd(plan.price)} with payOS QR</p>
+                      <PromoCheckout planId={plan.id as "pro" | "studio"} name={plan.name} price={plan.price} busy={Boolean(buying)} onBuy={buy} />
                     </>
                   ) : (
                     <>

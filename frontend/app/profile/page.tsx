@@ -8,6 +8,7 @@ import { fetchMyDesignsApi, updateDesignApi, deleteDesignApi, prepareEditorSessi
 import { CollectionItem, fetchMyCollectionsApi, deleteCollectionApi } from "@/lib/collectionService";
 import { fetchMyProfileApi, mergeCurrentUserProfile, updateMyProfileApi } from "@/lib/userService";
 import UserAvatar from "@/components/UserAvatar";
+import DesignThumbnail from "@/components/DesignThumbnail";
 import styles from "./page.module.css";
 
 type ProfileTab = "overview" | "designs" | "collections";
@@ -33,6 +34,11 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [loadingCollections, setLoadingCollections] = useState(false);
   const [tab, setTab] = useState<ProfileTab>("overview");
+  useEffect(() => {
+    const sync = () => { if (window.location.hash === "#designs") setTab("designs"); };
+    sync(); window.addEventListener("hashchange", sync);
+    return () => window.removeEventListener("hashchange", sync);
+  }, []);
   const [filterMode, setFilterMode] = useState<DesignFilter>("all");
   const [searchTag, setSearchTag] = useState("");
   const [editingTagId, setEditingTagId] = useState<string | null>(null);
@@ -263,7 +269,7 @@ export default function ProfilePage() {
               </div>
 
               {!isEditingBio && <p className={styles.bioPreview}>{user.bio || "Thêm vài dòng giới thiệu để cộng đồng biết thêm về bạn và những ý tưởng bạn đang thực hiện."}</p>}
-              {user.username && <Link className={styles.publicLink} href={`/creator/${user.username}`}><span className="material-symbols-rounded">open_in_new</span>pickme3d.com/creator/{user.username}</Link>}
+              {user.username && <Link className={styles.publicLink} href={`/creator/?username=${encodeURIComponent(user.username)}`}><span className="material-symbols-rounded">open_in_new</span>pickme3d.com/creator/{user.username}</Link>}
             </div>
 
             <div className={styles.profileActions}>
@@ -283,6 +289,10 @@ export default function ProfilePage() {
                   <span>Admin Console</span>
                 </Link>
               )}
+              <Link className={styles.outlineButton} href="/settings/" aria-label="Mở cài đặt">
+                <span className="material-symbols-rounded" aria-hidden="true">settings</span>
+                <span>Cài đặt</span>
+              </Link>
               <button className={styles.outlineButton} onClick={() => window.print()}><span className="material-symbols-rounded">print</span><span>In hồ sơ</span></button>
               <button className={styles.editButton} onClick={() => { setIsEditingName(true); setIsEditingBio(true); }}><span className="material-symbols-rounded">edit</span><span>Chỉnh sửa</span></button>
             </div>
@@ -361,7 +371,7 @@ export default function ProfilePage() {
                 <div className={styles.panelHeader}><div><h2>Thiết kế gần đây</h2><p>Tiếp tục hoàn thiện ý tưởng của bạn.</p></div></div>
                 {latestDesign ? (
                   <button className={styles.recentDesign} onClick={() => handleEditDesign(latestDesign)}>
-                    <img src={latestDesign.thumbnailUrl || "/hero/card-couture.png"} alt="" />
+                    <DesignThumbnail className={styles.recentPreview} docData={latestDesign.docData} thumbnailUrl={latestDesign.thumbnailUrl} title={latestDesign.title} />
                     <span><strong>{latestDesign.title}</strong><small>Cập nhật {formatDate(latestDesign.updatedAt || latestDesign.createdAt)}</small></span>
                     <i className="material-symbols-rounded">arrow_forward</i>
                   </button>
@@ -401,7 +411,7 @@ export default function ProfilePage() {
                   return (
                     <article className={styles.designCard} key={id}>
                       <div className={styles.designImage}>
-                        <img src={design.thumbnailUrl || "/hero/card-couture.png"} alt={design.title} />
+                        <DesignThumbnail docData={design.docData} thumbnailUrl={design.thumbnailUrl} title={design.title} />
                         <button className={`${styles.visibilityBadge} ${design.isPublic ? styles.publicBadge : ""}`} onClick={() => handleTogglePrivacy(design)} title="Đổi quyền hiển thị">
                           <span className="material-symbols-rounded">{design.isPublic ? "public" : "lock"}</span>{design.isPublic ? "Công khai" : "Riêng tư"}
                         </button>

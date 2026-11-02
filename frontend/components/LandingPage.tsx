@@ -986,7 +986,7 @@ export default function LandingPage({
                       placeholder="phantrongquy23032005@gmail.com"
                       value={adminEmail}
                       onChange={(e) => setAdminEmail(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-black/60 border border-neutral-700 text-xs text-white outline-none focus:border-indigo-500"
+                      className="w-full px-3 py-2 rounded-xl bg-black/60 border border-neutral-700 text-xs text-white outline-none "
                       required
                     />
                     <button

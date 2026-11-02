@@ -34,9 +34,7 @@
 }
 
 .page a:focus-visible,
-.page button:focus-visible,
-.page select:focus-visible,
-.page input:focus-visible {
+.page button:focus-visible {
   outline: 2px solid white;
   outline-offset: 4px;
 }
