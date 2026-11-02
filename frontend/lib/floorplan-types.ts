@@ -76,7 +76,8 @@ export const CASA_SERRA_PRESET: BlueprintProject = {
   name: "Casa Serra",
   code: "A-101 rev D",
   subtitle: "Ground floor plan",
-  location: "Serra de Tramuntana, Mallorca",
+  location: "Sintra, Portugal",
+  originalBlueprintUrl: "/blueprint/casa-serra-drawing.png",
   specs: {
     width: 22,
     length: 28,
@@ -428,8 +429,146 @@ export const APARTMENT_PRESET: BlueprintProject = {
   ]
 };
 
+/**
+ * PRESET 4: BIỆT THỰ PHỐ LẦU 2 (13.5m x 10.8m - 146 m²)
+ * Cấu trúc chính xác theo bản vẽ người dùng tải lên (Mặt Bằng Vật Dụng Lầu 2)
+ */
+export const NHA_LAU2_PRESET: BlueprintProject = {
+  id: "nha-lau-2",
+  name: "Mặt Bằng Lầu 2 Biệt Thự",
+  code: "TL: 1/100",
+  subtitle: "MẶT BẰNG VẬT DỤNG LẦU 2",
+  location: "Biệt thự phố hiện đại",
+  originalBlueprintUrl: "/blueprint/nha-lau2.png",
+  specs: {
+    width: 13.5,
+    length: 10.8,
+    totalArea: 146,
+    scale: "1:100",
+    ceilingHeight: 3.2,
+    exteriorWallThickness: 0.22,
+    interiorWallThickness: 0.12,
+    orientation: "S",
+    timeOfDay: "golden_hour",
+    style: "modern_minimal",
+    baseFloorMaterial: "oak"
+  },
+  rooms: [
+    {
+      id: "sinh-hoat-chung",
+      name: "Common Living Room",
+      vietnameseName: "Phòng Sinh Hoạt Chung",
+      category: "living",
+      bounds: [-2.2, -5.4, 2.2, 0.4],
+      area: 25,
+      ceilingHeight: 3.2,
+      floorMaterial: "oak",
+      description: "Không gian sinh hoạt chung ấm cúng ở trung tâm tầng 2, mở cửa đón gió ra ban công phía trước (nơi mũi tên đỏ chỉ vào).",
+      specs: {
+        orientation: "Mặt tiền hướng Nam đón gió",
+        ventilation: "Cửa kính trượt 4 cánh lớn ra ban công",
+        lightSource: "Ánh sáng tự nhiên từ ban công",
+        finishNote: "Sàn gỗ sồi, vách tivi ốp nan gỗ trang trí"
+      },
+      features: ["Sofa chữ L", "Bàn trà đôi", "Kệ tivi âm tường", "Cửa mở ra ban công trước"]
+    },
+    {
+      id: "phong-ngu-1",
+      name: "Daughter Bedroom 1",
+      vietnameseName: "Phòng Ngủ Con Gái 1",
+      category: "bedroom",
+      bounds: [-6.75, -5.4, -2.2, 0.4],
+      area: 28,
+      ceilingHeight: 3.2,
+      floorMaterial: "oak",
+      description: "Phòng ngủ lớn bên trái với giường đôi tựa tường chịu lực, bàn học cạnh cửa sổ đón sáng tự nhiên.",
+      specs: {
+        orientation: "Hướng Đông Nam",
+        ventilation: "Cửa sổ trượt lấy gió góc",
+        lightSource: "Ban công & cửa sổ hướng trước",
+        finishNote: "Sàn gỗ ấm áp, đầu giường nẹp da êm ái"
+      },
+      features: ["Giường King 1.8x2m", "Bàn học/làm việc", "Tủ quần áo liên hoàn", "Tab đầu giường"]
+    },
+    {
+      id: "phong-ngu-2",
+      name: "Daughter Bedroom 2",
+      vietnameseName: "Phòng Ngủ Con Gái 2",
+      category: "bedroom",
+      bounds: [2.2, -5.4, 6.75, 0.4],
+      area: 28,
+      ceilingHeight: 3.2,
+      floorMaterial: "oak",
+      description: "Phòng ngủ bên phải thoáng đãng, bài trí giường ngủ trung tâm và kệ trang trí.",
+      specs: {
+        orientation: "Hướng Tây Nam",
+        ventilation: "Cửa sổ đối lưu",
+        lightSource: "Cửa sổ lớn mặt tiền",
+        finishNote: "Gỗ sồi tự nhiên màu sáng"
+      },
+      features: ["Giường King size", "Bàn trang điểm", "Kệ sách âm tường"]
+    },
+    {
+      id: "thang-may",
+      name: "Stair & Elevator Hall",
+      vietnameseName: "Sảnh Thang Máy & Cầu Thang",
+      category: "hallway",
+      bounds: [-2.0, 0.4, 2.0, 5.4],
+      area: 20,
+      ceilingHeight: 3.2,
+      floorMaterial: "marble",
+      description: "Khu vực giao thông chính của tầng gồm buồng thang máy kính và vế thang bộ đúc đá hoa cương.",
+      specs: {
+        orientation: "Trục trung tâm",
+        ventilation: "Giếng trời thông tầng",
+        lightSource: "Đèn trần hắt sáng",
+        finishNote: "Đá cẩm thạch Calacatta"
+      },
+      features: ["Thang máy kính", "Cầu thang bộ đá", "Lan can kính tay vịn gỗ"]
+    },
+    {
+      id: "wc-1",
+      name: "Walk-in Dressing & Bath 1",
+      vietnameseName: "Phòng Thay Đồ & WC 1",
+      category: "bath",
+      bounds: [-6.75, 0.4, -2.0, 5.4],
+      area: 22,
+      ceilingHeight: 3.0,
+      floorMaterial: "tile",
+      description: "Không gian tiện nghi khép kín gồm phòng thay đồ tủ kính và phòng tắm trang bị bồn tắm nằm cao cấp.",
+      specs: {
+        orientation: "Trục kỹ thuật bên trái",
+        ventilation: "Hệ thống hút mùi âm trần",
+        lightSource: "Đèn led hắt viền gương",
+        finishNote: "Gạch men nhám chống trơn khổ lớn"
+      },
+      features: ["Bồn tắm nằm", "Bàn lavabo đá đôi", "Hệ tủ quần áo kịch trần"]
+    },
+    {
+      id: "wc-2",
+      name: "Walk-in Dressing & Bath 2",
+      vietnameseName: "Phòng Thay Đồ & WC 2",
+      category: "bath",
+      bounds: [2.0, 0.4, 6.75, 5.4],
+      area: 22,
+      ceilingHeight: 3.0,
+      floorMaterial: "tile",
+      description: "Khu thay đồ kết hợp phòng tắm hiện đại với vách kính cường lực và sen tắm mưa.",
+      specs: {
+        orientation: "Trục kỹ thuật bên phải",
+        ventilation: "Quạt thông gió",
+        lightSource: "Đèn thả trang trí",
+        finishNote: "Gạch ceramic vân đá"
+      },
+      features: ["Phòng tắm đứng vách kính", "Lavabo treo tường", "Tủ quần áo âm tường"]
+    }
+  ]
+};
+
 export const ALL_PRESETS: BlueprintProject[] = [
   CASA_SERRA_PRESET,
+  NHA_LAU2_PRESET,
   TOWNHOUSE_PRESET,
   APARTMENT_PRESET
 ];
+

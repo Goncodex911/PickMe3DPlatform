@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Template = require('../models/Template');
 const { createNotification } = require('../helpers/notificationHelper');
+const { uploadIfBase64 } = require('../services/cloudinaryService');
 
 /**
  * @desc    Get all public templates with filtering, search, and sorting
@@ -171,13 +172,25 @@ exports.createTemplate = async (req, res, next) => {
   try {
     const { title, description, category, tags, thumbnailUrl, galleryImages, docData, isPublic } = req.body;
 
+    let finalThumbnail = thumbnailUrl || '';
+    if (finalThumbnail && finalThumbnail.startsWith('data:')) {
+      finalThumbnail = await uploadIfBase64(finalThumbnail, 'pickme3d/templates/thumbnails');
+    }
+
+    let finalGallery = [];
+    if (Array.isArray(galleryImages)) {
+      finalGallery = await Promise.all(
+        galleryImages.map((img) => (img && img.startsWith('data:') ? uploadIfBase64(img, 'pickme3d/templates/gallery') : img))
+      );
+    }
+
     const newTemplate = await Template.create({
       title,
       description: description || '',
       category: category || 'Outfit',
       tags: tags || [],
-      thumbnailUrl: thumbnailUrl || '',
-      galleryImages: galleryImages || [],
+      thumbnailUrl: finalThumbnail,
+      galleryImages: finalGallery,
       author: req.user ? req.user._id : null,
       authorName: req.user ? req.user.name : 'Creator',
       authorAvatar: req.user ? req.user.picture : '',
@@ -236,8 +249,18 @@ exports.updateTemplate = async (req, res, next) => {
     if (description !== undefined) template.description = description;
     if (category !== undefined) template.category = category;
     if (tags !== undefined) template.tags = tags;
-    if (thumbnailUrl !== undefined) template.thumbnailUrl = thumbnailUrl;
-    if (galleryImages !== undefined) template.galleryImages = galleryImages;
+    if (thumbnailUrl !== undefined) {
+      if (thumbnailUrl && thumbnailUrl.startsWith('data:')) {
+        template.thumbnailUrl = await uploadIfBase64(thumbnailUrl, 'pickme3d/templates/thumbnails');
+      } else {
+        template.thumbnailUrl = thumbnailUrl;
+      }
+    }
+    if (galleryImages !== undefined && Array.isArray(galleryImages)) {
+      template.galleryImages = await Promise.all(
+        galleryImages.map((img) => (img && img.startsWith('data:') ? uploadIfBase64(img, 'pickme3d/templates/gallery') : img))
+      );
+    }
     if (docData !== undefined) template.docData = docData;
     if (isPublic !== undefined) template.isPublic = isPublic;
 

@@ -5,6 +5,7 @@ import { COLOR_TOKENS, ColorToken, PLACES, Palette, Place, R_INNER, SETTLE_MS, c
 import { AnimatePresence, animate, motion, useReducedMotion } from "motion/react";
 import { COLOR_TOKEN_TEXT, t, useLang } from "@/lib/i18n";
 import { Icon } from "./M3Node";
+import { uploadToCloudinary } from "@/lib/mediaUpload";
 
 /** the row of tabs and the clear gap under it, and the band a panel with no tabs fades its top with */
 const PANEL_TABS_H = 48;
@@ -1300,7 +1301,7 @@ export function UrlField({ value, onChange, placeholder, p }: { value: string; o
 export function ImageRow({ value, onChange, p }: { value?: string; onChange: (src: string | undefined) => void; p: Palette }) {
   const lang = useLang();
   const fileRef = useRef<HTMLInputElement>(null);
-  /* a file the browser could not read as a picture says so under the row, until the next pick */
+  const [uploading, setUploading] = useState(false);
   const [failed, setFailed] = useState(false);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -1314,21 +1315,43 @@ export function ImageRow({ value, onChange, p }: { value?: string; onChange: (sr
           const f = e.target.files?.[0];
           e.target.value = "";
           if (!f) return;
+          setUploading(true);
+          setFailed(false);
           try {
-            onChange(await readImage(f));
-            setFailed(false);
-          } catch {
-            setFailed(true);
+            const cloudUrl = await uploadToCloudinary(f, "pickme3d/canvas");
+            onChange(cloudUrl);
+          } catch (cloudErr) {
+            console.warn("Cloudinary upload failed, falling back to local encoding:", cloudErr);
+            try {
+              onChange(await readImage(f));
+            } catch {
+              setFailed(true);
+            }
+          } finally {
+            setUploading(false);
           }
         }}
       />
-      {/* a picked file shows as data and is not editable here, so the box stays empty for it */}
+      {/* a picked file or cloudinary url */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <UrlField value={value && /^https?:\/\//.test(value) ? value : ""} onChange={onChange} placeholder={t("imageUrl", lang)} p={p} />
       </div>
-      <IconBtn icon="upload" p={p} size={44} on onClick={() => fileRef.current?.click()} title={t("pickImage", lang)} />
+      <IconBtn
+        icon={uploading ? "sync" : "cloud_upload"}
+        p={p}
+        size={44}
+        on
+        onClick={() => !uploading && fileRef.current?.click()}
+        title={uploading ? "Đang tải lên Cloudinary..." : t("pickImage", lang)}
+      />
       {value && <IconBtn icon="close" p={p} size={44} onClick={() => onChange(undefined)} title={t("removeImage", lang)} />}
     </div>
+    {uploading && (
+      <div style={{ fontSize: 11, color: p.primary, padding: "0 6px", display: "flex", alignItems: "center", gap: 4 }}>
+        <span className="material-symbols-rounded animate-spin" style={{ fontSize: 13 }}>progress_activity</span>
+        Đang lưu trữ ảnh lên Cloudinary...
+      </div>
+    )}
     {failed && (
       <div role="alert" style={{ fontSize: 12, lineHeight: 1.5, color: p.error, padding: "0 6px" }}>
         {t("imageFailed", lang)}

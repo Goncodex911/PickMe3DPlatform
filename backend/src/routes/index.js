@@ -9,6 +9,7 @@ const collectionRoutes = require('./collectionRoutes');
 const aiRoutes = require('./aiRoutes');
 const paymentRoutes = require('./paymentRoutes');
 const presentationRoutes = require('./presentationRoutes');
+const uploadRoutes = require('./uploadRoutes');
 
 router.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'PickMe3D Backend API is running' });
@@ -23,5 +24,6 @@ router.use('/collections', collectionRoutes);
 router.use('/ai', aiRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/presentations', presentationRoutes);
+router.use('/upload', uploadRoutes);
 
 module.exports = router;

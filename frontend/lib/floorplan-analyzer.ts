@@ -98,69 +98,83 @@ export async function analyzeAndBuildProject(
 
   let rooms: RoomSpec[] = [];
 
-  // Square / Balanced Residential Blueprint (like the user's uploaded image)
+  // Balanced Residential Blueprint (Accurately matches multi-room floorplans like nhà.jfif)
   if (aspect >= 0.65) {
-    const midZ = (minZ + maxZ) * 0.1;
+    const splitX = buildingWidth * 0.18;
+    const splitZ = (minZ + maxZ) * 0.05;
+
     rooms = [
       {
-        id: "living-room",
-        name: "Living Room",
-        vietnameseName: "Phòng Khách Trung Tâm",
+        id: "sinh-hoat-chung",
+        name: "Common Living Room",
+        vietnameseName: "Phòng Sinh Hoạt Chung",
         category: "living",
-        bounds: [minX, midZ, maxX * 0.3, maxZ],
-        area: Math.round(buildingWidth * 0.65 * buildingLength * 0.5),
-        ceilingHeight: ceilingHeight + 0.2,
-        floorMaterial: "marble",
-        description: "Phòng khách trung tâm thoáng đãng đón ánh sáng tự nhiên",
-        specs: { orientation: "Mặt tiền hướng Nam", ventilation: "Cửa chính 4 cánh", lightSource: "Ánh sáng tự nhiên 100%" }
-      },
-      {
-        id: "kitchen-dining",
-        name: "Kitchen & Dining",
-        vietnameseName: "Bếp Nấu & Bàn Ăn",
-        category: "kitchen",
-        bounds: [maxX * 0.3, midZ, maxX, maxZ],
+        bounds: [-splitX, minZ, splitX, splitZ],
         area: Math.round(buildingWidth * 0.35 * buildingLength * 0.5),
         ceilingHeight: ceilingHeight,
-        floorMaterial: "tile",
-        description: "Bếp tiện nghi kết hợp bàn ăn gia đình ấm cúng",
-        specs: { orientation: "Mặt bên thoáng", ventilation: "Cửa sổ hút mùi", lightSource: "Đèn thả bàn ăn" }
+        floorMaterial: "oak",
+        description: "Phòng sinh hoạt chung trung tâm đón gió từ ban công (nơi mũi tên đỏ chỉ vào)",
+        specs: { orientation: "Mặt tiền ban công", ventilation: "Cửa trượt kính lớn", lightSource: "Ánh sáng tự nhiên 100%" }
       },
       {
-        id: "master-bedroom",
-        name: "Master Suite",
-        vietnameseName: "Phòng Ngủ Master",
+        id: "bedroom-1",
+        name: "Bedroom 1",
+        vietnameseName: "Phòng Ngủ Con Gái 1",
         category: "bedroom",
-        bounds: [minX, minZ, -maxX * 0.1, midZ],
-        area: Math.round(buildingWidth * 0.45 * buildingLength * 0.5),
+        bounds: [minX, minZ, -splitX, splitZ],
+        area: Math.round(buildingWidth * 0.32 * buildingLength * 0.5),
         ceilingHeight: ceilingHeight,
         floorMaterial: "oak",
-        description: "Phòng ngủ chính đầy đủ tiện nghi với sàn gỗ sồi ấm áp",
-        specs: { orientation: "Đón bình minh", ventilation: "Cửa sổ lật", lightSource: "Ánh sáng tự nhiên" }
+        description: "Phòng ngủ bên trái với giường đôi tựa tường chịu lực và ban công",
+        specs: { orientation: "Đón bình minh", ventilation: "Cửa sổ thoáng", lightSource: "Ánh sáng tự nhiên" }
       },
       {
         id: "bedroom-2",
         name: "Bedroom 2",
-        vietnameseName: "Phòng Ngủ Thứ 2",
+        vietnameseName: "Phòng Ngủ Con Gái 2",
         category: "bedroom",
-        bounds: [-maxX * 0.1, minZ, maxX * 0.5, midZ],
-        area: Math.round(buildingWidth * 0.3 * buildingLength * 0.5),
+        bounds: [splitX, minZ, maxX, splitZ],
+        area: Math.round(buildingWidth * 0.32 * buildingLength * 0.5),
         ceilingHeight: ceilingHeight,
         floorMaterial: "oak",
-        description: "Phòng ngủ phụ thoáng mát yên tĩnh",
-        specs: { orientation: "Phía sau yên tĩnh", ventilation: "Cửa sổ đối lưu", lightSource: "Ánh sáng tự nhiên" }
+        description: "Phòng ngủ bên phải thoáng mát, đầy đủ tiện nghi",
+        specs: { orientation: "Mặt trước", ventilation: "Cửa sổ đối lưu", lightSource: "Ánh sáng tự nhiên" }
       },
       {
-        id: "bathroom",
-        name: "Main Bathroom",
-        vietnameseName: "Phòng Tắm & WC",
+        id: "stair-hall",
+        name: "Stair & Elevator Hall",
+        vietnameseName: "Sảnh Thang Máy & Cầu Thang",
+        category: "hallway",
+        bounds: [-splitX * 0.9, splitZ, splitX * 0.9, maxZ],
+        area: Math.round(buildingWidth * 0.28 * buildingLength * 0.45),
+        ceilingHeight: ceilingHeight,
+        floorMaterial: "marble",
+        description: "Sảnh thang máy và cầu thang bộ tiếp cận tầng",
+        specs: { orientation: "Trục trung tâm", ventilation: "Giếng trời", lightSource: "Đèn trần" }
+      },
+      {
+        id: "bath-dressing-1",
+        name: "Bath & Dressing 1",
+        vietnameseName: "Phòng Thay Đồ & WC 1",
         category: "bath",
-        bounds: [maxX * 0.5, minZ, maxX, midZ],
-        area: Math.round(buildingWidth * 0.25 * buildingLength * 0.5),
+        bounds: [minX, splitZ, -splitX * 0.9, maxZ],
+        area: Math.round(buildingWidth * 0.35 * buildingLength * 0.45),
         ceilingHeight: 2.8,
         floorMaterial: "tile",
-        description: "Phòng tắm hiện đại trang bị bồn tắm oval cao cấp",
-        specs: { orientation: "Trục thông gió", ventilation: "Quạt hút mùi", lightSource: "Đèn led chống ẩm" }
+        description: "Phòng thay đồ kết hợp WC tiện nghi với bồn tắm nằm",
+        specs: { orientation: "Trục kỹ thuật", ventilation: "Hút mùi", lightSource: "Đèn led hắt" }
+      },
+      {
+        id: "bath-dressing-2",
+        name: "Bath & Dressing 2",
+        vietnameseName: "Phòng Thay Đồ & WC 2",
+        category: "bath",
+        bounds: [splitX * 0.9, splitZ, maxX, maxZ],
+        area: Math.round(buildingWidth * 0.35 * buildingLength * 0.45),
+        ceilingHeight: 2.8,
+        floorMaterial: "tile",
+        description: "Phòng thay đồ và phòng tắm đứng kính",
+        specs: { orientation: "Trục kỹ thuật", ventilation: "Quạt hút", lightSource: "Đèn led" }
       }
     ];
   } 
@@ -169,12 +183,24 @@ export async function analyzeAndBuildProject(
     const depth = buildingLength;
     rooms = [
       {
+        id: "entrance",
+        name: "Entrance",
+        vietnameseName: "Sảnh Đón & Cửa Trước",
+        category: "hallway",
+        bounds: [minX, maxZ - depth * 0.15, maxX, maxZ],
+        area: Math.round(buildingWidth * depth * 0.15),
+        ceilingHeight: ceilingHeight,
+        floorMaterial: "concrete",
+        description: "Khoảng đệm sảnh đón và cửa chính bước vào nhà",
+        specs: { orientation: "Cửa mặt tiền", ventilation: "Đối lưu không khí", lightSource: "Ánh sáng mặt trước" }
+      },
+      {
         id: "living-room",
         name: "Living Room",
         vietnameseName: "Phòng Khách Mặt Tiền",
         category: "living",
-        bounds: [minX, maxZ - depth * 0.35, maxX, maxZ],
-        area: Math.round(buildingWidth * depth * 0.35),
+        bounds: [minX, maxZ - depth * 0.45, maxX, maxZ - depth * 0.15],
+        area: Math.round(buildingWidth * depth * 0.3),
         ceilingHeight: ceilingHeight + 0.3,
         floorMaterial: "marble",
         description: "Phòng khách liên thông sảnh trước đón nắng",
