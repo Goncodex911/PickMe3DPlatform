@@ -182,7 +182,7 @@ exports.getPublicProfileByUsername = async (req, res, next) => {
     const templates = await Template.find({ author: user._id, isPublic: true })
       .sort({ createdAt: -1 })
       .limit(20)
-      .select('title description category tags thumbnailUrl likesCount viewsCount forksCount avgRating createdAt');
+      .select('title description category tags thumbnailUrl docData likesCount viewsCount forksCount avgRating createdAt');
 
     res.status(200).json({
       success: true,

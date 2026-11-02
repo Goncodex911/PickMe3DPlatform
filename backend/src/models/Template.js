@@ -123,6 +123,8 @@ const templateSchema = new mongoose.Schema(
   }
 );
 
+templateSchema.index({ isPublic: 1, createdAt: -1, _id: -1 });
+
 // Text index for search
 templateSchema.index({ title: 'text', description: 'text', tags: 'text' });
 
