@@ -63,6 +63,41 @@ export default function LandingPage({
   const phoneFrameRef = useRef<HTMLDivElement>(null);
   const cursorFollowerRef = useRef<HTMLDivElement>(null);
 
+  // Admin login by email (no username/password)
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [adminEmail, setAdminEmail] = useState("phantrongquy23032005@gmail.com");
+
+  const handleAdminAuthLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/auth/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: adminEmail.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        localStorage.setItem("pickme3d_token", data.token);
+        localStorage.setItem("pickme3d_user", JSON.stringify(data.user));
+        setCurrentUser(data.user);
+        setAuthOpen(false);
+        if (onLoginSuccess) {
+          onLoginSuccess(data.token, data.user);
+        }
+        router.push("/admin");
+      } else {
+        setError(data.message || "Email không hợp lệ hoặc không có quyền quản trị viên");
+      }
+    } catch (err: any) {
+      setError("Lỗi kết nối máy chủ: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
   // Auth handler
   const handleSuccess = async (credentialResponse: any) => {
     setLoading(true);
@@ -251,6 +286,7 @@ export default function LandingPage({
       {/* ------------------------------------------------------------- */}
       {/* NAVIGATION BAR */}
       {/* ------------------------------------------------------------- */}
+
 
 
       {/* ------------------------------------------------------------- */}
@@ -923,9 +959,50 @@ export default function LandingPage({
                 </div>
               )}
 
-              <div className="mt-8 pt-5 border-t border-white/10 w-full flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
+              {/* Admin Login Alternative */}
+              <div className="mt-4 w-full">
+                {!showAdminModal ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowAdminModal(true)}
+                    className="text-[11px] text-slate-400 hover:text-white underline cursor-pointer"
+                  >
+                    🔐 Đăng nhập Quản trị viên (Admin)
+                  </button>
+                ) : (
+                  <form onSubmit={handleAdminAuthLogin} className="mt-2 p-4 rounded-2xl bg-black/50 border border-white/10 space-y-2.5 text-left w-full">
+                    <div className="text-xs font-bold text-white flex items-center justify-between">
+                      <span>Đăng nhập Admin bằng Email</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowAdminModal(false)}
+                        className="text-neutral-400 hover:text-white text-[11px]"
+                      >
+                        Đóng
+                      </button>
+                    </div>
+                    <input
+                      type="email"
+                      placeholder="phantrongquy23032005@gmail.com"
+                      value={adminEmail}
+                      onChange={(e) => setAdminEmail(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-black/60 border border-neutral-700 text-xs text-white outline-none focus:border-indigo-500"
+                      required
+                    />
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold text-xs text-white transition-all cursor-pointer shadow-md shadow-indigo-600/30"
+                    >
+                      {loading ? "Đang xử lý..." : "Xác nhận Đăng nhập Admin"}
+                    </button>
+                  </form>
+                )}
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-white/10 w-full flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
                 <span className="material-symbols-rounded text-emerald-400 text-sm">lock</span>
-                <span>Bảo mật & mã hóa qua Google OAuth 2.0</span>
+                <span>Bảo mật & mã hóa PickMe3D Platform</span>
               </div>
             </motion.div>
           </div>
