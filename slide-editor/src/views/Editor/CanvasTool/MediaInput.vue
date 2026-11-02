@@ -75,17 +75,51 @@ const insertAudio = () => {
   emit('insertAudio', { src: audioSrc.value })
 }
 
-const uploadVideo = (files: FileList) => {
+const uploadVideo = async (files: FileList) => {
   const file = files[0]
   if (!file) return
   const ext = MIME_MAP[file.type] || ''
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('folder', 'pickme3d/media')
+    formData.append('resourceType', 'video')
+    const res = await fetch('http://localhost:5001/api/upload', {
+      method: 'POST',
+      body: formData,
+    })
+    const json = await res.json()
+    if (json.success && json.data?.url) {
+      emit('insertVideo', { src: json.data.url, ext })
+      return
+    }
+  } catch (err) {
+    console.warn('Upload video to Cloudinary fallback:', err)
+  }
   emit('insertVideo', { src: URL.createObjectURL(file), ext })
 }
 
-const uploadAudio = (files: FileList) => {
+const uploadAudio = async (files: FileList) => {
   const file = files[0]
   if (!file) return
   const ext = MIME_MAP[file.type] || ''
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('folder', 'pickme3d/media')
+    formData.append('resourceType', 'video')
+    const res = await fetch('http://localhost:5001/api/upload', {
+      method: 'POST',
+      body: formData,
+    })
+    const json = await res.json()
+    if (json.success && json.data?.url) {
+      emit('insertAudio', { src: json.data.url, ext })
+      return
+    }
+  } catch (err) {
+    console.warn('Upload audio to Cloudinary fallback:', err)
+  }
   emit('insertAudio', { src: URL.createObjectURL(file), ext })
 }
 </script>
