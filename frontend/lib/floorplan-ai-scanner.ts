@@ -58,9 +58,8 @@ HÃY TRẢ VỀ DUY NHẤT MỘT KHỐI JSON HỢP LỆ THEO CẤU TRÚC:
 \`\`\`
 Không thêm bất kỳ văn bản giải thích nào ngoài khối JSON.
 `;
-
   try {
-    const res = await fetch("http://localhost:5001/api/ai/complete", {
+    const res = await fetch("/api/ai", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
