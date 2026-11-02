@@ -1009,8 +1009,6 @@ function Num({ value, min, max, title, onChange, p }: { value: number; min: numb
         textAlign: "center",
         fontVariantNumeric: "tabular-nums",
         fontFamily: "inherit",
-        outline: editing ? `2px solid ${p.primary}` : "none",
-        outlineOffset: -1,
         boxSizing: "border-box",
       }}
     />

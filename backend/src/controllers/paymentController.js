@@ -1,5 +1,6 @@
 const { listPlans, getPlan } = require('../config/plans');
 const billing = require('../services/billingStore');
+const { quote } = require('../services/promoService');
 const payos = require('../services/payosService');
 
 exports.plans = (req, res) => {
@@ -23,27 +24,24 @@ exports.me = (req, res) => {
   res.json({ success: true, data: req.user });
 };
 
-exports.myOrders = async (req, res) => {
-  const data = await billing.listOrders(req.user.id);
-  res.json({ success: true, data });
+exports.myOrders = async (req, res, next) => {
+  try {
+    const data = await billing.listOrders(req.user.id);
+    res.json({ success: true, data });
+  } catch (err) { next(err); }
 };
 
 exports.checkout = async (req, res, next) => {
   try {
-    const planId = req.body?.planId;
+    const pricing = quote(req.body || {});
+    const { planId, months, amount } = pricing;
     const plan = getPlan(planId);
-    const months = Math.min(12, Math.max(1, Number(req.body?.months) || 1));
-    if (!plan || plan.price <= 0) {
-      return res.status(400).json({ success: false, message: 'Invalid plan' });
-    }
-    const amount = plan.price * months;
     const orderCode = Date.now();
     await billing.createOrder({
       orderCode,
       userId: req.user.id,
-      planId,
-      months,
-      amount,
+      customer: { name: req.user.name, email: req.user.email },
+      ...pricing,
       status: 'PENDING',
     });
     const front = payos.frontendUrl();
@@ -93,4 +91,27 @@ exports.status = async (req, res) => {
     }
   }
   return res.json({ success: true, data: order });
+};
+
+exports.quote = (req, res, next) => {
+  try { res.json({ success: true, data: quote(req.body || {}) }); }
+  catch (err) { next(err); }
+};
+
+exports.receipt = async (req, res, next) => {
+  try {
+    const order = await billing.findOrder(req.params.orderCode);
+    if (!order || String(order.userId) !== String(req.user.id)) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy đơn hàng' });
+    }
+    if (order.status !== 'PAID') {
+      return res.status(409).json({ success: false, message: 'Biên lai chỉ có sau khi thanh toán thành công' });
+    }
+    res.set('Cache-Control', 'private, no-store');
+    res.json({ success: true, data: {
+      ...order, receiptNumber: `PM3D-${order.orderCode}`,
+      customer: order.customer || { name: req.user.name, email: req.user.email }, currency: 'VND',
+      documentType: 'PAYMENT_RECEIPT',
+    } });
+  } catch (err) { next(err); }
 };

@@ -738,7 +738,7 @@ export default function AdminAnalyticsPage() {
                   value={tempMeasurementId}
                   onChange={(e) => setTempMeasurementId(e.target.value)}
                   placeholder="G-XXXXXXXXXX"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white font-mono focus:outline-none focus:border-white/30"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white font-mono focus:outline-none "
                   required
                 />
                 <p className="text-[11px] text-zinc-500 mt-1">
@@ -755,7 +755,7 @@ export default function AdminAnalyticsPage() {
                   value={tempPropertyId}
                   onChange={(e) => setTempPropertyId(e.target.value)}
                   placeholder="Ví dụ: 432198765"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white font-mono focus:outline-none focus:border-white/30"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white font-mono focus:outline-none "
                 />
                 <p className="text-[11px] text-zinc-500 mt-1">
                   Dùng để tạo đường link trực tiếp vào đúng Property trên Google Analytics Console.
@@ -771,7 +771,7 @@ export default function AdminAnalyticsPage() {
                   value={tempLookerUrl}
                   onChange={(e) => setTempLookerUrl(e.target.value)}
                   placeholder="https://lookerstudio.google.com/embed/reporting/..."
-                  className="w-full px-3.5 py-2 rounded-xl bg-zinc-900 border border-white/10 text-white font-mono focus:outline-none focus:border-white/30 resize-none text-[11px]"
+                  className="w-full px-3.5 py-2 rounded-xl bg-zinc-900 border border-white/10 text-white font-mono focus:outline-none  resize-none text-[11px]"
                 />
                 <p className="text-[11px] text-zinc-500 mt-1">
                   Trong Looker Studio, chọn <strong>Tệp &gt; Nhúng báo cáo &gt; Bật nhúng</strong> và sao chép mã URL trong `src="..."`.

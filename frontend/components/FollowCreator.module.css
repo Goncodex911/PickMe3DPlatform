@@ -1,0 +1,21 @@
+.follow { display: flex; flex-wrap: wrap; align-items: center; gap: 9px 12px; margin-top: 16px; }
+.followButton { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; gap: 8px; padding: 0 15px; border: 1px solid #f5f5f5; border-radius: 7px; background: #f5f5f5; color: #161616; cursor: pointer; font: inherit; font-size: 12px; font-weight: 650; text-decoration: none; transition: background .16s ease, border-color .16s ease, color .16s ease, transform .16s ease; }
+.followButton:hover:not(:disabled) { transform: translateY(-1px); border-color: #dedede; background: #dedede; }
+.followButton[data-following="true"] { border-color: #5b5e66; background: transparent; color: #f5f5f5; }
+.followButton[data-following="true"]:hover:not(:disabled) { border-color: #92959d; background: #171b24; }
+.followButton:disabled { cursor: wait; opacity: .65; }
+.followButton .material-symbols-rounded { font-size: 17px; }
+.followers { min-height: 32px; display: inline-flex; align-items: center; padding: 0 10px; border: 1px solid rgb(255 255 255 / 13%); border-radius: 999px; color: #c4c8d0; font-size: 11px; }
+.feedLink { display: inline-flex; min-height: 40px; align-items: center; padding: 0 4px; color: #c2baff; font-size: 11px; font-weight: 550; text-decoration: none; text-underline-offset: 4px; }
+.feedLink:hover { color: #fff; text-decoration: underline; }
+.error { width: 100%; margin: 0; color: #fecaca; font-size: 11px; line-height: 1.5; }
+.error button, .error a { min-height: 28px; border: 0; background: transparent; color: inherit; cursor: pointer; font: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.follow :is(a, button):focus-visible { outline: 2px solid #c7bdff; outline-offset: 3px; }
+
+@media (max-width: 640px) {
+  .follow { justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .follow *, .follow *::before, .follow *::after { transition-duration: .01ms!important; }
+}

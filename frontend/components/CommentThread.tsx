@@ -169,7 +169,7 @@ function CommentItemView({
                 onChange={(e) => setReplyText(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleReply()}
                 placeholder="Viết câu trả lời..."
-                className="flex-1 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-white placeholder:text-slate-500 outline-none focus:border-blue-500/50 transition-colors"
+                className="flex-1 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-white placeholder:text-slate-500 outline-none  transition-colors"
                 disabled={replying}
               />
               <button
@@ -310,7 +310,7 @@ export default function CommentThread({ templateId }: CommentThreadProps) {
               onChange={(e) => setNewComment(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handlePost()}
               placeholder="Viết bình luận..."
-              className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-white placeholder:text-slate-500 outline-none focus:border-blue-500/50 transition-colors"
+              className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-white placeholder:text-slate-500 outline-none  transition-colors"
               disabled={posting}
             />
             <button

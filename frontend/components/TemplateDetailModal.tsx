@@ -10,6 +10,7 @@ import {
   addTemplateReviewApi,
 } from "@/lib/templateService";
 import Link from "next/link";
+import DesignThumbnail from "./DesignThumbnail";
 
 interface TemplateDetailModalProps {
   template: TemplateItem | null;
@@ -23,7 +24,7 @@ export default function TemplateDetailModal({
   onTemplateUpdated,
 }: TemplateDetailModalProps) {
   const [activeImage, setActiveImage] = useState<string>(
-    template?.thumbnailUrl || "/hero/card-couture.png"
+    template?.thumbnailUrl || ""
   );
   const [copied, setCopied] = useState(false);
   const [likes, setLikes] = useState(0);
@@ -42,7 +43,7 @@ export default function TemplateDetailModal({
 
   useEffect(() => {
     if (template) {
-      setActiveImage(template.thumbnailUrl || "/hero/card-couture.png");
+      setActiveImage(template.thumbnailUrl || "");
       setLikes(template.likesCount || 0);
       setIsLiked(false);
       setReviewsList(template.reviews || []);
@@ -126,7 +127,7 @@ export default function TemplateDetailModal({
   const images =
     template.galleryImages && template.galleryImages.length > 0
       ? template.galleryImages
-      : [template.thumbnailUrl || "/hero/card-couture.png"];
+      : template.thumbnailUrl ? [template.thumbnailUrl] : [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-8 bg-black/80 backdrop-blur-md animate-fadeIn">
@@ -148,11 +149,7 @@ export default function TemplateDetailModal({
         <div className="w-full md:w-1/2 p-6 bg-[#090d16]/90 flex flex-col items-center justify-between border-b md:border-b-0 md:border-r border-white/10">
           {/* Main Active Image Preview */}
           <div className="relative w-full aspect-[4/5] rounded-2xl overflow-hidden bg-slate-900 border border-white/10 shadow-inner group">
-            <img
-              src={activeImage || template.thumbnailUrl || "/hero/card-couture.png"}
-              alt={template.title}
-              className="w-full h-full object-cover transition-all"
-            />
+            <DesignThumbnail docData={template.docData} thumbnailUrl={activeImage || template.thumbnailUrl} title={template.title} />
             <div className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-mono font-semibold uppercase bg-black/60 text-red-400 border border-red-500/30 backdrop-blur-md">
               {template.category === "Dạ hội" ? "Eveningwear" : template.category}
             </div>
@@ -330,7 +327,7 @@ export default function TemplateDetailModal({
                     placeholder="Write a short review (optional)…"
                     value={userComment}
                     onChange={(e) => setUserComment(e.target.value)}
-                    className="flex-1 px-3 py-1.5 rounded-xl bg-black/40 border border-white/10 text-xs text-white placeholder:text-slate-500 focus:border-red-500/60 outline-none"
+                    className="flex-1 px-3 py-1.5 rounded-xl bg-black/40 border border-white/10 text-xs text-white placeholder:text-slate-500  outline-none"
                   />
                   <button
                     type="submit"

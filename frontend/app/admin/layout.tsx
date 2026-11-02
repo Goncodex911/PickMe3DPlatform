@@ -226,7 +226,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     value={adminEmail}
                     onChange={(e) => setAdminEmail(e.target.value)}
                     placeholder="phantrongquy23032005@gmail.com"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-zinc-950 border border-white/10 text-xs text-white placeholder-zinc-500 outline-none focus:border-white/30 transition-colors"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-zinc-950 border border-white/10 text-xs text-white placeholder-zinc-500 outline-none  transition-colors"
                     required
                   />
                 </div>
