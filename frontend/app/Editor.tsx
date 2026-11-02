@@ -1430,6 +1430,16 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
   }, []);
 
   useEffect(() => {
+    const sync = () => setAiSettings(loadAiSettings());
+    window.addEventListener("storage", sync);
+    window.addEventListener("ai-settings-changed", sync);
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener("ai-settings-changed", sync);
+    };
+  }, []);
+
+  useEffect(() => {
     document.documentElement.lang = lang;
     /* the editor's own text and the parts both pick up the language's Noto face */
     document.body.style.fontFamily = uiFontFamily(lang);

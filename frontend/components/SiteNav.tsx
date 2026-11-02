@@ -108,6 +108,7 @@ export default function SiteNav() {
             Admin
           </Link>
         )}
+        {authenticated && <Link href="/activity/" aria-current={current("/activity") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Activity</Link>}
         {authenticated && <NotificationBell />}
         {authenticated
           ? <><Link href="/profile/" aria-current={current("/profile") ? "page" : undefined} className={styles.account} title={name}>{name || "Account"}</Link><button onClick={() => { logout(); setMenuOpen(false); router.push("/"); router.refresh(); }} className={styles.logout}>Sign out</button></>

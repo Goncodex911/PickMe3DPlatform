@@ -199,7 +199,7 @@ export default function AdminBillingPage() {
                 setStatusFilter(e.target.value);
                 setPage(1);
               }}
-              className="bg-zinc-950 border border-white/10 text-xs text-zinc-200 rounded-xl px-3 py-2 outline-none focus:border-white/30"
+              className="bg-zinc-950 border border-white/10 text-xs text-zinc-200 rounded-xl px-3 py-2 outline-none "
             >
               <option value="all">Tất cả</option>
               <option value="PAID">Đã thanh toán (PAID)</option>
@@ -217,7 +217,7 @@ export default function AdminBillingPage() {
                 setPlanFilter(e.target.value);
                 setPage(1);
               }}
-              className="bg-zinc-950 border border-white/10 text-xs text-zinc-200 rounded-xl px-3 py-2 outline-none focus:border-white/30"
+              className="bg-zinc-950 border border-white/10 text-xs text-zinc-200 rounded-xl px-3 py-2 outline-none "
             >
               <option value="all">Tất cả gói</option>
               <option value="pro">Pro Plan</option>
@@ -239,7 +239,7 @@ export default function AdminBillingPage() {
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="w-full pl-9 pr-4 py-2 bg-zinc-950 border border-white/10 rounded-xl text-xs text-white placeholder-zinc-500 outline-none focus:border-white/30 transition-colors"
+            className="w-full pl-9 pr-4 py-2 bg-zinc-950 border border-white/10 rounded-xl text-xs text-white placeholder-zinc-500 outline-none  transition-colors"
           />
         </div>
       </div>

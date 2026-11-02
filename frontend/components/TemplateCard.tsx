@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TemplateItem, getCoverEditorLink, prepareEditorSession, trackCoverTemplateApi } from "@/lib/templateService";
 import styles from "./TemplateCard.module.css";
+import DesignThumbnail from "./DesignThumbnail";
 
 interface TemplateCardProps {
   template: TemplateItem;
@@ -14,7 +15,6 @@ interface TemplateCardProps {
 export default function TemplateCard({ template, onSelect }: TemplateCardProps) {
   const router = useRouter();
   const templateId = template._id || template.id || "";
-  const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
   const openDetails = () => {
     if (onSelect) onSelect(template);
     else if (templateId) router.push(`/templates/${templateId}`);
@@ -23,7 +23,7 @@ export default function TemplateCard({ template, onSelect }: TemplateCardProps) 
   return (
     <article className={styles.card}>
       <button className={styles.preview} onClick={openDetails} aria-label={`View details ${template.title}`}>
-        <img src={template.thumbnailUrl || `${basePath}/hero/card-couture.png`} alt={template.title} loading="lazy" />
+        <DesignThumbnail docData={template.docData} thumbnailUrl={template.thumbnailUrl} title={template.title} />
         <span className={styles.category}>{template.category === "Dạ hội" ? "Eveningwear" : template.category}</span>
         <span className={styles.view}>View details <span aria-hidden="true">↗</span></span>
       </button>

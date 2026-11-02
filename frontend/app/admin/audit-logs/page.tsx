@@ -118,7 +118,7 @@ export default function AdminAuditLogsPage() {
               placeholder="Tìm theo tên admin, email hoặc đối tượng thao tác..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-zinc-950 border border-white/10 rounded-xl text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-colors"
+              className="w-full pl-10 pr-4 py-2 bg-zinc-950 border border-white/10 rounded-xl text-xs text-white placeholder-zinc-500 focus:outline-none  transition-colors"
             />
           </div>
           <button
@@ -136,7 +136,7 @@ export default function AdminAuditLogsPage() {
             <select
               value={action}
               onChange={(e) => setAction(e.target.value)}
-              className="bg-zinc-950 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-white/30"
+              className="bg-zinc-950 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none "
             >
               {ACTION_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -152,7 +152,7 @@ export default function AdminAuditLogsPage() {
             <select
               value={targetType}
               onChange={(e) => setTargetType(e.target.value)}
-              className="bg-zinc-950 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-white/30"
+              className="bg-zinc-950 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none "
             >
               <option value="all">Tất cả</option>
               <option value="user">User (Người dùng)</option>

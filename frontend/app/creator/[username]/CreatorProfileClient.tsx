@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useEffect, useState, use } from "react";
+import FollowCreator from "@/components/FollowCreator";
+import DesignThumbnail from "@/components/DesignThumbnail";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -179,6 +181,7 @@ function CreatorProfileClient({ username }: CreatorProfileClientProps) {
               {user.username && (
                 <p className="text-sm text-red-400 font-medium mt-0.5">@{user.username}</p>
               )}
+              <FollowCreator creatorId={user._id} />
               {user.jobRole && (
                 <div className="flex items-center justify-center sm:justify-start gap-1.5 mt-1.5 text-xs text-slate-400">
                   <span className="material-symbols-rounded text-xs">work</span>
@@ -272,17 +275,7 @@ function CreatorProfileClient({ username }: CreatorProfileClientProps) {
                   >
                     {/* Thumbnail */}
                     <div className="relative aspect-[4/3] overflow-hidden bg-slate-900">
-                      {tpl.thumbnailUrl ? (
-                        <img
-                          src={tpl.thumbnailUrl}
-                          alt={tpl.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <span className="material-symbols-rounded text-4xl text-slate-700">view_in_ar</span>
-                        </div>
-                      )}
+                      <DesignThumbnail docData={tpl.docData} thumbnailUrl={tpl.thumbnailUrl} title={tpl.title} />
                       {/* Category badge */}
                       <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[10px] font-mono font-medium uppercase bg-black/60 text-red-400 border border-white/10 backdrop-blur-sm">
                         {tpl.category}
