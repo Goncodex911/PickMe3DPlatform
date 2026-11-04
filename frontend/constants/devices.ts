@@ -482,6 +482,43 @@ const DESKTOP: DeviceConfig[] = [
   },
 ];
 
+// ─── Tablet / iPad ─────────────────────────────────────────────────────────
+const TABLET: DeviceConfig[] = [
+  {
+    id: "ipad-pro-12-9",
+    name: 'iPad Pro 12.9" (1024×1366)',
+    brand: "Apple",
+    type: "mobile",
+    width: 1024,
+    height: 1366,
+    pixelRatio: 2,
+    aspectRatio: "4:3",
+    hasNotchOrIsland: false,
+  },
+  {
+    id: "ipad-air-11",
+    name: 'iPad Air 11" (820×1180)',
+    brand: "Apple",
+    type: "mobile",
+    width: 820,
+    height: 1180,
+    pixelRatio: 2,
+    aspectRatio: "1.44:1",
+    hasNotchOrIsland: false,
+  },
+  {
+    id: "galaxy-tab-s9",
+    name: "Galaxy Tab S9 (800×1280)",
+    brand: "Samsung",
+    type: "mobile",
+    width: 800,
+    height: 1280,
+    pixelRatio: 2,
+    aspectRatio: "16:10",
+    hasNotchOrIsland: false,
+  },
+];
+
 // ─── Grouped by brand ─────────────────────────────────────────────────────────
 export const DEVICE_BRANDS: { brand: string; devices: DeviceConfig[] }[] = [
   { brand: "Apple", devices: APPLE },
@@ -491,10 +528,12 @@ export const DEVICE_BRANDS: { brand: string; devices: DeviceConfig[] }[] = [
   { brand: "OPPO", devices: OPPO },
 ];
 
+export const TABLET_DEVICES: DeviceConfig[] = TABLET;
 export const DESKTOP_DEVICES: DeviceConfig[] = DESKTOP;
 
 export const ALL_DEVICES: DeviceConfig[] = [
   ...APPLE,
+  ...TABLET,
   ...SAMSUNG,
   ...XIAOMI,
   ...PIXEL,

@@ -163,6 +163,11 @@ import DeviceSelector from "@/components/DeviceSelector";
 import ImportTemplateModal from "@/components/ImportTemplateModal";
 import ImportConflictModal from "@/components/ImportConflictModal";
 import EmbedModal from "@/components/EmbedModal";
+import VersionHistoryDrawer from "@/components/VersionHistoryDrawer";
+import PrototypeWiresOverlay from "@/components/PrototypeWiresOverlay";
+import CollaborationPresence from "@/components/CollaborationPresence";
+import { collabClient } from "@/lib/collaborationClient";
+
 import { DeviceConfig, findDeviceById } from "@/constants/devices";
 import { TemplateFile } from "@/types/template-file";
 import { UITemplate, translateTemplateSource, getCategoryLabel } from "@/lib/ui-marketplace-data";
@@ -546,6 +551,18 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
   const [shareOpen, setShareOpen] = useState(false);
   const [saveDesignOpen, setSaveDesignOpen] = useState(false);
   const [editingDesign, setEditingDesign] = useState<TemplateItem | null>(null);
+  const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
+  const [toolsSidebarOpen, setToolsSidebarOpen] = useState(false);
+  const [showWires, setShowWires] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    try {
+      const u = localStorage.getItem("pickme3d_user");
+      if (u) setCurrentUser(JSON.parse(u));
+    } catch { }
+  }, []);
+
   /** the idea typed into the "ask an AI" dialog; kept here so a failed draft does not lose it */
   const [ideaText, setIdeaText] = useState("");
   /** a model is drafting a design right now */
@@ -1517,6 +1534,108 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     mq.addEventListener("change", apply);
     return () => mq.removeEventListener("change", apply);
   }, []);
+
+
+  // ─── Real-time Multiplayer Document Sync ─────────────────────────────────
+  const isRemoteSyncRef = useRef(false);
+  const broadcastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 1. Subscribe to incoming updates from peers
+  useEffect(() => {
+    const unsubscribe = collabClient.subscribe({
+      onDocSync: ({ docData }) => {
+        if (!docData) return;
+        isRemoteSyncRef.current = true;
+        if (Array.isArray(docData.frames)) {
+          setFrames(docData.frames);
+          framesRef.current = docData.frames;
+        }
+        if (Array.isArray(docData.groups)) {
+          const targetFrames = Array.isArray(docData.frames) ? docData.frames : framesRef.current;
+          const migrated = migrateGroups(docData.groups, targetFrames);
+          setGroups(migrated);
+          groupsRef.current = migrated;
+        }
+        if (typeof docData.paletteKey === "string" && docData.paletteKey) {
+          setPaletteKey(docData.paletteKey);
+        }
+        if (docData.customPalette && typeof docData.customPalette.primary === "string") {
+          setCustomPalette(paletteOf("custom", docData.customPalette));
+        }
+        if (docData.theme && typeof docData.theme === "object") {
+          setTheme(normalizeTheme(docData.theme));
+        }
+        setTimeout(() => {
+          isRemoteSyncRef.current = false;
+        }, 80);
+      },
+      onNodePatch: ({ nodeId, patch }) => {
+        if (!nodeId || !patch) return;
+        isRemoteSyncRef.current = true;
+        setGroups((cur) =>
+          cur.map((g) => {
+            if (g.id === nodeId) return { ...g, ...patch };
+            const itemMatch = g.items.some((it) => it.id === nodeId);
+            if (itemMatch) {
+              return {
+                ...g,
+                items: g.items.map((it) => (it.id === nodeId ? { ...it, ...patch } : it)),
+              };
+            }
+            return g;
+          })
+        );
+        setTimeout(() => {
+          isRemoteSyncRef.current = false;
+        }, 80);
+      },
+      onPeersChange: (currentPeers) => {
+        if (currentPeers.length > 0 && loadedRef.current && !isRemoteSyncRef.current) {
+          collabClient.broadcastDoc({
+            groups: groupsRef.current,
+            frames: framesRef.current,
+            paletteKey,
+            customPalette: customPalette ?? undefined,
+            dynamicColor,
+            theme,
+          });
+        }
+      },
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [paletteKey, customPalette, dynamicColor, theme]);
+
+  // 2. Broadcast local edits to all room collaborators
+  useEffect(() => {
+    if (!loadedRef.current || editAccess !== "editable") return;
+    if (isRemoteSyncRef.current) return;
+
+    if (broadcastTimerRef.current) clearTimeout(broadcastTimerRef.current);
+    broadcastTimerRef.current = setTimeout(() => {
+      if (isRemoteSyncRef.current) return;
+      collabClient.broadcastDoc({
+        groups,
+        frames,
+        paletteKey,
+        customPalette: customPalette ?? undefined,
+        dynamicColor,
+        theme,
+      });
+    }, 50);
+
+    return () => {
+      if (broadcastTimerRef.current) clearTimeout(broadcastTimerRef.current);
+    };
+  }, [groups, frames, paletteKey, customPalette, dynamicColor, theme, editAccess]);
+
+  // 3. Broadcast node selection to lock / show peer selection
+  useEffect(() => {
+    if (!loadedRef.current) return;
+    collabClient.selectNodes(selectedIds);
+  }, [selectedIds]);
 
   useEffect(() => {
     if (!loadedRef.current || editAccess !== "editable") return;
@@ -5628,6 +5747,37 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                   />
                 )}
               </div>
+                {/* ── Real-time Multiplayer Collaboration Presence & Cursors ── */}
+                <CollaborationPresence
+                  canvasId={editingDesign?._id || editingDesign?.id || "draft-canvas"}
+                  user={{
+                    id: currentUser?.id || currentUser?._id || "guest",
+                    name: currentUser?.name || "Bạn",
+                    avatar: currentUser?.picture || currentUser?.googlePicture,
+                    color: p.primary,
+                  }}
+                  zoom={view.z}
+                  panX={view.x}
+                  panY={view.y}
+                  canvasRef={canvasRef}
+                  primaryColor={p.primary}
+                />
+
+                {/* ── Interactive Prototype Screen Linkage Wires Overlay ── */}
+                <PrototypeWiresOverlay
+                  frames={frames}
+                  groups={groups}
+                  zoom={view.z}
+                  panX={view.x}
+                  panY={view.y}
+                  active={showWires}
+                  selectedIds={selectedIds}
+                  p={p}
+                  onSelectWire={(wire) => {
+                    if (wire.sourceId) setSelectedIds([wire.sourceId]);
+                  }}
+                />
+
             </div>
 
             {draftBusy && (
@@ -5691,94 +5841,205 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
               }}
             />
 
-            {/* ── New Feature Controls: Device Preset · Import · Embed ── */}
+            {/* ── Collapsible Sidebar: Device Preset · Import · Embed · Version History · Wires ── */}
             {!isMobile && (
-              <div
-                style={{
-                  position: "absolute",
-                  left: 22,
-                  bottom: 82,
-                  zIndex: 50,
-                  display: "flex",
-                  gap: 6,
-                  alignItems: "center",
-                  padding: "4px 8px",
-                  borderRadius: 24,
-                  background: p.surfaceContainerLow,
-                  boxShadow: "0 4px 16px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.08)",
-                  pointerEvents: "auto",
-                }}
-              >
-                {/* Device Preset Selector */}
-                <DeviceSelector
-                  activeDeviceId={activeDeviceId}
-                  onSelect={handleDeviceSelect}
-                  surfaceColor={p.surface}
-                  surfaceContainerColor={p.surfaceContainerHigh}
-                  onSurfaceColor={p.onSurface}
-                  onSurfaceVariantColor={p.onSurfaceVariant}
-                  primaryColor={p.primary}
-                  onPrimaryColor={p.onPrimary}
-                />
+              <>
+                {!toolsSidebarOpen ? (
+                  <button
+                    onClick={() => setToolsSidebarOpen(true)}
+                    title="Mở bảng công cụ & Viewport"
+                    style={{
+                      position: "absolute",
+                      left: 18,
+                      bottom: 18,
+                      zIndex: 50,
+                      height: 34,
+                      padding: "0 14px",
+                      borderRadius: 17,
+                      border: `1px solid ${p.outlineVariant}`,
+                      background: p.surfaceContainerHigh,
+                      color: p.onSurface,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      boxShadow: "0 2px 10px rgba(0,0,0,0.22)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      userSelect: "none",
+                    }}
+                  >
+                    Công cụ & Viewport ▾
+                  </button>
+                ) : (
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: 18,
+                      bottom: 18,
+                      zIndex: 60,
+                      width: 280,
+                      background: p.surfaceContainerHigh,
+                      borderRadius: 16,
+                      boxShadow: "0 12px 36px rgba(0,0,0,0.38), 0 0 0 1px rgba(255,255,255,0.06)",
+                      padding: "14px",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 10,
+                      pointerEvents: "auto",
+                    }}
+                  >
+                    {/* Header */}
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        borderBottom: `1px solid ${p.outlineVariant}`,
+                        paddingBottom: 8,
+                      }}
+                    >
+                      <span style={{ fontSize: 13, fontWeight: 700, color: p.onSurface }}>
+                        Công cụ & Viewport
+                      </span>
+                      <button
+                        onClick={() => setToolsSidebarOpen(false)}
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: p.onSurfaceVariant,
+                          fontSize: 12,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          padding: "2px 8px",
+                          borderRadius: 6,
+                        }}
+                      >
+                        Thu gọn
+                      </button>
+                    </div>
 
-                <div style={{ width: 1, height: 22, background: p.outlineVariant, opacity: 0.5 }} />
+                    {/* 1. Device Viewport */}
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: p.onSurfaceVariant, marginBottom: 4 }}>
+                        Thiết bị Viewport:
+                      </div>
+                      <DeviceSelector
+                        activeDeviceId={activeDeviceId}
+                        onSelect={handleDeviceSelect}
+                        surfaceColor={p.surface}
+                        surfaceContainerColor={p.surfaceContainerHighest}
+                        onSurfaceColor={p.onSurface}
+                        onSurfaceVariantColor={p.onSurfaceVariant}
+                        primaryColor={p.primary}
+                        onPrimaryColor={p.onPrimary}
+                      />
+                    </div>
 
-                {/* Import template file button */}
-                <button
-                  onClick={() => setImportModalOpen(true)}
-                  title="Nhập file template (.json / .pickme3d)"
-                  className="m3-press"
-                  style={{
-                    height: 36,
-                    padding: "0 12px",
-                    borderRadius: 18,
-                    border: "none",
-                    background: p.surfaceContainerHigh,
-                    color: p.onSurface,
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                    whiteSpace: "nowrap",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-                  }}
-                >
-                  <span style={{ fontFamily: "Material Symbols Rounded", fontSize: 18, lineHeight: 1 }}>
-                    file_open
-                  </span>
-                  Nhập file
-                </button>
+                    {/* 2. Import Template */}
+                    <button
+                      onClick={() => setImportModalOpen(true)}
+                      title="Nhập file template (.json / .pickme3d)"
+                      style={{
+                        width: "100%",
+                        height: 36,
+                        padding: "0 12px",
+                        borderRadius: 10,
+                        border: `1px solid ${p.outlineVariant}`,
+                        background: p.surface,
+                        color: p.onSurface,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        textAlign: "left",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <span>Nhập file template</span>
+                      <span style={{ fontSize: 11, opacity: 0.6 }}>.json</span>
+                    </button>
 
-                {/* Embed code button (always accessible) */}
-                <button
-                  onClick={() => setEmbedModalOpen(true)}
-                  title="Lấy mã nhúng iframe"
-                  className="m3-press"
-                  style={{
-                    height: 36,
-                    padding: "0 12px",
-                    borderRadius: 18,
-                    border: "none",
-                    background: p.surfaceContainerHigh,
-                    color: p.onSurface,
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                    whiteSpace: "nowrap",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-                  }}
-                >
-                  <span style={{ fontFamily: "Material Symbols Rounded", fontSize: 18, lineHeight: 1 }}>
-                    code
-                  </span>
-                  Nhúng
-                </button>
-              </div>
+                    {/* 3. Embed Code */}
+                    <button
+                      onClick={() => setEmbedModalOpen(true)}
+                      title="Lấy mã nhúng iframe"
+                      style={{
+                        width: "100%",
+                        height: 36,
+                        padding: "0 12px",
+                        borderRadius: 10,
+                        border: `1px solid ${p.outlineVariant}`,
+                        background: p.surface,
+                        color: p.onSurface,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        textAlign: "left",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <span>Mã nhúng iframe</span>
+                      <span style={{ fontSize: 11, opacity: 0.6 }}>embed</span>
+                    </button>
+
+                    {/* 4. Version History */}
+                    <button
+                      onClick={() => setVersionHistoryOpen(true)}
+                      title="Lịch sử phiên bản & Rollback"
+                      style={{
+                        width: "100%",
+                        height: 36,
+                        padding: "0 12px",
+                        borderRadius: 10,
+                        border: versionHistoryOpen ? `1px solid ${p.primary}` : `1px solid ${p.outlineVariant}`,
+                        background: versionHistoryOpen ? `${p.primary}18` : p.surface,
+                        color: versionHistoryOpen ? p.primary : p.onSurface,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        textAlign: "left",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <span>Lịch sử phiên bản</span>
+                      <span style={{ fontSize: 11, opacity: 0.6 }}>Rollback</span>
+                    </button>
+
+                    {/* 5. Prototype Wires */}
+                    <button
+                      onClick={() => setShowWires((v) => !v)}
+                      title={showWires ? "Tắt dây liên kết Prototype" : "Bật dây liên kết Prototype"}
+                      style={{
+                        width: "100%",
+                        height: 36,
+                        padding: "0 12px",
+                        borderRadius: 10,
+                        border: showWires ? `1px solid ${p.primary}` : `1px solid ${p.outlineVariant}`,
+                        background: showWires ? `${p.primary}18` : p.surface,
+                        color: showWires ? p.primary : p.onSurface,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        textAlign: "left",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <span>Dây liên kết Prototype</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: showWires ? p.primary : p.onSurfaceVariant }}>
+                        {showWires ? "Bật" : "Tắt"}
+                      </span>
+                    </button>
+                  </div>
+                )}
+              </>
             )}
 
             {isMobile && (
@@ -6260,6 +6521,28 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
           secondaryContainerColor={p.secondaryContainer}
           onSecondaryContainerColor={p.onSecondaryContainer}
         />
+
+        {/* ── Version History & Rollback Drawer ── */}
+        <VersionHistoryDrawer
+          open={versionHistoryOpen}
+          onClose={() => setVersionHistoryOpen(false)}
+          templateId={editingDesign?._id || editingDesign?.id || "draft"}
+          currentDocData={doc}
+          onRollback={(restoredDocData) => {
+            if (restoredDocData) {
+              applyDoc(restoredDocData, false);
+              snapshot(true);
+              showToast("Đã khôi phục phiên bản thành công!", 2200, "check");
+            }
+          }}
+          primaryColor={p.primary}
+          surfaceColor={p.surface}
+          surfaceContainerColor={p.surfaceContainerHigh}
+          onSurfaceColor={p.onSurface}
+          onSurfaceVariantColor={p.onSurfaceVariant}
+          token={typeof window !== "undefined" ? localStorage.getItem("pickme3d_token") || localStorage.getItem("token") : null}
+        />
+
 
       </ThemeContext.Provider>
     </LangContext.Provider>
