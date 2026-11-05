@@ -7,7 +7,7 @@ import { Icon } from "./M3Node";
 import { KIND_TEXT, t, useLang } from "@/lib/i18n";
 import { Field, Section, Tile } from "./ui";
 import { UITemplate, getCategoryLabel, translateTemplateSource } from "@/lib/ui-marketplace-data";
-import { getPurchasedTemplates, subscribePurchasedTemplates } from "@/lib/purchased-animations";
+import { getPurchasedTemplates, subscribePurchasedTemplates, syncPurchasedTemplatesWithServer } from "@/lib/purchased-animations";
 
 function AnimationAvatar({ template, primaryColor }: { template: UITemplate; primaryColor: string }) {
   const srcDoc = useMemo(() => {
@@ -124,6 +124,11 @@ export function PartsPalette({
 
   useEffect(() => {
     setPurchased(getPurchasedTemplates());
+    void syncPurchasedTemplatesWithServer().then((templates) => {
+      if (Array.isArray(templates) && templates.length > 0) {
+        setPurchased(templates);
+      }
+    });
     return subscribePurchasedTemplates(setPurchased);
   }, []);
 
