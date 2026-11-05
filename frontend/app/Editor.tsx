@@ -171,6 +171,7 @@ import { collabClient } from "@/lib/collaborationClient";
 import { DeviceConfig, findDeviceById } from "@/constants/devices";
 import { TemplateFile } from "@/types/template-file";
 import { UITemplate, translateTemplateSource, getCategoryLabel } from "@/lib/ui-marketplace-data";
+import { getPurchasedTemplates, purchaseTemplate } from "@/lib/purchased-animations";
 
 /** the screens while a model drafts: primary, tertiary and primary container, drifting */
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
@@ -3931,6 +3932,65 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     if (toastTimer.current) window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => setToast(null), ms);
   };
+
+  // Check for pending marketplace animation insert from UI Marketplace
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const rawPending = sessionStorage.getItem("pending_marketplace_insert");
+      const urlParams = new URLSearchParams(window.location.search);
+      const insertMarketplaceId = urlParams.get("insertMarketplace");
+
+      if (rawPending || insertMarketplaceId) {
+        sessionStorage.removeItem("pending_marketplace_insert");
+
+        let tmpl: UITemplate | null = null;
+        if (rawPending) {
+          try {
+            tmpl = JSON.parse(rawPending);
+          } catch {}
+        }
+
+        if (!tmpl && insertMarketplaceId) {
+          const purchased = getPurchasedTemplates();
+          tmpl = purchased.find((t) => t.id === insertMarketplaceId) || null;
+        }
+
+        const applyInsert = (template: UITemplate) => {
+          onAddAnimation(template);
+          setLeftTab("parts");
+          setLeftOpen(true);
+          showToast(`Đã chèn animation "${template.titleEn || template.title}" vào Canvas!`, 3000, "check");
+          if (insertMarketplaceId) {
+            const cleanUrl = new URL(window.location.href);
+            cleanUrl.searchParams.delete("insertMarketplace");
+            window.history.replaceState({}, "", cleanUrl.toString());
+          }
+        };
+
+        if (tmpl) {
+          const target = tmpl;
+          const timer = setTimeout(() => applyInsert(target), 400);
+          return () => clearTimeout(timer);
+        } else if (insertMarketplaceId) {
+          fetch("/ux-full-catalog.json")
+            .then((r) => r.json())
+            .then((catalog: UITemplate[]) => {
+              const found = catalog.find((t) => t.id === insertMarketplaceId);
+              if (found) {
+                purchaseTemplate(found);
+                setTimeout(() => applyInsert(found), 400);
+              }
+            })
+            .catch((err) => {
+              console.warn("Could not load marketplace catalog:", err);
+            });
+        }
+      }
+    } catch (err) {
+      console.warn("Marketplace insertion error:", err);
+    }
+  }, []);
 
   const updateAiSettings = (s: AiSettings) => {
     setAiSettings(s);
