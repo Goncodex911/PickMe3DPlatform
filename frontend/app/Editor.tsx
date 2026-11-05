@@ -2108,16 +2108,24 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
       defaultH = 190;
     }
 
+    const customText = (template as any).customText || cleanTitle;
+    const customColor = (template as any).customColor || p.primary;
+    const customSpeed = (template as any).customSpeed ?? 1;
+    const customInteractive = (template as any).customInteractive !== undefined ? (template as any).customInteractive : true;
+
     const item: Item = {
       ...makeItem("animation"),
       id: uid(),
-      label: cleanTitle,
-      animationText: cleanTitle,
+      label: customText,
+      animationText: customText,
       supporting: cat,
       animationId: template.id,
       animationHtml: html,
       animationJs: js,
       animationDemo: template.demo || [],
+      animationColor: customColor,
+      animationSpeed: customSpeed,
+      animationInteractive: customInteractive,
       size: defaultW,
       size2: defaultH,
     };
@@ -2187,16 +2195,24 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
       defaultH = 190;
     }
 
+    const customText = (template as any).customText || cleanTitle;
+    const customColor = (template as any).customColor || p.primary;
+    const customSpeed = (template as any).customSpeed ?? 1;
+    const customInteractive = (template as any).customInteractive !== undefined ? (template as any).customInteractive : true;
+
     const item: Item = {
       ...makeItem("animation"),
       id: uid(),
-      label: cleanTitle,
-      animationText: cleanTitle,
+      label: customText,
+      animationText: customText,
       supporting: cat,
       animationId: template.id,
       animationHtml: html,
       animationJs: js,
       animationDemo: template.demo || [],
+      animationColor: customColor,
+      animationSpeed: customSpeed,
+      animationInteractive: customInteractive,
       size: defaultW,
       size2: defaultH,
     };
@@ -3861,6 +3877,28 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     } catch (err) {
       console.warn("Marketplace insertion error:", err);
     }
+  }, []);
+
+  // Listen to double-click on animation node to toggle direct interaction mode
+  useEffect(() => {
+    const handleToggleInteractive = (e: Event) => {
+      const customEvent = e as CustomEvent<{ id: string }>;
+      const id = customEvent.detail?.id;
+      if (id) {
+        setGroups((prev) =>
+          prev.map((g) => ({
+            ...g,
+            items: g.items.map((it) =>
+              it.id === id ? { ...it, animationInteractive: !it.animationInteractive } : it
+            ),
+          }))
+        );
+        setSelectedIds([id]);
+        showToast("⚡ Đã bật Chế độ Tương tác trực tiếp: Nhấp hoặc chạm để thử nghiệm!", 2400, "check");
+      }
+    };
+    window.addEventListener("pm:toggle_interactive", handleToggleInteractive);
+    return () => window.removeEventListener("pm:toggle_interactive", handleToggleInteractive);
   }, []);
 
   const updateAiSettings = (s: AiSettings) => {
@@ -5528,6 +5566,189 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                       onDown={(e, side) => onWidthHandleDown(e, g, selected, side)}
                       onNudge={(side, dir) => nudgeSize(g, selected, side, dir)}
                     />
+                  );
+                })()}
+
+                {/* Floating Quick Action Toolbar for Animation Component */}
+                {!handMode && !drag && selected && selected.kind === "animation" && (() => {
+                  const g = groups.find((x) => x.items.some((it) => it.id === selected.id));
+                  if (!g) return null;
+                  const b = groupBounds(g, widths);
+                  const isInteractive = Boolean(selected.animationInteractive);
+                  const currentSpeed = selected.animationSpeed ?? 1;
+                  const currentColor = selected.animationColor || p.primary;
+
+                  return (
+                    <div
+                      key={"anim-floating-" + selected.id}
+                      style={{
+                        position: "absolute",
+                        left: Math.round(b.l),
+                        top: Math.round(b.t - 46),
+                        zIndex: 100,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        background: isInteractive ? "#09090b" : p.surface,
+                        color: isInteractive ? "#ffffff" : p.onSurface,
+                        border: `1.5px solid ${isInteractive ? "#22c55e" : p.outlineVariant}`,
+                        borderRadius: 24,
+                        padding: "4px 8px",
+                        boxShadow: isInteractive
+                          ? "0 6px 22px rgba(34,197,94,0.35), 0 2px 6px rgba(0,0,0,0.4)"
+                          : "0 4px 16px rgba(0,0,0,0.14)",
+                        pointerEvents: "auto",
+                        userSelect: "none",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        whiteSpace: "nowrap",
+                        transform: "translateZ(0)",
+                      }}
+                    >
+                      {/* Interactive Toggle */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const nextInteractive = !isInteractive;
+                          patchSelected({ animationInteractive: nextInteractive });
+                          showToast(
+                            nextInteractive
+                              ? "⚡ Đã bật Chế độ Tương tác: Bấm & test trực tiếp animation trên Canvas!"
+                              : "✋ Đã chuyển sang Chế độ Di chuyển: Kéo thả và đổi vị trí bình thường.",
+                            2500,
+                            nextInteractive ? "check" : "info"
+                          );
+                        }}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 5,
+                          padding: "5px 12px",
+                          borderRadius: 16,
+                          border: "none",
+                          background: isInteractive ? "#22c55e" : p.primary,
+                          color: isInteractive ? "#000000" : p.onPrimary,
+                          cursor: "pointer",
+                          fontWeight: 700,
+                          fontSize: 11,
+                          boxShadow: isInteractive ? "0 2px 8px rgba(34,197,94,0.4)" : "none",
+                        }}
+                        title={isInteractive ? "Chuyển về chế độ kéo di chuyển" : "Tương tác bấm trực tiếp trên Canvas"}
+                      >
+                        <span className="msr" style={{ fontSize: 15 }}>
+                          {isInteractive ? "touch_app" : "pan_tool"}
+                        </span>
+                        <span>{isInteractive ? "Đang Tương Tác ⚡" : "Bật Tương Tác ⚡"}</span>
+                      </button>
+
+                      {/* Speed Switcher */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const speeds = [0.5, 1, 1.5, 2];
+                          const nextIdx = (speeds.indexOf(currentSpeed) + 1) % speeds.length;
+                          const nextSpeed = speeds[nextIdx];
+                          patchSelected({ animationSpeed: nextSpeed });
+                          showToast(`Tốc độ animation: ${nextSpeed}x`, 1200);
+                        }}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 3,
+                          padding: "4px 8px",
+                          borderRadius: 12,
+                          border: `1px solid ${p.outlineVariant}`,
+                          background: p.surfaceContainerHigh,
+                          color: p.onSurface,
+                          cursor: "pointer",
+                          fontSize: 11,
+                          fontWeight: 700,
+                        }}
+                        title="Đổi tốc độ chuyển động (0.5x, 1x, 1.5x, 2x)"
+                      >
+                        <span className="msr" style={{ fontSize: 13 }}>speed</span>
+                        <span>{currentSpeed}x</span>
+                      </button>
+
+                      {/* Quick Color Picker */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const colors = [p.primary, "#6366f1", "#10b981", "#f59e0b", "#ef4444", "#ec4899", "#8b5cf6", "#06b6d4"];
+                          const nextIdx = (colors.indexOf(currentColor) + 1) % colors.length;
+                          patchSelected({ animationColor: colors[nextIdx] });
+                        }}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 5,
+                          padding: "4px 8px",
+                          borderRadius: 12,
+                          border: `1px solid ${p.outlineVariant}`,
+                          background: p.surfaceContainerHigh,
+                          color: p.onSurface,
+                          cursor: "pointer",
+                          fontSize: 11,
+                        }}
+                        title="Đổi màu sắc chủ đạo của Animation"
+                      >
+                        <span
+                          style={{
+                            width: 11,
+                            height: 11,
+                            borderRadius: "50%",
+                            background: currentColor,
+                            display: "inline-block",
+                            boxShadow: "0 0 0 1px rgba(0,0,0,0.2)",
+                          }}
+                        />
+                        <span>Màu</span>
+                      </button>
+
+                      {/* Replay Demo */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          patchSelected({ animationSpeed: currentSpeed });
+                          showToast("Đã tải lại animation", 1000, "check");
+                        }}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          padding: "4px 6px",
+                          borderRadius: 12,
+                          border: `1px solid ${p.outlineVariant}`,
+                          background: p.surfaceContainerHigh,
+                          color: p.onSurface,
+                          cursor: "pointer",
+                        }}
+                        title="Chạy lại hiệu ứng animation"
+                      >
+                        <span className="msr" style={{ fontSize: 14 }}>replay</span>
+                      </button>
+
+                      {/* Open Inspector */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRightTab("edit");
+                          setRightOpen(true);
+                        }}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          padding: "4px 6px",
+                          borderRadius: 12,
+                          border: "none",
+                          background: "transparent",
+                          color: isInteractive ? "#aaa" : p.onSurfaceVariant,
+                          cursor: "pointer",
+                        }}
+                        title="Mở toàn bộ tùy chỉnh chi tiết ở bảng bên phải"
+                      >
+                        <span className="msr" style={{ fontSize: 15 }}>tune</span>
+                      </button>
+                    </div>
                   );
                 })()}
 
