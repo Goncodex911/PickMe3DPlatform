@@ -160,10 +160,18 @@ function plainOrder(order) {
   return {
     orderCode: o.orderCode,
     userId: String(o.userId),
-    planId: o.planId,
-    months: o.months,
+    orderType: o.orderType || 'SUBSCRIPTION',
+    planId: o.planId || null,
+    months: o.months || 1,
+    templateId: o.templateId || null,
+    sellerId: o.sellerId || null,
+    sellerType: o.sellerType || 'ADMIN',
+    transactionSource: o.transactionSource || 'SUBSCRIPTION',
     amount: o.amount,
     subtotal: o.subtotal ?? o.amount,
+    grossAmount: o.grossAmount ?? o.amount,
+    creatorEarnings: o.creatorEarnings || 0,
+    adminRevenue: o.adminRevenue ?? o.amount,
     discount: o.discount || 0,
     promoCode: o.promoCode || '',
     customer: o.customer || null,
@@ -179,7 +187,27 @@ async function createOrder(input) {
     const created = await Order.create(input);
     return plainOrder(created);
   }
-  const order = { ...input, createdAt: new Date().toISOString(), paidAt: null, raw: null };
+  const finalAmount = Number(input.amount || 0);
+  let creatorEarnings = 0;
+  let adminRevenue = finalAmount;
+  if (input.orderType === 'TEMPLATE_PURCHASE') {
+    if (input.sellerType === 'CREATOR' && input.transactionSource === 'TEMPLATE_SECTION') {
+      creatorEarnings = Math.round(finalAmount * 0.7);
+      adminRevenue = finalAmount - creatorEarnings;
+    }
+  }
+  const order = {
+    orderType: 'SUBSCRIPTION',
+    sellerType: 'ADMIN',
+    transactionSource: 'SUBSCRIPTION',
+    ...input,
+    grossAmount: input.grossAmount ?? finalAmount,
+    creatorEarnings: input.creatorEarnings ?? creatorEarnings,
+    adminRevenue: input.adminRevenue ?? adminRevenue,
+    createdAt: new Date().toISOString(),
+    paidAt: null,
+    raw: null,
+  };
   memory.orders.set(order.orderCode, order);
   return plainOrder(order);
 }

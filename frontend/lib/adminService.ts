@@ -47,9 +47,23 @@ export interface AdminOrder {
   userName?: string;
   userEmail?: string;
   userPicture?: string | null;
-  planId: "pro" | "studio";
-  months: number;
+  orderType?: "SUBSCRIPTION" | "TEMPLATE_PURCHASE";
+  planId?: "pro" | "studio" | null;
+  months?: number;
+  templateId?: string | null;
+  templateTitle?: string | null;
+  templateThumbnail?: string | null;
+  sellerId?: string | null;
+  sellerName?: string;
+  sellerEmail?: string;
+  sellerType?: "ADMIN" | "CREATOR";
+  transactionSource?: "TEMPLATE_SECTION" | "ADMIN_MARKETPLACE" | "SUBSCRIPTION";
   amount: number;
+  grossAmount?: number;
+  creatorEarnings?: number;
+  adminRevenue?: number;
+  discount?: number;
+  promoCode?: string;
   status: "PENDING" | "PAID" | "CANCELLED";
   paidAt?: string | null;
   createdAt: string;
@@ -154,9 +168,14 @@ export interface AdminDashboardStats {
   };
   billing?: {
     totalRevenue: number;
+    totalGrossVolume?: number;
+    totalAdminRevenue?: number;
+    totalCreatorEarnings?: number;
     totalOrders: number;
     paidOrders: number;
     pendingOrders: number;
+    mrr?: number;
+    breakdown?: any;
   };
   plans?: {
     free: number;
@@ -173,6 +192,67 @@ export interface AdminDashboardStats {
     picture?: string;
     createdAt: string;
   }>;
+}
+
+
+export interface PayoutItem {
+  _id: string;
+  creatorId: string;
+  creatorName: string;
+  creatorEmail: string;
+  amount: number;
+  creatorBalance: number;
+  bankInfo: {
+    bankName: string;
+    accountNumber: string;
+    accountHolder: string;
+  };
+  status: "PENDING" | "PAID" | "REJECTED";
+  adminNote?: string;
+  processedAt?: string | null;
+  processedBy?: { _id: string; name: string; email: string } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SystemHealthData {
+  overall: "healthy" | "warning" | "error";
+  timestamp: string;
+  services: {
+    database: {
+      name: string;
+      status: "operational" | "degraded" | "disconnected";
+      latencyMs: number;
+      readyState: number;
+      host: string;
+      error?: string | null;
+    };
+    storage: {
+      name: string;
+      status: "operational" | "degraded";
+      cloudName: string;
+      latency: number;
+      details: string;
+    };
+    aiEngine: {
+      name: string;
+      status: "operational" | "degraded";
+      provider: string;
+      latency: number;
+      details: string;
+    };
+    backend: {
+      name: string;
+      status: "operational";
+      uptimeSeconds: number;
+      nodeVersion: string;
+      port: number | string;
+      heapUsedMB: number;
+      heapTotalMB: number;
+      rssMB: number;
+      timestamp: string;
+    };
+  };
 }
 
 export interface AnalyticsData {
@@ -587,14 +667,21 @@ export async function fetchAdminOrdersApi(params?: {
   limit?: number;
   status?: string;
   planId?: string;
+  orderType?: string;
+  sellerType?: string;
+  transactionSource?: string;
   search?: string;
 }): Promise<{
   success: boolean;
   data?: AdminOrder[];
   summary?: {
     totalRevenue: number;
+    totalGrossVolume?: number;
+    totalAdminRevenue?: number;
+    totalCreatorEarnings?: number;
     paidOrdersCount: number;
     pendingOrdersCount: number;
+    breakdown?: any;
   };
   pagination?: PaginationMeta;
   message?: string;
@@ -605,6 +692,9 @@ export async function fetchAdminOrdersApi(params?: {
     if (params?.limit) query.append("limit", params.limit.toString());
     if (params?.status && params.status !== "all") query.append("status", params.status);
     if (params?.planId && params.planId !== "all") query.append("planId", params.planId);
+    if (params?.orderType && params.orderType !== "all") query.append("orderType", params.orderType);
+    if (params?.sellerType && params.sellerType !== "all") query.append("sellerType", params.sellerType);
+    if (params?.transactionSource && params.transactionSource !== "all") query.append("transactionSource", params.transactionSource);
     if (params?.search) query.append("search", params.search);
 
     const res = await fetch(`${API_BASE}/admin/orders?${query.toString()}`, {
@@ -693,5 +783,87 @@ export async function deleteAdminPresentationApi(
     return await res.json();
   } catch (err: any) {
     return { success: false, message: err.message || "Lỗi xóa bản trình chiếu" };
+  }
+}
+
+// ==========================================
+// H. PAYOUTS & CREATOR EARNINGS APIS
+// ==========================================
+
+export async function fetchAdminPayoutsApi(params?: {
+  status?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{
+  success: boolean;
+  data?: PayoutItem[];
+  meta?: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    summary: {
+      pendingCount: number;
+      paidCount: number;
+      rejectedCount: number;
+      totalPendingAmount: number;
+    };
+  };
+  message?: string;
+}> {
+  try {
+    const searchParams = new URLSearchParams();
+    if (params?.status && params.status !== "all") searchParams.set("status", params.status);
+    if (params?.search) searchParams.set("search", params.search);
+    if (params?.page) searchParams.set("page", params.page.toString());
+    if (params?.limit) searchParams.set("limit", params.limit.toString());
+
+    const qs = searchParams.toString();
+    const url = `${API_BASE}/admin/payouts${qs ? "?" + qs : ""}`;
+
+    const res = await fetch(url, {
+      headers: getAuthHeaders(),
+      cache: "no-store",
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, message: err.message || "Lỗi tải danh sách yêu cầu rút tiền" };
+  }
+}
+
+export async function updatePayoutStatusApi(
+  id: string,
+  payload: { status: "PAID" | "REJECTED"; adminNote?: string }
+): Promise<{ success: boolean; data?: PayoutItem; message?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/admin/payouts/${id}`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, message: err.message || "Lỗi cập nhật trạng thái rút tiền" };
+  }
+}
+
+// ==========================================
+// I. SYSTEM HEALTH MONITORING API
+// ==========================================
+
+export async function fetchSystemHealthApi(): Promise<{
+  success: boolean;
+  data?: SystemHealthData;
+  message?: string;
+}> {
+  try {
+    const res = await fetch(`${API_BASE}/admin/system-health`, {
+      headers: getAuthHeaders(),
+      cache: "no-store",
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, message: err.message || "Lỗi kiểm tra trạng thái hệ thống" };
   }
 }

@@ -17,6 +17,9 @@ import {
 } from "@/lib/gtag";
 
 export default function AdminAnalyticsPage() {
+  const formatCurrency = (val?: number) => {
+    return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(val || 0);
+  };
   // Navigation tabs: "all" (both) | "database" (internal DB) | "ga4" (Google Analytics)
   const [activeTab, setActiveTab] = useState<"all" | "database" | "ga4">("all");
 
