@@ -12,6 +12,7 @@ const presentationRoutes = require('./presentationRoutes');
 const uploadRoutes = require('./uploadRoutes');
 const adminRoutes = require('./adminRoutes');
 const reportRoutes = require('./reportRoutes');
+const marketplaceRoutes = require('./marketplaceRoutes');
 
 router.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'PickMe3D Backend API is running' });
@@ -29,5 +30,6 @@ router.use('/presentations', presentationRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/admin', adminRoutes);
 router.use('/reports', reportRoutes);
+router.use('/marketplace', marketplaceRoutes);
 
 module.exports = router;

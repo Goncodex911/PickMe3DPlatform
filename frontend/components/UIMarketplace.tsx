@@ -3,9 +3,14 @@
 import { useState, useMemo, useCallback, useRef, useEffect, createContext, useContext } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
-import { UITemplate, CATEGORIES, buildPreviewHTML, buildDownloadHTML } from "@/lib/ui-marketplace-data";
+import { UITemplate, CATEGORIES, buildPreviewHTML, buildDownloadHTML, translateTemplateSource, getCategoryLabel } from "@/lib/ui-marketplace-data";
 import styles from "@/app/ui-marketplace/marketplace.module.css";
-import { purchaseTemplate, getPurchasedTemplateIds, subscribePurchasedTemplates } from "@/lib/purchased-animations";
+import {
+  purchaseTemplate,
+  getPurchasedTemplateIds,
+  subscribePurchasedTemplates,
+  syncPurchasedTemplatesWithServer,
+} from "@/lib/purchased-animations";
 
 /* ───────────────────────────────────────────────── */
 /*  Tokens CSS Context                              */
@@ -72,11 +77,13 @@ function DetailDialog({
   onClose,
   isPurchased,
   onBuy,
+  onInsert,
 }: {
   template: UITemplate;
   onClose: () => void;
   isPurchased: boolean;
   onBuy: (template: UITemplate) => void;
+  onInsert: (template: UITemplate) => void;
 }) {
   const tokensCSS = useContext(TokensCtx);
   const [tab, setTab] = useState<"demo" | "prompt" | "code">("demo");
@@ -282,7 +289,32 @@ Please implement this animated UI component in my project. Adapt the code above 
           <div style={{ fontSize: 11, color: "#777" }}>
             Dataset: <span style={{ color: "#aaa" }}>Hiếu Thuận</span> · PickMe3D
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <button
+              onClick={() => {
+                onInsert(template);
+                onClose();
+              }}
+              style={{
+                minHeight: 40,
+                padding: "10px 18px",
+                background: "linear-gradient(135deg, #6366f1, #a855f7)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                color: "#fff",
+                fontSize: 12,
+                fontWeight: 700,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                cursor: "pointer",
+                borderRadius: 8,
+                boxShadow: "0 4px 12px rgba(99,102,241,0.35)",
+              }}
+              title="Tự động mở Canvas Editor và chèn ngay animation này"
+            >
+              <span className="material-symbols-rounded" style={{ fontSize: 16 }}>dashboard_customize</span>
+              Chèn vào Canvas ↗
+            </button>
             {isPurchased ? (
               <Link
                 href="/editor/"
@@ -361,12 +393,14 @@ function SystemTemplateCard({
   onClick,
   isPurchased,
   onBuy,
+  onInsert,
 }: {
   template: UITemplate;
   idx: number;
   onClick: () => void;
   isPurchased: boolean;
   onBuy: (template: UITemplate) => void;
+  onInsert: (template: UITemplate) => void;
 }) {
   const [isVisible, setIsVisible] = useState(idx < 12);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -444,7 +478,33 @@ function SystemTemplateCard({
             ))}
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onInsert(template);
+              }}
+              style={{
+                height: 30,
+                padding: "0 10px",
+                background: "linear-gradient(135deg, #4f46e5, #7c3aed)",
+                color: "#fff",
+                border: "none",
+                borderRadius: 8,
+                fontSize: 11,
+                fontWeight: 700,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                cursor: "pointer",
+                boxShadow: "0 2px 8px rgba(79,70,229,0.25)",
+                whiteSpace: "nowrap",
+              }}
+              title="Chèn trực tiếp vào Canvas Editor"
+            >
+              <span className="material-symbols-rounded" style={{ fontSize: 13 }}>dashboard_customize</span>
+              <span>Chèn</span>
+            </button>
             {isPurchased ? (
               <button
                 className={styles.cardOwnedBtn}
@@ -499,6 +559,11 @@ export default function UIMarketplacePage() {
 
   useEffect(() => {
     setPurchasedIds(getPurchasedTemplateIds());
+    void syncPurchasedTemplatesWithServer().then((templates) => {
+      if (Array.isArray(templates) && templates.length > 0) {
+        setPurchasedIds(templates.map((t) => t.id));
+      }
+    });
     return subscribePurchasedTemplates(() => {
       setPurchasedIds(getPurchasedTemplateIds());
     });
@@ -507,9 +572,30 @@ export default function UIMarketplacePage() {
   const handleBuy = useCallback((tmpl: UITemplate) => {
     const ok = purchaseTemplate(tmpl);
     if (ok) {
-      setToastMessage(`Đã mua thành công "${tmpl.titleEn || tmpl.title}"! Mẫu đã được thêm vào mục Animation ở trang Editor.`);
+      setToastMessage(`Đã mua thành công "${tmpl.titleEn || tmpl.title}"! Mẫu đã được lưu vào tài khoản & sẵn sàng dùng trong Editor.`);
       setTimeout(() => setToastMessage(null), 4500);
     }
+  }, []);
+
+  const handleInsert = useCallback((tmpl: UITemplate) => {
+    purchaseTemplate(tmpl);
+    const { html, js } = translateTemplateSource(tmpl);
+    const cat = getCategoryLabel(tmpl.category);
+    const cleanTitle = tmpl.titleEn || tmpl.title;
+    const readyTemplate = {
+      ...tmpl,
+      category: cat,
+      title: cleanTitle,
+      titleEn: cleanTitle,
+      html,
+      js,
+    };
+    try {
+      sessionStorage.setItem("pending_marketplace_insert", JSON.stringify(readyTemplate));
+    } catch (err) {
+      console.warn("Could not write to sessionStorage:", err);
+    }
+    window.open(`/editor/?insertMarketplace=${encodeURIComponent(tmpl.id)}`, "_blank");
   }, []);
 
   // Authenticated user state
@@ -741,6 +827,7 @@ export default function UIMarketplacePage() {
                   idx={idx}
                   isPurchased={purchasedIds.includes(template.id)}
                   onBuy={handleBuy}
+                  onInsert={handleInsert}
                   onClick={() => setSelectedTemplate(template)}
                 />
               ))}
@@ -779,6 +866,31 @@ export default function UIMarketplacePage() {
                       </p>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleInsert(template);
+                        }}
+                        style={{
+                          height: 34,
+                          padding: "0 12px",
+                          background: "linear-gradient(135deg, #4f46e5, #7c3aed)",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: 8,
+                          fontSize: 11,
+                          fontWeight: 700,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 5,
+                          cursor: "pointer",
+                          whiteSpace: "nowrap",
+                        }}
+                        title="Chèn ngay vào Canvas Editor"
+                      >
+                        <span className="material-symbols-rounded" style={{ fontSize: 15 }}>dashboard_customize</span>
+                        <span>Chèn vào Canvas ↗</span>
+                      </button>
                       {purchasedIds.includes(template.id) ? (
                         <button
                           className={styles.cardOwnedBtn}
@@ -789,7 +901,7 @@ export default function UIMarketplacePage() {
                           title="Mở trong Canvas Editor"
                         >
                           <span className="material-symbols-rounded" style={{ fontSize: 14 }}>check_circle</span>
-                          <span>Đã mua ↗</span>
+                          <span>Đã mua</span>
                         </button>
                       ) : (
                         <button
@@ -843,6 +955,7 @@ export default function UIMarketplacePage() {
             template={selectedTemplate}
             isPurchased={purchasedIds.includes(selectedTemplate.id)}
             onBuy={handleBuy}
+            onInsert={handleInsert}
             onClose={() => setSelectedTemplate(null)}
           />
         )}
