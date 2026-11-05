@@ -86,8 +86,11 @@ function DetailDialog({
   onInsert: (template: UITemplate) => void;
 }) {
   const tokensCSS = useContext(TokensCtx);
-  const [tab, setTab] = useState<"demo" | "prompt" | "code">("demo");
+  const [tab, setTab] = useState<"demo" | "analysis" | "prompt" | "code">("demo");
   const [copied, setCopied] = useState(false);
+  const [customText, setCustomText] = useState(template.titleEn || template.title);
+  const [customColor, setCustomColor] = useState(template.hue || "#6366f1");
+  const [customSpeed, setCustomSpeed] = useState<number>(1);
 
   useEffect(() => {
     const origOverflow = document.body.style.overflow;
@@ -184,6 +187,7 @@ Please implement this animated UI component in my project. Adapt the code above 
         <div className={styles.modalTabs}>
           {([
             { key: "demo" as const, icon: "play_circle", label: "Interactive Demo" },
+            { key: "analysis" as const, icon: "analytics", label: "Phân Tích UI & Tương Tác" },
             { key: "prompt" as const, icon: "auto_awesome", label: "AI Prompt" },
             { key: "code" as const, icon: "code", label: "Source Code" },
           ]).map((t) => (
@@ -235,8 +239,102 @@ Please implement this animated UI component in my project. Adapt the code above 
                     pointerEvents: "none",
                   }}
                 >
-                  <span className="material-symbols-rounded" style={{ fontSize: 14 }}>touch_app</span>
-                  Interactive: test clicks, hover, and controls directly
+                  <span className="material-symbols-rounded" style={{ fontSize: 14, color: "#34d399" }}>touch_app</span>
+                  <span>Tương tác trực tiếp: Thử click, hover và xem micro-animations</span>
+                </div>
+              </div>
+
+              {/* Bộ tùy biến nhanh trước khi chèn vào Canvas */}
+              <div
+                style={{
+                  padding: "14px 18px",
+                  background: "#161618",
+                  border: "1px solid #2e2e34",
+                  borderRadius: 8,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 12,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span className="material-symbols-rounded" style={{ fontSize: 18, color: "#34d399" }}>tune</span>
+                    <strong style={{ fontSize: 13, color: "#fff" }}>Cấu hình trực tiếp trước khi chèn vào Canvas:</strong>
+                  </div>
+                  <span style={{ fontSize: 11, color: "#34d399", background: "rgba(52,211,153,0.12)", padding: "2px 8px", borderRadius: 10, fontWeight: 700 }}>
+                    ⚡ 100% Canvas Interactive Ready
+                  </span>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, alignItems: "center" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, color: "#888", marginBottom: 4 }}>Nhãn văn bản hiển thị:</label>
+                    <input
+                      type="text"
+                      value={customText}
+                      onChange={(e) => setCustomText(e.target.value)}
+                      placeholder="Nhập chữ nút..."
+                      style={{
+                        width: "100%",
+                        height: 34,
+                        padding: "0 10px",
+                        background: "#0c0c0e",
+                        border: "1px solid #3c3c44",
+                        borderRadius: 6,
+                        color: "#fff",
+                        fontSize: 12,
+                        outline: "none",
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, color: "#888", marginBottom: 4 }}>Màu chủ đạo (Accent):</label>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      {["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4"].map((c) => (
+                        <button
+                          key={c}
+                          onClick={() => setCustomColor(c)}
+                          style={{
+                            width: 24,
+                            height: 24,
+                            borderRadius: "50%",
+                            background: c,
+                            border: customColor === c ? "2px solid #fff" : "1px solid rgba(255,255,255,0.2)",
+                            cursor: "pointer",
+                            transform: customColor === c ? "scale(1.15)" : "scale(1)",
+                            transition: "transform 0.15s ease",
+                          }}
+                          title={`Chọn màu ${c}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, color: "#888", marginBottom: 4 }}>Tốc độ animation:</label>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      {[0.5, 1, 1.5, 2].map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => setCustomSpeed(s)}
+                          style={{
+                            height: 28,
+                            padding: "0 8px",
+                            borderRadius: 6,
+                            border: customSpeed === s ? "1px solid #6366f1" : "1px solid #333",
+                            background: customSpeed === s ? "#6366f1" : "#222",
+                            color: "#fff",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                          }}
+                        >
+                          {s}x
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -263,6 +361,67 @@ Please implement this animated UI component in my project. Adapt the code above 
                   </div>
                 </div>
               )}
+            </div>
+          ) : tab === "analysis" ? (
+            /* Tab Phân tích Kỹ thuật & Tương tác UI */
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14 }}>
+                {/* 1. Kiến trúc component */}
+                <div style={{ padding: 16, background: "#16161a", border: "1px solid #2d2d38", borderRadius: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                    <span className="material-symbols-rounded" style={{ color: "#6366f1", fontSize: 20 }}>architecture</span>
+                    <strong style={{ fontSize: 14, color: "#fff" }}>Kiến Trúc & Phân Loại UI</strong>
+                  </div>
+                  <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: "#bbb", lineHeight: 1.8 }}>
+                    <li><strong>Mã định danh:</strong> #{template.id}</li>
+                    <li><strong>Danh mục:</strong> {catLabel}</li>
+                    <li><strong>Dạng hình học:</strong> {template.shape === "tall" ? "Tall Widget (Khung dọc)" : "Compact Component (Khung ngang)"}</li>
+                    <li><strong>Kích thước đề xuất Canvas:</strong> {template.shape === "tall" ? "320 × 360 px" : "260 × 80 px (Button) / 280 × 170 px (Card)"}</li>
+                    <li><strong>Tối ưu hóa:</strong> GPU Composited, Zero CPU Reflow</li>
+                  </ul>
+                </div>
+
+                {/* 2. Cơ chế tương tác */}
+                <div style={{ padding: 16, background: "#16161a", border: "1px solid #2d2d38", borderRadius: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                    <span className="material-symbols-rounded" style={{ color: "#22c55e", fontSize: 20 }}>bolt</span>
+                    <strong style={{ fontSize: 14, color: "#fff" }}>Cơ Chế Kích Hoạt Tương Tác</strong>
+                  </div>
+                  <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: "#bbb", lineHeight: 1.8 }}>
+                    <li><strong>Sự kiện chuột / cảm ứng:</strong> Click, Tap, Hover, Long Press</li>
+                    <li><strong>Vật lý chuyển động:</strong> Đường cong lò xo Spring Physics (cubic-bezier)</li>
+                    <li><strong>Hiệu ứng phản hồi:</strong> Dynamic Ripples, Sheen Glow, State Fill</li>
+                    <li><strong>Bộ điều khiển:</strong> Tự động kích hoạt khi bật chế độ Direct Interactive</li>
+                  </ul>
+                </div>
+
+                {/* 3. Tương thích Canvas Editor */}
+                <div style={{ padding: 16, background: "#16161a", border: "1px solid #2d2d38", borderRadius: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                    <span className="material-symbols-rounded" style={{ color: "#38bdf8", fontSize: 20 }}>dashboard_customize</span>
+                    <strong style={{ fontSize: 14, color: "#fff" }}>Tương Thích Canvas Editor</strong>
+                  </div>
+                  <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: "#bbb", lineHeight: 1.8 }}>
+                    <li><strong>Đồng bộ Palette:</strong> Tự động phản hồi theo biến màu `--ux-accent`</li>
+                    <li><strong>Tự động co giãn (Fit):</strong> Tự scale theo tỷ lệ màn hình không thanh cuộn</li>
+                    <li><strong>Thanh công cụ nổi (Floating Bar):</strong> Bật/tắt tương tác trực tiếp 1-click</li>
+                    <li><strong>Nhấp đúp kích hoạt:</strong> Double-click trên Canvas để test tương tác</li>
+                  </ul>
+                </div>
+
+                {/* 4. Khả năng xuất & Tích hợp */}
+                <div style={{ padding: 16, background: "#16161a", border: "1px solid #2d2d38", borderRadius: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                    <span className="material-symbols-rounded" style={{ color: "#f59e0b", fontSize: 20 }}>output</span>
+                    <strong style={{ fontSize: 14, color: "#fff" }}>Khả Năng Xuất & Đa Nền Tảng</strong>
+                  </div>
+                  <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: "#bbb", lineHeight: 1.8 }}>
+                    <li><strong>HTML / Pure CSS / JS:</strong> Mã độc lập, không phụ thuộc thư viện ngoài</li>
+                    <li><strong>React / Vue / Angular:</strong> Tích hợp trong gói mã xuất toàn màn hình</li>
+                    <li><strong>Độ mượt:</strong> Đạt chuẩn 60 - 120 FPS trên màn hình ProMotion</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           ) : (
             <div
@@ -292,7 +451,13 @@ Please implement this animated UI component in my project. Adapt the code above 
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             <button
               onClick={() => {
-                onInsert(template);
+                onInsert({
+                  ...template,
+                  customText: customText.trim() || template.titleEn || template.title,
+                  customColor,
+                  customSpeed,
+                  customInteractive: true,
+                });
                 onClose();
               }}
               style={{
@@ -471,7 +636,19 @@ function SystemTemplateCard({
 
         <div className={styles.cardBottom}>
           <div className={styles.cardTags}>
-            {template.tags.slice(0, 2).map((tag) => (
+            <span
+              className={styles.cardTag}
+              style={{
+                color: "#34d399",
+                background: "rgba(52, 211, 153, 0.12)",
+                borderColor: "rgba(52, 211, 153, 0.3)",
+                fontWeight: 700,
+                fontSize: 10,
+              }}
+            >
+              ⚡ Live
+            </span>
+            {template.tags.slice(0, 1).map((tag) => (
               <span key={tag} className={styles.cardTag}>
                 #{tag}
               </span>
@@ -482,7 +659,7 @@ function SystemTemplateCard({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onInsert(template);
+                onInsert({ ...template, customInteractive: true });
               }}
               style={{
                 height: 30,
