@@ -23,6 +23,9 @@ const {
   getAdminPresentations,
   togglePresentationVisibility,
   deleteAdminPresentation,
+  getAdminPayouts,
+  updatePayoutStatus,
+  getSystemHealth,
 } = require('../controllers/adminController');
 const { protect, authorize } = require('../middlewares/authMiddleware');
 
@@ -64,5 +67,13 @@ router.get('/audit-logs', getAuditLogs);
 
 // Analytics and Trends
 router.get('/analytics', getReportingAnalytics);
+
+
+// Creator Payouts Management
+router.get('/payouts', getAdminPayouts);
+router.put('/payouts/:id', updatePayoutStatus);
+
+// System Health Monitoring
+router.get('/system-health', getSystemHealth);
 
 module.exports = router;
