@@ -934,4 +934,63 @@ export function convertBlueprintProjectToLayoutData(project: BlueprintProject): 
   };
 }
 
+/**
+ * Convert updated LayoutData back into BlueprintProject format for two-way synchronization
+ */
+export function updateProjectFromLayoutData(
+  currentProject: BlueprintProject,
+  layout: LayoutData
+): BlueprintProject {
+  const { width, length, default_ceiling_height, exterior_wall_thickness, interior_wall_thickness } = layout.metadata.dimensions;
+
+  const updatedRooms: RoomSpec[] = layout.rooms.map((lr, idx) => {
+    // Compute bounds from polygon
+    let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    lr.polygon.forEach(([x, z]) => {
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (z < minZ) minZ = z;
+      if (z > maxZ) maxZ = z;
+    });
+    if (!isFinite(minX)) {
+      minX = -width / 4;
+      maxX = width / 4;
+      minZ = -length / 4;
+      maxZ = length / 4;
+    }
+
+    const existingRoom = currentProject.rooms.find((r) => r.id === lr.id) || currentProject.rooms[idx];
+    const area = lr.area_m2 || Math.round((maxX - minX) * (maxZ - minZ) * 10) / 10;
+
+    return {
+      id: lr.id || `room_${idx + 1}`,
+      name: lr.name || `Room ${idx + 1}`,
+      vietnameseName: lr.vietnamese_name || existingRoom?.vietnameseName || lr.name,
+      category: lr.category || existingRoom?.category || "living",
+      bounds: [minX, minZ, maxX, maxZ],
+      area,
+      ceilingHeight: lr.ceiling_height || default_ceiling_height,
+      floorMaterial: (lr.materials?.floor as any) || existingRoom?.floorMaterial || currentProject.specs.baseFloorMaterial || "concrete",
+      description: existingRoom?.description || `${lr.name} diện tích ${area}m²`,
+      specs: existingRoom?.specs || { orientation: "Tự nhiên", ventilation: "Đối lưu", lightSource: "Cửa sổ" },
+      features: existingRoom?.features || []
+    };
+  });
+
+  return {
+    ...currentProject,
+    name: layout.metadata.project_name || currentProject.name,
+    specs: {
+      ...currentProject.specs,
+      width,
+      length,
+      totalArea: Math.round(width * length),
+      ceilingHeight: default_ceiling_height,
+      exteriorWallThickness: exterior_wall_thickness,
+      interiorWallThickness: interior_wall_thickness,
+    },
+    rooms: updatedRooms.length > 0 ? updatedRooms : currentProject.rooms
+  };
+}
+
 

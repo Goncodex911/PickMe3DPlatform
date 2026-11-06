@@ -1,0 +1,319 @@
+{
+  "$schema": "https://pickme3d.com/schemas/layout_data.v1.json",
+  "metadata": {
+    "project_id": "07_cad_thin_lines_complex",
+    "project_name": "Architectural CAD Multi-Bay Blueprint",
+    "units": "meters",
+    "coordinate_system": "right_handed_y_up",
+    "scale_pixel_to_meter": 0.015,
+    "dimensions": {
+      "width": 16,
+      "length": 14,
+      "default_ceiling_height": 3.3,
+      "exterior_wall_thickness": 0.22,
+      "interior_wall_thickness": 0.11
+    },
+    "original_blueprint_url": "/blueprint/07_cad_thin_lines_complex.png",
+    "created_at": "2026-11-06T10:23:39.638Z",
+    "version": "1.0.0"
+  },
+  "walls": [
+    {
+      "id": "w_ext_n",
+      "type": "exterior",
+      "start": [
+        -8,
+        -7
+      ],
+      "end": [
+        8,
+        -7
+      ],
+      "thickness": 0.22,
+      "height": 3.3
+    },
+    {
+      "id": "w_ext_e",
+      "type": "exterior",
+      "start": [
+        8,
+        -7
+      ],
+      "end": [
+        8,
+        7
+      ],
+      "thickness": 0.22,
+      "height": 3.3
+    },
+    {
+      "id": "w_ext_s",
+      "type": "exterior",
+      "start": [
+        8,
+        7
+      ],
+      "end": [
+        -8,
+        7
+      ],
+      "thickness": 0.22,
+      "height": 3.3
+    },
+    {
+      "id": "w_ext_w",
+      "type": "exterior",
+      "start": [
+        -8,
+        7
+      ],
+      "end": [
+        -8,
+        -7
+      ],
+      "thickness": 0.22,
+      "height": 3.3
+    },
+    {
+      "id": "w_col_grid_1",
+      "type": "interior",
+      "start": [
+        -3,
+        -7
+      ],
+      "end": [
+        -3,
+        7
+      ],
+      "thickness": 0.15,
+      "height": 3.3
+    },
+    {
+      "id": "w_col_grid_2",
+      "type": "interior",
+      "start": [
+        3,
+        -7
+      ],
+      "end": [
+        3,
+        7
+      ],
+      "thickness": 0.15,
+      "height": 3.3
+    },
+    {
+      "id": "w_col_grid_h",
+      "type": "interior",
+      "start": [
+        -8,
+        0
+      ],
+      "end": [
+        8,
+        0
+      ],
+      "thickness": 0.15,
+      "height": 3.3
+    }
+  ],
+  "openings": [
+    {
+      "id": "op_cad_entry",
+      "type": "door",
+      "wall_id": "w_ext_s",
+      "center": [
+        0,
+        7
+      ],
+      "width": 2,
+      "height": 2.4,
+      "sill_height": 0,
+      "door_type": "double_glass_swing"
+    },
+    {
+      "id": "op_cad_w1",
+      "type": "window",
+      "wall_id": "w_ext_n",
+      "center": [
+        -5.5,
+        -7
+      ],
+      "width": 1.8,
+      "height": 1.5,
+      "sill_height": 0.9,
+      "window_type": "sliding_glass"
+    },
+    {
+      "id": "op_cad_w2",
+      "type": "window",
+      "wall_id": "w_ext_n",
+      "center": [
+        5.5,
+        -7
+      ],
+      "width": 1.8,
+      "height": 1.5,
+      "sill_height": 0.9,
+      "window_type": "sliding_glass"
+    }
+  ],
+  "rooms": [
+    {
+      "id": "r_cad_nw",
+      "name": "North-West Office",
+      "vietnamese_name": "Văn Phòng Phía Bắc",
+      "category": "office",
+      "polygon": [
+        [
+          -8,
+          -7
+        ],
+        [
+          -3,
+          -7
+        ],
+        [
+          -3,
+          0
+        ],
+        [
+          -8,
+          0
+        ]
+      ],
+      "area_m2": 35,
+      "ceiling_height": 3.3,
+      "materials": {
+        "floor": "concrete",
+        "ceiling": "plaster_white",
+        "walls": "warm_white"
+      }
+    },
+    {
+      "id": "r_cad_ne",
+      "name": "North-East Suite",
+      "vietnamese_name": "Phòng Họp Đông Bắc",
+      "category": "office",
+      "polygon": [
+        [
+          3,
+          -7
+        ],
+        [
+          8,
+          -7
+        ],
+        [
+          8,
+          0
+        ],
+        [
+          3,
+          0
+        ]
+      ],
+      "area_m2": 35,
+      "ceiling_height": 3.3,
+      "materials": {
+        "floor": "concrete",
+        "ceiling": "plaster_white",
+        "walls": "warm_white"
+      }
+    },
+    {
+      "id": "r_cad_center",
+      "name": "Central Conference Hall",
+      "vietnamese_name": "Hội Trường Trung Tâm",
+      "category": "living",
+      "polygon": [
+        [
+          -3,
+          -7
+        ],
+        [
+          3,
+          -7
+        ],
+        [
+          3,
+          7
+        ],
+        [
+          -3,
+          7
+        ]
+      ],
+      "area_m2": 84,
+      "ceiling_height": 3.3,
+      "materials": {
+        "floor": "marble",
+        "ceiling": "plaster_white",
+        "walls": "warm_white"
+      }
+    },
+    {
+      "id": "r_cad_sw",
+      "name": "South-West Lab",
+      "vietnamese_name": "Phòng Lab Tây Nam",
+      "category": "office",
+      "polygon": [
+        [
+          -8,
+          0
+        ],
+        [
+          -3,
+          0
+        ],
+        [
+          -3,
+          7
+        ],
+        [
+          -8,
+          7
+        ]
+      ],
+      "area_m2": 35,
+      "ceiling_height": 3.3,
+      "materials": {
+        "floor": "tile",
+        "ceiling": "plaster_white",
+        "walls": "warm_white"
+      }
+    },
+    {
+      "id": "r_cad_se",
+      "name": "South-East Reception",
+      "vietnamese_name": "Lễ Tân Đông Nam",
+      "category": "hallway",
+      "polygon": [
+        [
+          3,
+          0
+        ],
+        [
+          8,
+          0
+        ],
+        [
+          8,
+          7
+        ],
+        [
+          3,
+          7
+        ]
+      ],
+      "area_m2": 35,
+      "ceiling_height": 3.3,
+      "materials": {
+        "floor": "marble",
+        "ceiling": "plaster_white",
+        "walls": "warm_white"
+      }
+    }
+  ],
+  "furniture_assets": []
+}

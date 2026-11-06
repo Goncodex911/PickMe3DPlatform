@@ -1,0 +1,256 @@
+{
+  "$schema": "https://pickme3d.com/schemas/layout_data.v1.json",
+  "metadata": {
+    "project_id": "02_apartment_skyline_2br",
+    "project_name": "Skyline 2BR Apartment",
+    "units": "meters",
+    "coordinate_system": "right_handed_y_up",
+    "scale_pixel_to_meter": 0.015,
+    "dimensions": {
+      "width": 10.5,
+      "length": 8.4,
+      "default_ceiling_height": 2.8,
+      "exterior_wall_thickness": 0.22,
+      "interior_wall_thickness": 0.11
+    },
+    "original_blueprint_url": "/blueprint/02_apartment_skyline_2br.png",
+    "created_at": "2026-11-06T10:23:39.637Z",
+    "version": "1.0.0"
+  },
+  "walls": [
+    {
+      "id": "w_ext_n",
+      "type": "exterior",
+      "start": [
+        -5.25,
+        -4.2
+      ],
+      "end": [
+        5.25,
+        -4.2
+      ],
+      "thickness": 0.2,
+      "height": 2.8
+    },
+    {
+      "id": "w_ext_e",
+      "type": "exterior",
+      "start": [
+        5.25,
+        -4.2
+      ],
+      "end": [
+        5.25,
+        4.2
+      ],
+      "thickness": 0.2,
+      "height": 2.8
+    },
+    {
+      "id": "w_ext_s",
+      "type": "exterior",
+      "start": [
+        5.25,
+        4.2
+      ],
+      "end": [
+        -5.25,
+        4.2
+      ],
+      "thickness": 0.2,
+      "height": 2.8
+    },
+    {
+      "id": "w_ext_w",
+      "type": "exterior",
+      "start": [
+        -5.25,
+        4.2
+      ],
+      "end": [
+        -5.25,
+        -4.2
+      ],
+      "thickness": 0.2,
+      "height": 2.8
+    },
+    {
+      "id": "w_int_1",
+      "type": "interior",
+      "start": [
+        -0.5,
+        -4.2
+      ],
+      "end": [
+        -0.5,
+        4.2
+      ],
+      "thickness": 0.1,
+      "height": 2.8
+    },
+    {
+      "id": "w_int_2",
+      "type": "interior",
+      "start": [
+        -0.5,
+        0
+      ],
+      "end": [
+        5.25,
+        0
+      ],
+      "thickness": 0.1,
+      "height": 2.8
+    }
+  ],
+  "openings": [
+    {
+      "id": "op_apt_door",
+      "type": "door",
+      "wall_id": "w_ext_w",
+      "center": [
+        -5.25,
+        0
+      ],
+      "width": 1,
+      "height": 2.2,
+      "sill_height": 0,
+      "door_type": "single_wood_swing"
+    },
+    {
+      "id": "op_balcony_slider",
+      "type": "door",
+      "wall_id": "w_ext_n",
+      "center": [
+        -2.8,
+        -4.2
+      ],
+      "width": 2.2,
+      "height": 2.4,
+      "sill_height": 0,
+      "door_type": "sliding_glass"
+    },
+    {
+      "id": "op_bed1_win",
+      "type": "window",
+      "wall_id": "w_ext_e",
+      "center": [
+        5.25,
+        -2.1
+      ],
+      "width": 1.6,
+      "height": 1.4,
+      "sill_height": 0.9,
+      "window_type": "sliding_glass"
+    },
+    {
+      "id": "op_bed2_win",
+      "type": "window",
+      "wall_id": "w_ext_e",
+      "center": [
+        5.25,
+        2.1
+      ],
+      "width": 1.6,
+      "height": 1.4,
+      "sill_height": 0.9,
+      "window_type": "sliding_glass"
+    }
+  ],
+  "rooms": [
+    {
+      "id": "room_living_din",
+      "name": "Living & Dining",
+      "vietnamese_name": "Khách & Bếp Ăn",
+      "category": "living",
+      "polygon": [
+        [
+          -5.25,
+          -4.2
+        ],
+        [
+          -0.5,
+          -4.2
+        ],
+        [
+          -0.5,
+          4.2
+        ],
+        [
+          -5.25,
+          4.2
+        ]
+      ],
+      "area_m2": 39.9,
+      "ceiling_height": 2.8,
+      "materials": {
+        "floor": "concrete",
+        "ceiling": "plaster_white",
+        "walls": "warm_white"
+      }
+    },
+    {
+      "id": "room_bed_master",
+      "name": "Master Bedroom",
+      "vietnamese_name": "Phòng Ngủ Lớn",
+      "category": "bedroom",
+      "polygon": [
+        [
+          -0.5,
+          -4.2
+        ],
+        [
+          5.25,
+          -4.2
+        ],
+        [
+          5.25,
+          0
+        ],
+        [
+          -0.5,
+          0
+        ]
+      ],
+      "area_m2": 24.1,
+      "ceiling_height": 2.8,
+      "materials": {
+        "floor": "oak",
+        "ceiling": "plaster_white",
+        "walls": "warm_white"
+      }
+    },
+    {
+      "id": "room_bed_small",
+      "name": "Second Bedroom",
+      "vietnamese_name": "Phòng Ngủ Nhỏ",
+      "category": "bedroom",
+      "polygon": [
+        [
+          -0.5,
+          0
+        ],
+        [
+          5.25,
+          0
+        ],
+        [
+          5.25,
+          4.2
+        ],
+        [
+          -0.5,
+          4.2
+        ]
+      ],
+      "area_m2": 24.1,
+      "ceiling_height": 2.8,
+      "materials": {
+        "floor": "oak",
+        "ceiling": "plaster_white",
+        "walls": "warm_white"
+      }
+    }
+  ],
+  "furniture_assets": []
+}

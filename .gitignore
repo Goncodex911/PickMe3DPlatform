@@ -45,3 +45,5 @@ test-embed.html
 frontend/public/test-embed.html
 frontend/public/sample-template.json
 frontend/public/sample-template.pickme3d
+backend/uploads/
+uploads/
