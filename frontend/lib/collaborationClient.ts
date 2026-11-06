@@ -82,7 +82,7 @@ class CollaborationClient {
       this.notifyConnection(false);
     });
 
-    this.socket.on("canvas:init", ({ self, peers, locks, docData }) => {
+    this.socket.on("canvas:init", ({ self, peers, locks, docData }: any) => {
       if (self) this.currentUser = self;
       this.peers.clear();
       if (Array.isArray(peers)) {
@@ -104,7 +104,7 @@ class CollaborationClient {
       this.notifyPeers();
     });
 
-    this.socket.on("peer:left", ({ socketId }) => {
+    this.socket.on("peer:left", ({ socketId }: any) => {
       this.peers.delete(socketId);
       // Clean up locks from this peer
       for (const [nodeId, lock] of Array.from(this.locks.entries())) {
@@ -125,7 +125,7 @@ class CollaborationClient {
       }
     });
 
-    this.socket.on("node:selection_changed", ({ socketId, selectedNodeIds, userId, userName, color }) => {
+    this.socket.on("node:selection_changed", ({ socketId, selectedNodeIds, userId, userName, color }: any) => {
       const peer = this.peers.get(socketId);
       if (peer) {
         peer.selectedNodeIds = selectedNodeIds;
@@ -145,11 +145,11 @@ class CollaborationClient {
       this.notifyLocks();
     });
 
-    this.socket.on("node:patched", (data) => {
+    this.socket.on("node:patched", (data: any) => {
       this.listeners.forEach((l) => l.onNodePatch && l.onNodePatch(data));
     });
 
-    this.socket.on("doc:updated", (data) => {
+    this.socket.on("doc:updated", (data: any) => {
       this.listeners.forEach((l) => l.onDocSync && l.onDocSync(data));
     });
 
