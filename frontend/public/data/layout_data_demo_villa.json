@@ -1,0 +1,345 @@
+{
+  "$schema": "https://pickme3d.com/schemas/layout_data.v1.json",
+  "metadata": {
+    "project_id": "villa_modern_oasis_01",
+    "project_name": "Biệt Thự Hiện Đại Vườn Xanh (Modern Villa Oasis)",
+    "units": "meters",
+    "coordinate_system": "right_handed_y_up",
+    "scale_pixel_to_meter": 0.0125,
+    "dimensions": {
+      "width": 14.0,
+      "length": 12.0,
+      "default_ceiling_height": 3.4,
+      "exterior_wall_thickness": 0.22,
+      "interior_wall_thickness": 0.11
+    },
+    "original_blueprint_url": "/blueprint/casa-serra-drawing.png",
+    "created_at": "2026-11-06T00:00:00.000Z",
+    "version": "1.0.0"
+  },
+  "walls": [
+    {
+      "id": "wall_ext_north",
+      "type": "exterior",
+      "start": [-7.0, -6.0],
+      "end": [7.0, -6.0],
+      "thickness": 0.22,
+      "height": 3.4,
+      "openings": ["win_north_living", "win_north_bed1"]
+    },
+    {
+      "id": "wall_ext_east",
+      "type": "exterior",
+      "start": [7.0, -6.0],
+      "end": [7.0, 6.0],
+      "thickness": 0.22,
+      "height": 3.4,
+      "openings": ["win_east_kitchen", "win_east_dining"]
+    },
+    {
+      "id": "wall_ext_south",
+      "type": "exterior",
+      "start": [7.0, 6.0],
+      "end": [-7.0, 6.0],
+      "thickness": 0.22,
+      "height": 3.4,
+      "openings": ["door_main_entrance", "win_south_bed2"]
+    },
+    {
+      "id": "wall_ext_west",
+      "type": "exterior",
+      "start": [-7.0, 6.0],
+      "end": [-7.0, -6.0],
+      "thickness": 0.22,
+      "height": 3.4,
+      "openings": ["win_west_bath", "door_patio_exit"]
+    },
+    {
+      "id": "wall_int_div_living_kitchen",
+      "type": "interior",
+      "start": [0.0, -6.0],
+      "end": [0.0, 1.0],
+      "thickness": 0.11,
+      "height": 3.4,
+      "openings": ["door_kitchen_arch"]
+    },
+    {
+      "id": "wall_int_div_hallway_bed",
+      "type": "interior",
+      "start": [-7.0, 1.0],
+      "end": [7.0, 1.0],
+      "thickness": 0.11,
+      "height": 3.4,
+      "openings": ["door_bedroom_1", "door_bedroom_2", "door_hallway_bath"]
+    },
+    {
+      "id": "wall_int_div_bed1_bed2",
+      "type": "interior",
+      "start": [0.0, 1.0],
+      "end": [0.0, 6.0],
+      "thickness": 0.11,
+      "height": 3.4,
+      "openings": []
+    }
+  ],
+  "openings": [
+    {
+      "id": "door_main_entrance",
+      "type": "door",
+      "wall_id": "wall_ext_south",
+      "center": [-3.5, 6.0],
+      "width": 1.6,
+      "height": 2.4,
+      "sill_height": 0.0,
+      "door_type": "double_wood_pivot",
+      "rotation_deg": 180
+    },
+    {
+      "id": "door_patio_exit",
+      "type": "door",
+      "wall_id": "wall_ext_west",
+      "center": [-7.0, -2.5],
+      "width": 1.8,
+      "height": 2.4,
+      "sill_height": 0.0,
+      "door_type": "sliding_glass_patio",
+      "rotation_deg": 270
+    },
+    {
+      "id": "door_bedroom_1",
+      "type": "door",
+      "wall_id": "wall_int_div_hallway_bed",
+      "center": [-4.5, 1.0],
+      "width": 0.9,
+      "height": 2.2,
+      "sill_height": 0.0,
+      "door_type": "single_swing_wood",
+      "rotation_deg": 0
+    },
+    {
+      "id": "door_bedroom_2",
+      "type": "door",
+      "wall_id": "wall_int_div_hallway_bed",
+      "center": [2.5, 1.0],
+      "width": 0.9,
+      "height": 2.2,
+      "sill_height": 0.0,
+      "door_type": "single_swing_wood",
+      "rotation_deg": 0
+    },
+    {
+      "id": "door_hallway_bath",
+      "type": "door",
+      "wall_id": "wall_int_div_hallway_bed",
+      "center": [5.5, 1.0],
+      "width": 0.8,
+      "height": 2.2,
+      "sill_height": 0.0,
+      "door_type": "single_swing_wood",
+      "rotation_deg": 0
+    },
+    {
+      "id": "door_kitchen_arch",
+      "type": "opening",
+      "wall_id": "wall_int_div_living_kitchen",
+      "center": [0.0, -1.5],
+      "width": 1.8,
+      "height": 2.6,
+      "sill_height": 0.0,
+      "door_type": "open_archway",
+      "rotation_deg": 90
+    },
+    {
+      "id": "win_north_living",
+      "type": "window",
+      "wall_id": "wall_ext_north",
+      "center": [-3.5, -6.0],
+      "width": 2.4,
+      "height": 1.8,
+      "sill_height": 0.6,
+      "window_type": "picture_window_view",
+      "rotation_deg": 0
+    },
+    {
+      "id": "win_north_bed1",
+      "type": "window",
+      "wall_id": "wall_ext_north",
+      "center": [3.5, -6.0],
+      "width": 1.6,
+      "height": 1.5,
+      "sill_height": 0.9,
+      "window_type": "sliding_glass",
+      "rotation_deg": 0
+    },
+    {
+      "id": "win_east_kitchen",
+      "type": "window",
+      "wall_id": "wall_ext_east",
+      "center": [7.0, -3.5],
+      "width": 1.4,
+      "height": 1.2,
+      "sill_height": 1.1,
+      "window_type": "awning_glass",
+      "rotation_deg": 90
+    },
+    {
+      "id": "win_east_dining",
+      "type": "window",
+      "wall_id": "wall_ext_east",
+      "center": [7.0, 3.5],
+      "width": 2.0,
+      "height": 1.6,
+      "sill_height": 0.8,
+      "window_type": "sliding_glass",
+      "rotation_deg": 90
+    },
+    {
+      "id": "win_south_bed2",
+      "type": "window",
+      "wall_id": "wall_ext_south",
+      "center": [3.5, 6.0],
+      "width": 1.8,
+      "height": 1.5,
+      "sill_height": 0.9,
+      "window_type": "sliding_glass",
+      "rotation_deg": 180
+    },
+    {
+      "id": "win_west_bath",
+      "type": "window",
+      "wall_id": "wall_ext_west",
+      "center": [-7.0, 3.5],
+      "width": 0.8,
+      "height": 0.8,
+      "sill_height": 1.8,
+      "window_type": "frosted_vent",
+      "rotation_deg": 270
+    }
+  ],
+  "rooms": [
+    {
+      "id": "room_living_hall",
+      "name": "Grand Living Room",
+      "vietnamese_name": "Phòng Khách Trung Tâm",
+      "category": "living",
+      "polygon": [
+        [-7.0, -6.0],
+        [0.0, -6.0],
+        [0.0, 1.0],
+        [-7.0, 1.0]
+      ],
+      "area_m2": 49.0,
+      "ceiling_height": 3.4,
+      "materials": {
+        "floor": "concrete",
+        "ceiling": "plaster_white_matte",
+        "walls": "wall_paint_warm_white"
+      }
+    },
+    {
+      "id": "room_kitchen_dining",
+      "name": "Kitchen & Dining",
+      "vietnamese_name": "Bếp & Phòng Ăn",
+      "category": "kitchen",
+      "polygon": [
+        [0.0, -6.0],
+        [7.0, -6.0],
+        [7.0, 1.0],
+        [0.0, 1.0]
+      ],
+      "area_m2": 49.0,
+      "ceiling_height": 3.4,
+      "materials": {
+        "floor": "marble",
+        "ceiling": "plaster_white_matte",
+        "walls": "wall_paint_warm_white"
+      }
+    },
+    {
+      "id": "room_master_suite",
+      "name": "Master Suite",
+      "vietnamese_name": "Phòng Ngủ Master",
+      "category": "bedroom",
+      "polygon": [
+        [-7.0, 1.0],
+        [0.0, 1.0],
+        [0.0, 6.0],
+        [-7.0, 6.0]
+      ],
+      "area_m2": 35.0,
+      "ceiling_height": 3.2,
+      "materials": {
+        "floor": "oak",
+        "ceiling": "plaster_white_matte",
+        "walls": "wall_paint_warm_white"
+      }
+    },
+    {
+      "id": "room_guest_bedroom",
+      "name": "Guest Bedroom",
+      "vietnamese_name": "Phòng Ngủ Khách",
+      "category": "bedroom",
+      "polygon": [
+        [0.0, 1.0],
+        [7.0, 1.0],
+        [7.0, 6.0],
+        [0.0, 6.0]
+      ],
+      "area_m2": 35.0,
+      "ceiling_height": 3.2,
+      "materials": {
+        "floor": "oak",
+        "ceiling": "plaster_white_matte",
+        "walls": "wall_paint_warm_white"
+      }
+    }
+  ],
+  "furniture_assets": [
+    {
+      "id": "furn_sofa_living",
+      "asset_model_id": "sofa_modern_3seat",
+      "category": "living",
+      "position": [-3.5, 0.0, -3.0],
+      "rotation_deg": 0.0,
+      "scale": [1.0, 1.0, 1.0],
+      "glb_url": "/models/furniture/sofa_modern_3seat.glb"
+    },
+    {
+      "id": "furn_dining_set",
+      "asset_model_id": "dining_table_6chairs",
+      "category": "kitchen",
+      "position": [3.5, 0.0, -2.5],
+      "rotation_deg": 90.0,
+      "scale": [1.0, 1.0, 1.0],
+      "glb_url": "/models/furniture/dining_table_6chairs.glb"
+    },
+    {
+      "id": "furn_kitchen_counter",
+      "asset_model_id": "kitchen_counter_island",
+      "category": "kitchen",
+      "position": [5.5, 0.0, -4.8],
+      "rotation_deg": 0.0,
+      "scale": [1.0, 1.0, 1.0],
+      "glb_url": "/models/furniture/kitchen_counter_island.glb"
+    },
+    {
+      "id": "furn_bed_master",
+      "asset_model_id": "bed_queen_modern",
+      "category": "bedroom",
+      "position": [-3.5, 0.0, 3.8],
+      "rotation_deg": 180.0,
+      "scale": [1.0, 1.0, 1.0],
+      "glb_url": "/models/furniture/bed_queen_modern.glb"
+    },
+    {
+      "id": "furn_bed_guest",
+      "asset_model_id": "bed_queen_modern",
+      "category": "bedroom",
+      "position": [3.5, 0.0, 3.8],
+      "rotation_deg": 180.0,
+      "scale": [1.0, 1.0, 1.0],
+      "glb_url": "/models/furniture/bed_queen_modern.glb"
+    }
+  ]
+}
+

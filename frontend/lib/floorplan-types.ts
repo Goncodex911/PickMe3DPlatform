@@ -3,6 +3,8 @@
  * Inspired by Casa Serra (https://sam1983aing.github.io/casa-serra/)
  */
 
+import { z } from "zod";
+
 export type ArchitecturalStyle = 
   | "casa_serra" 
   | "scandinavian" 
@@ -571,4 +573,365 @@ export const ALL_PRESETS: BlueprintProject[] = [
   TOWNHOUSE_PRESET,
   APARTMENT_PRESET
 ];
+
+/* ==========================================================================
+   STANDARDIZED LAYOUT DATA SCHEMA (STORY-THUAN-BP01)
+   --------------------------------------------------------------------------
+   HỆ QUY CHIẾU KHÔNG GIAN 3D (COORDINATE SYSTEM SPECIFICATION):
+   - Chuẩn hệ tọa độ: Right-Handed Y-up (chuẩn glTF 2.0 & Three.js).
+     * Trục X (+X): Chiều ngang mặt bằng từ Trái sang Phải.
+     * Trục Z (+Z): Chiều sâu mặt bằng từ Trên xuống Dưới (nhìn từ trên cao mặt bằng 2D).
+     * Trục Y (+Y): Chiều cao thẳng đứng (Y=0 là mặt sàn, Y=3.3m là mặt trần).
+   - Đơn vị đo lường: Mét (meter). Toàn bộ tọa độ và kích thước tính bằng Mét.
+   - Gốc tọa độ (0, 0, 0): Tâm hình học mặt bằng hoặc góc Tây Nam của tòa nhà.
+   ========================================================================== */
+
+export type CoordinateSystem = "right_handed_y_up";
+
+export type WallSegmentType = "exterior" | "interior" | "partition";
+
+export interface WallSegment {
+  id: string;
+  type: WallSegmentType;
+  /** Tọa độ bắt đầu [x, z] tính bằng mét */
+  start: [number, number];
+  /** Tọa độ kết thúc [x, z] tính bằng mét */
+  end: [number, number];
+  /** Độ dày tường tính bằng mét (vd: 0.22 cho tường bao, 0.11 cho tường ngăn) */
+  thickness: number;
+  /** Chiều cao tường tính bằng mét (mặc định 3.3m) */
+  height: number;
+  /** Danh sách ID các ô cửa gắn trên tường này */
+  openings?: string[];
+}
+
+export type OpeningType = "door" | "window" | "opening";
+
+export interface OpeningSpec {
+  id: string;
+  type: OpeningType;
+  /** ID mảng tường chứa ô cửa này */
+  wall_id?: string;
+  /** Tọa độ tâm ô cửa [x, z] tính bằng mét */
+  center: [number, number];
+  /** Chiều rộng ô cửa tính bằng mét (vd: 0.9m cửa đơn, 1.8m cửa đôi) */
+  width: number;
+  /** Chiều cao ô cửa tính bằng mét (vd: 2.2m cửa đi, 1.5m cửa sổ) */
+  height: number;
+  /** Cao độ bậu cửa từ sàn tính bằng mét (0.0m cho cửa đi, 0.9m cho cửa sổ) */
+  sill_height: number;
+  /** Phân loại thiết kế cửa */
+  door_type?: string;
+  window_type?: string;
+  /** Góc xoay theo độ (0 - 360) */
+  rotation_deg?: number;
+}
+
+export type RoomCategory =
+  | "living"
+  | "bedroom"
+  | "kitchen"
+  | "bath"
+  | "outdoor"
+  | "hallway"
+  | "utility"
+  | "office";
+
+export interface RoomPolygon {
+  id: string;
+  name: string;
+  vietnamese_name?: string;
+  category: RoomCategory;
+  /** Danh sách các đỉnh đa giác kín [[x1, z1], [x2, z2], ...] tính bằng mét */
+  polygon: [number, number][];
+  /** Diện tích phòng tính bằng mét vuông (m²) */
+  area_m2?: number;
+  /** Chiều cao trần riêng của phòng nếu khác chiều cao chung */
+  ceiling_height?: number;
+  /** Cấu hình vật liệu PBR cho phòng */
+  materials?: {
+    floor?: FloorMaterialType | string;
+    ceiling?: string;
+    walls?: string;
+  };
+}
+
+export interface FurniturePlacement {
+  id: string;
+  /** ID mã đồ dùng trong catalog (vd: bed_queen_modern, sofa_modern_3seat) */
+  asset_model_id: string;
+  category?: string;
+  /** Tọa độ tâm đáy vật dụng [x, y, z] tính bằng mét (y=0 là mặt sàn) */
+  position: [number, number, number];
+  /** Góc xoay quanh trục thẳng đứng Y (tính bằng độ: 0 - 360) */
+  rotation_deg?: number;
+  /** Hệ số tỷ lệ kích thước [sx, sy, sz], mặc định [1, 1, 1] */
+  scale?: [number, number, number];
+  /** Đường dẫn tải file mô hình 3D (.glb) */
+  glb_url?: string;
+}
+
+export interface LayoutMetadata {
+  project_id: string;
+  project_name: string;
+  units: "meters";
+  coordinate_system: CoordinateSystem;
+  scale_pixel_to_meter?: number;
+  dimensions: {
+    width: number;
+    length: number;
+    default_ceiling_height: number;
+    exterior_wall_thickness: number;
+    interior_wall_thickness: number;
+  };
+  original_blueprint_url?: string;
+  created_at?: string;
+  version?: string;
+}
+
+export interface LayoutData {
+  $schema?: string;
+  metadata: LayoutMetadata;
+  walls: WallSegment[];
+  openings: OpeningSpec[];
+  rooms: RoomPolygon[];
+  furniture_assets: FurniturePlacement[];
+}
+
+/* ==========================================================================
+   ZOD RUNTIME VALIDATION SCHEMAS
+   ========================================================================== */
+
+export const WallSegmentZodSchema = z.object({
+  id: z.string().min(1, "Wall ID is required"),
+  type: z.enum(["exterior", "interior", "partition"]).default("interior"),
+  start: z.tuple([z.number(), z.number()]),
+  end: z.tuple([z.number(), z.number()]),
+  thickness: z.number().positive("Wall thickness must be positive").default(0.11),
+  height: z.number().positive("Wall height must be positive").default(3.3),
+  openings: z.array(z.string()).optional()
+}).refine(
+  (wall) => {
+    // start and end coordinates should not be identical
+    const dx = wall.start[0] - wall.end[0];
+    const dz = wall.start[1] - wall.end[1];
+    return Math.hypot(dx, dz) >= 0.05; // Tường phải dài tối thiểu 5cm
+  },
+  { message: "Wall length must be at least 0.05m (5cm)" }
+);
+
+export const OpeningSpecZodSchema = z.object({
+  id: z.string().min(1, "Opening ID is required"),
+  type: z.enum(["door", "window", "opening"]),
+  wall_id: z.string().optional(),
+  center: z.tuple([z.number(), z.number()]),
+  width: z.number().positive("Opening width must be positive"),
+  height: z.number().positive("Opening height must be positive"),
+  sill_height: z.number().min(0, "Sill height cannot be negative").default(0),
+  door_type: z.string().optional(),
+  window_type: z.string().optional(),
+  rotation_deg: z.number().min(0).max(360).optional().default(0)
+});
+
+export const RoomPolygonZodSchema = z.object({
+  id: z.string().min(1, "Room ID is required"),
+  name: z.string().min(1, "Room name is required"),
+  vietnamese_name: z.string().optional(),
+  category: z.enum(["living", "bedroom", "kitchen", "bath", "outdoor", "hallway", "utility", "office"]),
+  polygon: z.array(z.tuple([z.number(), z.number()])).min(3, "Room polygon must have at least 3 vertices"),
+  area_m2: z.number().positive().optional(),
+  ceiling_height: z.number().positive().optional(),
+  materials: z.object({
+    floor: z.string().optional(),
+    ceiling: z.string().optional(),
+    walls: z.string().optional()
+  }).optional()
+});
+
+export const FurniturePlacementZodSchema = z.object({
+  id: z.string().min(1, "Asset ID is required"),
+  asset_model_id: z.string().min(1, "Asset model ID is required"),
+  category: z.string().optional(),
+  position: z.tuple([z.number(), z.number(), z.number()]),
+  rotation_deg: z.number().min(0).max(360).optional().default(0),
+  scale: z.tuple([z.number(), z.number(), z.number()]).optional().default([1, 1, 1]),
+  glb_url: z.string().optional()
+});
+
+export const LayoutMetadataZodSchema = z.object({
+  project_id: z.string().min(1, "Project ID is required"),
+  project_name: z.string().min(1, "Project name is required"),
+  units: z.literal("meters").default("meters"),
+  coordinate_system: z.literal("right_handed_y_up").default("right_handed_y_up"),
+  scale_pixel_to_meter: z.number().positive().optional(),
+  dimensions: z.object({
+    width: z.number().positive("Building width must be positive"),
+    length: z.number().positive("Building length must be positive"),
+    default_ceiling_height: z.number().positive().default(3.3),
+    exterior_wall_thickness: z.number().positive().default(0.22),
+    interior_wall_thickness: z.number().positive().default(0.11)
+  }),
+  original_blueprint_url: z.string().optional(),
+  created_at: z.string().optional(),
+  version: z.string().optional()
+});
+
+export const LayoutDataZodSchema = z.object({
+  $schema: z.string().optional(),
+  metadata: LayoutMetadataZodSchema,
+  walls: z.array(WallSegmentZodSchema),
+  openings: z.array(OpeningSpecZodSchema),
+  rooms: z.array(RoomPolygonZodSchema),
+  furniture_assets: z.array(FurniturePlacementZodSchema)
+});
+
+/**
+ * Validates any object against the official PickMe3D LayoutData Schema.
+ * Returns { success, data, errors }.
+ */
+export function validateLayoutData(input: unknown): {
+  success: boolean;
+  data?: LayoutData;
+  errors?: string[];
+} {
+  const result = LayoutDataZodSchema.safeParse(input);
+  if (result.success) {
+    return { success: true, data: result.data as LayoutData };
+  }
+  const formattedErrors = result.error.issues.map(
+    (issue) => `[${issue.path.join(".")}]: ${issue.message}`
+  );
+  return { success: false, errors: formattedErrors };
+}
+
+/**
+ * Convert legacy BlueprintProject (e.g. Casa Serra presets) into modern LayoutData
+ */
+export function convertBlueprintProjectToLayoutData(project: BlueprintProject): LayoutData {
+  const { width, length, ceilingHeight, exteriorWallThickness, interiorWallThickness } = project.specs;
+  const hw = width / 2;
+  const hl = length / 2;
+
+  // 1. Exterior boundary walls
+  const walls: WallSegment[] = [
+    {
+      id: "wall_ext_north",
+      type: "exterior",
+      start: [-hw, -hl],
+      end: [hw, -hl],
+      thickness: exteriorWallThickness || 0.22,
+      height: ceilingHeight || 3.3
+    },
+    {
+      id: "wall_ext_east",
+      type: "exterior",
+      start: [hw, -hl],
+      end: [hw, hl],
+      thickness: exteriorWallThickness || 0.22,
+      height: ceilingHeight || 3.3
+    },
+    {
+      id: "wall_ext_south",
+      type: "exterior",
+      start: [hw, hl],
+      end: [-hw, hl],
+      thickness: exteriorWallThickness || 0.22,
+      height: ceilingHeight || 3.3
+    },
+    {
+      id: "wall_ext_west",
+      type: "exterior",
+      start: [-hw, hl],
+      end: [-hw, -hl],
+      thickness: exteriorWallThickness || 0.22,
+      height: ceilingHeight || 3.3
+    }
+  ];
+
+  // 2. Interior rooms polygons & interior partition walls
+  const rooms: RoomPolygon[] = project.rooms.map((room, idx) => {
+    const [x0, z0, x1, z1] = room.bounds;
+    
+    // Add interior division wall if needed
+    if (idx > 0) {
+      walls.push({
+        id: `wall_int_${room.id}`,
+        type: "interior",
+        start: [x0, z0],
+        end: [x1, z0],
+        thickness: interiorWallThickness || 0.11,
+        height: room.ceilingHeight || ceilingHeight || 3.3
+      });
+    }
+
+    return {
+      id: room.id,
+      name: room.name,
+      vietnamese_name: room.vietnameseName,
+      category: room.category,
+      polygon: [
+        [x0, z0],
+        [x1, z0],
+        [x1, z1],
+        [x0, z1]
+      ],
+      area_m2: room.area,
+      ceiling_height: room.ceilingHeight || ceilingHeight || 3.3,
+      materials: {
+        floor: room.floorMaterial || project.specs.baseFloorMaterial || "concrete",
+        ceiling: "plaster_white_matte",
+        walls: "wall_paint_warm_white"
+      }
+    };
+  });
+
+  // 3. Default main door and sample window
+  const openings: OpeningSpec[] = [
+    {
+      id: "opening_main_entrance",
+      type: "door",
+      wall_id: "wall_ext_south",
+      center: [0, hl],
+      width: 1.6,
+      height: 2.4,
+      sill_height: 0.0,
+      door_type: "double_glass_swing"
+    },
+    {
+      id: "opening_front_window",
+      type: "window",
+      wall_id: "wall_ext_south",
+      center: [-hw * 0.5, hl],
+      width: 2.0,
+      height: 1.5,
+      sill_height: 0.9,
+      window_type: "sliding_glass"
+    }
+  ];
+
+  return {
+    $schema: "https://pickme3d.com/schemas/layout_data.v1.json",
+    metadata: {
+      project_id: project.id,
+      project_name: project.name,
+      units: "meters",
+      coordinate_system: "right_handed_y_up",
+      dimensions: {
+        width,
+        length,
+        default_ceiling_height: ceilingHeight || 3.3,
+        exterior_wall_thickness: exteriorWallThickness || 0.22,
+        interior_wall_thickness: interiorWallThickness || 0.11
+      },
+      original_blueprint_url: project.originalBlueprintUrl,
+      created_at: new Date().toISOString(),
+      version: "1.0.0"
+    },
+    walls,
+    openings,
+    rooms,
+    furniture_assets: []
+  };
+}
+
 
