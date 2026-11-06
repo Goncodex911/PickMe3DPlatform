@@ -350,13 +350,13 @@ gantt
   *Tôi muốn* tạo khối tường có lỗ cửa bằng phương pháp chia đoạn hình hộp (Segmented Boxes) thay vì dùng CSG Boolean,  
   *Để* tốc độ tạo mesh đạt dưới 1 giây, loại bỏ 100% lỗi rách mặt (non-manifold) và tiết kiệm tài nguyên CPU.
 - **Tiêu chí chấp nhận (AC):**
-  - [ ] Tường không có cửa: Dựng 1 hình hộp chữ nhật kéo dài từ `start` đến `end` với chiều cao $H = 3.3\text{ m}$.
-  - [ ] Tường có cửa đi: Tự động chia thành 3 khối (Tường trái, Tường phải, Đà lanh-tô trên cửa từ cao độ $2.2\text{ m} \to 3.3\text{ m}$).
-  - [ ] Tường có cửa sổ: Tự động chia thành 4 khối (Tường trái, Tường phải, Đà trên cửa, Bậu tường dưới đáy cửa sổ từ $0.0\text{ m} \to 0.9\text{ m}$).
-  - [ ] UV Mapping được tạo tự động chuẩn xác để vân gạch/sơn không bị méo.
+  - [x] Tường không có cửa: Dựng 1 hình hộp chữ nhật kéo dài từ `start` đến `end` với chiều cao $H = 3.3\text{ m}$.
+  - [x] Tường có cửa đi: Tự động chia thành 3 khối (Tường trái, Tường phải, Đà lanh-tô trên cửa từ cao độ $2.2\text{ m} \to 3.3\text{ m}$).
+  - [x] Tường có cửa sổ: Tự động chia thành 4 khối (Tường trái, Tường phải, Đà trên cửa, Bậu tường dưới đáy cửa sổ từ $0.0\text{ m} \to 0.9\text{ m}$).
+  - [x] UV Mapping được tạo tự động chuẩn xác để vân gạch/sơn không bị méo.
 - **Công việc (Tasks):**
-  - [ ] **Task 3.1.1:** Viết thuật toán chia đoạn tường `generateWallSegmentMeshes(wall, openings)` trong `frontend/lib/floorplan-mesh-generator.ts`.
-  - [ ] **Task 3.1.2:** Tích hợp bộ phát sinh sàn đa giác `generateRoomFloorMesh(room.polygon)`.
+  - [x] **Task 3.1.1:** Viết thuật toán chia đoạn tường `generateWallSegmentMeshes(wall, openings)` trong `frontend/lib/floorplan-mesh-generator.ts`.
+  - [x] **Task 3.1.2:** Tích hợp bộ phát sinh sàn đa giác `generateRoomFloorMesh(room.polygon)`.
 
 #### 📌 Story 3.2: Đặt Nội Thất & Đóng Gói Tệp `.GLB` Nén Draco
 - **Mã:** `STORY-THUAN-BP06`
@@ -365,12 +365,12 @@ gantt
   *Tôi muốn* sau khi dựng hình xong có thể tải về tệp `.GLB` nén siêu nhẹ duy nhất có chứa đầy đủ tường, sàn, cửa và nội thất,  
   *Để* dễ dàng gửi cho khách hàng, đối tác hoặc mở trong Blender/Unreal Engine.
 - **Tiêu chí chấp nhận (AC):**
-  - [ ] Tự động load và clone các model GLB từ thư viện vào đúng tọa độ $(x, y, z)$ và góc xoay `rotation_deg`.
-  - [ ] Xuất toàn bộ Scene thành file `.GLB` bằng `GLTFExporter` của Three.js.
-  - [ ] Tích hợp nén Draco Compression giúp dung lượng file giảm từ 70% đến 80% (tệp cuối $< 5\text{ MB}$).
+  - [x] Tự động load và clone các model GLB từ thư viện vào đúng tọa độ $(x, y, z)$ và góc xoay `rotation_deg`.
+  - [x] Xuất toàn bộ Scene thành file `.GLB` bằng `GLTFExporter` của Three.js.
+  - [x] Tích hợp nén Draco Compression giúp dung lượng file giảm từ 70% đến 80% (tệp cuối $< 5\text{ MB}$).
 - **Công việc (Tasks):**
-  - [ ] **Task 3.2.1:** Viết pipeline xuất file `exportSceneToGLB(scene, options)` hỗ trợ Draco extension.
-  - [ ] **Task 3.2.2:** Tạo nút "Tải File 3D (.GLB)" trên giao diện Viewer với thanh tiến trình tải.
+  - [x] **Task 3.2.1:** Viết pipeline xuất file `exportSceneToGLB(scene, options)` hỗ trợ Draco extension.
+  - [x] **Task 3.2.2:** Tạo nút "Tải File 3D (.GLB)" trên giao diện Viewer với thanh tiến trình tải.
 
 ---
 
