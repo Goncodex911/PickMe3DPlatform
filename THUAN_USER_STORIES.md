@@ -2,7 +2,7 @@
 
 > **Người phụ trách:** Nguyễn Hiệu Thuận (`Goncodex911` / `Gonindex_911`)  
 > **Nhánh làm việc:** `thuan-confirm`  
-> **Phiên bản tài liệu:** 1.3 — Ngày cập nhật: 06/11/2026 (Hoàn thành Giai đoạn 1 & Giai đoạn 2 Blueprint 3D: Schema, 3D Assets, AI BIM Scanner & Vector Cleanup)  
+> **Phiên bản tài liệu:** 1.4 — Ngày cập nhật: 06/11/2026 (Hoàn thành Giai đoạn 1, 2, 3: Schema, 3D Assets, AI Vision & Segmented Wall Extrusion & Export .GLB)  
 > **Tài liệu đặc tả kiến trúc 3D:** Xem chi tiết tại [BLUEPRINT_3D_DESIGN_SPEC.md](file:///d:/CODE/PickMe3D/BLUEPRINT_3D_DESIGN_SPEC.md)  
 > **Phạm vi trách nhiệm:** Dựng hình 3D bản vẽ kiến trúc (Blueprint 3D), Xuất file 3D công nghiệp, Chợ UI Marketplace & Tích hợp Canvas, Quản lý Cloudinary Media Pipeline, AR & AI Interior.
 
@@ -55,14 +55,14 @@ flowchart TD
   *Tôi muốn* chuyển đổi từ góc nhìn 2D sang mô hình 3D khối có chiều cao tường thật, khoét ô cửa đi, cửa sổ và trát sàn gạch/gỗ,  
   *Để* hình dung chân thực không gian sống trước khi thi công.
 - **Tiêu chí chấp nhận (Acceptance Criteria):**
-  - [ ] Tường 3D được extrude theo chiều cao trần nhà (mặc định 2.8m - 3.2m tùy chỉnh được).
-  - [ ] Các vị trí cửa đi được đục thông tường, có khung cửa và cánh cửa gỗ/kính có thể mở góc 45°-90°.
-  - [ ] Vị trí cửa sổ được đục tường ở cao độ bậu cửa (mặc định 0.9m) kèm tấm kính trong suốt phản chiếu ánh sáng.
-  - [ ] Sàn mỗi phòng có vật liệu riêng biệt (Phòng khách lát đá Marble, Phòng ngủ lát sàn gỗ sồi, WC lát gạch chống trơn).
+  - [x] Tường 3D được extrude theo chiều cao trần nhà (mặc định 2.8m - 3.2m tùy chỉnh được).
+  - [x] Các vị trí cửa đi được đục thông tường, có khung cửa và cánh cửa gỗ/kính có thể mở góc 45°-90°.
+  - [x] Vị trí cửa sổ được đục tường ở cao độ bậu cửa (mặc định 0.9m) kèm tấm kính trong suốt phản chiếu ánh sáng.
+  - [x] Sàn mỗi phòng có vật liệu riêng biệt (Phòng khách lát đá Marble, Phòng ngủ lát sàn gỗ sồi, WC lát gạch chống trơn).
 - **Công việc phải làm (Tasks):**
-  - [ ] **Task 1.2.1:** Hoàn thiện thuật toán CSG (Constructive Solid Geometry) hoặc ghép tường phân đoạn (Segmented Walls) trong [`frontend/components/blueprint/CasaSerraViewer.tsx`](file:///d:/CODE/PickMe3D/frontend/components/blueprint/CasaSerraViewer.tsx) để khoét ô cửa mượt mà không lỗi mesh.
-  - [ ] **Task 1.2.2:** Xây dựng thư viện vật liệu chuẩn (`Three.MeshStandardMaterial`) có bump map / roughness cho sàn gạch, sàn gỗ, tường sơn trắng, kính cường lực.
-  - [ ] **Task 1.2.3:** Tự động sinh nội thất cơ bản mẫu (Sofa phòng khách, Giường ngủ, Bồn rửa WC, Bàn ăn) theo đúng loại phòng đã nhận dạng.
+  - [x] **Task 1.2.1:** Hoàn thiện thuật toán Segmented Walls trong [`frontend/lib/floorplan-mesh-generator.ts`](file:///d:/CODE/PickMe3D/frontend/lib/floorplan-mesh-generator.ts) để khoét ô cửa mượt mà không lỗi mesh.
+  - [x] **Task 1.2.2:** Xây dựng thư viện vật liệu chuẩn (`Three.MeshStandardMaterial`) có bump map / roughness cho sàn gạch, sàn gỗ, tường sơn trắng, kính cường lực.
+  - [x] **Task 1.2.3:** Tự động sinh nội thất cơ bản mẫu (Sofa phòng khách, Giường ngủ, Bồn rửa WC, Bàn ăn) theo đúng loại phòng đã nhận dạng.
 
 ---
 
