@@ -1,0 +1,275 @@
+{
+  "$schema": "https://pickme3d.com/schemas/layout_data.v1.json",
+  "metadata": {
+    "project_id": "03_townhouse_tube_house",
+    "project_name": "Urban Tube Townhouse 4.5x18m",
+    "units": "meters",
+    "coordinate_system": "right_handed_y_up",
+    "scale_pixel_to_meter": 0.015,
+    "dimensions": {
+      "width": 4.5,
+      "length": 18,
+      "default_ceiling_height": 3.6,
+      "exterior_wall_thickness": 0.22,
+      "interior_wall_thickness": 0.11
+    },
+    "original_blueprint_url": "/blueprint/03_townhouse_tube_house.png",
+    "created_at": "2026-11-06T10:23:39.637Z",
+    "version": "1.0.0"
+  },
+  "walls": [
+    {
+      "id": "w_ext_n",
+      "type": "exterior",
+      "start": [
+        -2.25,
+        -9
+      ],
+      "end": [
+        2.25,
+        -9
+      ],
+      "thickness": 0.22,
+      "height": 3.6
+    },
+    {
+      "id": "w_ext_e",
+      "type": "exterior",
+      "start": [
+        2.25,
+        -9
+      ],
+      "end": [
+        2.25,
+        9
+      ],
+      "thickness": 0.22,
+      "height": 3.6
+    },
+    {
+      "id": "w_ext_s",
+      "type": "exterior",
+      "start": [
+        2.25,
+        9
+      ],
+      "end": [
+        -2.25,
+        9
+      ],
+      "thickness": 0.22,
+      "height": 3.6
+    },
+    {
+      "id": "w_ext_w",
+      "type": "exterior",
+      "start": [
+        -2.25,
+        9
+      ],
+      "end": [
+        -2.25,
+        -9
+      ],
+      "thickness": 0.22,
+      "height": 3.6
+    },
+    {
+      "id": "w_int_1",
+      "type": "interior",
+      "start": [
+        -2.25,
+        -3
+      ],
+      "end": [
+        2.25,
+        -3
+      ],
+      "thickness": 0.11,
+      "height": 3.6
+    },
+    {
+      "id": "w_int_2",
+      "type": "interior",
+      "start": [
+        -2.25,
+        2
+      ],
+      "end": [
+        2.25,
+        2
+      ],
+      "thickness": 0.11,
+      "height": 3.6
+    },
+    {
+      "id": "w_int_3",
+      "type": "interior",
+      "start": [
+        -2.25,
+        6
+      ],
+      "end": [
+        2.25,
+        6
+      ],
+      "thickness": 0.11,
+      "height": 3.6
+    }
+  ],
+  "openings": [
+    {
+      "id": "op_gate",
+      "type": "door",
+      "wall_id": "w_ext_s",
+      "center": [
+        0,
+        9
+      ],
+      "width": 2.4,
+      "height": 2.8,
+      "sill_height": 0,
+      "door_type": "double_glass_swing"
+    },
+    {
+      "id": "op_back_win",
+      "type": "window",
+      "wall_id": "w_ext_n",
+      "center": [
+        0,
+        -9
+      ],
+      "width": 1.8,
+      "height": 1.6,
+      "sill_height": 0.9,
+      "window_type": "sliding_glass"
+    }
+  ],
+  "rooms": [
+    {
+      "id": "r_front_living",
+      "name": "Front Living Room",
+      "vietnamese_name": "Phòng Khách Mặt Tiền",
+      "category": "living",
+      "polygon": [
+        [
+          -2.25,
+          6
+        ],
+        [
+          2.25,
+          6
+        ],
+        [
+          2.25,
+          9
+        ],
+        [
+          -2.25,
+          9
+        ]
+      ],
+      "area_m2": 13.5,
+      "ceiling_height": 3.6,
+      "materials": {
+        "floor": "marble",
+        "ceiling": "plaster_white",
+        "walls": "warm_white"
+      }
+    },
+    {
+      "id": "r_stair_kitchen",
+      "name": "Dining & Stair Atrium",
+      "vietnamese_name": "Bếp Ăn & Cầu Thang Giếng Trời",
+      "category": "kitchen",
+      "polygon": [
+        [
+          -2.25,
+          2
+        ],
+        [
+          2.25,
+          2
+        ],
+        [
+          2.25,
+          6
+        ],
+        [
+          -2.25,
+          6
+        ]
+      ],
+      "area_m2": 18,
+      "ceiling_height": 3.6,
+      "materials": {
+        "floor": "concrete",
+        "ceiling": "plaster_white",
+        "walls": "warm_white"
+      }
+    },
+    {
+      "id": "r_bed_ground",
+      "name": "Ground Bedroom",
+      "vietnamese_name": "Phòng Ngủ Tầng Trệt",
+      "category": "bedroom",
+      "polygon": [
+        [
+          -2.25,
+          -3
+        ],
+        [
+          2.25,
+          -3
+        ],
+        [
+          2.25,
+          2
+        ],
+        [
+          -2.25,
+          2
+        ]
+      ],
+      "area_m2": 22.5,
+      "ceiling_height": 3.4,
+      "materials": {
+        "floor": "oak",
+        "ceiling": "plaster_white",
+        "walls": "warm_white"
+      }
+    },
+    {
+      "id": "r_backyard",
+      "name": "Rear Lightwell & Laundry",
+      "vietnamese_name": "Sân Sau & Giặt Phơi",
+      "category": "outdoor",
+      "polygon": [
+        [
+          -2.25,
+          -9
+        ],
+        [
+          2.25,
+          -9
+        ],
+        [
+          2.25,
+          -3
+        ],
+        [
+          -2.25,
+          -3
+        ]
+      ],
+      "area_m2": 27,
+      "ceiling_height": 3.6,
+      "materials": {
+        "floor": "gravel",
+        "ceiling": "open_sky",
+        "walls": "warm_white"
+      }
+    }
+  ],
+  "furniture_assets": []
+}

@@ -1,0 +1,230 @@
+{
+  "$schema": "https://pickme3d.com/schemas/layout_data.v1.json",
+  "metadata": {
+    "project_id": "04_penthouse_duplex",
+    "project_name": "Grand Horizon Penthouse Duplex",
+    "units": "meters",
+    "coordinate_system": "right_handed_y_up",
+    "scale_pixel_to_meter": 0.015,
+    "dimensions": {
+      "width": 18,
+      "length": 16,
+      "default_ceiling_height": 5.8,
+      "exterior_wall_thickness": 0.22,
+      "interior_wall_thickness": 0.11
+    },
+    "original_blueprint_url": "/blueprint/04_penthouse_duplex.png",
+    "created_at": "2026-11-06T10:23:39.637Z",
+    "version": "1.0.0"
+  },
+  "walls": [
+    {
+      "id": "w_ext_n",
+      "type": "exterior",
+      "start": [
+        -9,
+        -8
+      ],
+      "end": [
+        9,
+        -8
+      ],
+      "thickness": 0.25,
+      "height": 5.8
+    },
+    {
+      "id": "w_ext_e",
+      "type": "exterior",
+      "start": [
+        9,
+        -8
+      ],
+      "end": [
+        9,
+        8
+      ],
+      "thickness": 0.25,
+      "height": 5.8
+    },
+    {
+      "id": "w_ext_s",
+      "type": "exterior",
+      "start": [
+        9,
+        8
+      ],
+      "end": [
+        -9,
+        8
+      ],
+      "thickness": 0.25,
+      "height": 5.8
+    },
+    {
+      "id": "w_ext_w",
+      "type": "exterior",
+      "start": [
+        -9,
+        8
+      ],
+      "end": [
+        -9,
+        -8
+      ],
+      "thickness": 0.25,
+      "height": 5.8
+    },
+    {
+      "id": "w_int_1",
+      "type": "interior",
+      "start": [
+        -1,
+        -8
+      ],
+      "end": [
+        -1,
+        8
+      ],
+      "thickness": 0.15,
+      "height": 3.2
+    },
+    {
+      "id": "w_int_2",
+      "type": "interior",
+      "start": [
+        -9,
+        0
+      ],
+      "end": [
+        -1,
+        0
+      ],
+      "thickness": 0.12,
+      "height": 3.2
+    }
+  ],
+  "openings": [
+    {
+      "id": "op_facade_curtain",
+      "type": "window",
+      "wall_id": "w_ext_s",
+      "center": [
+        4,
+        8
+      ],
+      "width": 7,
+      "height": 5,
+      "sill_height": 0.2,
+      "window_type": "fixed_picture"
+    },
+    {
+      "id": "op_terrace_door",
+      "type": "door",
+      "wall_id": "w_ext_e",
+      "center": [
+        9,
+        4
+      ],
+      "width": 3.2,
+      "height": 3,
+      "sill_height": 0,
+      "door_type": "pocket_sliding"
+    }
+  ],
+  "rooms": [
+    {
+      "id": "r_grand_salon",
+      "name": "Double-Height Grand Salon",
+      "vietnamese_name": "Đại Sảnh Thông Tầng",
+      "category": "living",
+      "polygon": [
+        [
+          -1,
+          -8
+        ],
+        [
+          9,
+          -8
+        ],
+        [
+          9,
+          8
+        ],
+        [
+          -1,
+          8
+        ]
+      ],
+      "area_m2": 160,
+      "ceiling_height": 5.8,
+      "materials": {
+        "floor": "marble",
+        "ceiling": "plaster_white",
+        "walls": "warm_white"
+      }
+    },
+    {
+      "id": "r_cigar_lounge",
+      "name": "Private Library & Cigar Lounge",
+      "vietnamese_name": "Phòng Đọc Sách & Cigar",
+      "category": "living",
+      "polygon": [
+        [
+          -9,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          -1,
+          8
+        ],
+        [
+          -9,
+          8
+        ]
+      ],
+      "area_m2": 64,
+      "ceiling_height": 3.2,
+      "materials": {
+        "floor": "oak",
+        "ceiling": "plaster_white",
+        "walls": "warm_white"
+      }
+    },
+    {
+      "id": "r_gourmet_kitchen",
+      "name": "Chef Kitchen & Wine Cellar",
+      "vietnamese_name": "Bếp Bếp Trưởng & Hầm Rượu",
+      "category": "kitchen",
+      "polygon": [
+        [
+          -9,
+          -8
+        ],
+        [
+          -1,
+          -8
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          -9,
+          0
+        ]
+      ],
+      "area_m2": 64,
+      "ceiling_height": 3.2,
+      "materials": {
+        "floor": "concrete",
+        "ceiling": "plaster_white",
+        "walls": "warm_white"
+      }
+    }
+  ],
+  "furniture_assets": []
+}

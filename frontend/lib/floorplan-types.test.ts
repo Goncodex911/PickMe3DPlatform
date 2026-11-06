@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   validateLayoutData,
   convertBlueprintProjectToLayoutData,
+  updateProjectFromLayoutData,
   CASA_SERRA_PRESET,
   LayoutData,
   WallSegmentZodSchema,
@@ -90,6 +91,30 @@ describe("STORY-THUAN-BP01: LayoutData Schema and Validator", () => {
 
     const parseResult = RoomPolygonZodSchema.safeParse(invalidRoom);
     expect(parseResult.success).toBe(false);
+  });
+
+  it("STORY-THUAN-BP07: should perform 2-way sync between BlueprintProject and LayoutData", () => {
+    const layout = convertBlueprintProjectToLayoutData(CASA_SERRA_PRESET);
+    
+    // Simulate user editing dimensions and room polygons in 2D Correction Canvas
+    layout.metadata.dimensions.width = 18;
+    layout.metadata.dimensions.length = 16;
+    layout.metadata.dimensions.default_ceiling_height = 3.8;
+    layout.rooms[0].polygon = [
+      [-9, -8],
+      [-2, -8],
+      [-2, 0],
+      [-9, 0]
+    ];
+    layout.rooms[0].area_m2 = 56;
+
+    const updatedProject = updateProjectFromLayoutData(CASA_SERRA_PRESET, layout);
+    expect(updatedProject.specs.width).toBe(18);
+    expect(updatedProject.specs.length).toBe(16);
+    expect(updatedProject.specs.totalArea).toBe(288);
+    expect(updatedProject.specs.ceilingHeight).toBe(3.8);
+    expect(updatedProject.rooms[0].bounds).toEqual([-9, -8, -2, 0]);
+    expect(updatedProject.rooms[0].area).toBe(56);
   });
 });
 

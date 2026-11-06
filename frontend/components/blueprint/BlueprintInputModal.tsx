@@ -10,10 +10,12 @@ import {
   FloorMaterialType, 
   Orientation, 
   TimeOfDay,
-  convertBlueprintProjectToLayoutData
+  convertBlueprintProjectToLayoutData,
+  updateProjectFromLayoutData
 } from "@/lib/floorplan-types";
 import { scanBlueprintWithAI } from "@/lib/floorplan-ai-scanner";
 import { exportLayoutDataToGLB } from "@/lib/floorplan-glb-exporter";
+import VectorCorrectionCanvas from "./VectorCorrectionCanvas";
 
 interface BlueprintInputModalProps {
   initialProject?: BlueprintProject;
@@ -32,6 +34,7 @@ export default function BlueprintInputModal({
   const [isScanning, setIsScanning] = useState(false);
   const [isExportingGLB, setIsExportingGLB] = useState(false);
   const [scanMessage, setScanMessage] = useState<string | null>(null);
+  const [isEditingVector, setIsEditingVector] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExportGLB = async () => {
@@ -351,6 +354,16 @@ export default function BlueprintInputModal({
                         </>
                       )}
                     </button>
+
+                    {uploadedImage && (
+                      <button
+                        onClick={() => setIsEditingVector(true)}
+                        className="w-full mt-2 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition bg-cyan-950/60 border border-cyan-500/40 hover:bg-cyan-900/60 text-cyan-300"
+                        title="Mở bộ công cụ vẽ và nắn chỉnh nét tường đè trên ảnh bản vẽ gốc"
+                      >
+                        <span>✏️ Chỉnh Nét Vector Đè Lên Bản Vẽ</span>
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -720,6 +733,13 @@ export default function BlueprintInputModal({
 
           <div className="flex items-center gap-3">
             <button
+              onClick={() => setIsEditingVector(true)}
+              className="px-4 py-2 text-xs font-semibold rounded-lg border border-cyan-500/40 bg-cyan-950/50 text-cyan-300 hover:text-white hover:bg-cyan-900 transition flex items-center gap-1.5"
+              title="Mở bộ công cụ nắn chỉnh nét tường vector 2D trên nền ảnh bản vẽ"
+            >
+              <span>✏️ Nắn Chỉnh Vector 2D</span>
+            </button>
+            <button
               onClick={handleExportGLB}
               disabled={isExportingGLB}
               className="px-4 py-2 text-xs font-semibold rounded-lg border border-neutral-700 bg-neutral-800 text-neutral-200 hover:text-white hover:bg-neutral-700 transition flex items-center gap-1.5 disabled:opacity-50"
@@ -746,6 +766,22 @@ export default function BlueprintInputModal({
         </div>
 
       </div>
+
+      {/* 2D VECTOR CORRECTION CANVAS MODAL (Story 4.1) */}
+      {isEditingVector && (
+        <div className="fixed inset-0 z-[60] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6">
+          <VectorCorrectionCanvas
+            initialLayout={convertBlueprintProjectToLayoutData(project)}
+            onConfirm={(updatedLayout) => {
+              const updatedProject = updateProjectFromLayoutData(project, updatedLayout);
+              setProject(updatedProject);
+              setIsEditingVector(false);
+              setScanMessage("✓ Đã cập nhật tọa độ tường và phòng từ bản vẽ vector 2D!");
+            }}
+            onClose={() => setIsEditingVector(false)}
+          />
+        </div>
+      )}
     </div>
   );
 }

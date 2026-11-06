@@ -1,0 +1,244 @@
+{
+  "$schema": "https://pickme3d.com/schemas/layout_data.v1.json",
+  "metadata": {
+    "project_id": "06_l_shaped_countryside",
+    "project_name": "L-Shaped Countryside Retreat",
+    "units": "meters",
+    "coordinate_system": "right_handed_y_up",
+    "scale_pixel_to_meter": 0.015,
+    "dimensions": {
+      "width": 15,
+      "length": 12,
+      "default_ceiling_height": 3.2,
+      "exterior_wall_thickness": 0.22,
+      "interior_wall_thickness": 0.11
+    },
+    "original_blueprint_url": "/blueprint/06_l_shaped_countryside.png",
+    "created_at": "2026-11-06T10:23:39.638Z",
+    "version": "1.0.0"
+  },
+  "walls": [
+    {
+      "id": "w_ext_n",
+      "type": "exterior",
+      "start": [
+        -7.5,
+        -6
+      ],
+      "end": [
+        7.5,
+        -6
+      ],
+      "thickness": 0.22,
+      "height": 3.2
+    },
+    {
+      "id": "w_ext_e1",
+      "type": "exterior",
+      "start": [
+        7.5,
+        -6
+      ],
+      "end": [
+        7.5,
+        0
+      ],
+      "thickness": 0.22,
+      "height": 3.2
+    },
+    {
+      "id": "w_ext_inner_s",
+      "type": "exterior",
+      "start": [
+        7.5,
+        0
+      ],
+      "end": [
+        0,
+        0
+      ],
+      "thickness": 0.22,
+      "height": 3.2
+    },
+    {
+      "id": "w_ext_inner_e",
+      "type": "exterior",
+      "start": [
+        0,
+        0
+      ],
+      "end": [
+        0,
+        6
+      ],
+      "thickness": 0.22,
+      "height": 3.2
+    },
+    {
+      "id": "w_ext_s",
+      "type": "exterior",
+      "start": [
+        0,
+        6
+      ],
+      "end": [
+        -7.5,
+        6
+      ],
+      "thickness": 0.22,
+      "height": 3.2
+    },
+    {
+      "id": "w_ext_w",
+      "type": "exterior",
+      "start": [
+        -7.5,
+        6
+      ],
+      "end": [
+        -7.5,
+        -6
+      ],
+      "thickness": 0.22,
+      "height": 3.2
+    },
+    {
+      "id": "w_int_wing",
+      "type": "interior",
+      "start": [
+        -2,
+        -6
+      ],
+      "end": [
+        -2,
+        0
+      ],
+      "thickness": 0.11,
+      "height": 3.2
+    }
+  ],
+  "openings": [
+    {
+      "id": "op_terrace_slider",
+      "type": "door",
+      "wall_id": "w_ext_inner_s",
+      "center": [
+        3.5,
+        0
+      ],
+      "width": 2.6,
+      "height": 2.4,
+      "sill_height": 0,
+      "door_type": "pocket_sliding"
+    },
+    {
+      "id": "op_west_bed_win",
+      "type": "window",
+      "wall_id": "w_ext_w",
+      "center": [
+        -7.5,
+        0
+      ],
+      "width": 2,
+      "height": 1.4,
+      "sill_height": 0.9,
+      "window_type": "sliding_glass"
+    }
+  ],
+  "rooms": [
+    {
+      "id": "r_l_living",
+      "name": "Veranda Living Lounge",
+      "vietnamese_name": "Phòng Khách Hướng Hiên",
+      "category": "living",
+      "polygon": [
+        [
+          -2,
+          -6
+        ],
+        [
+          7.5,
+          -6
+        ],
+        [
+          7.5,
+          0
+        ],
+        [
+          -2,
+          0
+        ]
+      ],
+      "area_m2": 57,
+      "ceiling_height": 3.2,
+      "materials": {
+        "floor": "oak",
+        "ceiling": "plaster_white",
+        "walls": "warm_white"
+      }
+    },
+    {
+      "id": "r_l_bed_wing",
+      "name": "Guest Bedroom Wing",
+      "vietnamese_name": "Gian Ngủ Khách",
+      "category": "bedroom",
+      "polygon": [
+        [
+          -7.5,
+          -6
+        ],
+        [
+          -2,
+          -6
+        ],
+        [
+          -2,
+          0
+        ],
+        [
+          -7.5,
+          0
+        ]
+      ],
+      "area_m2": 33,
+      "ceiling_height": 3.2,
+      "materials": {
+        "floor": "oak",
+        "ceiling": "plaster_white",
+        "walls": "warm_white"
+      }
+    },
+    {
+      "id": "r_l_master_wing",
+      "name": "South Wing Master Suite",
+      "vietnamese_name": "Gian Ngủ Phía Nam",
+      "category": "bedroom",
+      "polygon": [
+        [
+          -7.5,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          6
+        ],
+        [
+          -7.5,
+          6
+        ]
+      ],
+      "area_m2": 45,
+      "ceiling_height": 3.2,
+      "materials": {
+        "floor": "oak",
+        "ceiling": "plaster_white",
+        "walls": "warm_white"
+      }
+    }
+  ],
+  "furniture_assets": []
+}
