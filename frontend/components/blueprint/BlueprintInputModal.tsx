@@ -9,9 +9,11 @@ import {
   ArchitecturalStyle, 
   FloorMaterialType, 
   Orientation, 
-  TimeOfDay 
+  TimeOfDay,
+  convertBlueprintProjectToLayoutData
 } from "@/lib/floorplan-types";
 import { scanBlueprintWithAI } from "@/lib/floorplan-ai-scanner";
+import { exportLayoutDataToGLB } from "@/lib/floorplan-glb-exporter";
 
 interface BlueprintInputModalProps {
   initialProject?: BlueprintProject;
@@ -28,8 +30,23 @@ export default function BlueprintInputModal({
   const [project, setProject] = useState<BlueprintProject>(JSON.parse(JSON.stringify(initialProject)));
   const [uploadedImage, setUploadedImage] = useState<string | null>(initialProject.originalBlueprintUrl || null);
   const [isScanning, setIsScanning] = useState(false);
+  const [isExportingGLB, setIsExportingGLB] = useState(false);
   const [scanMessage, setScanMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleExportGLB = async () => {
+    setIsExportingGLB(true);
+    setScanMessage("Đang đóng gói toàn bộ cảnh 3D sang tệp .GLB chuẩn nén...");
+    try {
+      const layoutData = convertBlueprintProjectToLayoutData(project);
+      const res = await exportLayoutDataToGLB(layoutData, { autoDownload: true });
+      setScanMessage(`✓ Đã tải xuống tệp 3D ${res.filename} (${res.sizeKb} KB)!`);
+    } catch (err: any) {
+      setScanMessage(`Lỗi xuất file 3D: ${err?.message || "Không thể xuất .GLB"}`);
+    } finally {
+      setIsExportingGLB(false);
+    }
+  };
 
   // Switch preset
   const handleSelectPreset = (preset: BlueprintProject) => {
@@ -702,6 +719,14 @@ export default function BlueprintInputModal({
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={handleExportGLB}
+              disabled={isExportingGLB}
+              className="px-4 py-2 text-xs font-semibold rounded-lg border border-neutral-700 bg-neutral-800 text-neutral-200 hover:text-white hover:bg-neutral-700 transition flex items-center gap-1.5 disabled:opacity-50"
+              title="Xuất toàn bộ cấu trúc 3D sang định dạng .GLB tiêu chuẩn"
+            >
+              <span>{isExportingGLB ? "⏳ Đang xuất..." : "📥 Tải File 3D (.GLB)"}</span>
+            </button>
             {onClose && (
               <button
                 onClick={onClose}
