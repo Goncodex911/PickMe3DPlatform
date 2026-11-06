@@ -286,12 +286,12 @@ gantt
   *Tôi muốn* có một bộ định nghĩa TypeScript Interface và JSON Schema hoàn chỉnh cho dữ liệu mặt bằng,  
   *Để* các service Frontend, AI Vision và 3D Engine có cùng một tiếng nói chung, không bị sai lệch kiểu dữ liệu.
 - **Tiêu chí chấp nhận (AC):**
-  - [ ] Nâng cấp file [`frontend/lib/floorplan-types.ts`](file:///d:/CODE/PickMe3D/frontend/lib/floorplan-types.ts) hỗ trợ đầy đủ `LayoutData`, `WallSegment`, `OpeningSpec`, `RoomPolygon`, `FurniturePlacement`.
-  - [ ] Viết hàm validator (dùng `zod` hoặc JSON Schema) kiểm tra tính hợp lệ của tọa độ trước khi đưa vào render.
-  - [ ] Có bộ tài liệu mô tả chi tiết hệ tọa độ Right-Handed Y-up và đơn vị đo mét.
+  - [x] Nâng cấp file [`frontend/lib/floorplan-types.ts`](file:///d:/CODE/PickMe3D/frontend/lib/floorplan-types.ts) hỗ trợ đầy đủ `LayoutData`, `WallSegment`, `OpeningSpec`, `RoomPolygon`, `FurniturePlacement`.
+  - [x] Viết hàm validator (dùng `zod` hoặc JSON Schema) kiểm tra tính hợp lệ của tọa độ trước khi đưa vào render.
+  - [x] Có bộ tài liệu mô tả chi tiết hệ tọa độ Right-Handed Y-up và đơn vị đo mét.
 - **Công việc (Tasks):**
-  - [ ] **Task 1.1.1:** Viết TypeScript schema trong `floorplan-types.ts` và export các Zod schemas kiểm tra dữ liệu.
-  - [ ] **Task 1.1.2:** Tạo bộ file mẫu `layout_data_demo_villa.json` và `layout_data_demo_apartment.json` để phục vụ mock test.
+  - [x] **Task 1.1.1:** Viết TypeScript schema trong `floorplan-types.ts` và export các Zod schemas kiểm tra dữ liệu.
+  - [x] **Task 1.1.2:** Tạo bộ file mẫu `layout_data_demo_villa.json` và `layout_data_demo_apartment.json` để phục vụ mock test.
 
 #### 📌 Story 1.2: Xây dựng Thư Viện 3D Asset Nội Thất & Khung Cửa Chuẩn Hóa
 - **Mã:** `STORY-THUAN-BP02`
@@ -300,13 +300,12 @@ gantt
   *Tôi muốn* các đồ vật nội thất được đặt tự động vào đúng cao độ mặt sàn, kích thước chuẩn nhân trắc học,  
   *Để* căn nhà sinh ra trông thực tế, sống động và không bị đồ vật chìm dưới sàn hay lơ lửng giữa phòng.
 - **Tiêu chí chấp nhận (AC):**
-  - [ ] 8 models `.glb` cơ bản được lưu trong `frontend/public/models/furniture/` hoặc CDN.
-  - [ ] 100% models có Pivot Point tại $(0, 0, 0)$ ở tâm chân đáy.
-  
-  - [ ] Dung lượng mỗi file $< 1.5\text{ MB}$, texture được tối ưu hóa tối đa $1024 \times 1024$.
+  - [x] 8 models `.glb` cơ bản được lưu trong `frontend/public/models/furniture/` hoặc CDN.
+  - [x] 100% models có Pivot Point tại $(0, 0, 0)$ ở tâm chân đáy.
+  - [x] Dung lượng mỗi file $< 1.5\text{ MB}$, texture được tối ưu hóa tối đa $1024 \times 1024$.
 - **Công việc (Tasks):**
-  - [ ] **Task 1.2.1:** Kiểm tra, tối ưu hóa vertex và set pivot point cho 8 file GLB mẫu.
-  - [ ] **Task 1.2.2:** Viết catalog metadata `furniture-catalog.json` chứa id, tên tiếng Việt, kích thước bounding box `[w, h, d]` và URL file.
+  - [x] **Task 1.2.1:** Kiểm tra, tối ưu hóa vertex và set pivot point cho 8 file GLB mẫu.
+  - [x] **Task 1.2.2:** Viết catalog metadata `furniture-catalog.json` chứa id, tên tiếng Việt, kích thước bounding box `[w, h, d]` và URL file.
 
 ---
 
@@ -319,12 +318,12 @@ gantt
   *Tôi muốn* AI tự động phân tích và trích xuất danh sách các đoạn tường, cửa đi, cửa sổ và diện tích phòng dưới dạng tọa độ vector,  
   *Để* tôi không cần phải tự vẽ lại bằng tay từ đầu.
 - **Tiêu chí chấp nhận (AC):**
-  - [ ] Cải tiến hàm `scanBlueprintWithAI` trong [`floorplan-ai-scanner.ts`](file:///d:/CODE/PickMe3D/frontend/lib/floorplan-ai-scanner.ts) gửi ảnh kèm prompt chuyên sâu kiến trúc.
-  - [ ] AI trả về đúng cấu trúc JSON chứa mảng `walls`, `openings`, `rooms` theo tỉ lệ tương quan với kích thước thực tế được cung cấp.
-  - [ ] Tỷ lệ parse thành công cấu trúc phòng đạt $> 90\%$ trên các bản vẽ tiêu chuẩn.
+  - [x] Cải tiến hàm `scanBlueprintWithAI` trong [`floorplan-ai-scanner.ts`](file:///d:/CODE/PickMe3D/frontend/lib/floorplan-ai-scanner.ts) gửi ảnh kèm prompt chuyên sâu kiến trúc.
+  - [x] AI trả về đúng cấu trúc JSON chứa mảng `walls`, `openings`, `rooms` theo tỉ lệ tương quan với kích thước thực tế được cung cấp.
+  - [x] Tỷ lệ parse thành công cấu trúc phòng đạt $> 90\%$ trên các bản vẽ tiêu chuẩn.
 - **Công việc (Tasks):**
-  - [ ] **Task 2.1.1:** Xây dựng System Prompt kiến trúc chuyên dụng với Few-shot examples mẫu.
-  - [ ] **Task 2.1.2:** Viết parser chuyển đổi từ tọa độ normalized $(0.0 \to 1.0)$ sang tọa độ hệ mét thực tế dựa trên kích thước $W \times L$ của người dùng.
+  - [x] **Task 2.1.1:** Xây dựng System Prompt kiến trúc chuyên dụng với Few-shot examples mẫu.
+  - [x] **Task 2.1.2:** Viết parser chuyển đổi từ tọa độ normalized $(0.0 \to 1.0)$ sang tọa độ hệ mét thực tế dựa trên kích thước $W \times L$ của người dùng.
 
 #### 📌 Story 2.2: Thuật Toán Nắn Chỉnh & Làm Sạch Dữ Liệu Vector (Vector Cleanup)
 - **Mã:** `STORY-THUAN-BP04`
@@ -333,12 +332,12 @@ gantt
   *Tôi muốn* các đường tường xiên xẹo hoặc hở do AI nhận diện sai lệch tự động được nắn vuông vức và nối liền lạc,  
   *Để* mô hình 3D sinh ra vuông vắn, thẳng thớm và không bị hở khe sáng.
 - **Tiêu chí chấp nhận (AC):**
-  - [ ] **Orthogonalization:** Bất kỳ đoạn tường nào lệch so với trục ngang/dọc trong khoảng $\le 5^\circ$ tự động được nắn về góc $0^\circ, 90^\circ, 180^\circ, 270^\circ$.
-  - [ ] **Wall Snapping:** Các đầu mút tường cách nhau dưới $15\text{ cm}$ tự động hít vào nhau tạo thành đỉnh chung (Shared Vertex).
-  - [ ] **Collinear Merge:** Hai đoạn tường thẳng đồng phẳng liền kề tự động gộp thành một đoạn tường duy nhất.
+  - [x] **Orthogonalization:** Bất kỳ đoạn tường nào lệch so với trục ngang/dọc trong khoảng $\le 5^\circ$ tự động được nắn về góc $0^\circ, 90^\circ, 180^\circ, 270^\circ$.
+  - [x] **Wall Snapping:** Các đầu mút tường cách nhau dưới $15\text{ cm}$ tự động hít vào nhau tạo thành đỉnh chung (Shared Vertex).
+  - [x] **Collinear Merge:** Hai đoạn tường thẳng đồng phẳng liền kề tự động gộp thành một đoạn tường duy nhất.
 - **Công việc (Tasks):**
-  - [ ] **Task 2.2.1:** Viết thuật toán dọn dẹp vector trong [`floorplan-analyzer.ts`](file:///d:/CODE/PickMe3D/frontend/lib/floorplan-analyzer.ts).
-  - [ ] **Task 2.2.2:** Viết bộ test kiểm thử hình học với các trường hợp tường xiên, tường đứt đoạn và góc hở.
+  - [x] **Task 2.2.1:** Viết thuật toán dọn dẹp vector trong [`floorplan-analyzer.ts`](file:///d:/CODE/PickMe3D/frontend/lib/floorplan-analyzer.ts).
+  - [x] **Task 2.2.2:** Viết bộ test kiểm thử hình học với các trường hợp tường xiên, tường đứt đoạn và góc hở.
 
 ---
 
