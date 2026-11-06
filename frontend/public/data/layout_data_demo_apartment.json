@@ -1,0 +1,263 @@
+{
+  "$schema": "https://pickme3d.com/schemas/layout_data.v1.json",
+  "metadata": {
+    "project_id": "apartment_skyline_2br",
+    "project_name": "Căn Hộ Cao Cấp 2PN (Skyline Urban Apartment)",
+    "units": "meters",
+    "coordinate_system": "right_handed_y_up",
+    "scale_pixel_to_meter": 0.015,
+    "dimensions": {
+      "width": 10.0,
+      "length": 8.0,
+      "default_ceiling_height": 2.9,
+      "exterior_wall_thickness": 0.20,
+      "interior_wall_thickness": 0.10
+    },
+    "original_blueprint_url": "/blueprint/nha-lau2.png",
+    "created_at": "2026-11-06T00:00:00.000Z",
+    "version": "1.0.0"
+  },
+  "walls": [
+    {
+      "id": "wall_ext_north",
+      "type": "exterior",
+      "start": [-5.0, -4.0],
+      "end": [5.0, -4.0],
+      "thickness": 0.20,
+      "height": 2.9,
+      "openings": ["win_balcony_living", "win_bed_master"]
+    },
+    {
+      "id": "wall_ext_east",
+      "type": "exterior",
+      "start": [5.0, -4.0],
+      "end": [5.0, 4.0],
+      "thickness": 0.20,
+      "height": 2.9,
+      "openings": ["win_bed_single"]
+    },
+    {
+      "id": "wall_ext_south",
+      "type": "exterior",
+      "start": [5.0, 4.0],
+      "end": [-5.0, 4.0],
+      "thickness": 0.20,
+      "height": 2.9,
+      "openings": ["door_apt_entrance"]
+    },
+    {
+      "id": "wall_ext_west",
+      "type": "exterior",
+      "start": [-5.0, 4.0],
+      "end": [-5.0, -4.0],
+      "thickness": 0.20,
+      "height": 2.9,
+      "openings": []
+    },
+    {
+      "id": "wall_int_living_bed1",
+      "type": "interior",
+      "start": [0.0, -4.0],
+      "end": [0.0, 1.5],
+      "thickness": 0.10,
+      "height": 2.9,
+      "openings": ["door_master_room"]
+    },
+    {
+      "id": "wall_int_hallway_bath",
+      "type": "interior",
+      "start": [0.0, 1.5],
+      "end": [5.0, 1.5],
+      "thickness": 0.10,
+      "height": 2.9,
+      "openings": ["door_bath", "door_bed2"]
+    }
+  ],
+  "openings": [
+    {
+      "id": "door_apt_entrance",
+      "type": "door",
+      "wall_id": "wall_ext_south",
+      "center": [-2.5, 4.0],
+      "width": 1.0,
+      "height": 2.2,
+      "sill_height": 0.0,
+      "door_type": "security_fireproof_door",
+      "rotation_deg": 180
+    },
+    {
+      "id": "door_master_room",
+      "type": "door",
+      "wall_id": "wall_int_living_bed1",
+      "center": [0.0, 0.5],
+      "width": 0.9,
+      "height": 2.1,
+      "sill_height": 0.0,
+      "door_type": "single_swing_wood",
+      "rotation_deg": 90
+    },
+    {
+      "id": "door_bed2",
+      "type": "door",
+      "wall_id": "wall_int_hallway_bath",
+      "center": [3.5, 1.5],
+      "width": 0.9,
+      "height": 2.1,
+      "sill_height": 0.0,
+      "door_type": "single_swing_wood",
+      "rotation_deg": 0
+    },
+    {
+      "id": "door_bath",
+      "type": "door",
+      "wall_id": "wall_int_hallway_bath",
+      "center": [1.2, 1.5],
+      "width": 0.8,
+      "height": 2.1,
+      "sill_height": 0.0,
+      "door_type": "waterproof_aluminum",
+      "rotation_deg": 0
+    },
+    {
+      "id": "win_balcony_living",
+      "type": "window",
+      "wall_id": "wall_ext_north",
+      "center": [-2.5, -4.0],
+      "width": 2.4,
+      "height": 2.3,
+      "sill_height": 0.1,
+      "window_type": "full_height_sliding",
+      "rotation_deg": 0
+    },
+    {
+      "id": "win_bed_master",
+      "type": "window",
+      "wall_id": "wall_ext_north",
+      "center": [2.5, -4.0],
+      "width": 1.8,
+      "height": 1.5,
+      "sill_height": 0.9,
+      "window_type": "bay_window",
+      "rotation_deg": 0
+    },
+    {
+      "id": "win_bed_single",
+      "type": "window",
+      "wall_id": "wall_ext_east",
+      "center": [5.0, 2.8],
+      "width": 1.2,
+      "height": 1.3,
+      "sill_height": 1.0,
+      "window_type": "casement_window",
+      "rotation_deg": 90
+    }
+  ],
+  "rooms": [
+    {
+      "id": "room_apt_living",
+      "name": "Living & Dining",
+      "vietnamese_name": "Phòng Khách & Bếp",
+      "category": "living",
+      "polygon": [
+        [-5.0, -4.0],
+        [0.0, -4.0],
+        [0.0, 4.0],
+        [-5.0, 4.0]
+      ],
+      "area_m2": 40.0,
+      "ceiling_height": 2.9,
+      "materials": {
+        "floor": "oak",
+        "ceiling": "plaster_white_matte",
+        "walls": "wall_paint_warm_white"
+      }
+    },
+    {
+      "id": "room_apt_master",
+      "name": "Master Bedroom",
+      "vietnamese_name": "Phòng Ngủ Lớn",
+      "category": "bedroom",
+      "polygon": [
+        [0.0, -4.0],
+        [5.0, -4.0],
+        [5.0, 1.5],
+        [0.0, 1.5]
+      ],
+      "area_m2": 27.5,
+      "ceiling_height": 2.9,
+      "materials": {
+        "floor": "dark_wood",
+        "ceiling": "plaster_white_matte",
+        "walls": "wall_paint_warm_white"
+      }
+    },
+    {
+      "id": "room_apt_bath",
+      "name": "Bathroom",
+      "vietnamese_name": "Phòng Vệ Sinh",
+      "category": "bath",
+      "polygon": [
+        [0.0, 1.5],
+        [2.5, 1.5],
+        [2.5, 4.0],
+        [0.0, 4.0]
+      ],
+      "area_m2": 6.25,
+      "ceiling_height": 2.7,
+      "materials": {
+        "floor": "tile",
+        "ceiling": "moisture_resistant_board",
+        "walls": "ceramic_marble_tile"
+      }
+    },
+    {
+      "id": "room_apt_bed2",
+      "name": "Secondary Bedroom",
+      "vietnamese_name": "Phòng Ngủ Nhỏ",
+      "category": "bedroom",
+      "polygon": [
+        [2.5, 1.5],
+        [5.0, 1.5],
+        [5.0, 4.0],
+        [2.5, 4.0]
+      ],
+      "area_m2": 6.25,
+      "ceiling_height": 2.9,
+      "materials": {
+        "floor": "oak",
+        "ceiling": "plaster_white_matte",
+        "walls": "wall_paint_warm_white"
+      }
+    }
+  ],
+  "furniture_assets": [
+    {
+      "id": "furn_apt_sofa",
+      "asset_model_id": "sofa_modern_3seat",
+      "category": "living",
+      "position": [-3.0, 0.0, -1.5],
+      "rotation_deg": 90.0,
+      "scale": [0.95, 0.95, 0.95],
+      "glb_url": "/models/furniture/sofa_modern_3seat.glb"
+    },
+    {
+      "id": "furn_apt_bed_master",
+      "asset_model_id": "bed_queen_modern",
+      "category": "bedroom",
+      "position": [2.5, 0.0, -1.8],
+      "rotation_deg": 0.0,
+      "scale": [1.0, 1.0, 1.0],
+      "glb_url": "/models/furniture/bed_queen_modern.glb"
+    },
+    {
+      "id": "furn_apt_toilet",
+      "asset_model_id": "toilet_wall_hung",
+      "category": "bath",
+      "position": [1.2, 0.0, 3.5],
+      "rotation_deg": 180.0,
+      "scale": [1.0, 1.0, 1.0],
+      "glb_url": "/models/furniture/toilet_wall_hung.glb"
+    }
+  ]
+}
+
