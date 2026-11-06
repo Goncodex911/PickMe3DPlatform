@@ -2,7 +2,7 @@
 
 > **Người phụ trách:** Nguyễn Hiệu Thuận (`Goncodex911` / `Gonindex_911`)  
 > **Nhánh làm việc:** `thuan-confirm`  
-> **Phiên bản tài liệu:** 1.2 — Ngày cập nhật: 06/11/2026 (Hoàn thành Giai đoạn 1 Blueprint 3D: Schema & Kho Asset 3D)  
+> **Phiên bản tài liệu:** 1.3 — Ngày cập nhật: 06/11/2026 (Hoàn thành Giai đoạn 1 & Giai đoạn 2 Blueprint 3D: Schema, 3D Assets, AI BIM Scanner & Vector Cleanup)  
 > **Tài liệu đặc tả kiến trúc 3D:** Xem chi tiết tại [BLUEPRINT_3D_DESIGN_SPEC.md](file:///d:/CODE/PickMe3D/BLUEPRINT_3D_DESIGN_SPEC.md)  
 > **Phạm vi trách nhiệm:** Dựng hình 3D bản vẽ kiến trúc (Blueprint 3D), Xuất file 3D công nghiệp, Chợ UI Marketplace & Tích hợp Canvas, Quản lý Cloudinary Media Pipeline, AR & AI Interior.
 
