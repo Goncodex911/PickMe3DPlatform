@@ -1,0 +1,313 @@
+{
+  "$schema": "https://pickme3d.com/schemas/layout_data.v1.json",
+  "metadata": {
+    "project_id": "01_villa_modern_oasis",
+    "project_name": "Modern Villa Oasis with Pool",
+    "units": "meters",
+    "coordinate_system": "right_handed_y_up",
+    "scale_pixel_to_meter": 0.015,
+    "dimensions": {
+      "width": 14,
+      "length": 12,
+      "default_ceiling_height": 3.4,
+      "exterior_wall_thickness": 0.22,
+      "interior_wall_thickness": 0.11
+    },
+    "original_blueprint_url": "/blueprint/01_villa_modern_oasis.png",
+    "created_at": "2026-11-06T10:23:39.636Z",
+    "version": "1.0.0"
+  },
+  "walls": [
+    {
+      "id": "w_ext_n",
+      "type": "exterior",
+      "start": [
+        -7,
+        -6
+      ],
+      "end": [
+        7,
+        -6
+      ],
+      "thickness": 0.22,
+      "height": 3.4
+    },
+    {
+      "id": "w_ext_e",
+      "type": "exterior",
+      "start": [
+        7,
+        -6
+      ],
+      "end": [
+        7,
+        6
+      ],
+      "thickness": 0.22,
+      "height": 3.4
+    },
+    {
+      "id": "w_ext_s",
+      "type": "exterior",
+      "start": [
+        7,
+        6
+      ],
+      "end": [
+        -7,
+        6
+      ],
+      "thickness": 0.22,
+      "height": 3.4
+    },
+    {
+      "id": "w_ext_w",
+      "type": "exterior",
+      "start": [
+        -7,
+        6
+      ],
+      "end": [
+        -7,
+        -6
+      ],
+      "thickness": 0.22,
+      "height": 3.4
+    },
+    {
+      "id": "w_int_div_x",
+      "type": "interior",
+      "start": [
+        0,
+        -6
+      ],
+      "end": [
+        0,
+        6
+      ],
+      "thickness": 0.11,
+      "height": 3.4
+    },
+    {
+      "id": "w_int_div_z1",
+      "type": "interior",
+      "start": [
+        -7,
+        0
+      ],
+      "end": [
+        0,
+        0
+      ],
+      "thickness": 0.11,
+      "height": 3.4
+    },
+    {
+      "id": "w_int_div_z2",
+      "type": "interior",
+      "start": [
+        0,
+        1
+      ],
+      "end": [
+        7,
+        1
+      ],
+      "thickness": 0.11,
+      "height": 3.4
+    }
+  ],
+  "openings": [
+    {
+      "id": "op_main_door",
+      "type": "door",
+      "wall_id": "w_ext_s",
+      "center": [
+        -3.5,
+        6
+      ],
+      "width": 1.8,
+      "height": 2.4,
+      "sill_height": 0,
+      "door_type": "double_glass_swing"
+    },
+    {
+      "id": "op_living_win",
+      "type": "window",
+      "wall_id": "w_ext_w",
+      "center": [
+        -7,
+        -3
+      ],
+      "width": 2.4,
+      "height": 1.6,
+      "sill_height": 0.8,
+      "window_type": "fixed_picture"
+    },
+    {
+      "id": "op_bed_win",
+      "type": "window",
+      "wall_id": "w_ext_e",
+      "center": [
+        7,
+        -2.5
+      ],
+      "width": 2,
+      "height": 1.4,
+      "sill_height": 0.9,
+      "window_type": "sliding_glass"
+    },
+    {
+      "id": "op_patio_portal",
+      "type": "door",
+      "wall_id": "w_ext_n",
+      "center": [
+        3.5,
+        -6
+      ],
+      "width": 3,
+      "height": 2.6,
+      "sill_height": 0,
+      "door_type": "pocket_sliding"
+    }
+  ],
+  "rooms": [
+    {
+      "id": "room_living",
+      "name": "Living Lounge",
+      "vietnamese_name": "Phòng Khách",
+      "category": "living",
+      "polygon": [
+        [
+          -7,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          6
+        ],
+        [
+          -7,
+          6
+        ]
+      ],
+      "area_m2": 42,
+      "ceiling_height": 3.4,
+      "materials": {
+        "floor": "marble",
+        "ceiling": "plaster_white",
+        "walls": "warm_white"
+      }
+    },
+    {
+      "id": "room_kitchen",
+      "name": "Kitchen & Bar",
+      "vietnamese_name": "Bếp & Quầy Bar",
+      "category": "kitchen",
+      "polygon": [
+        [
+          0,
+          1
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          7,
+          6
+        ],
+        [
+          0,
+          6
+        ]
+      ],
+      "area_m2": 35,
+      "ceiling_height": 3.4,
+      "materials": {
+        "floor": "concrete",
+        "ceiling": "plaster_white",
+        "walls": "warm_white"
+      }
+    },
+    {
+      "id": "room_master_bed",
+      "name": "Master Bedroom",
+      "vietnamese_name": "Phòng Ngủ Master",
+      "category": "bedroom",
+      "polygon": [
+        [
+          0,
+          -6
+        ],
+        [
+          7,
+          -6
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "area_m2": 49,
+      "ceiling_height": 3.4,
+      "materials": {
+        "floor": "oak",
+        "ceiling": "plaster_white",
+        "walls": "warm_white"
+      }
+    },
+    {
+      "id": "room_patio",
+      "name": "Inner Olive Patio",
+      "vietnamese_name": "Sân Trong Ô-liu",
+      "category": "outdoor",
+      "polygon": [
+        [
+          -7,
+          -6
+        ],
+        [
+          0,
+          -6
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          -7,
+          0
+        ]
+      ],
+      "area_m2": 42,
+      "ceiling_height": 3.4,
+      "materials": {
+        "floor": "travertine",
+        "ceiling": "open_sky",
+        "walls": "warm_white"
+      }
+    }
+  ],
+  "furniture_assets": [
+    {
+      "id": "f_sofa",
+      "asset_model_id": "furn_sofa_l_shape",
+      "category": "living",
+      "position": [
+        -3.5,
+        0,
+        3
+      ],
+      "rotation_deg": 0
+    }
+  ]
+}

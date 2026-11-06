@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import * as THREE from "three";
 import { BlueprintProject, RoomSpec, convertBlueprintProjectToLayoutData } from "@/lib/floorplan-types";
 import { exportLayoutDataToGLB } from "@/lib/floorplan-glb-exporter";
+import { cleanupThreeScene } from "@/lib/three-cleanup";
+import FloorLayerToolbar, { CameraMode } from "./FloorLayerToolbar";
 
 interface CasaSerraViewerProps {
   project: BlueprintProject;
@@ -44,6 +46,76 @@ export default function CasaSerraViewer({
   const [zoomScale, setZoomScale] = useState<number>(1.0);
   const [isEditingRoom, setIsEditingRoom] = useState<boolean>(false);
   const [isExportingGLB, setIsExportingGLB] = useState<boolean>(false);
+
+  // Layer & Camera Controls (Phase 4 Story 4.2)
+  const [cameraMode, setCameraMode] = useState<CameraMode>("orbit");
+  const [showCeilings, setShowCeilings] = useState<boolean>(true);
+  const [showWalls, setShowWalls] = useState<boolean>(true);
+  const [showFurniture, setShowFurniture] = useState<boolean>(true);
+  const [showLandscape, setShowLandscape] = useState<boolean>(true);
+  const [isRulerActive, setIsRulerActive] = useState<boolean>(false);
+  const [measuredDistance, setMeasuredDistance] = useState<number | null>(null);
+
+  const cameraModeRef = useRef<CameraMode>("orbit");
+  const showCeilingsRef = useRef<boolean>(true);
+  const showWallsRef = useRef<boolean>(true);
+  const showFurnitureRef = useRef<boolean>(true);
+  const showLandscapeRef = useRef<boolean>(true);
+  const isRulerActiveRef = useRef<boolean>(false);
+
+  useEffect(() => { cameraModeRef.current = cameraMode; }, [cameraMode]);
+  useEffect(() => { showCeilingsRef.current = showCeilings; }, [showCeilings]);
+  useEffect(() => { showWallsRef.current = showWalls; }, [showWalls]);
+  useEffect(() => { showFurnitureRef.current = showFurniture; }, [showFurniture]);
+  useEffect(() => { showLandscapeRef.current = showLandscape; }, [showLandscape]);
+  useEffect(() => { isRulerActiveRef.current = isRulerActive; }, [isRulerActive]);
+
+  // 3D Measurement Ruler references
+  const rulerGroupRef = useRef<THREE.Group | null>(null);
+  const rulerPointsRef = useRef<THREE.Vector3[]>([]);
+  const rulerMarkersRef = useRef<THREE.Mesh[]>([]);
+  const rulerLineRef = useRef<THREE.Line | null>(null);
+
+  const clearMeasurement = useCallback(() => {
+    if (rulerGroupRef.current) {
+      rulerGroupRef.current.clear();
+    }
+    rulerMarkersRef.current = [];
+    rulerLineRef.current = null;
+    rulerPointsRef.current = [];
+    setMeasuredDistance(null);
+  }, []);
+
+  // First-person walkthrough keyboard listeners
+  const keysDown = useRef<Record<string, boolean>>({});
+  const walkPos = useRef(new THREE.Vector3(0, 1.65, 0));
+  const fpsAngles = useRef({ yaw: 0, pitch: 0 });
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      keysDown.current[e.key.toLowerCase()] = true;
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      keysDown.current[e.key.toLowerCase()] = false;
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, []);
+
+  const handleCameraModeChange = (mode: CameraMode) => {
+    setCameraMode(mode);
+    if (mode === "walkthrough") {
+      walkPos.current.set(currentCamPos.current.x, 1.65, currentCamPos.current.z);
+      fpsAngles.current.yaw = lookOffset.current.yaw;
+      fpsAngles.current.pitch = lookOffset.current.pitch;
+    } else if (mode === "top_down") {
+      lookOffset.current = { yaw: 0, pitch: 0 };
+    }
+  };
 
   const handleExportGLB = async () => {
     setIsExportingGLB(true);
@@ -126,14 +198,17 @@ export default function CasaSerraViewer({
     return () => window.removeEventListener("wheel", handleGlobalWheel);
   }, [project]);
 
-  // 2. MOUSE DRAG LOOK-AROUND (Allows 360° exploration inside any room)
+  // 2. MOUSE DRAG LOOK-AROUND & 3D RULER CLICK
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
+    let hasDragged = false;
+
     const onMouseDown = (e: MouseEvent) => {
-      if (scrollProgressRef.current <= 0.15) return;
+      if (scrollProgressRef.current <= 0.15 && cameraModeRef.current === "orbit") return;
       isDragging.current = true;
+      hasDragged = false;
       dragStart.current = { x: e.clientX, y: e.clientY };
     };
 
@@ -141,26 +216,88 @@ export default function CasaSerraViewer({
       if (!isDragging.current) return;
       const dx = e.clientX - dragStart.current.x;
       const dy = e.clientY - dragStart.current.y;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+        hasDragged = true;
+      }
       dragStart.current = { x: e.clientX, y: e.clientY };
 
-      lookOffset.current.yaw -= dx * 0.004;
-      lookOffset.current.pitch = Math.max(-0.65, Math.min(0.65, lookOffset.current.pitch - dy * 0.003));
+      if (cameraModeRef.current === "walkthrough") {
+        fpsAngles.current.yaw -= dx * 0.0035;
+        fpsAngles.current.pitch = Math.max(-1.3, Math.min(1.3, fpsAngles.current.pitch - dy * 0.003));
+      } else {
+        lookOffset.current.yaw -= dx * 0.004;
+        lookOffset.current.pitch = Math.max(-0.65, Math.min(0.65, lookOffset.current.pitch - dy * 0.003));
+      }
     };
 
     const onMouseUp = () => {
       isDragging.current = false;
     };
 
+    const onContainerClick = (e: MouseEvent) => {
+      if (hasDragged) return; // Prevent placing measurement point when dragging view
+      if (!isRulerActiveRef.current || !containerRef.current || !cameraRef.current || !rulerGroupRef.current) return;
+
+      const rect = containerRef.current.getBoundingClientRect();
+      const mouse = new THREE.Vector2(
+        ((e.clientX - rect.left) / rect.width) * 2 - 1,
+        -((e.clientY - rect.top) / rect.height) * 2 + 1
+      );
+
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(mouse, cameraRef.current);
+
+      const targets: THREE.Object3D[] = [];
+      if (wallGroupRef.current) targets.push(wallGroupRef.current);
+      if (floorGroupRef.current) targets.push(floorGroupRef.current);
+
+      const intersects = raycaster.intersectObjects(targets, true);
+      if (intersects.length > 0) {
+        const hitPoint = intersects[0].point;
+
+        if (rulerPointsRef.current.length >= 2) {
+          clearMeasurement();
+        }
+
+        const sphereGeo = new THREE.SphereGeometry(0.12, 16, 16);
+        const sphereMat = new THREE.MeshBasicMaterial({ color: 0x10b981 });
+        const sphere = new THREE.Mesh(sphereGeo, sphereMat);
+        sphere.position.copy(hitPoint);
+        rulerGroupRef.current.add(sphere);
+        rulerMarkersRef.current.push(sphere);
+
+        rulerPointsRef.current.push(hitPoint.clone());
+
+        if (rulerPointsRef.current.length === 2) {
+          const p1 = rulerPointsRef.current[0];
+          const p2 = rulerPointsRef.current[1];
+          const dist = p1.distanceTo(p2);
+          setMeasuredDistance(dist);
+
+          const lineGeo = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+          const lineMat = new THREE.LineBasicMaterial({
+            color: 0x10b981,
+            linewidth: 3
+          });
+          const line = new THREE.Line(lineGeo, lineMat);
+          rulerGroupRef.current.add(line);
+          rulerLineRef.current = line;
+        }
+      }
+    };
+
     container.addEventListener("mousedown", onMouseDown);
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
+    container.addEventListener("click", onContainerClick);
 
     return () => {
       container.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
+      container.removeEventListener("click", onContainerClick);
     };
-  }, []);
+  }, [clearMeasurement]);
 
   // 3. THREE.JS INITIALIZATION WITH AUTHENTIC CASA SERRA LIGHTING & ENVIRONMENT
   useEffect(() => {
@@ -234,18 +371,21 @@ export default function CasaSerraViewer({
     const wallGroup = new THREE.Group();
     const ceilingGroup = new THREE.Group();
     const furnitureGroup = new THREE.Group();
+    const rulerGroup = new THREE.Group();
 
     scene.add(landscapeGroup);
     scene.add(floorGroup);
     scene.add(wallGroup);
     scene.add(ceilingGroup);
     scene.add(furnitureGroup);
+    scene.add(rulerGroup);
 
     landscapeGroupRef.current = landscapeGroup;
     floorGroupRef.current = floorGroup;
     wallGroupRef.current = wallGroup;
     ceilingGroupRef.current = ceilingGroup;
     furnitureGroupRef.current = furnitureGroup;
+    rulerGroupRef.current = rulerGroup;
 
     // Build the Full 3D Architectural Model with Landscape, Ceilings, and Furniture
     buildArchitecturalScene(scene, landscapeGroup, floorGroup, wallGroup, ceilingGroup, furnitureGroup);
@@ -270,19 +410,68 @@ export default function CasaSerraViewer({
           cameraRef.current.fov = THREE.MathUtils.lerp(cameraRef.current.fov, targetFov, 0.06);
           cameraRef.current.updateProjectionMatrix();
 
-          // Smooth lerp camera movement
-          currentCamPos.current.lerp(targetCamPos.current, 0.075);
-          currentCamLook.current.lerp(targetCamLook.current, 0.075);
+          if (cameraModeRef.current === "walkthrough") {
+            // First-person WASD Walkthrough
+            const speed = 0.085;
+            const yaw = fpsAngles.current.yaw;
+            const pitch = fpsAngles.current.pitch;
 
-          cameraRef.current.position.copy(currentCamPos.current);
+            const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+            const right = new THREE.Vector3(-Math.cos(yaw), 0, Math.sin(yaw));
 
-          // Apply interactive lookOffset (mouse dragging)
-          const lookDir = currentCamLook.current.clone().sub(currentCamPos.current);
-          if (p > 0.15 && (lookOffset.current.yaw !== 0 || lookOffset.current.pitch !== 0)) {
-            lookDir.applyAxisAngle(new THREE.Vector3(0, 1, 0), lookOffset.current.yaw);
-            lookDir.y += lookOffset.current.pitch * 2.8;
+            if (keysDown.current["w"] || keysDown.current["arrowup"]) {
+              walkPos.current.addScaledVector(forward, speed);
+            }
+            if (keysDown.current["s"] || keysDown.current["arrowdown"]) {
+              walkPos.current.addScaledVector(forward, -speed);
+            }
+            if (keysDown.current["a"] || keysDown.current["arrowleft"]) {
+              walkPos.current.addScaledVector(right, speed);
+            }
+            if (keysDown.current["d"] || keysDown.current["arrowright"]) {
+              walkPos.current.addScaledVector(right, -speed);
+            }
+
+            walkPos.current.y = 1.65;
+            currentCamPos.current.copy(walkPos.current);
+            targetCamPos.current.copy(walkPos.current);
+
+            const lookDir = new THREE.Vector3(
+              -Math.sin(yaw) * Math.cos(pitch),
+              Math.sin(pitch),
+              -Math.cos(yaw) * Math.cos(pitch)
+            );
+            cameraRef.current.position.copy(walkPos.current);
+            cameraRef.current.lookAt(walkPos.current.clone().add(lookDir));
+          } else if (cameraModeRef.current === "top_down") {
+            // Top-down Orthographic-style Perspective
+            const bW = project.specs.width || 14;
+            const bL = project.specs.length || 12;
+            const maxDim = Math.max(bW, bL, 14);
+            const altitude = (maxDim * 0.85) / zoomScale;
+
+            targetCamPos.current.set(0, altitude, 0.001);
+            targetCamLook.current.set(0, 0, 0);
+
+            currentCamPos.current.lerp(targetCamPos.current, 0.08);
+            currentCamLook.current.lerp(targetCamLook.current, 0.08);
+            cameraRef.current.position.copy(currentCamPos.current);
+            cameraRef.current.lookAt(currentCamLook.current);
+          } else {
+            // Smooth lerp camera movement
+            currentCamPos.current.lerp(targetCamPos.current, 0.075);
+            currentCamLook.current.lerp(targetCamLook.current, 0.075);
+
+            cameraRef.current.position.copy(currentCamPos.current);
+
+            // Apply interactive lookOffset (mouse dragging)
+            const lookDir = currentCamLook.current.clone().sub(currentCamPos.current);
+            if (p > 0.15 && (lookOffset.current.yaw !== 0 || lookOffset.current.pitch !== 0)) {
+              lookDir.applyAxisAngle(new THREE.Vector3(0, 1, 0), lookOffset.current.yaw);
+              lookDir.y += lookOffset.current.pitch * 2.8;
+            }
+            cameraRef.current.lookAt(currentCamPos.current.clone().add(lookDir));
           }
-          cameraRef.current.lookAt(currentCamPos.current.clone().add(lookDir));
         }
 
         // Wall Extrusion: 0.0 in 2D, extruding up to 1.0 in 3D
@@ -291,17 +480,17 @@ export default function CasaSerraViewer({
 
         if (wallGroupRef.current) {
           wallGroupRef.current.scale.set(1, currentExtrusion, 1);
-          wallGroupRef.current.visible = currentExtrusion > 0.005;
+          wallGroupRef.current.visible = showWallsRef.current && currentExtrusion > 0.005;
         }
 
         // Ceilings appear when walls are fully upright
         if (ceilingGroupRef.current) {
-          ceilingGroupRef.current.visible = p > 0.22 && p < 0.92;
+          ceilingGroupRef.current.visible = showCeilingsRef.current && p > 0.22 && p < 0.92;
         }
 
         // Exterior Landscape fades in as user enters 3D
         if (landscapeGroupRef.current) {
-          landscapeGroupRef.current.visible = currentExtrusion > 0.08;
+          landscapeGroupRef.current.visible = showLandscapeRef.current && currentExtrusion > 0.08;
         }
 
         // 2D Blueprint Floorplan fades out when 3D rises
@@ -330,7 +519,7 @@ export default function CasaSerraViewer({
 
         // Furniture appears seamlessly as walls rise
         if (furnitureGroupRef.current) {
-          furnitureGroupRef.current.visible = currentExtrusion > 0.15;
+          furnitureGroupRef.current.visible = showFurnitureRef.current && currentExtrusion > 0.15;
           furnitureGroupRef.current.position.y = (currentExtrusion - 1) * 0.65;
         }
 
@@ -361,10 +550,7 @@ export default function CasaSerraViewer({
     return () => {
       window.removeEventListener("resize", handleResize);
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-      renderer.dispose();
-      if (containerRef.current && renderer.domElement) {
-        containerRef.current.removeChild(renderer.domElement);
-      }
+      cleanupThreeScene(scene, renderer);
     };
   }, [project, zoomScale, activeRoomIndex]);
 
@@ -1457,6 +1643,30 @@ export default function CasaSerraViewer({
           )}
         </div>
       </header>
+
+      {/* 3D CAMERA MODES, LAYER TOGGLES & 3D RULER TOOLBAR (Story 4.2) */}
+      <FloorLayerToolbar
+        cameraMode={cameraMode}
+        onCameraModeChange={handleCameraModeChange}
+        showCeilings={showCeilings}
+        onToggleCeilings={() => setShowCeilings((v) => !v)}
+        showWalls={showWalls}
+        onToggleWalls={() => setShowWalls((v) => !v)}
+        showFurniture={showFurniture}
+        onToggleFurniture={() => setShowFurniture((v) => !v)}
+        showLandscape={showLandscape}
+        onToggleLandscape={() => setShowLandscape((v) => !v)}
+        isRulerActive={isRulerActive}
+        onToggleRuler={() => {
+          setIsRulerActive((v) => {
+            const next = !v;
+            if (!next) clearMeasurement();
+            return next;
+          });
+        }}
+        measuredDistance={measuredDistance}
+        onClearMeasurement={clearMeasurement}
+      />
 
       {/* 2D ZOOM CONTROLS */}
       {scrollProgress <= 0.08 && (
