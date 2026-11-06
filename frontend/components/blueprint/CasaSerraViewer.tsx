@@ -2,7 +2,8 @@
 
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import * as THREE from "three";
-import { BlueprintProject, RoomSpec } from "@/lib/floorplan-types";
+import { BlueprintProject, RoomSpec, convertBlueprintProjectToLayoutData } from "@/lib/floorplan-types";
+import { exportLayoutDataToGLB } from "@/lib/floorplan-glb-exporter";
 
 interface CasaSerraViewerProps {
   project: BlueprintProject;
@@ -42,6 +43,20 @@ export default function CasaSerraViewer({
   const [activeRoomIndex, setActiveRoomIndex] = useState<number>(0);
   const [zoomScale, setZoomScale] = useState<number>(1.0);
   const [isEditingRoom, setIsEditingRoom] = useState<boolean>(false);
+  const [isExportingGLB, setIsExportingGLB] = useState<boolean>(false);
+
+  const handleExportGLB = async () => {
+    setIsExportingGLB(true);
+    try {
+      const layoutData = convertBlueprintProjectToLayoutData(project);
+      await exportLayoutDataToGLB(layoutData, { autoDownload: true });
+    } catch (err) {
+      console.error("Failed to export GLB:", err);
+      alert("Không thể xuất file 3D .GLB. Vui lòng thử lại!");
+    } finally {
+      setIsExportingGLB(false);
+    }
+  };
 
   // Three.js Core References
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -1418,6 +1433,17 @@ export default function CasaSerraViewer({
               <span>Tải Bản Vẽ 2D</span>
             </button>
           )}
+
+          {/* Export 3D GLB Button */}
+          <button
+            onClick={handleExportGLB}
+            disabled={isExportingGLB}
+            className="px-4 py-1.5 rounded-full border border-amber-600 bg-amber-500/90 hover:bg-amber-500 text-neutral-950 font-mono text-xs font-bold tracking-wider uppercase shadow-sm transition flex items-center gap-1.5 disabled:opacity-50"
+            title="Tải toàn bộ cảnh 3D về máy dưới dạng file .GLB"
+          >
+            <span>{isExportingGLB ? "⏳" : "📥"}</span>
+            <span>{isExportingGLB ? "Đang Xuất..." : "Xuất 3D (.GLB)"}</span>
+          </button>
 
           {/* Revert to Demo */}
           {isCustomUploaded && onResetToDemo && (
