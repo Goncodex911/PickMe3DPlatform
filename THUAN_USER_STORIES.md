@@ -2,7 +2,8 @@
 
 > **Người phụ trách:** Nguyễn Hiệu Thuận (`Goncodex911` / `Gonindex_911`)  
 > **Nhánh làm việc:** `thuan-confirm`  
-> **Phiên bản tài liệu:** 1.0 — Ngày lập: 05/11/2026  
+> **Phiên bản tài liệu:** 1.2 — Ngày cập nhật: 06/11/2026 (Hoàn thành Giai đoạn 1 Blueprint 3D: Schema & Kho Asset 3D)  
+> **Tài liệu đặc tả kiến trúc 3D:** Xem chi tiết tại [BLUEPRINT_3D_DESIGN_SPEC.md](file:///d:/CODE/PickMe3D/BLUEPRINT_3D_DESIGN_SPEC.md)  
 > **Phạm vi trách nhiệm:** Dựng hình 3D bản vẽ kiến trúc (Blueprint 3D), Xuất file 3D công nghiệp, Chợ UI Marketplace & Tích hợp Canvas, Quản lý Cloudinary Media Pipeline, AR & AI Interior.
 
 ---
@@ -13,16 +14,17 @@
 flowchart TD
     E1["Epic 1: Dựng 3D Bản Vẽ Kiến Trúc (Blueprint 3D & AI)"] --> E2["Epic 2: Xuất File 3D Công Nghiệp (GLB/GLTF/DXF)"]
     E1 --> E5["Epic 5: Trải Nghiệm AR & Đổi Nội Thất AI (Phase 2)"]
-    E3["Epic 3: Đồng Bộ DB & Tích Hợp Chợ UI Marketplace"] --> E4["Epic 4: Tối Ưu Pipeline Cloudinary & Hiệu Năng Three.js"]
+    E3["Epic 3: Đồng Bộ DB & Tích Hợp Chợ UI Marketplace (HOÀN THÀNH)"] --> E4["Epic 4: Tối Ưu Pipeline Cloudinary & Hiệu Năng Three.js"]
+    style E3 fill:#10b981,stroke:#059669,color:#fff
 ```
 
-| Epic ID | Tên Epic | Mức độ ưu tiên | Ước tính |
-|---|---|---|---|
-| **EPIC-01** | Hoàn thiện Phân tích Bản vẽ & Tái tạo Không gian 3D (Blueprint 3D) | 🔥 P0 (Cao nhất) | 2 tuần |
-| **EPIC-02** | Xuất Dữ liệu 3D Tiêu Chuẩn Công Nghiệp (`.GLB`, `.GLTF`, `.DXF`) | 🔥 P0 (Cao nhất) | 4 ngày |
-| **EPIC-03** | Lưu Trữ DB & Cầu Nối UI Marketplace vào Canvas Editor | 🟡 P1 (Ưu tiên cao) | 1 tuần |
-| **EPIC-04** | Tối Ưu Cloudinary Media Pipeline & Hiệu Năng Render Three.js | 🟡 P1 (Ưu tiên cao) | 4 ngày |
-| **EPIC-05** | AR View Quét Sàn Thực Tế & AI Interior Re-Texture (Phase 2) | 🔵 P2 (Nâng cao) | 2 tuần |
+| Epic ID | Tên Epic | Mức độ ưu tiên | Trạng thái | Ước tính |
+|---|---|---|---|---|
+| **EPIC-01** | Hoàn thiện Phân tích Bản vẽ & Tái tạo Không gian 3D (Blueprint 3D) | 🔥 P0 (Cao nhất) | 🟡 Đang thực hiện | 2 tuần |
+| **EPIC-02** | Xuất Dữ liệu 3D Tiêu Chuẩn Công Nghiệp (`.GLB`, `.GLTF`, `.DXF`) | 🔥 P0 (Cao nhất) | ⏳ Chờ làm | 4 ngày |
+| **EPIC-03** | Lưu Trữ DB & Cầu Nối UI Marketplace vào Canvas Editor | 🟡 P1 (Ưu tiên cao) | ✅ Đã hoàn thành (Commit `0aee723`) | Đã xong |
+| **EPIC-04** | Tối Ưu Cloudinary Media Pipeline & Hiệu Năng Render Three.js | 🟡 P1 (Ưu tiên cao) | ⏳ Chờ làm | 4 ngày |
+| **EPIC-05** | AR View Quét Sàn Thực Tế & AI Interior Re-Texture (Phase 2) | 🔵 P2 (Nâng cao) | ⏳ Chờ làm | 2 tuần |
 
 ---
 
@@ -116,7 +118,7 @@ flowchart TD
 
 ---
 
-## 🛒 EPIC-03: Đồng Bộ Database & Tích Hợp Chợ UI Marketplace Vào Canvas
+## 🛒 EPIC-03: Đồng Bộ Database & Tích Hợp Chợ UI Marketplace Vào Canvas ✅ (HOÀN THÀNH — Commit `0aee723`)
 
 ### 📌 Story 3.1: Cơ chế lưu trữ và quản lý bản quyền mua template UI trên MongoDB
 - **Mã:** `STORY-THUAN-06`
@@ -221,17 +223,17 @@ flowchart TD
 gantt
     title Lộ Trình Công Việc Của Thuận (Sprint 1 -> Sprint 4)
     dateFormat  YYYY-MM-DD
-    section Sprint 1 (Ưu tiên số 1)
+    section Hoàn Thành (Done)
+    MongoDB Model & API Purchase           :done, sp2_1, 2026-11-05, 1d
+    Nút Chèn Marketplace vào Canvas       :done, sp2_2, 2026-11-05, 1d
+    section Sprint 1 (Đang làm - P0)
     AI Parser & Dựng Tường 3D Modal       :active, sp1_1, 2026-11-05, 7d
     Xuất File 3D (.GLB/.GLTF)              :sp1_2, after sp1_1, 4d
-    section Sprint 2 (Đồng bộ Marketplace)
-    MongoDB Model & API Purchase           :sp2_1, 2026-11-16, 4d
-    Nút Chèn Marketplace vào Canvas       :sp2_2, after sp2_1, 4d
-    section Sprint 3 (Tối ưu & CAD)
-    Tối ưu Cloudinary & Three.js 60FPS    :sp3_1, 2026-11-24, 4d
+    section Sprint 2 (Tối ưu & CAD)
+    Tối ưu Cloudinary & Three.js 60FPS    :sp3_1, 2026-11-16, 4d
     Xuất Bản Vẽ CAD (.DXF)                 :sp3_2, after sp3_1, 3d
-    section Sprint 4 (Phase 2 Đột phá)
-    AR View Mobile (USDZ & WebXR)         :sp4_1, 2026-12-01, 6d
+    section Sprint 3 (Phase 2 Đột phá)
+    AR View Mobile (USDZ & WebXR)         :sp4_1, 2026-11-25, 6d
     AI Interior Re-Texture                 :sp4_2, after sp4_1, 5d
 ```
 
@@ -241,6 +243,7 @@ gantt
 
 - [ ] **Độ chính xác của 3D Viewer:** Tường không bị lủng mặt (Normals), cửa đi có thể click để mở/đóng, camera không bị giật lag.
 - [ ] **Tính toàn vẹn của File 3D:** File `.GLB` xuất ra mở được trên Blender và Windows 3D Viewer mà không bị mất vật liệu.
-- [ ] **Đồng bộ tài khoản:** Mua template xong mở tab ẩn danh hoặc trình duyệt khác đăng nhập vẫn thấy template đã mua.
+- [x] **Đồng bộ tài khoản:** Mua template xong mở tab ẩn danh hoặc trình duyệt khác đăng nhập vẫn thấy template đã mua. *(Đã hoàn thành trong EPIC-03)*
+- [x] **Nút chèn 1-click vào Editor:** Từ Marketplace có thể bấm "Chèn vào Canvas ↗" để mở ngay Editor và gắn animation. *(Đã hoàn thành trong EPIC-03)*
 - [ ] **Bảo mật mã nguồn:** Không hardcode API key Cloudinary hay Gemini vào mã nguồn frontend; toàn bộ thông qua biến môi trường hoặc API backend.
 

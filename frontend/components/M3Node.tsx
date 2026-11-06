@@ -1206,6 +1206,11 @@ ${demoScript}
             alignItems: "center",
             justifyContent: "center",
             overflow: "hidden",
+            borderRadius: isSingleButton ? 28 : 16,
+            boxShadow: isInteractiveOnCanvas
+              ? "0 0 0 2px #22c55e, 0 8px 24px rgba(34,197,94,0.22)"
+              : undefined,
+            transition: "box-shadow 0.2s ease",
           }}
         >
           {srcDoc ? (
@@ -1227,10 +1232,42 @@ ${demoScript}
                 }}
                 title={title}
               />
-              {/* Overlay trong suốt khi ở chế độ canvas edit để nhấp chọn và kéo thả node mượt mà không bị iframe nuốt con trỏ */}
+              {/* Badge thông báo trạng thái đang tương tác trực tiếp */}
+              {interactive && isInteractiveOnCanvas && (
+                <div
+                  aria-hidden
+                  style={{
+                    position: "absolute",
+                    top: 6,
+                    right: 8,
+                    zIndex: 10,
+                    background: "rgba(34, 197, 94, 0.95)",
+                    color: "#000000",
+                    fontSize: 9,
+                    fontWeight: 800,
+                    padding: "2px 7px",
+                    borderRadius: 12,
+                    pointerEvents: "none",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    boxShadow: "0 2px 8px rgba(34, 197, 94, 0.4)",
+                    letterSpacing: "0.5px",
+                    userSelect: "none",
+                  }}
+                >
+                  <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#000" }} />
+                  LIVE
+                </div>
+              )}
+              {/* Overlay trong suốt khi ở chế độ canvas edit để nhấp chọn và kéo thả node; nhấp đúp để bật tương tác trực tiếp */}
               {interactive && !isInteractiveOnCanvas && (
                 <div
                   aria-hidden
+                  onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    window.dispatchEvent(new CustomEvent("pm:toggle_interactive", { detail: { id: item.id } }));
+                  }}
                   style={{
                     position: "absolute",
                     inset: 0,
@@ -1238,7 +1275,7 @@ ${demoScript}
                     zIndex: 2,
                     background: "transparent",
                   }}
-                  title="Nhấp để chọn • Kéo để di chuyển"
+                  title="Nhấp để chọn • Kéo để di chuyển • Nhấp đúp để bật tương tác trực tiếp"
                 />
               )}
             </>

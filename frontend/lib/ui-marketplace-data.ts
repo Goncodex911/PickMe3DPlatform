@@ -21,6 +21,11 @@ export interface UITemplate {
   js: string;
   demo: unknown[];
   map: string[][];
+  // Optional runtime custom presets
+  customText?: string;
+  customColor?: string;
+  customSpeed?: number;
+  customInteractive?: boolean;
 }
 
 export const CATEGORIES = [
