@@ -210,38 +210,159 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Revenue & Platform Monetization Strip */}
-      <div className="p-5 sm:p-6 rounded-2xl bg-zinc-900/50 border border-white/10 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-zinc-800/80 border border-white/10 flex items-center justify-center flex-shrink-0 text-zinc-400">
-            <span className="material-symbols-rounded text-xl">monetization_on</span>
-          </div>
+            {/* Financial & Monetization Overview (Doanh thu, MRR, Đơn hàng, Biểu đồ phân bổ) */}
+      <div className="p-6 rounded-2xl bg-zinc-900/60 border border-white/10 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/10">
           <div>
-            <div className="flex flex-wrap items-baseline gap-2">
-              <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Doanh Thu PayOS:</span>
-              <span className="text-xl sm:text-2xl font-semibold text-white tracking-tight">
-                {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(stats.billing?.totalRevenue || 0)}
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-rounded text-emerald-400 text-lg">paid</span>
+              <h2 className="text-base font-semibold text-white tracking-tight">Tài Chính, MRR & Doanh Thu Nền Tảng</h2>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                Quy tắc 2.1 & 3.2
               </span>
-              <span className="text-xs text-zinc-500 font-normal">({stats.billing?.paidOrders || 0} đơn thành công)</span>
             </div>
-            <div className="text-[11px] text-zinc-400 flex flex-wrap items-center gap-2 mt-1">
-              <span className="text-zinc-500">Thuê bao:</span>
-              <span className="text-zinc-300 font-medium">{stats.plans?.pro || 0} Pro</span>
-              <span className="text-zinc-600">•</span>
-              <span className="text-zinc-300 font-medium">{stats.plans?.studio || 0} Studio</span>
-              <span className="text-zinc-600">•</span>
-              <span className="text-zinc-400">{stats.presentations?.total || 0} bài trình chiếu</span>
+            <p className="text-xs text-zinc-400 mt-1">
+              Phân tách minh bạch giữa Doanh thu Admin và Thu nhập Creator theo 4 nguồn độc lập.
+            </p>
+          </div>
+          <Link
+            href="/admin/billing"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-semibold transition-all shrink-0 cursor-pointer shadow-sm"
+          >
+            <span>Quản lý Đơn hàng & Đối soát</span>
+            <span className="material-symbols-rounded text-sm">arrow_forward</span>
+          </Link>
+        </div>
+
+        {/* 3 Key Financial KPI Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* 1. Total Admin Revenue */}
+          <div className="p-4 rounded-xl bg-zinc-950/70 border border-white/10">
+            <div className="flex items-center justify-between text-xs text-zinc-400 mb-2">
+              <span className="font-mono uppercase tracking-wider text-[10px]">Doanh Thu Thực Thu Admin</span>
+              <span className="material-symbols-rounded text-emerald-400 text-base">account_balance_wallet</span>
+            </div>
+            <div className="text-2xl font-bold text-white tracking-tight">
+              {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
+                stats.billing?.totalRevenue || stats.billing?.totalAdminRevenue || 0
+              )}
+            </div>
+            <div className="mt-2 text-[11px] text-zinc-400 flex items-center justify-between">
+              <span>GMV Tổng giao dịch:</span>
+              <span className="text-zinc-200 font-mono">
+                {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
+                  stats.billing?.totalGrossVolume || stats.billing?.totalRevenue || 0
+                )}
+              </span>
+            </div>
+          </div>
+
+          {/* 2. MRR (Monthly Recurring Revenue) */}
+          <div className="p-4 rounded-xl bg-zinc-950/70 border border-white/10">
+            <div className="flex items-center justify-between text-xs text-zinc-400 mb-2">
+              <span className="font-mono uppercase tracking-wider text-[10px]">Doanh Thu Định Kỳ Hàng Tháng (MRR)</span>
+              <span className="material-symbols-rounded text-blue-400 text-base">repeat</span>
+            </div>
+            <div className="text-2xl font-bold text-blue-400 tracking-tight">
+              {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
+                stats.billing?.mrr ?? ((stats.plans?.pro || 0) * 99000 + (stats.plans?.studio || 0) * 199000)
+              )}
+            </div>
+            <div className="mt-2 text-[11px] text-zinc-400 flex items-center justify-between">
+              <span>Thuê bao hoạt động:</span>
+              <span className="text-zinc-200">
+                {stats.plans?.pro || 0} Pro • {stats.plans?.studio || 0} Studio
+              </span>
+            </div>
+          </div>
+
+          {/* 3. Orders Count & Ratio */}
+          <div className="p-4 rounded-xl bg-zinc-950/70 border border-white/10">
+            <div className="flex items-center justify-between text-xs text-zinc-400 mb-2">
+              <span className="font-mono uppercase tracking-wider text-[10px]">Tổng Đơn Hàng Cổng PayOS</span>
+              <span className="material-symbols-rounded text-purple-400 text-base">receipt_long</span>
+            </div>
+            <div className="text-2xl font-bold text-white tracking-tight">
+              {stats.billing?.totalOrders || 0} <span className="text-xs font-normal text-zinc-500">đơn</span>
+            </div>
+            <div className="mt-2 text-[11px] text-zinc-400 flex items-center justify-between">
+              <span className="text-emerald-400 font-medium">
+                {stats.billing?.paidOrders || 0} thành công
+              </span>
+              <span className="text-zinc-500">
+                {stats.billing?.pendingOrders || 0} đang chờ
+              </span>
             </div>
           </div>
         </div>
 
-        <Link
-          href="/admin/billing"
-          className="px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 hover:border-white/20 text-zinc-200 hover:text-white text-xs font-medium transition-all flex items-center justify-center gap-1.5 flex-shrink-0"
-        >
-          <span>Xem Chi Tiết Đơn Hàng</span>
-          <span className="material-symbols-rounded text-sm text-zinc-400">arrow_forward</span>
-        </Link>
+        {/* 4. Mini Revenue Trend & Sources Distribution */}
+        <div className="p-4 rounded-xl bg-zinc-950/50 border border-white/5 space-y-3">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-medium text-zinc-300 flex items-center gap-1.5">
+              <span className="material-symbols-rounded text-sm text-zinc-400">bar_chart</span>
+              Biểu Đồ Phân Bổ 4 Nguồn Thu Nhập Nền Tảng (Doanh Thu vs Hoa Hồng)
+            </span>
+            <span className="text-[11px] text-zinc-500 font-mono">
+              Creator nhận: {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(stats.billing?.totalCreatorEarnings || 0)}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* Stream 1 */}
+            <div className="p-3 rounded-lg bg-zinc-900/60 border border-white/5">
+              <div className="flex items-center justify-between text-[11px] text-zinc-400">
+                <span className="truncate">1. Admin Template</span>
+                <span className="text-emerald-400 font-mono font-semibold">100% Admin</span>
+              </div>
+              <div className="text-sm font-semibold text-white mt-1">
+                {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
+                  stats.billing?.breakdown?.sources?.adminTemplateSection?.adminRevenue || 0
+                )}
+              </div>
+            </div>
+
+            {/* Stream 2 */}
+            <div className="p-3 rounded-lg bg-zinc-900/60 border border-white/5">
+              <div className="flex items-center justify-between text-[11px] text-zinc-400">
+                <span className="truncate">2. Creator Template</span>
+                <span className="text-blue-400 font-mono font-semibold">70/30 Split</span>
+              </div>
+              <div className="text-sm font-semibold text-white mt-1">
+                {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
+                  stats.billing?.breakdown?.sources?.creatorTemplateSection?.adminRevenue || 0
+                )}
+                <span className="text-[10px] text-zinc-500 font-normal ml-1">(Admin 30%)</span>
+              </div>
+            </div>
+
+            {/* Stream 3 */}
+            <div className="p-3 rounded-lg bg-zinc-900/60 border border-white/5">
+              <div className="flex items-center justify-between text-[11px] text-zinc-400">
+                <span className="truncate">3. Admin Marketplace</span>
+                <span className="text-emerald-400 font-mono font-semibold">100% Admin</span>
+              </div>
+              <div className="text-sm font-semibold text-white mt-1">
+                {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
+                  stats.billing?.breakdown?.sources?.adminMarketplace?.adminRevenue || 0
+                )}
+              </div>
+            </div>
+
+            {/* Stream 4 */}
+            <div className="p-3 rounded-lg bg-zinc-900/60 border border-white/5">
+              <div className="flex items-center justify-between text-[11px] text-zinc-400">
+                <span className="truncate">4. Gói Thuê Bao</span>
+                <span className="text-emerald-400 font-mono font-semibold">100% Admin</span>
+              </div>
+              <div className="text-sm font-semibold text-white mt-1">
+                {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
+                  stats.billing?.breakdown?.sources?.subscriptions?.adminRevenue || 0
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Middle Grid: Quick Links & Recent Activities */}

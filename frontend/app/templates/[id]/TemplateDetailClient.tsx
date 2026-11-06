@@ -19,6 +19,7 @@ import { Preview } from "@/components/Preview";
 import { DEFAULT_THEME, paletteOf } from "@/lib/tokens";
 import CommentThread from "@/components/CommentThread";
 import { AddToCollectionModal } from "@/components/CollectionManager";
+import DesignThumbnail from "@/components/DesignThumbnail";
 
 interface TemplateDetailClientProps {
   id: string;
@@ -37,7 +38,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
 
   // Preview interactive state
   const [viewMode, setViewMode] = useState<"canvas" | "image" | "3d">("canvas");
-  const [activeImage, setActiveImage] = useState<string>("/hero/card-couture.png");
+  const [activeImage, setActiveImage] = useState<string>("");
   const [fullInteractiveOpen, setFullInteractiveOpen] = useState(false);
 
   // Social & Follow state
@@ -76,7 +77,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
 
       if (data) {
         setTemplate(data);
-        setActiveImage(data.thumbnailUrl || "/hero/card-couture.png");
+        setActiveImage(data.thumbnailUrl || "");
         setLikes(data.likesCount || 0);
         setReviewsList(data.reviews || []);
         setAvgRating(data.avgRating || 0);
@@ -203,11 +204,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
         </div>
 
         <div className="relative my-3 flex-1 min-h-[300px] flex items-center justify-center bg-slate-950 rounded-md overflow-hidden border border-white/5">
-          <img
-            src={template.thumbnailUrl || "/hero/card-couture.png"}
-            alt={template.title}
-            className="max-h-full max-w-full object-contain"
-          />
+          <DesignThumbnail docData={template.docData} thumbnailUrl={template.thumbnailUrl} title={template.title} />
         </div>
 
         <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-white/10">
@@ -268,7 +265,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
   const images =
     template.galleryImages && template.galleryImages.length > 0
       ? template.galleryImages
-      : [template.thumbnailUrl || "/hero/card-couture.png"];
+      : template.thumbnailUrl ? [template.thumbnailUrl] : [];
 
   const doc = template.docData || {
     groups: [],
@@ -377,55 +374,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
             {/* Display Stage Area */}
             <div className="relative w-full aspect-[4/3] sm:aspect-[16/10] bg-slate-950 rounded-md border border-white/5 overflow-hidden flex items-center justify-center">
               {viewMode === "canvas" ? (
-                /* Interactive Canvas Phone Stage */
-                <div className="w-full h-full p-4 flex items-center justify-center">
-                  <div className="relative w-[240px] sm:w-[270px] aspect-[9/18] rounded-2xl bg-[#121826] border-4 border-slate-700 shadow-xl overflow-hidden flex flex-col">
-                    {/* Phone Bezel Header */}
-                    <div className="h-5 bg-black/60 flex items-center justify-center">
-                      <div className="w-12 h-2.5 bg-slate-800 rounded-full" />
-                    </div>
-                    {/* Screen View */}
-                    <div
-                      className="flex-1 p-3 overflow-y-auto"
-                      style={{ background: palette.surface, color: palette.onSurface }}
-                    >
-                      <div className="text-center py-2 border-b border-black/10 mb-3">
-                        <span className="text-[11px] font-bold tracking-tight block">
-                          {doc.title || template.title}
-                        </span>
-                        <span className="text-[9px] text-slate-500 block">
-                          {doc.frames?.[0]?.name || "Trang chủ"}
-                        </span>
-                      </div>
-                      <div className="space-y-2">
-                        {doc.groups && doc.groups.length > 0 ? (
-                          doc.groups.slice(0, 5).map((g: any, i: number) => (
-                            <div
-                              key={i}
-                              className="p-2 rounded-md bg-black/5 border border-black/5 text-[10px] space-y-1"
-                            >
-                              <div className="font-semibold text-slate-700 flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                                <span>Nhóm {i + 1}</span>
-                              </div>
-                              <div className="text-[9px] text-slate-500 truncate">
-                                {g.items?.map((it: any) => it.label || it.kind).join(", ") || "Phần tử"}
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="text-center py-6 text-[10px] text-slate-400">
-                            Khung thiết kế chuẩn PickMe3D
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    {/* Phone Bezel Footer */}
-                    <div className="h-4 bg-black/60 flex items-center justify-center">
-                      <div className="w-16 h-1 bg-slate-700 rounded-full" />
-                    </div>
-                  </div>
-                </div>
+                <DesignThumbnail docData={template.docData} title={template.title} />
               ) : viewMode === "3d" ? (
                 /* 3D Perspective View Stage */
                 <div
@@ -439,11 +388,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                       boxShadow: "20px 25px 40px rgba(0,0,0,0.7)",
                     }}
                   >
-                    <img
-                      src={activeImage || template.thumbnailUrl || "/hero/card-couture.png"}
-                      alt={template.title}
-                      className="w-full h-full object-cover"
-                    />
+                    <DesignThumbnail docData={template.docData} thumbnailUrl={activeImage || template.thumbnailUrl} title={template.title} />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-4">
                       <div>
                         <span className="text-[10px] font-mono text-red-400 block uppercase">
@@ -457,11 +402,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
               ) : (
                 /* Standard Image Gallery Stage */
                 <div className="w-full h-full flex items-center justify-center p-4">
-                  <img
-                    src={activeImage || template.thumbnailUrl || "/hero/card-couture.png"}
-                    alt={template.title}
-                    className="max-w-full max-h-full object-contain rounded-md"
-                  />
+                  <DesignThumbnail docData={template.docData} thumbnailUrl={activeImage || template.thumbnailUrl} title={template.title} />
                 </div>
               )}
             </div>
@@ -561,7 +502,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                   placeholder="Để lại nhận xét về mẫu thiết kế..."
                   value={userComment}
                   onChange={(e) => setUserComment(e.target.value)}
-                  className="flex-1 px-3 py-2 rounded-md bg-slate-950 border border-white/10 text-xs text-white placeholder:text-slate-500 focus:border-red-500 outline-none"
+                  className="flex-1 px-3 py-2 rounded-md bg-slate-950 border border-white/10 text-xs text-white placeholder:text-slate-500  outline-none"
                 />
                 <button
                   type="submit"
@@ -693,7 +634,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                 );
                 return authorUsername ? (
                   <Link
-                    href={`/creator/${authorUsername}`}
+                    href={`/creator/?username=${encodeURIComponent(authorUsername)}`}
                     className="flex items-center gap-3 min-w-0 hover:opacity-80 transition-opacity"
                   >
                     {avatarEl}

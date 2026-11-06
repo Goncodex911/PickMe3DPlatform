@@ -264,7 +264,7 @@ export default function AdminUsersPage() {
               placeholder="Tìm theo tên, email hoặc username..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-zinc-900 border border-white/10 rounded-xl text-xs sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-colors"
+              className="w-full pl-10 pr-4 py-2 bg-zinc-900 border border-white/10 rounded-xl text-xs sm:text-sm text-white placeholder-zinc-500 focus:outline-none  transition-colors"
             />
           </div>
           <button
@@ -282,7 +282,7 @@ export default function AdminUsersPage() {
             <select
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="bg-zinc-900 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-white/30"
+              className="bg-zinc-900 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none "
             >
               <option value="all">Tất cả</option>
               <option value="user">User</option>
@@ -296,7 +296,7 @@ export default function AdminUsersPage() {
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="bg-zinc-900 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-white/30"
+              className="bg-zinc-900 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none "
             >
               <option value="all">Tất cả</option>
               <option value="active">Hoạt động</option>
@@ -310,7 +310,7 @@ export default function AdminUsersPage() {
             <select
               value={plan}
               onChange={(e) => setPlan(e.target.value)}
-              className="bg-zinc-900 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-white/30"
+              className="bg-zinc-900 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none "
             >
               <option value="all">Tất cả gói</option>
               <option value="free">Free</option>
@@ -599,7 +599,7 @@ export default function AdminUsersPage() {
                   required
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-white/30"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs sm:text-sm text-white focus:outline-none "
                   placeholder="Ví dụ: Nguyễn Văn A"
                 />
               </div>
@@ -611,7 +611,7 @@ export default function AdminUsersPage() {
                   required
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-white/30"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs sm:text-sm text-white focus:outline-none "
                   placeholder="name@example.com"
                 />
               </div>
@@ -625,7 +625,7 @@ export default function AdminUsersPage() {
                     type="text"
                     value={newUsername}
                     onChange={(e) => setNewUsername(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-white/30"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs sm:text-sm text-white focus:outline-none "
                     placeholder="nguyenvana"
                   />
                 </div>
@@ -652,7 +652,7 @@ export default function AdminUsersPage() {
                   type="text"
                   value={newJobRole}
                   onChange={(e) => setNewJobRole(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-white/30"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs sm:text-sm text-white focus:outline-none "
                   placeholder="3D Designer, Fashion Creator..."
                 />
               </div>
@@ -663,7 +663,7 @@ export default function AdminUsersPage() {
                   rows={2}
                   value={newBio}
                   onChange={(e) => setNewBio(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-zinc-900 border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-white/30"
+                  className="w-full px-3.5 py-2 rounded-xl bg-zinc-900 border border-white/10 text-xs sm:text-sm text-white focus:outline-none "
                   placeholder="Mô tả ngắn về người dùng..."
                 />
               </div>
@@ -754,7 +754,7 @@ export default function AdminUsersPage() {
                   <select
                     value={planMonths}
                     onChange={(e) => setPlanMonths(Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white outline-none focus:border-white/30"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white outline-none "
                   >
                     <option value={1}>1 tháng (+30 ngày)</option>
                     <option value={3}>3 tháng (+90 ngày)</option>
@@ -821,7 +821,7 @@ export default function AdminUsersPage() {
                   value={banReason}
                   onChange={(e) => setBanReason(e.target.value)}
                   placeholder="Ví dụ: Đăng tải nội dung vi phạm bản quyền hoặc spam..."
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white focus:outline-none focus:border-white/30 placeholder:text-zinc-600"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white focus:outline-none  placeholder:text-zinc-600"
                 />
               </div>
             )}
@@ -1057,7 +1057,7 @@ export default function AdminUsersPage() {
               value={importText}
               onChange={(e) => setImportText(e.target.value)}
               placeholder={`Nguyễn Văn A, a@example.com, Fashion Designer, Yêu thích 3D\nTrần Thị B, b@example.com, 3D Artist, Chuyên gia trang phục`}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white font-mono focus:outline-none focus:border-white/30 placeholder:text-zinc-600 mb-4"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white font-mono focus:outline-none  placeholder:text-zinc-600 mb-4"
             />
 
             <div className="flex justify-between items-center">

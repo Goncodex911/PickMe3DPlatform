@@ -220,7 +220,7 @@ export default function SaveDesignModal({
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Nhập tên thiết kế..."
-                  className="w-full px-3 py-2 rounded-md bg-slate-950 border border-white/15 focus:border-red-500 text-white text-xs outline-none transition-colors"
+                  className="w-full px-3 py-2 rounded-md bg-slate-950 border border-white/15  text-white text-xs outline-none transition-colors"
                   autoFocus
                 />
               </div>
@@ -233,37 +233,43 @@ export default function SaveDesignModal({
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Mô tả ý tưởng thiết kế..."
                   rows={2}
-                  className="w-full px-3 py-2 rounded-md bg-slate-950 border border-white/15 focus:border-red-500 text-white text-xs outline-none resize-none transition-colors"
+                  className="w-full px-3 py-2 rounded-md bg-slate-950 border border-white/15  text-white text-xs outline-none resize-none transition-colors"
                 />
               </div>
 
               {/* Privacy Toggle */}
               <div className="space-y-1">
-                <label className="text-xs text-slate-300 font-medium">Quyền riêng tư</label>
+                <label className="text-xs text-slate-300 font-medium">Ai có thể xem?</label>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <button
                     type="button"
                     onClick={() => setIsPublic(true)}
+                    aria-pressed={isPublic}
                     className={`py-2 px-3 rounded-md border text-center transition-colors cursor-pointer ${
                       isPublic
                         ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-300 font-semibold"
                         : "bg-slate-950 border-white/10 text-slate-400 hover:text-white"
                     }`}
                   >
-                    Công khai (Public)
+                    <span className="inline-flex items-center justify-center gap-1.5"><span className="material-symbols-rounded text-sm" aria-hidden="true">public</span>Công khai</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsPublic(false)}
+                    aria-pressed={!isPublic}
                     className={`py-2 px-3 rounded-md border text-center transition-colors cursor-pointer ${
                       !isPublic
                         ? "bg-amber-500/15 border-amber-500/50 text-amber-300 font-semibold"
                         : "bg-slate-950 border-white/10 text-slate-400 hover:text-white"
                     }`}
                   >
-                    Riêng tư (Private)
+                    <span className="inline-flex items-center justify-center gap-1.5"><span className="material-symbols-rounded text-sm" aria-hidden="true">lock</span>Riêng tư</span>
                   </button>
                 </div>
+                <p className="flex items-start gap-1.5 text-[11px] leading-5 text-slate-400">
+                  <span className="material-symbols-rounded mt-0.5 text-sm text-slate-500" aria-hidden="true">info</span>
+                  {isPublic ? "Thiết kế sẽ xuất hiện trong thư viện và trang Creator của bạn." : "Chỉ bạn mới xem được thiết kế này."}
+                </p>
               </div>
 
               {/* Hashtag Preset Chips */}

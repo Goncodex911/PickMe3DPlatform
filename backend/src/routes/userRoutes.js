@@ -20,6 +20,10 @@ router.route('/profile')
   .put(protect, updateUserProfile)
   .delete(protect, deleteUserProfile);
 
+const social = require('../controllers/socialController');
+router.get('/activity', protect, social.activityFeed);
+router.route('/:id/follow').get(protect, social.followStatus).put(protect, social.setFollow).delete(protect, social.setFollow);
+
 // Public profile routes (no auth required)
 router.route('/username/:username').get(getPublicProfileByUsername);
 router.route('/:id/public').get(getPublicProfile);
