@@ -152,7 +152,7 @@ export default function AdminReportsPage() {
               placeholder="Tìm theo nội dung, đối tượng hoặc người báo cáo..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-zinc-950 border border-white/10 rounded-xl text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-colors"
+              className="w-full pl-10 pr-4 py-2 bg-zinc-950 border border-white/10 rounded-xl text-xs text-white placeholder-zinc-500 focus:outline-none  transition-colors"
             />
           </div>
           <button
@@ -170,7 +170,7 @@ export default function AdminReportsPage() {
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="bg-zinc-950 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-white/30"
+              className="bg-zinc-950 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none "
             >
               <option value="all">Tất cả</option>
               <option value="pending">Chờ xử lý (Pending)</option>
@@ -186,7 +186,7 @@ export default function AdminReportsPage() {
             <select
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
-              className="bg-zinc-950 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-white/30"
+              className="bg-zinc-950 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none "
             >
               <option value="all">Tất cả</option>
               <option value="critical">Khẩn cấp (Critical)</option>
@@ -202,7 +202,7 @@ export default function AdminReportsPage() {
             <select
               value={targetType}
               onChange={(e) => setTargetType(e.target.value)}
-              className="bg-zinc-950 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-white/30"
+              className="bg-zinc-950 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none "
             >
               <option value="all">Tất cả</option>
               <option value="template">Mẫu thiết kế</option>
@@ -407,7 +407,7 @@ export default function AdminReportsPage() {
                   <select
                     value={editStatus}
                     onChange={(e) => setEditStatus(e.target.value as any)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-white/10 text-white focus:outline-none focus:border-white/30"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-white/10 text-white focus:outline-none "
                   >
                     <option value="pending">Chờ xử lý (Pending)</option>
                     <option value="investigating">Đang điều tra (Investigating)</option>
@@ -421,7 +421,7 @@ export default function AdminReportsPage() {
                   <select
                     value={editPriority}
                     onChange={(e) => setEditPriority(e.target.value as any)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-white/10 text-white focus:outline-none focus:border-white/30"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-white/10 text-white focus:outline-none "
                   >
                     <option value="low">Thấp (Low)</option>
                     <option value="medium">Trung bình (Medium)</option>
@@ -440,7 +440,7 @@ export default function AdminReportsPage() {
                   value={resolutionNotes}
                   onChange={(e) => setResolutionNotes(e.target.value)}
                   placeholder="Ví dụ: Đã xóa mẫu vi phạm bản quyền và cảnh cáo người dùng..."
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-white/10 text-white focus:outline-none focus:border-white/30 placeholder:text-zinc-600"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-white/10 text-white focus:outline-none  placeholder:text-zinc-600"
                 />
               </div>
 

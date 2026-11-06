@@ -106,6 +106,7 @@ export default function PaymentResultPage() {
               {view === "PAID" ? (
                 <>
                   <a className={`${s.btn} ${s.primary}`} href="/slides/">{paymentCopy.openSlides} <Arrow /></a>
+                  <a className={s.btn} href={`/payment/receipt/?orderCode=${orderCode}`}>Xem biên lai / Lưu PDF</a>
                   <a className={s.btn} href="/pricing/">{paymentCopy.backPricing}</a>
                 </>
               ) : (

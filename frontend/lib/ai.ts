@@ -75,12 +75,38 @@ export const DEFAULT_AI: AiSettings = {
   key: DEFAULT_GEMINI_KEY,
 };
 
-const STORE_KEY = "m3e:ai";
+function settingsStoreKey() {
+  try {
+    const user = JSON.parse(localStorage.getItem("pickme3d_user") || "null");
+    const id = user?._id || user?.id || user?.email;
+    if (id) return `m3e:ai:${id}`;
+  } catch {}
+  return "m3e:ai";
+}
+
+export function loadProviderSettings(provider: Provider): AiSettings {
+  const spec = providerSpec(provider);
+  try {
+    const bank = JSON.parse(localStorage.getItem(`${settingsStoreKey()}:providers`) || "{}");
+    if (bank[provider]) return { provider, ...bank[provider] };
+    const active = loadAiSettings();
+    if (active.provider === provider) return active;
+  } catch {}
+  return { provider, baseUrl: spec.baseUrl, model: spec.model, key: "" };
+}
+
+export function clearAiKeys() {
+  localStorage.removeItem(`${settingsStoreKey()}:providers`);
+  localStorage.removeItem(settingsStoreKey());
+  // Also remove the old, browser-wide key so it cannot be reused after sign-out.
+  localStorage.removeItem("m3e:ai");
+  window.dispatchEvent(new Event("ai-settings-changed"));
+}
 
 export function loadAiSettings(): AiSettings {
   const s = { ...DEFAULT_AI };
   try {
-    const raw = localStorage.getItem(STORE_KEY);
+    const raw = localStorage.getItem(settingsStoreKey());
     if (raw) {
       const v = JSON.parse(raw) as Partial<AiSettings>;
       if (PROVIDERS.some((p) => p.key === v.provider)) s.provider = v.provider as Provider;
@@ -98,7 +124,7 @@ export function loadAiSettings(): AiSettings {
       if (s.provider === "gemini" && (!s.baseUrl || s.baseUrl.includes("generativelanguage.googleapis.com"))) {
         s.baseUrl = "https://generativelanguage.googleapis.com/v1beta/openai";
       }
-      if (!s.key || !s.key.trim()) {
+      if ((!s.key || !s.key.trim()) && s.provider === "gemini") {
         s.key = DEFAULT_GEMINI_KEY;
       }
     }
@@ -109,8 +135,14 @@ export function loadAiSettings(): AiSettings {
 /** Settings live in this browser only, like the document itself. */
 export function saveAiSettings(s: AiSettings) {
   try {
-    localStorage.setItem(STORE_KEY, JSON.stringify(s));
-  } catch {}
+    const storeKey = settingsStoreKey();
+    const bank = JSON.parse(localStorage.getItem(`${storeKey}:providers`) || "{}");
+    bank[s.provider] = s;
+    localStorage.setItem(`${storeKey}:providers`, JSON.stringify(bank));
+    localStorage.setItem(storeKey, JSON.stringify(s));
+    window.dispatchEvent(new Event("ai-settings-changed"));
+    return true;
+  } catch { return false; }
 }
 
 const isLocal = (u: string) => /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/i.test(u.trim());

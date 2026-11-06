@@ -183,7 +183,7 @@ export function AddToCollectionModal({
                 onChange={(e) => setNewName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleCreate()}
                 placeholder="Tên bộ sưu tập..."
-                className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-white placeholder:text-slate-500 outline-none focus:border-amber-500/50 transition-colors"
+                className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-white placeholder:text-slate-500 outline-none  transition-colors"
                 autoFocus
                 disabled={creating}
               />

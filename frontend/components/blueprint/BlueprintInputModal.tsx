@@ -357,7 +357,7 @@ export default function BlueprintInputModal({
                     type="text"
                     value={project.name}
                     onChange={(e) => setProject({ ...project, name: e.target.value })}
-                    className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400"
+                    className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none "
                     placeholder="VD: Casa Serra, Nhà phố Q.7..."
                   />
                 </div>
@@ -367,7 +367,7 @@ export default function BlueprintInputModal({
                     type="text"
                     value={project.code}
                     onChange={(e) => setProject({ ...project, code: e.target.value })}
-                    className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400 font-mono"
+                    className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none  font-mono"
                     placeholder="VD: A-101 rev D"
                   />
                 </div>
@@ -376,7 +376,7 @@ export default function BlueprintInputModal({
                   <select
                     value={project.specs.scale}
                     onChange={(e) => handleUpdateSpec("scale", e.target.value)}
-                    className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400"
+                    className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none "
                   >
                     <option value="1:50">1:50 (Chi tiết nội thất)</option>
                     <option value="1:100">1:100 (Tiêu chuẩn xây dựng)</option>
@@ -398,7 +398,7 @@ export default function BlueprintInputModal({
                       step="0.5"
                       value={project.specs.width}
                       onChange={(e) => handleUpdateSpec("width", parseFloat(e.target.value) || 1)}
-                      className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400 font-mono"
+                      className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none  font-mono"
                     />
                   </div>
                   <div>
@@ -408,7 +408,7 @@ export default function BlueprintInputModal({
                       step="0.5"
                       value={project.specs.length}
                       onChange={(e) => handleUpdateSpec("length", parseFloat(e.target.value) || 1)}
-                      className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400 font-mono"
+                      className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none  font-mono"
                     />
                   </div>
                   <div>
@@ -417,7 +417,7 @@ export default function BlueprintInputModal({
                       type="number"
                       value={project.specs.totalArea}
                       onChange={(e) => handleUpdateSpec("totalArea", parseFloat(e.target.value) || 1)}
-                      className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400 font-mono"
+                      className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none  font-mono"
                     />
                   </div>
                   <div>
@@ -427,7 +427,7 @@ export default function BlueprintInputModal({
                       step="0.1"
                       value={project.specs.ceilingHeight}
                       onChange={(e) => handleUpdateSpec("ceilingHeight", parseFloat(e.target.value) || 3.0)}
-                      className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400 font-mono"
+                      className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none  font-mono"
                     />
                   </div>
                 </div>
@@ -442,7 +442,7 @@ export default function BlueprintInputModal({
                       step="0.05"
                       value={project.specs.exteriorWallThickness}
                       onChange={(e) => handleUpdateSpec("exteriorWallThickness", parseFloat(e.target.value) || 0.2)}
-                      className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400 font-mono"
+                      className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none  font-mono"
                     />
                     <span className="text-[11px] text-neutral-500 mt-0.5 block">
                       Tiêu chuẩn tường đôi chống nóng: 0.20m - 0.25m (200 - 250mm)
@@ -457,7 +457,7 @@ export default function BlueprintInputModal({
                       step="0.02"
                       value={project.specs.interiorWallThickness}
                       onChange={(e) => handleUpdateSpec("interiorWallThickness", parseFloat(e.target.value) || 0.1)}
-                      className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400 font-mono"
+                      className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none  font-mono"
                     />
                     <span className="text-[11px] text-neutral-500 mt-0.5 block">
                       Tiêu chuẩn tường đơn ngăn phòng: 0.10m (100mm)
@@ -477,7 +477,7 @@ export default function BlueprintInputModal({
                     <select
                       value={project.specs.orientation}
                       onChange={(e) => handleUpdateSpec("orientation", e.target.value as Orientation)}
-                      className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400"
+                      className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none "
                     >
                       <option value="S">Hướng Nam (Đón gió mát, nắng dịu)</option>
                       <option value="SE">Hướng Đông Nam (Lý tưởng khí hậu VN)</option>
@@ -494,7 +494,7 @@ export default function BlueprintInputModal({
                     <select
                       value={project.specs.timeOfDay}
                       onChange={(e) => handleUpdateSpec("timeOfDay", e.target.value as TimeOfDay)}
-                      className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400"
+                      className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none "
                     >
                       <option value="golden_hour">Hoàng Hôn / Golden Hour (Casa Serra)</option>
                       <option value="morning">Sáng Sớm (Ánh sáng tươi mát)</option>
@@ -507,7 +507,7 @@ export default function BlueprintInputModal({
                     <select
                       value={project.specs.style}
                       onChange={(e) => handleUpdateSpec("style", e.target.value as ArchitecturalStyle)}
-                      className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400"
+                      className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none "
                     >
                       <option value="casa_serra">Casa Serra Brutalist (Bê tông & Gỗ mộc)</option>
                       <option value="modern_minimal">Tối Giản Hiện Đại (Modern Minimalist)</option>
@@ -521,7 +521,7 @@ export default function BlueprintInputModal({
                     <select
                       value={project.specs.baseFloorMaterial}
                       onChange={(e) => handleUpdateSpec("baseFloorMaterial", e.target.value as FloorMaterialType)}
-                      className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400"
+                      className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none "
                     >
                       <option value="concrete">Bê tông mài bóng (Polished Concrete)</option>
                       <option value="oak">Gỗ sồi tự nhiên (Natural Oak)</option>
@@ -571,7 +571,7 @@ export default function BlueprintInputModal({
                           type="text"
                           value={room.vietnameseName || room.name}
                           onChange={(e) => handleUpdateRoom(idx, "vietnameseName", e.target.value)}
-                          className="font-semibold text-sm bg-transparent border-b border-transparent hover:border-neutral-500 focus:border-amber-400 focus:outline-none text-white px-1"
+                          className="font-semibold text-sm bg-transparent border-b border-transparent hover:border-neutral-500  focus:outline-none text-white px-1"
                           placeholder="Tên phòng (tiếng Việt)"
                         />
                         <span className="text-xs text-neutral-500 font-mono">({room.name})</span>
@@ -685,7 +685,7 @@ export default function BlueprintInputModal({
                       value={room.description}
                       onChange={(e) => handleUpdateRoom(idx, "description", e.target.value)}
                       placeholder="Mô tả công năng và cảm quan kiến trúc..."
-                      className="w-full bg-[#111317] border border-[#272c36] rounded px-2.5 py-1.5 text-xs text-neutral-400 focus:outline-none focus:border-amber-400"
+                      className="w-full bg-[#111317] border border-[#272c36] rounded px-2.5 py-1.5 text-xs text-neutral-400 focus:outline-none "
                     />
                   </div>
                 ))}

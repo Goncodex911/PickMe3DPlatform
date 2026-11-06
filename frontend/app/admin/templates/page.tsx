@@ -338,7 +338,7 @@ export default function AdminTemplatesPage() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") loadPresentations(1);
                   }}
-                  className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-colors"
+                  className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-none  transition-colors"
                 />
               </div>
               <button
@@ -358,7 +358,7 @@ export default function AdminTemplatesPage() {
                   setPresPublicFilter(e.target.value);
                   setTimeout(() => loadPresentations(1), 0);
                 }}
-                className="bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-white/30"
+                className="bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none "
               >
                 <option value="all">Tất cả</option>
                 <option value="true">Công khai</option>
@@ -449,7 +449,7 @@ export default function AdminTemplatesPage() {
               placeholder="Tìm theo tiêu đề, tác giả, mô tả hoặc tag..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-white/10 rounded-xl text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-colors"
+              className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-white/10 rounded-xl text-xs text-white placeholder-zinc-500 focus:outline-none  transition-colors"
             />
           </div>
           <button
@@ -467,7 +467,7 @@ export default function AdminTemplatesPage() {
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="bg-zinc-900 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-white/30"
+              className="bg-zinc-900 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none "
             >
               {CATEGORIES.map((cat) => (
                 <option key={cat} value={cat === "Tất cả" ? "all" : cat}>
@@ -483,7 +483,7 @@ export default function AdminTemplatesPage() {
             <select
               value={isSystem}
               onChange={(e) => setIsSystem(e.target.value)}
-              className="bg-zinc-900 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-white/30"
+              className="bg-zinc-900 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none "
             >
               <option value="all">Tất cả nguồn</option>
               <option value="true">Chính thức (System)</option>
@@ -497,7 +497,7 @@ export default function AdminTemplatesPage() {
             <select
               value={isPublic}
               onChange={(e) => setIsPublic(e.target.value)}
-              className="bg-zinc-900 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-white/30"
+              className="bg-zinc-900 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none "
             >
               <option value="all">Tất cả</option>
               <option value="true">Công khai</option>
@@ -690,7 +690,7 @@ export default function AdminTemplatesPage() {
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
                   placeholder="Ví dụ: Áo Khoác Cyberpunk 3D Nam"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white text-sm focus:outline-none focus:border-white/30 placeholder:text-zinc-600"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white text-sm focus:outline-none  placeholder:text-zinc-600"
                 />
               </div>
 
@@ -701,7 +701,7 @@ export default function AdminTemplatesPage() {
                   value={formDesc}
                   onChange={(e) => setFormDesc(e.target.value)}
                   placeholder="Mô tả phong cách, chất liệu, hướng dẫn phối trang phục..."
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white focus:outline-none focus:border-white/30 placeholder:text-zinc-600"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white focus:outline-none  placeholder:text-zinc-600"
                 />
               </div>
 
@@ -711,7 +711,7 @@ export default function AdminTemplatesPage() {
                   <select
                     value={formCategory}
                     onChange={(e) => setFormCategory(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-white/10 text-white focus:outline-none focus:border-white/30"
+                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-white/10 text-white focus:outline-none "
                   >
                     {CATEGORIES.filter((c) => c !== "Tất cả").map((c) => (
                       <option key={c} value={c}>
@@ -730,7 +730,7 @@ export default function AdminTemplatesPage() {
                     value={formTags}
                     onChange={(e) => setFormTags(e.target.value)}
                     placeholder="streetwear, 3d, jacket"
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-white/10 text-white focus:outline-none focus:border-white/30 placeholder:text-zinc-600"
+                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-white/10 text-white focus:outline-none  placeholder:text-zinc-600"
                   />
                 </div>
               </div>
@@ -744,7 +744,7 @@ export default function AdminTemplatesPage() {
                   value={formThumbnail}
                   onChange={(e) => setFormThumbnail(e.target.value)}
                   placeholder="https://images.unsplash.com/..."
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white focus:outline-none focus:border-white/30 placeholder:text-zinc-600"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white focus:outline-none  placeholder:text-zinc-600"
                 />
               </div>
 
@@ -822,7 +822,7 @@ export default function AdminTemplatesPage() {
                   required
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white text-sm focus:outline-none focus:border-white/30"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white text-sm focus:outline-none "
                 />
               </div>
 
@@ -832,7 +832,7 @@ export default function AdminTemplatesPage() {
                   rows={3}
                   value={formDesc}
                   onChange={(e) => setFormDesc(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white focus:outline-none focus:border-white/30"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white focus:outline-none "
                 />
               </div>
 
@@ -842,7 +842,7 @@ export default function AdminTemplatesPage() {
                   <select
                     value={formCategory}
                     onChange={(e) => setFormCategory(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-white/10 text-white focus:outline-none focus:border-white/30"
+                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-white/10 text-white focus:outline-none "
                   >
                     {CATEGORIES.filter((c) => c !== "Tất cả").map((c) => (
                       <option key={c} value={c}>
@@ -858,7 +858,7 @@ export default function AdminTemplatesPage() {
                     type="text"
                     value={formTags}
                     onChange={(e) => setFormTags(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-white/10 text-white focus:outline-none focus:border-white/30"
+                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-white/10 text-white focus:outline-none "
                   />
                 </div>
               </div>
@@ -869,7 +869,7 @@ export default function AdminTemplatesPage() {
                   type="url"
                   value={formThumbnail}
                   onChange={(e) => setFormThumbnail(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white focus:outline-none focus:border-white/30"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white focus:outline-none "
                 />
               </div>
 

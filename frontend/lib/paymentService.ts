@@ -90,10 +90,10 @@ export async function apiFetch(url: string, init: RequestInit = {}) {
   return res;
 }
 
-async function readJson(res: Response) {
+export async function readJson(res: Response) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok || data.success === false) {
-    const error = new Error(res.status === 401 ? "Your session has expired. Please sign in again from the home page." : (data.message || paymentCopy.quota)) as Error & { code?: string };
+    const error = new Error(res.status === 401 ? "Your session has expired. Please sign in again from the home page." : (data.message || data.error || paymentCopy.quota)) as Error & { code?: string };
     error.code = data.code;
     throw error;
   }
@@ -113,10 +113,10 @@ export async function fetchAccount(): Promise<AccountPlan | null> {
   return data.data;
 }
 
-export async function checkout(planId: "pro" | "studio", months = 1) {
+export async function checkout(planId: "pro" | "studio", months = 1, promoCode = "") {
   const res = await apiFetch(`${API_BASE}/payments/checkout`, {
     method: "POST",
-    body: JSON.stringify({ planId, months }),
+    body: JSON.stringify({ planId, months, promoCode }),
   });
   return readJson(res) as Promise<{ checkoutUrl: string; orderCode: number; amount: number; mock: boolean }>;
 }
@@ -134,4 +134,24 @@ export async function confirmMockPayment(orderCode: string, amount: number) {
     body: JSON.stringify({ mock: true, data: { orderCode: Number(orderCode), amount, code: "00" } }),
   });
   return readJson(res);
+}
+
+export interface OrderInfo {
+  orderCode: number; planId: string; months: number; amount: number;
+  subtotal: number; discount: number; promoCode: string;
+  status: "PENDING" | "PAID" | "CANCELLED"; paidAt: string | null; createdAt: string | null;
+}
+export interface Receipt extends OrderInfo {
+  receiptNumber: string; customer: { name: string; email: string }; currency: string;
+}
+export interface PaymentQuote { subtotal: number; discount: number; amount: number; promoCode: string }
+export async function quotePayment(planId: string, promoCode: string): Promise<PaymentQuote> {
+  const response = await apiFetch(`${API_BASE}/payments/quote`, { method: "POST", body: JSON.stringify({ planId, months: 1, promoCode }) });
+  return (await readJson(response)).data;
+}
+export async function fetchOrders(): Promise<OrderInfo[]> {
+  return (await readJson(await apiFetch(`${API_BASE}/payments/orders`))).data;
+}
+export async function fetchReceipt(orderCode: string): Promise<Receipt> {
+  return (await readJson(await apiFetch(`${API_BASE}/payments/orders/${encodeURIComponent(orderCode)}/receipt`))).data;
 }

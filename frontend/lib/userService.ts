@@ -26,6 +26,7 @@ export interface PublicUserProfile {
     category: string;
     tags: string[];
     thumbnailUrl: string;
+    docData?: unknown;
     likesCount: number;
     viewsCount: number;
     forksCount: number;

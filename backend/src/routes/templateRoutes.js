@@ -15,6 +15,7 @@ const {
   getComments,
   createComment,
 } = require('../controllers/commentController');
+const versionRoutes = require('./versionRoutes');
 const { protect } = require('../middlewares/authMiddleware');
 
 router.route('/').get(getTemplates).post(protect, createTemplate);
@@ -27,5 +28,8 @@ router.route('/:id/review').post(protect, addTemplateReview);
 
 // Comments nested under template
 router.route('/:templateId/comments').get(getComments).post(protect, createComment);
+
+// Versions nested under template
+router.use('/:templateId/versions', versionRoutes);
 
 module.exports = router;

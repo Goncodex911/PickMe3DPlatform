@@ -283,7 +283,7 @@ export async function saveDesignApi(payload: {
     description: payload.description || "",
     category: payload.category || "Outfit",
     tags: payload.tags || [],
-    thumbnailUrl: payload.thumbnailUrl || "/hero/card-couture.png",
+    thumbnailUrl: payload.thumbnailUrl || "",
     authorName: currentUser?.name || "Bạn",
     authorAvatar: currentUser?.picture || "",
     likesCount: 0,

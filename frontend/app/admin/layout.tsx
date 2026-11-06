@@ -20,7 +20,9 @@ const NAV_ITEMS = [
   { href: "/admin/users", label: "Quản lý người dùng", icon: "group" },
   { href: "/admin/templates", label: "Mẫu 3D & Slides", icon: "view_in_ar" },
   { href: "/admin/billing", label: "Doanh thu & Gói cước", icon: "payments" },
+  { href: "/admin/payouts", label: "Yêu cầu rút tiền", icon: "currency_exchange" },
   { href: "/admin/reports", label: "Sự cố & Vi phạm", icon: "report_problem" },
+  { href: "/admin/system-health", label: "Trạng thái hệ thống", icon: "health_and_safety" },
   { href: "/admin/audit-logs", label: "Nhật ký kiểm toán", icon: "history_edu" },
   { href: "/admin/analytics", label: "Báo cáo & Phân tích", icon: "analytics" },
 ];
@@ -226,7 +228,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     value={adminEmail}
                     onChange={(e) => setAdminEmail(e.target.value)}
                     placeholder="phantrongquy23032005@gmail.com"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-zinc-950 border border-white/10 text-xs text-white placeholder-zinc-500 outline-none focus:border-white/30 transition-colors"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-zinc-950 border border-white/10 text-xs text-white placeholder-zinc-500 outline-none  transition-colors"
                     required
                   />
                 </div>
