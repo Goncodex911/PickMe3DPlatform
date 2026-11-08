@@ -24,5 +24,11 @@ router.get('/jobs/:jobId/events', blueprintController.streamJobEvents);
 // 5. CDN Cached Delivery for .GLB Files
 router.get('/cdn/:filename', blueprintController.serveCdnGlb);
 
+// 6. 1-Click AI Photorealistic 4K Render (STORY-THUAN-BP16)
+router.post('/ai-render-4k', blueprintController.generateAIRender4K);
+
+// 7. CDN Cached Delivery for 4K Rendered Images
+router.get('/cdn/renders/:filename', blueprintController.serveCdnRender);
+
 module.exports = router;
 

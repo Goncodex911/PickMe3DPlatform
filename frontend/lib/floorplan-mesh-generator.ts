@@ -10,9 +10,11 @@ import {
   WallSegment,
   OpeningSpec,
   RoomPolygon,
-  FurniturePlacement
+  FurniturePlacement,
+  ArchitecturalStyle
 } from "./floorplan-types";
 import { FURNITURE_CATALOG } from "./furniture-catalog";
+import { createPhotorealisticMaterialLibrary } from "./floorplan-materials";
 
 export interface MeshMaterials {
   exteriorWallMat: THREE.Material;
@@ -29,20 +31,14 @@ export interface MeshMaterials {
 }
 
 /**
- * Creates default PBR materials for architectural rendering
+ * Creates default PBR materials for architectural rendering adapted to style (STORY-THUAN-BP11)
  */
-export function createDefaultArchitecturalMaterials(): MeshMaterials {
+export function createDefaultArchitecturalMaterials(style: ArchitecturalStyle = "scandinavian"): MeshMaterials {
+  const pbr = createPhotorealisticMaterialLibrary(style);
+
   return {
-    exteriorWallMat: new THREE.MeshStandardMaterial({
-      color: 0xf3eee5, // warm architectural stucco
-      roughness: 0.85,
-      metalness: 0.05
-    }),
-    interiorWallMat: new THREE.MeshStandardMaterial({
-      color: 0xfdfbf7, // pure interior plaster white
-      roughness: 0.9,
-      metalness: 0.02
-    }),
+    exteriorWallMat: pbr.warmWhiteWall,
+    interiorWallMat: pbr.warmWhiteWall,
     lintelSillMat: new THREE.MeshStandardMaterial({
       color: 0xe8e2d8,
       roughness: 0.8,
@@ -53,38 +49,12 @@ export function createDefaultArchitecturalMaterials(): MeshMaterials {
       roughness: 0.65,
       metalness: 0.1
     }),
-    windowFrameMat: new THREE.MeshStandardMaterial({
-      color: 0x1f2937, // dark aluminum
-      roughness: 0.35,
-      metalness: 0.75
-    }),
-    glassMat: new THREE.MeshStandardMaterial({
-      color: 0x93c5fd,
-      roughness: 0.05,
-      metalness: 0.1,
-      transparent: true,
-      opacity: 0.35
-    }),
-    concreteFloorMat: new THREE.MeshStandardMaterial({
-      color: 0xcfcfcf,
-      roughness: 0.7,
-      metalness: 0.05
-    }),
-    oakFloorMat: new THREE.MeshStandardMaterial({
-      color: 0xd4a373,
-      roughness: 0.55,
-      metalness: 0.08
-    }),
-    marbleFloorMat: new THREE.MeshStandardMaterial({
-      color: 0xf1f5f9,
-      roughness: 0.2,
-      metalness: 0.1
-    }),
-    tileFloorMat: new THREE.MeshStandardMaterial({
-      color: 0xe2e8f0,
-      roughness: 0.45,
-      metalness: 0.05
-    }),
+    windowFrameMat: pbr.metalDarkBrushed,
+    glassMat: pbr.glassShowerClear,
+    concreteFloorMat: pbr.concreteFloor,
+    oakFloorMat: pbr.oakParquetFloor,
+    marbleFloorMat: pbr.marbleTileFloor,
+    tileFloorMat: pbr.balconySlateFloor,
     ceilingMat: new THREE.MeshStandardMaterial({
       color: 0xfafafa,
       roughness: 0.9,
@@ -299,7 +269,8 @@ function createOpeningFillerMesh(
  */
 export function generateRoomFloorMesh(
   room: RoomPolygon,
-  materials: MeshMaterials = createDefaultArchitecturalMaterials()
+  materials: MeshMaterials = createDefaultArchitecturalMaterials(),
+  uvRepeatPerMeter: number = 2.0
 ): THREE.Mesh {
   const poly = room.polygon;
   if (!poly || poly.length < 3) {
@@ -319,6 +290,17 @@ export function generateRoomFloorMesh(
   const geo = new THREE.ShapeGeometry(shape);
   // In ShapeGeometry, X is horizontal, Y is vertical. Rotate X by -90° to map Y to Z!
   geo.rotateX(-Math.PI / 2);
+
+  // TASK 6.1.2: Calculate UV coordinates based on world metric coordinates (1m = 2 repeats)
+  const posAttr = geo.attributes.position;
+  const uvs = new Float32Array(posAttr.count * 2);
+  for (let i = 0; i < posAttr.count; i++) {
+    const x = posAttr.getX(i);
+    const z = posAttr.getZ(i);
+    uvs[i * 2] = Math.abs(x) * uvRepeatPerMeter;
+    uvs[i * 2 + 1] = Math.abs(z) * uvRepeatPerMeter;
+  }
+  geo.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
 
   // Pick floor material
   let mat = materials.concreteFloorMat;
