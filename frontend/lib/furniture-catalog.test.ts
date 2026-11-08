@@ -7,14 +7,14 @@ describe("STORY-THUAN-BP02: 3D Asset Furniture Library & Catalog", () => {
   const modelsDir = path.resolve(__dirname, "../public/models/furniture");
   const catalogJsonPath = path.join(modelsDir, "furniture-catalog.json");
 
-  it("should have exactly 8 standardized assets in the catalog", () => {
-    expect(FURNITURE_CATALOG.length).toBe(8);
+  it("should have 20 standardized assets in the catalog (8 core + 12 archviz)", () => {
+    expect(FURNITURE_CATALOG.length).toBe(20);
   });
 
   it("should have a valid furniture-catalog.json file matching the metadata", () => {
     expect(fs.existsSync(catalogJsonPath)).toBe(true);
     const jsonContent = JSON.parse(fs.readFileSync(catalogJsonPath, "utf-8"));
-    expect(jsonContent.assets.length).toBe(8);
+    expect(jsonContent.assets.length).toBe(20);
   });
 
   it("should verify every asset has a valid .glb file with magic header 'glTF'", () => {
@@ -49,9 +49,10 @@ describe("STORY-THUAN-BP02: 3D Asset Furniture Library & Catalog", () => {
     expect(sofa?.vietnamese_name).toContain("Sofa");
 
     const bathAssets = getFurnitureAssetsByCategory("bath");
-    expect(bathAssets.length).toBe(2);
+    expect(bathAssets.length).toBeGreaterThanOrEqual(2);
     expect(bathAssets.some((a) => a.id === "toilet_wall_hung")).toBe(true);
     expect(bathAssets.some((a) => a.id === "sink_cabinet_bath")).toBe(true);
+    expect(bathAssets.some((a) => a.id === "archviz_shower_cabin_glass")).toBe(true);
   });
 });
 

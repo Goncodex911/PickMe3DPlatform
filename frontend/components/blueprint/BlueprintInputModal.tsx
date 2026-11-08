@@ -16,6 +16,8 @@ import {
 import { scanBlueprintWithAI } from "@/lib/floorplan-ai-scanner";
 import { exportLayoutDataToGLB } from "@/lib/floorplan-glb-exporter";
 import VectorCorrectionCanvas from "./VectorCorrectionCanvas";
+import StylePicker from "./StylePicker";
+import { applyStyleToBlueprintProject, SYSTEM_STYLE_PRESETS } from "@/lib/floorplan-auto-staging";
 
 interface BlueprintInputModalProps {
   initialProject?: BlueprintProject;
@@ -28,7 +30,7 @@ export default function BlueprintInputModal({
   onApply,
   onClose
 }: BlueprintInputModalProps) {
-  const [activeTab, setActiveTab] = useState<"source" | "specs" | "rooms">("source");
+  const [activeTab, setActiveTab] = useState<"source" | "style" | "specs" | "rooms">("source");
   const [project, setProject] = useState<BlueprintProject>(JSON.parse(JSON.stringify(initialProject)));
   const [uploadedImage, setUploadedImage] = useState<string | null>(initialProject.originalBlueprintUrl || null);
   const [isScanning, setIsScanning] = useState(false);
@@ -56,6 +58,20 @@ export default function BlueprintInputModal({
     setProject(JSON.parse(JSON.stringify(preset)));
     setUploadedImage(null);
     setScanMessage(`Đã nạp bản vẽ mẫu: ${preset.name} (${preset.specs.totalArea} m²)`);
+  };
+
+  // Switch architectural style & adapt materials
+  const handleSelectStyle = (style: ArchitecturalStyle) => {
+    const updated = applyStyleToBlueprintProject(project, style);
+    setProject(updated);
+    setScanMessage(`✓ Đã áp dụng phong cách ${SYSTEM_STYLE_PRESETS[style]?.vietnameseName || style}!`);
+  };
+
+  // Smart auto-stage furniture and layout
+  const handleAutoStage = (style: ArchitecturalStyle) => {
+    const updated = applyStyleToBlueprintProject(project, style);
+    setProject(updated);
+    setScanMessage(`✓ Đã tự động kê đồ nội thất và gán vật liệu chuẩn phong cách ${SYSTEM_STYLE_PRESETS[style]?.vietnameseName || style}!`);
   };
 
   // Upload image
@@ -101,13 +117,17 @@ export default function BlueprintInputModal({
 
   // Update building spec field
   const handleUpdateSpec = (field: keyof typeof project.specs, value: any) => {
-    setProject((prev) => ({
-      ...prev,
-      specs: {
-        ...prev.specs,
-        [field]: value
-      }
-    }));
+    if (field === "style") {
+      setProject((prev) => applyStyleToBlueprintProject(prev, value as ArchitecturalStyle));
+    } else {
+      setProject((prev) => ({
+        ...prev,
+        specs: {
+          ...prev.specs,
+          [field]: value
+        }
+      }));
+    }
   };
 
   // Room editing
@@ -214,6 +234,16 @@ export default function BlueprintInputModal({
             <span>1. Nguồn Bản Vẽ & AI Scan</span>
           </button>
           <button
+            onClick={() => setActiveTab("style")}
+            className={`py-3 px-4 text-sm font-medium border-b-2 transition flex items-center gap-2 ${
+              activeTab === "style" 
+                ? "border-amber-400 text-amber-300 bg-amber-400/5" 
+                : "border-transparent text-neutral-400 hover:text-neutral-200"
+            }`}
+          >
+            <span>2. Phong Cách & Kê Đồ</span>
+          </button>
+          <button
             onClick={() => setActiveTab("specs")}
             className={`py-3 px-4 text-sm font-medium border-b-2 transition flex items-center gap-2 ${
               activeTab === "specs" 
@@ -221,7 +251,7 @@ export default function BlueprintInputModal({
                 : "border-transparent text-neutral-400 hover:text-neutral-200"
             }`}
           >
-            <span>2. Thông Số Kiến Trúc Kỹ Thuật</span>
+            <span>3. Thông Số Kiến Trúc Kỹ Thuật</span>
           </button>
           <button
             onClick={() => setActiveTab("rooms")}
@@ -231,7 +261,7 @@ export default function BlueprintInputModal({
                 : "border-transparent text-neutral-400 hover:text-neutral-200"
             }`}
           >
-            <span>3. Bóc Tách Từng Phòng ({project.rooms.length})</span>
+            <span>4. Bóc Tách Từng Phòng ({project.rooms.length})</span>
           </button>
         </div>
 
@@ -376,7 +406,23 @@ export default function BlueprintInputModal({
             </div>
           )}
 
-          {/* TAB 2: ARCHITECTURAL SPECS */}
+          {/* TAB 2: ARCHITECTURAL STYLE & AUTO-STAGING */}
+          {activeTab === "style" && (
+            <div className="space-y-6">
+              <StylePicker
+                currentStyle={project.specs.style}
+                onSelectStyle={handleSelectStyle}
+                onAutoStage={handleAutoStage}
+              />
+              {scanMessage && (
+                <div className="p-3 rounded-lg bg-neutral-900 border border-neutral-700 text-xs text-neutral-300">
+                  {scanMessage}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 3: ARCHITECTURAL SPECS */}
           {activeTab === "specs" && (
             <div className="space-y-6">
               {/* Project Identification */}

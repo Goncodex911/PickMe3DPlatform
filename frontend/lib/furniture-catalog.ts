@@ -118,6 +118,151 @@ export const FURNITURE_CATALOG: FurnitureAssetMeta[] = [
     glb_url: "/models/furniture/window_sliding_2pane.glb",
     thumbnail_icon: "window",
     default_room_categories: ["living", "bedroom", "kitchen", "bath", "office"]
+  },
+  // STORY-THUAN-BP14: 12 High-Fidelity ArchViz 3D Assets
+  {
+    id: "archviz_bed_double_linen",
+    name: "ArchViz Double Bed with Wrinkled Linen",
+    vietnamese_name: "Giường Đôi Ga Nhăn & Gối Xếp Lớp",
+    category: "bedroom",
+    dimensions: { width: 1.9, height: 0.85, depth: 2.15 },
+    pivot_point: [0.0, 0.0, 0.0],
+    pivot_alignment: "bottom_center",
+    glb_url: "/models/archviz/archviz_bed_double_linen.glb",
+    thumbnail_icon: "bed",
+    default_room_categories: ["bedroom"]
+  },
+  {
+    id: "archviz_wood_slats_divider",
+    name: "Vertical Wood Slats Room Divider",
+    vietnamese_name: "Vách Lam Gỗ Nan Dọc Phân Chia Không Gian",
+    category: "living",
+    dimensions: { width: 2.1, height: 2.4, depth: 0.12 },
+    pivot_point: [0.0, 0.0, 0.0],
+    pivot_alignment: "bottom_center",
+    glb_url: "/models/archviz/archviz_wood_slats_divider.glb",
+    thumbnail_icon: "splitscreen",
+    default_room_categories: ["living", "bedroom", "hallway"]
+  },
+  {
+    id: "archviz_sofa_l_shape",
+    name: "L-Shaped Fabric Sectional Sofa",
+    vietnamese_name: "Sofa Nỉ Chữ L Bọc Đệm Êm Ái Kèm Gối Tựa",
+    category: "living",
+    dimensions: { width: 2.6, height: 0.8, depth: 1.8 },
+    pivot_point: [0.0, 0.0, 0.0],
+    pivot_alignment: "bottom_center",
+    glb_url: "/models/archviz/archviz_sofa_l_shape.glb",
+    thumbnail_icon: "weekend",
+    default_room_categories: ["living"]
+  },
+  {
+    id: "archviz_coffee_table_round_marble",
+    name: "Round Calacatta Marble Coffee Table",
+    vietnamese_name: "Bàn Trà Tròn Mặt Đá Marble Calacatta",
+    category: "living",
+    dimensions: { width: 0.96, height: 0.38, depth: 0.96 },
+    pivot_point: [0.0, 0.0, 0.0],
+    pivot_alignment: "bottom_center",
+    glb_url: "/models/archviz/archviz_coffee_table_round_marble.glb",
+    thumbnail_icon: "table_restaurant",
+    default_room_categories: ["living"]
+  },
+  {
+    id: "archviz_shower_cabin_glass",
+    name: "90° Glass Shower Cabin with Rain Column",
+    vietnamese_name: "Vách Tắm Kính Góc 90° Kèm Sen Cây Chrome",
+    category: "bath",
+    dimensions: { width: 1.1, height: 2.0, depth: 1.1 },
+    pivot_point: [0.0, 0.0, 0.0],
+    pivot_alignment: "bottom_center",
+    glb_url: "/models/archviz/archviz_shower_cabin_glass.glb",
+    thumbnail_icon: "shower",
+    default_room_categories: ["bath"]
+  },
+  {
+    id: "archviz_vanity_double_mirror",
+    name: "Double Sink Vanity with Backlit LED Mirror",
+    vietnamese_name: "Tủ Lavabo Đôi Mặt Đá Kèm Gương LED",
+    category: "bath",
+    dimensions: { width: 1.4, height: 1.9, depth: 0.55 },
+    pivot_point: [0.0, 0.0, 0.0],
+    pivot_alignment: "bottom_center",
+    glb_url: "/models/archviz/archviz_vanity_double_mirror.glb",
+    thumbnail_icon: "wash",
+    default_room_categories: ["bath"]
+  },
+  {
+    id: "archviz_toilet_wall_hung",
+    name: "Modern Wall-Hung Ceramic Toilet",
+    vietnamese_name: "Bồn Cầu Liền Khối Sứ Treo Tường",
+    category: "bath",
+    dimensions: { width: 0.4, height: 0.85, depth: 0.55 },
+    pivot_point: [0.0, 0.0, 0.0],
+    pivot_alignment: "bottom_center",
+    glb_url: "/models/archviz/archviz_toilet_wall_hung.glb",
+    thumbnail_icon: "wc",
+    default_room_categories: ["bath"]
+  },
+  {
+    id: "archviz_kitchen_module_combo",
+    name: "Complete Kitchen Module with Cooktop, Sink & Fridge",
+    vietnamese_name: "Cụm Bếp Liền Khối (Bồn Rửa + Bếp Từ + Tủ Lạnh)",
+    category: "kitchen",
+    dimensions: { width: 2.6, height: 1.9, depth: 0.65 },
+    pivot_point: [0.0, 0.0, 0.0],
+    pivot_alignment: "bottom_center",
+    glb_url: "/models/archviz/archviz_kitchen_module_combo.glb",
+    thumbnail_icon: "kitchen",
+    default_room_categories: ["kitchen"]
+  },
+  {
+    id: "archviz_desk_office_chair",
+    name: "Work Desk with Ergonomic Swivel Chair & Laptop",
+    vietnamese_name: "Bàn Làm Việc Gỗ Dài Kèm Ghế Xoay & Laptop",
+    category: "office",
+    dimensions: { width: 1.4, height: 0.85, depth: 0.65 },
+    pivot_point: [0.0, 0.0, 0.0],
+    pivot_alignment: "bottom_center",
+    glb_url: "/models/archviz/archviz_desk_office_chair.glb",
+    thumbnail_icon: "desk",
+    default_room_categories: ["bedroom", "office", "living"]
+  },
+  {
+    id: "archviz_wardrobe_open_walkin",
+    name: "Modern Open Walk-in Wardrobe System",
+    vietnamese_name: "Hệ Tủ Quần Áo Mở Hiện Đại Kèm Móc Treo",
+    category: "bedroom",
+    dimensions: { width: 1.6, height: 2.2, depth: 0.55 },
+    pivot_point: [0.0, 0.0, 0.0],
+    pivot_alignment: "bottom_center",
+    glb_url: "/models/archviz/archviz_wardrobe_open_walkin.glb",
+    thumbnail_icon: "checkroom",
+    default_room_categories: ["bedroom"]
+  },
+  {
+    id: "archviz_balcony_planter_box",
+    name: "Balcony Flower Planter Box with Lush Botanicals",
+    vietnamese_name: "Bồn Cây Hoa Ban Công Sắc Màu Tự Nhiên",
+    category: "living",
+    dimensions: { width: 1.2, height: 0.65, depth: 0.35 },
+    pivot_point: [0.0, 0.0, 0.0],
+    pivot_alignment: "bottom_center",
+    glb_url: "/models/archviz/archviz_balcony_planter_box.glb",
+    thumbnail_icon: "yard",
+    default_room_categories: ["living", "outdoor"]
+  },
+  {
+    id: "archviz_carpet_round_woven",
+    name: "Concentric Round Woven Fiber Rug",
+    vietnamese_name: "Thảm Dệt Sợi Tròn Đan Thủ Công",
+    category: "living",
+    dimensions: { width: 2.3, height: 0.02, depth: 2.3 },
+    pivot_point: [0.0, 0.0, 0.0],
+    pivot_alignment: "bottom_center",
+    glb_url: "/models/archviz/archviz_carpet_round_woven.glb",
+    thumbnail_icon: "crop_din",
+    default_room_categories: ["living", "bedroom"]
   }
 ];
 
