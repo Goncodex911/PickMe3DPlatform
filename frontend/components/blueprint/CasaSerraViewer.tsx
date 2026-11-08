@@ -6,6 +6,7 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { SSAOPass } from "three/examples/jsm/postprocessing/SSAOPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { BlueprintProject, RoomSpec, convertBlueprintProjectToLayoutData } from "@/lib/floorplan-types";
 import { exportLayoutDataToGLB } from "@/lib/floorplan-glb-exporter";
 import { cleanupThreeScene } from "@/lib/three-cleanup";
@@ -33,7 +34,78 @@ interface CameraWaypoint {
   fov: number;
 }
 
-// 0. GENERATE RICH ARCHITECTURAL DRAFTING BOARD TEXTURE (Exact Match to Prototype Model)
+// 0. GENERATE AUTHENTIC ARCHITECTURAL DRAFTING MAT TEXTURE (Drafting Table Grid & Precision Crosses)
+function createDraftingMatTexture(): THREE.CanvasTexture {
+  if (typeof document === "undefined" || typeof document.createElement !== "function") {
+    return new THREE.CanvasTexture({} as any);
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024;
+  canvas.height = 1024;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return new THREE.CanvasTexture(canvas);
+
+  // Warm drafting table cutting mat base #ece5d8 (exact match to Image 3)
+  ctx.fillStyle = "#ece5d8";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Subtle minor drafting grid (32px step)
+  ctx.strokeStyle = "#ded6c5";
+  ctx.lineWidth = 1;
+  const step = 32;
+  for (let x = 0; x <= canvas.width; x += step) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
+    ctx.stroke();
+  }
+  for (let y = 0; y <= canvas.height; y += step) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+  }
+
+  // Major architectural grid lines (160px step) with precision cross marks
+  ctx.strokeStyle = "#cdbfab";
+  ctx.lineWidth = 1.5;
+  const majorStep = 160;
+  for (let x = 0; x <= canvas.width; x += majorStep) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
+    ctx.stroke();
+  }
+  for (let y = 0; y <= canvas.height; y += majorStep) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+  }
+
+  // Precision crosses at intersections
+  ctx.strokeStyle = "#b5a690";
+  ctx.lineWidth = 2;
+  for (let x = 0; x <= canvas.width; x += majorStep) {
+    for (let y = 0; y <= canvas.height; y += majorStep) {
+      ctx.beginPath();
+      ctx.moveTo(x - 6, y);
+      ctx.lineTo(x + 6, y);
+      ctx.moveTo(x, y - 6);
+      ctx.lineTo(x, y + 6);
+      ctx.stroke();
+    }
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(12, 12);
+  texture.needsUpdate = true;
+  return texture;
+}
+
+// 0. GENERATE RICH ARCHITECTURAL DRAFTING BOARD TEXTURE (Exact Match to Image 3 Blueprint Maquette)
 function createArchitecturalBoardTexture(project: BlueprintProject): THREE.Texture {
   if (typeof document === "undefined" || typeof document.createElement !== "function") {
     return new THREE.Texture();
@@ -45,12 +117,12 @@ function createArchitecturalBoardTexture(project: BlueprintProject): THREE.Textu
   const ctx = canvas.getContext("2d");
   if (!ctx) return new THREE.CanvasTexture(canvas);
 
-  // 1. Warm drafting paper background
+  // 1. Warm ivory drafting paper background
   ctx.fillStyle = "#faf7f0";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // 2. Fine drafting grid
-  ctx.strokeStyle = "#eee8dc";
+  // 2. Fine paper drafting grid
+  ctx.strokeStyle = "#eee7db";
   ctx.lineWidth = 1;
   const step = 32;
   for (let x = 0; x < canvas.width; x += step) {
@@ -66,36 +138,38 @@ function createArchitecturalBoardTexture(project: BlueprintProject): THREE.Textu
     ctx.stroke();
   }
 
-  // 3. Technical Borders
-  ctx.strokeStyle = "#242220";
+  // 3. Technical Borders (Crisp, deep black architectural borders)
+  ctx.strokeStyle = "#1a1918";
   ctx.lineWidth = 4;
   ctx.strokeRect(50, 50, canvas.width - 100, canvas.height - 100);
 
-  ctx.strokeStyle = "#524e49";
+  ctx.strokeStyle = "#3d3a36";
   ctx.lineWidth = 1.5;
   ctx.strokeRect(62, 62, canvas.width - 124, canvas.height - 124);
 
   // Dimension labels
   ctx.font = "bold 15px 'Courier New', monospace";
-  ctx.fillStyle = "#69635b";
-  ctx.fillText("Trục A - B : 14.200 m", 80, 42);
-  ctx.fillText("Trục 1 - 2 : 18.600 m", canvas.width - 270, 42);
+  ctx.fillStyle = "#4a4641";
+  ctx.fillText("Trục 1 - 4 : 24.000 m", 80, 42);
+  ctx.fillText("Trục A - D : 14.200 m", canvas.width - 290, 42);
+  ctx.fillText("Trục Cửa Trượt: Kính Low-E 3 Lớp", 80, canvas.height - 24);
+  ctx.fillText("Cao độ sàn hoàn thiện: ±0.000", canvas.width - 340, canvas.height - 24);
 
-  // Helper for drawing room cards exactly matching the screenshot
+  // Helper for drawing room cards exactly matching Image 3
   const drawRoom = (
     rx: number, ry: number, rw: number, rh: number,
     num: string, title: string, subtitle: string, area: string,
-    items: { label: string; x: number; y: number; w: number; h: number; isOval?: boolean }[]
+    items: { label: string; x: number; y: number; w: number; h: number; isOval?: boolean; isHatch?: boolean }[]
   ) => {
     // Room boundary
-    ctx.strokeStyle = "#2b2927";
+    ctx.strokeStyle = "#1a1918";
     ctx.lineWidth = 2.5;
     ctx.strokeRect(rx, ry, rw, rh);
 
     // Header bar
-    ctx.fillStyle = "#f0ebe1";
+    ctx.fillStyle = "#ede6d8";
     ctx.fillRect(rx + 2, ry + 2, rw - 4, 38);
-    ctx.strokeStyle = "#2b2927";
+    ctx.strokeStyle = "#1a1918";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(rx, ry + 40);
@@ -103,29 +177,42 @@ function createArchitecturalBoardTexture(project: BlueprintProject): THREE.Textu
     ctx.stroke();
 
     // Title
-    ctx.fillStyle = "#1e1d1b";
+    ctx.fillStyle = "#181716";
     ctx.font = "bold 20px 'Courier New', sans-serif";
     ctx.fillText(`${num}. ${title}`, rx + 16, ry + 27);
 
-    // Area tag
+    // Area tag (Rust Terracotta #b85434)
     ctx.font = "bold 15px 'Courier New', monospace";
-    ctx.fillStyle = "#8c533e";
-    ctx.fillText(area, rx + rw - 75, ry + 26);
+    ctx.fillStyle = "#b85434";
+    ctx.fillText(area, rx + rw - 80, ry + 26);
 
     // Subtitle
     if (subtitle) {
       ctx.font = "italic 14px Georgia, serif";
-      ctx.fillStyle = "#69635b";
+      ctx.fillStyle = "#55504a";
       ctx.fillText(subtitle, rx + 16, ry + 64);
     }
 
     // Furniture boxes
     items.forEach((item) => {
-      ctx.strokeStyle = "#524e49";
+      ctx.strokeStyle = "#2e2b28";
       ctx.lineWidth = 1.5;
       ctx.fillStyle = "#ffffff";
 
-      if (item.isOval) {
+      if (item.isHatch) {
+        // Teak wood deck hatching
+        ctx.fillStyle = "#f5eee4";
+        ctx.fillRect(item.x, item.y, item.w, item.h);
+        ctx.strokeRect(item.x, item.y, item.w, item.h);
+        ctx.strokeStyle = "#cfc4b2";
+        ctx.lineWidth = 1;
+        for (let dy = item.y + 16; dy < item.y + item.h; dy += 18) {
+          ctx.beginPath();
+          ctx.moveTo(item.x, dy);
+          ctx.lineTo(item.x + item.w, dy);
+          ctx.stroke();
+        }
+      } else if (item.isOval) {
         ctx.beginPath();
         ctx.ellipse(item.x + item.w / 2, item.y + item.h / 2, item.w / 2, item.h / 2, 0, 0, Math.PI * 2);
         ctx.fill();
@@ -134,8 +221,8 @@ function createArchitecturalBoardTexture(project: BlueprintProject): THREE.Textu
         ctx.strokeRect(item.x, item.y, item.w, item.h);
       }
 
-      ctx.fillStyle = "#33312e";
-      ctx.font = "12px 'Courier New', monospace";
+      ctx.fillStyle = "#1e1d1b";
+      ctx.font = "bold 12px 'Courier New', monospace";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(item.label, item.x + item.w / 2, item.y + item.h / 2);
@@ -144,29 +231,43 @@ function createArchitecturalBoardTexture(project: BlueprintProject): THREE.Textu
     });
   };
 
-  // ROOM 02: PHÒNG NGỦ MASTER (Top Left)
-  drawRoom(80, 80, 880, 640, "02", "PHÒNG NGỦ MASTER", "Nội thất gỗ sồi mộc tự nhiên", "34.8 m²", [
+  // ROOM 01: PHÒNG NGỦ MASTER (Top Left)
+  drawRoom(80, 80, 880, 640, "01", "PHÒNG NGỦ MASTER", "Nội thất gỗ sồi mộc tự nhiên • Cửa sổ kính lớn", "34.8 m²", [
     { label: "Giường Kingsize", x: 340, y: 260, w: 280, h: 220 },
     { label: "Gỗ Sồi Tự Nhiên", x: 380, y: 540, w: 200, h: 44 }
   ]);
 
-  // ROOM 01: ĐẠI SẢNH & PHÒNG KHÁCH (Top Right)
-  drawRoom(1000, 80, 960, 640, "01", "ĐẠI SẢNH & PHÒNG KHÁCH", "Phòng Khách Panoramic - Cửa sổ Kính Lớn", "42.5 m²", [
+  // ROOM 02: ĐẠI SẢNH & PHÒNG KHÁCH (Top Right)
+  drawRoom(1000, 80, 960, 640, "02", "ĐẠI SẢNH & PHÒNG KHÁCH", "Phòng Khách Panoramic - Cửa sổ Kính Lớn", "42.5 m²", [
     { label: "Sofa Dài Mây", x: 1120, y: 320, w: 240, h: 100 },
     { label: "Bàn Trà Travertine", x: 1420, y: 330, w: 160, h: 80, isOval: true },
     { label: "Wall Lounge", x: 1640, y: 310, w: 200, h: 120 }
   ]);
 
   // ROOM 03: BẾP ĐẢO & DINING (Bottom Left)
-  drawRoom(80, 760, 880, 680, "03", "BẾP ĐẢO & DINING", "Hệ Tủ Âm Tường 600mm • Cao Độ: ±0.000", "36.2 m²", [
+  drawRoom(80, 760, 880, 640, "03", "BẾP ĐẢO & DINING", "Bàn đảo đá Sa Thạch • Hệ tủ âm tường 600mm", "36.2 m²", [
     { label: "Bàn Bếp Marble Đá Sa Thạch", x: 220, y: 920, w: 580, h: 120 },
-    { label: "Hệ Tủ Âm Tường 600mm", x: 280, y: 1160, w: 460, h: 70 }
+    { label: "Hệ Tủ Âm Tường 600mm", x: 280, y: 1140, w: 460, h: 70 }
   ]);
 
   // ROOM 04: SÂN TRONG & VƯỜN ZEN (Bottom Right)
-  drawRoom(1000, 760, 960, 680, "04", "SÂN TRONG & VƯỜN ZEN", "Trục Cửa Trượt: Kính Low-E 2 Lớp", "28.0 m²", [
-    { label: "Sàn Deck Gỗ Teak Tự Nhiên", x: 1140, y: 940, w: 680, h: 280 }
+  drawRoom(1000, 760, 960, 640, "04", "SÂN TRONG & VƯỜN ZEN", "Trục Cửa Trượt: Kính Low-E 2 Lớp • Cây Ô Lâu", "28.0 m²", [
+    { label: "Sàn Deck Gỗ Teak Tự Nhiên", x: 1140, y: 920, w: 680, h: 260, isHatch: true }
   ]);
+
+  // Technical Stamp Box in bottom-right
+  ctx.strokeStyle = "#1a1918";
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(1540, 1370, 420, 80);
+  ctx.fillStyle = "#1a1918";
+  ctx.font = "bold 11px 'Courier New', monospace";
+  ctx.fillText("HỒ SƠ THI CÔNG | CĂN HỘ DUPLEX 9 PHÒNG", 1555, 1392);
+  ctx.font = "10px 'Courier New', monospace";
+  ctx.fillStyle = "#4a4641";
+  ctx.fillText("TỶ LỆ: 1:50 | BẢN VẼ: A-101 REV D", 1555, 1414);
+  ctx.font = "bold 10px 'Courier New', monospace";
+  ctx.fillStyle = "#b85434";
+  ctx.fillText("KIẾN TRÚC SƯ: GON MARCUS [APPROVED]", 1555, 1436);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.needsUpdate = true;
@@ -361,6 +462,10 @@ export default function CasaSerraViewer({
   const landscapeGroupRef = useRef<THREE.Group | null>(null);
   const doorPivotRef = useRef<THREE.Group | null>(null);
   const blueprintMeshRef = useRef<THREE.Mesh | null>(null);
+  const sheetsGroupRef = useRef<THREE.Group | null>(null);
+  const bottomSheetRef = useRef<THREE.Mesh | null>(null);
+  const middleSheetRef = useRef<THREE.Mesh | null>(null);
+  const topSheetGroupRef = useRef<THREE.Group | null>(null);
   const roomFloorsRef = useRef<THREE.Mesh[]>([]);
   const roomInkMeshesRef = useRef<{ mesh: THREE.Mesh; roomId: string }[]>([]);
   const fireLightRef = useRef<THREE.PointLight | null>(null);
@@ -369,11 +474,11 @@ export default function CasaSerraViewer({
   const progressAnimRef = useRef<number | null>(null);
   const animationFrameRef = useRef<number | null>(null);
 
-  // Smooth camera vectors
-  const currentCamPos = useRef(new THREE.Vector3(12, 15, 16));
-  const targetCamPos = useRef(new THREE.Vector3(12, 15, 16));
-  const currentCamLook = useRef(new THREE.Vector3(0, 0.3, 0));
-  const targetCamLook = useRef(new THREE.Vector3(0, 0.3, 0));
+  // Smooth camera vectors (Initial Axonometric Framing exact match to Image 3)
+  const currentCamPos = useRef(new THREE.Vector3(14.0, 17.5, 19.5));
+  const targetCamPos = useRef(new THREE.Vector3(14.0, 17.5, 19.5));
+  const currentCamLook = useRef(new THREE.Vector3(1.6, 0.2, 0));
+  const targetCamLook = useRef(new THREE.Vector3(1.6, 0.2, 0));
 
   // Interactive mouse look-around offset (when dragging or looking around inside room)
   const lookOffset = useRef({ yaw: 0, pitch: 0 });
@@ -635,27 +740,27 @@ export default function CasaSerraViewer({
     const width = containerRef.current.clientWidth;
     const height = containerRef.current.clientHeight;
 
-    // Palette authentic to Architectural Drafting Paper Canvas #f7f4ec
+    // Palette authentic to Architectural Drafting Table Mat #ece5d8 (Exact match to Image 3)
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf7f4ec);
-    scene.fog = new THREE.FogExp2(0xf7f4ec, 0.0030);
+    scene.background = new THREE.Color(0xece5d8);
+    scene.fog = new THREE.FogExp2(0xece5d8, 0.0035);
     sceneRef.current = scene;
 
     const bW = project.specs.width || 14;
     const bL = project.specs.length || 12;
     const maxDim = Math.max(bW, bL, 14);
 
-    const axCamPos = new THREE.Vector3(maxDim * 0.72, (maxDim * 0.82) / zoomScale, maxDim * 0.88);
-    const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
+    const axCamPos = new THREE.Vector3(14.0, 17.5 / zoomScale, 19.5);
+    const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 1000);
     camera.position.copy(axCamPos);
-    camera.lookAt(0, 0.3, 0);
+    camera.lookAt(1.6, 0.2, 0);
     cameraRef.current = camera;
     currentCamPos.current.copy(axCamPos);
     targetCamPos.current.copy(axCamPos);
-    currentCamLook.current.set(0, 0.3, 0);
-    targetCamLook.current.set(0, 0.3, 0);
+    currentCamLook.current.set(1.6, 0.2, 0);
+    targetCamLook.current.set(1.6, 0.2, 0);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: false });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.localClippingEnabled = true;
@@ -670,27 +775,30 @@ export default function CasaSerraViewer({
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Post-Processing Pipeline: SSAO & UnrealBloomPass (STORY-THUAN-BP13)
+    // Post-Processing Pipeline: SSAO, UnrealBloomPass & OutputPass (Tone mapping & Color Corrected)
     try {
       const composer = new EffectComposer(renderer);
       const renderPass = new RenderPass(scene, camera);
       composer.addPass(renderPass);
 
       const ssaoPass = new SSAOPass(scene, camera, width, height);
-      ssaoPass.kernelRadius = 14;
+      ssaoPass.kernelRadius = 16;
       ssaoPass.minDistance = 0.005;
-      ssaoPass.maxDistance = 0.12;
+      ssaoPass.maxDistance = 0.15;
       composer.addPass(ssaoPass);
       ssaoPassRef.current = ssaoPass;
 
       const bloomPass = new UnrealBloomPass(
         new THREE.Vector2(width, height),
-        0.3,
+        0.25,
         0.4,
-        0.88
+        0.90
       );
       composer.addPass(bloomPass);
       bloomPassRef.current = bloomPass;
+
+      const outputPass = new OutputPass();
+      composer.addPass(outputPass);
 
       composerRef.current = composer;
     } catch (e) {
@@ -699,32 +807,41 @@ export default function CasaSerraViewer({
 
     // Balanced Photorealistic Lighting Setup (Story 6.3 & UX Tuning)
     // Soft, natural ambient light avoids washing out the architectural drafting paper
-    const ambient = new THREE.AmbientLight(0xfdfbf7, 0.65);
+    const ambient = new THREE.AmbientLight(0xfcf8f2, 0.42);
     scene.add(ambient);
 
-    const hemi = new THREE.HemisphereLight(0xfff8ee, 0xd0c8b8, 0.45);
+    const hemi = new THREE.HemisphereLight(0xfff8ee, 0xd4ccba, 0.32);
     scene.add(hemi);
 
-    const sun = new THREE.DirectionalLight(0xfff1db, 1.6);
-    sun.position.set(28, 36, 20);
+    const sun = new THREE.DirectionalLight(0xfffaea, 1.15);
+    sun.position.set(22, 34, 18);
     sun.castShadow = true;
     sun.shadow.mapSize.width = 2048;
     sun.shadow.mapSize.height = 2048;
-    sun.shadow.camera.near = 0.5;
-    sun.shadow.camera.far = 160;
-    sun.shadow.camera.left = -50;
-    sun.shadow.camera.right = 50;
-    sun.shadow.camera.top = 50;
-    sun.shadow.camera.bottom = -50;
-    sun.shadow.bias = -0.00008; // Task 6.3.2: Optimized shadow bias
+    sun.shadow.camera.near = 1;
+    sun.shadow.camera.far = 140;
+    sun.shadow.camera.left = -40;
+    sun.shadow.camera.right = 40;
+    sun.shadow.camera.top = 40;
+    sun.shadow.camera.bottom = -40;
+    sun.shadow.bias = -0.0001; // Task 6.3.2: Optimized shadow bias
     sun.shadow.normalBias = 0.02;
     scene.add(sun);
     sunRef.current = sun;
 
-    // Warm Architectural Drafting Grid on Ground
-    const grid = new THREE.GridHelper(160, 160, 0xdcd5c7, 0xeae4d6);
-    grid.position.y = -0.02;
-    scene.add(grid);
+    // Ground Drafting Mat with Warm Texture & Intersections (Exact match to Image 3)
+    const matGeo = new THREE.PlaneGeometry(160, 160);
+    matGeo.rotateX(-Math.PI / 2);
+    const matTex = createDraftingMatTexture();
+    const matMat = new THREE.MeshStandardMaterial({
+      map: matTex,
+      roughness: 0.95,
+      metalness: 0.0
+    });
+    const matMesh = new THREE.Mesh(matGeo, matMat);
+    matMesh.position.y = -0.01;
+    matMesh.receiveShadow = true;
+    scene.add(matMesh);
 
     // Scene Groups
     const landscapeGroup = new THREE.Group();
@@ -879,12 +996,31 @@ export default function CasaSerraViewer({
           landscapeGroupRef.current.visible = showLandscapeRef.current && currentExtrusion > 0.08;
         }
 
+        // Morphing from 2D Tilted Maquette into Straightened 3D Floorplan
+        const straightenT = Math.min(1.0, p / 0.12);
+        if (topSheetGroupRef.current) {
+          topSheetGroupRef.current.rotation.y = THREE.MathUtils.lerp(-0.42, 0, straightenT);
+          topSheetGroupRef.current.position.x = THREE.MathUtils.lerp(1.6, 0, straightenT);
+          topSheetGroupRef.current.position.z = THREE.MathUtils.lerp(0.0, 0, straightenT);
+        }
+        if (bottomSheetRef.current) {
+          bottomSheetRef.current.rotation.y = THREE.MathUtils.lerp(-0.55, 0, straightenT);
+          bottomSheetRef.current.position.x = THREE.MathUtils.lerp(0.9, 0, straightenT);
+          bottomSheetRef.current.visible = p < 0.16;
+        }
+        if (middleSheetRef.current) {
+          middleSheetRef.current.rotation.y = THREE.MathUtils.lerp(-0.48, 0, straightenT);
+          middleSheetRef.current.position.x = THREE.MathUtils.lerp(1.3, 0, straightenT);
+          middleSheetRef.current.visible = p < 0.16;
+        }
+
         // 2D Blueprint Floorplan fades out when 3D rises
         if (blueprintMeshRef.current) {
-          const bpMat = blueprintMeshRef.current.material as THREE.MeshBasicMaterial;
+          const bpMat = blueprintMeshRef.current.material as THREE.MeshStandardMaterial;
           if (bpMat) {
-            const bpOpacity = Math.max(0, 1 - (p - 0.05) * 16.0);
+            const bpOpacity = Math.max(0, 1 - (p - 0.08) * 12.0);
             bpMat.opacity = bpOpacity;
+            bpMat.transparent = bpOpacity < 0.999;
             blueprintMeshRef.current.visible = bpOpacity > 0.01;
           }
         }
@@ -1096,26 +1232,25 @@ export default function CasaSerraViewer({
     const r0cZ = (room0.bounds[1] + room0.bounds[3]) / 2;
     const doorZ = room0.bounds[1];
 
-    // PHASE 1: 3D AXONOMETRIC BLUEPRINT BOARD (p = 0 to 0.06)
+    // PHASE 1: 3D AXONOMETRIC BLUEPRINT BOARD (p = 0 to 0.06 - Exact match to Image 3)
     if (p <= 0.06) {
       if (cameraModeRef.current === "top_down") {
         const altitude = (maxDim * 0.75) / zoomScale;
         targetCamPos.current.set(0, altitude, 0.01);
         targetCamLook.current.set(0, 0, 0);
       } else {
-        const axPos = new THREE.Vector3(maxDim * 0.72, (maxDim * 0.82) / zoomScale, maxDim * 0.88);
-        targetCamPos.current.copy(axPos);
-        targetCamLook.current.set(0, 0.3, 0);
+        targetCamPos.current.set(14.0, 17.5 / zoomScale, 19.5);
+        targetCamLook.current.set(1.6, 0.2, 0.0);
       }
     }
     // PHASE 2: 3D AXONOMETRIC MAQUETTE RISE (p = 0.06 to 0.18)
     // Swoops down from overhead into an elegant 48° architectural perspective
     else if (p <= 0.18) {
       const t = (p - 0.06) / 0.12;
-      const startPos = new THREE.Vector3(maxDim * 0.72, (maxDim * 0.82) / zoomScale, maxDim * 0.88);
+      const startPos = new THREE.Vector3(14.0, 17.5 / zoomScale, 19.5);
       const endPos = new THREE.Vector3(-maxDim * 0.65, maxDim * 0.58, maxDim * 0.68);
       targetCamPos.current.lerpVectors(startPos, endPos, t);
-      targetCamLook.current.set(0, 0.8 * t, 0);
+      targetCamLook.current.lerpVectors(new THREE.Vector3(1.6, 0.2, 0.0), new THREE.Vector3(0, 0.8 * t, 0), t);
     }
     // PHASE 3: DOOR APPROACH & CINEMATIC GLIDE INSIDE (p = 0.18 to 0.28)
     // Camera descends to eye-level outside door, door pivots open, camera glides inside!
@@ -1296,41 +1431,79 @@ export default function CasaSerraViewer({
     landscapeGroup.add(poolRimMesh);
 
     // C. FOUNDATION SLAB & 2D BLUEPRINT TEXTURE
-    // C. 3D ARCHITECTURAL DRAFTING SHEETS (Exact match to Prototype in Screenshot)
+    // C. 3D ARCHITECTURAL DRAFTING SHEETS (Layered Maquette Matching Image 3)
     const sheetW = project.specs.width ? Math.max(18, project.specs.width) : 20;
     const sheetL = project.specs.length ? Math.max(14, project.specs.length) : 16;
 
-    // Sheet 1: Bottom Layered Offset Sheet (creates physical paper maquette depth)
-    const bottomSheetGeo = new THREE.BoxGeometry(sheetW + 1.2, 0.04, sheetL + 1.2);
+    const sheetsGroup = new THREE.Group();
+    sheetsGroupRef.current = sheetsGroup;
+
+    // Sheet 0: Bottom Layered Offset Sheet (Warm darker base paper, tilted -31.5°)
+    const bottomSheetGeo = new THREE.BoxGeometry(sheetW + 1.8, 0.03, sheetL + 1.8);
     const bottomSheetMat = new THREE.MeshStandardMaterial({
-      color: 0xf3efe6,
-      roughness: 0.92,
-      metalness: 0.02
+      color: 0xeadfcf,
+      roughness: 0.95,
+      metalness: 0.01
     });
     const bottomSheetMesh = new THREE.Mesh(bottomSheetGeo, bottomSheetMat);
-    bottomSheetMesh.position.set(-0.8, 0.02, 0.6);
-    bottomSheetMesh.rotation.y = -0.05;
+    bottomSheetMesh.position.set(0.9, 0.015, 0.7);
+    bottomSheetMesh.rotation.y = -0.55;
     bottomSheetMesh.castShadow = true;
     bottomSheetMesh.receiveShadow = true;
-    floorGroup.add(bottomSheetMesh);
+    sheetsGroup.add(bottomSheetMesh);
+    bottomSheetRef.current = bottomSheetMesh;
 
-    // Sheet 2: Main Top Architectural Blueprint Sheet with Vector Drawing Layout
-    const topSheetGeo = new THREE.BoxGeometry(sheetW, 0.05, sheetL);
+    // Sheet 1: Middle Layered Offset Sheet (Tilted -27.5°)
+    const middleSheetGeo = new THREE.BoxGeometry(sheetW + 0.9, 0.03, sheetL + 0.9);
+    const middleSheetMat = new THREE.MeshStandardMaterial({
+      color: 0xf5efe4,
+      roughness: 0.90,
+      metalness: 0.01
+    });
+    const middleSheetMesh = new THREE.Mesh(middleSheetGeo, middleSheetMat);
+    middleSheetMesh.position.set(1.3, 0.035, 0.35);
+    middleSheetMesh.rotation.y = -0.48;
+    middleSheetMesh.castShadow = true;
+    middleSheetMesh.receiveShadow = true;
+    sheetsGroup.add(middleSheetMesh);
+    middleSheetRef.current = middleSheetMesh;
+
+    // Sheet 2: Top Presentation Sheet with Rich Architectural Vector Floorplan (Tilted -24°)
+    const topSheetGroup = new THREE.Group();
+    topSheetGroup.position.set(1.6, 0.065, 0.0);
+    topSheetGroup.rotation.y = -0.42;
+
+    const paperSlabGeo = new THREE.BoxGeometry(sheetW, 0.04, sheetL);
+    const paperSlabMat = new THREE.MeshStandardMaterial({
+      color: 0xfbf8f0,
+      roughness: 0.88,
+      metalness: 0.01
+    });
+    const paperSlabMesh = new THREE.Mesh(paperSlabGeo, paperSlabMat);
+    paperSlabMesh.castShadow = true;
+    paperSlabMesh.receiveShadow = true;
+    topSheetGroup.add(paperSlabMesh);
+
+    const paperFaceGeo = new THREE.PlaneGeometry(sheetW, sheetL);
+    paperFaceGeo.rotateX(-Math.PI / 2);
     const boardTex = createArchitecturalBoardTexture(project);
     if (rendererRef.current && (boardTex as any).anisotropy) {
       (boardTex as any).anisotropy = rendererRef.current.capabilities.getMaxAnisotropy();
     }
-    const topSheetMat = new THREE.MeshStandardMaterial({
+    const paperFaceMat = new THREE.MeshStandardMaterial({
       map: boardTex,
       roughness: 0.85,
-      metalness: 0.02
+      metalness: 0.01
     });
-    const topSheetMesh = new THREE.Mesh(topSheetGeo, topSheetMat);
-    topSheetMesh.position.set(0, 0.05, 0);
-    topSheetMesh.castShadow = true;
-    topSheetMesh.receiveShadow = true;
-    floorGroup.add(topSheetMesh);
-    blueprintMeshRef.current = topSheetMesh;
+    const paperFaceMesh = new THREE.Mesh(paperFaceGeo, paperFaceMat);
+    paperFaceMesh.position.y = 0.021;
+    paperFaceMesh.receiveShadow = true;
+    topSheetGroup.add(paperFaceMesh);
+
+    sheetsGroup.add(topSheetGroup);
+    floorGroup.add(sheetsGroup);
+    topSheetGroupRef.current = topSheetGroup;
+    blueprintMeshRef.current = paperFaceMesh;
 
     // Helper: Add solid wall segment with clerestory top glass band & 1.5m dollhouse cap
     const addArchitecturalWall = (
