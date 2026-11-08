@@ -1,12 +1,34 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import CasaSerraViewer from "@/components/blueprint/CasaSerraViewer";
+import dynamic from "next/dynamic";
 import { BlueprintProject, CASA_SERRA_PRESET, NHA_LAU2_PRESET, TOWNHOUSE_PRESET, APARTMENT_PRESET, RoomSpec } from "@/lib/floorplan-types";
 import { analyzeAndBuildProject } from "@/lib/floorplan-analyzer";
+import { applyStyleToBlueprintProject } from "@/lib/floorplan-auto-staging";
+
+const CasaSerraViewer = dynamic(
+  () => import("@/components/blueprint/CasaSerraViewer"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full min-h-[580px] bg-[#f7f4ec] flex flex-col items-center justify-center font-mono text-xs text-neutral-600 space-y-3">
+        <div className="w-8 h-8 rounded-lg bg-neutral-900 flex items-center justify-center text-[#FF4D00] font-black text-sm animate-pulse">
+          3D
+        </div>
+        <span className="tracking-widest uppercase text-neutral-500">Đang khởi tạo không gian 3D kiến trúc...</span>
+      </div>
+    )
+  }
+);
+
+const DEFAULT_BLUEPRINT_PROJECT: BlueprintProject = {
+  ...CASA_SERRA_PRESET,
+  name: "BẢN VẼ MẶT BẰNG 3D",
+  subtitle: "MẶT BẰNG TỔNG THỂ"
+};
 
 export default function Blueprint3DStudioPage() {
-  const [project, setProject] = useState<BlueprintProject>(CASA_SERRA_PRESET);
+  const [project, setProject] = useState<BlueprintProject>(DEFAULT_BLUEPRINT_PROJECT);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
 
   // Analysis progress states
@@ -148,7 +170,15 @@ export default function Blueprint3DStudioPage() {
 
   return (
     <div 
-      className="relative w-full h-[calc(100vh-64px)] bg-[#eae6df] overflow-hidden select-none"
+      className="relative w-full h-[calc(100vh-64px)] overflow-hidden select-none"
+      style={{
+        backgroundColor: "#f7f4ec",
+        backgroundImage: `
+          linear-gradient(#e5dfd3 1px, transparent 1px),
+          linear-gradient(90deg, #e5dfd3 1px, transparent 1px)
+        `,
+        backgroundSize: "32px 32px"
+      }}
       onDrop={handleDrop}
       onDragOver={handleDragOver}
     >
@@ -171,6 +201,7 @@ export default function Blueprint3DStudioPage() {
           onResetToDemo={handleResetToDemo}
           onSelectArchetype={handleSelectArchetype}
           onUpdateRoom={handleUpdateRoom}
+          onSelectStyle={(style) => setProject((prev) => applyStyleToBlueprintProject(prev, style))}
           isCustomUploaded={Boolean(uploadedImage)}
         />
       </main>

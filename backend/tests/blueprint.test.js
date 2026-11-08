@@ -137,5 +137,92 @@ describe('STORY-THUAN-BP10: Blueprint Background Queue & CDN Delivery', () => {
     assert.strictEqual(jsonResponse.format, 'glb');
     assert.ok(jsonResponse.sizeBytes > 0);
   });
+
+  test('STORY-THUAN-BP16: generateAIRender4K rejects missing imageBase64 with 400', async () => {
+    let statusCode = null;
+    let jsonResponse = null;
+
+    const req = {
+      body: { style: 'scandinavian' },
+    };
+    const res = {
+      status: (code) => {
+        statusCode = code;
+        return {
+          json: (data) => {
+            jsonResponse = data;
+          },
+        };
+      },
+    };
+
+    await blueprintController.generateAIRender4K(req, res);
+
+    assert.strictEqual(statusCode, 400);
+    assert.strictEqual(jsonResponse.success, false);
+    assert.ok(jsonResponse.message.includes('Vui lòng cung cấp'));
+  });
+
+  test('STORY-THUAN-BP16: generateAIRender4K returns photorealistic 4K render payload under 5 seconds', async () => {
+    let statusCode = null;
+    let jsonResponse = null;
+
+    const mockPngBase64 = Buffer.from('mock-png-image-binary-data').toString('base64');
+    const req = {
+      body: {
+        imageBase64: `data:image/png;base64,${mockPngBase64}`,
+        style: 'luxury_marble',
+        customPrompt: 'warm dusk ambiance',
+      },
+    };
+    const res = {
+      status: (code) => {
+        statusCode = code;
+        return {
+          json: (data) => {
+            jsonResponse = data;
+          },
+        };
+      },
+    };
+
+    await blueprintController.generateAIRender4K(req, res);
+
+    assert.strictEqual(statusCode, 200);
+    assert.strictEqual(jsonResponse.success, true);
+    assert.ok(jsonResponse.renderUrl.includes('render_4k_luxury_marble'));
+    assert.strictEqual(jsonResponse.width, 3840);
+    assert.strictEqual(jsonResponse.height, 2160);
+    assert.strictEqual(jsonResponse.style, 'luxury_marble');
+    assert.ok(jsonResponse.enhancedPrompt.includes('Calacatta white marble'));
+    assert.ok(jsonResponse.enhancedPrompt.includes('cyan LED strip'));
+    assert.ok(jsonResponse.executionTimeMs < 5000, `Execution time ${jsonResponse.executionTimeMs}ms exceeds 5000ms`);
+  });
+
+  test('STORY-THUAN-BP16: serveCdnRender sets 1-year immutable caching header for PNG images', () => {
+    const headers = {};
+    const req = {
+      params: { filename: 'render_sample_test.png' },
+      method: 'GET',
+    };
+    const res = {
+      setHeader: (key, val) => {
+        headers[key.toLowerCase()] = val;
+      },
+      status: (code) => {
+        res.statusCode = code;
+        return {
+          json: (d) => { res.body = d; }
+        };
+      },
+      statusCode: 200,
+    };
+
+    blueprintController.serveCdnRender(req, res);
+
+    assert.strictEqual(headers['cache-control'], 'public, max-age=31536000, immutable');
+    assert.strictEqual(headers['content-type'], 'image/png');
+    assert.strictEqual(headers['access-control-allow-origin'], '*');
+  });
 });
 

@@ -437,18 +437,115 @@ gantt
 
 ---
 
+### 🟢 GIAI ĐOẠN 6: Engine Sa Bàn 3D Dollhouse, Vật Liệu PBR & Ánh Sáng SSAO (Photorealistic ArchViz)
+
+> [!IMPORTANT]
+> **Định chuẩn kiến trúc:** Mốc cao độ cắt tường Sa bàn (Dollhouse Cutaway) được cố định chuẩn ở **$1.5\text{ m}$** (ngang tầm ngực) với mép cắt viền đen sa bàn. Phong cách nội thất cho phép người dùng lựa chọn đa dạng theo danh mục phong cách của hệ thống (`Scandinavian`, `Luxury Marble`, `Modern Minimal`, `Casa Serra`, `Japandi`, `Industrial`).
+
+#### 📌 Story 6.1: Hệ Thống Vật Liệu PBR Thực Tế (PBR Texture Maps)
+- **Mã:** `STORY-THUAN-BP11`
+- **Mô tả:**  
+  *Là một* Người dùng xem bản vẽ,  
+  *Tôi muốn* sàn nhà lát vân gỗ ghép thanh tự nhiên (Parquet), nhà tắm lát gạch đá mài bóng nhẹ và vách tắm làm bằng kính trong suốt,  
+  *Để* căn nhà có cảm giác chân thật như hình ảnh thực tế chứ không phải mặt phẳng sơn đơn sắc.
+- **Tiêu chí chấp nhận (AC):**
+  - [x] Tích hợp 4 bộ Texture PBR chuẩn (kèm `map`, `normalMap`, `roughnessMap`): Sàn gỗ sồi thanh dài (`oak_parquet`), Gạch đá mài phòng tắm (`marble_tile`), Ban công đá đen (`slate_tile`), Bề mặt tường vữa trắng (`plaster_wall`).
+  - [x] Vách kính phòng tắm và lan can kính sử dụng `THREE.MeshPhysicalMaterial` với độ truyền quang (`transmission: 0.95`, `roughness: 0.05`, `ior: 1.5`).
+- **Công việc (Tasks):**
+  - [x] **Task 6.1.1:** Chuẩn bị bộ map texture liền mạch (Seamless PBR Textures) độ phân giải tối ưu $1024 \times 1024$ định dạng WebP lưu tại `frontend/public/textures/` bằng script `generate-pbr-textures.js`.
+  - [x] **Task 6.1.2:** Cập nhật [`floorplan-mesh-generator.ts`](file:///d:/CODE/PickMe3D/frontend/lib/floorplan-mesh-generator.ts) áp dụng Texture mapping tự động với tỉ lệ lặp (UV repeat) chuẩn theo mét thực tế ($1\text{m} = 2\text{ repeats}$).
+
+#### 📌 Story 6.2: Chế Độ Sa Bàn Cắt Tường 3D Dollhouse Cutaway Ở Cao Độ 1.5m
+- **Mã:** `STORY-THUAN-BP12`
+- **Mô tả:**  
+  *Là một* Khách hàng muốn xem tổng thể căn hộ,  
+  *Tôi muốn* khi ở góc nhìn từ trên cao, các mảng tường tự động được cắt ở độ cao $1.5\text{m}$ và mép cắt có viền đen sa bàn kiến trúc,  
+  *Để* nhìn thấy trọn vẹn toàn bộ các phòng và nội thất bên trong mà không bị tường che khuất (như Ảnh 1).
+- **Tiêu chí chấp nhận (AC):**
+  - [x] Kích hoạt `THREE.Plane` clipping ở cao độ chuẩn $Y = 1.5\text{m}$ khi chuyển sang chế độ TopDown hoặc Orbit sa bàn.
+  - [x] Mép cắt tường (Cut cap) hiển thị màu xám đậm/đen đồng nhất như sa bàn kiến trúc.
+  - [x] Khi chuyển sang góc nhìn thứ nhất (Walkthrough WASD), tự động nâng tường lên cao đủ $3.2\text{m}$ kèm trần nhà.
+- **Công việc (Tasks):**
+  - [x] **Task 6.2.1:** Thêm nút chuyển đổi "Chế độ Sa Bàn (Dollhouse View)" vào [`FloorLayerToolbar.tsx`](file:///d:/CODE/PickMe3D/frontend/components/blueprint/FloorLayerToolbar.tsx).
+  - [x] **Task 6.2.2:** Cấu hình `renderer.clippingPlanes` và render pass stenciling trong [`CasaSerraViewer.tsx`](file:///d:/CODE/PickMe3D/frontend/components/blueprint/CasaSerraViewer.tsx).
+
+#### 📌 Story 6.3: Ánh Sáng Kiến Trúc Đa Tầng & Hiệu Ứng Chiều Sâu SSAO
+- **Mã:** `STORY-THUAN-BP13`
+- **Mô tả:**  
+  *Là một* Người xem không gian,  
+  *Tôi muốn* nhìn thấy bóng đổ chân thật tại các khe tiếp giáp giữa sàn, tường và chân đồ vật, cùng dải đèn hắt trần và đèn rọi điểm ấm áp,  
+  *Để* cảm nhận không gian có chiều sâu như đang đứng trong căn nhà thực tế (như Ảnh 2).
+- **Tiêu chí chấp nhận (AC):**
+  - [x] Tích hợp bộ lọc bóng đổ tiếp xúc góc khuất **SSAO (Screen Space Ambient Occlusion)** bằng `EffectComposer` của Three.js.
+  - [x] Bổ sung các nguồn sáng kiến trúc: Đèn rọi điểm (Spotlights) hướng xuống bàn ăn/sofa, dải LED hắt khe tủ bếp và khe tivi.
+  - [x] Tích hợp hiệu ứng ánh sáng phát quang nhẹ (Unreal Bloom Pass) cho các dải đèn LED.
+- **Công việc (Tasks):**
+  - [x] **Task 6.3.1:** Cài đặt Three.js Post-processing pipeline (`EffectComposer`, `RenderPass`, `SSAOPass`, `UnrealBloomPass`).
+  - [x] **Task 6.3.2:** Cấu hình bóng đổ mềm `THREE.PCFSoftShadowMap` với bias tối ưu chống hiện tượng sọc bóng (shadow acne).
+
+---
+
+### 🟢 GIAI ĐOẠN 7: Kho Asset Nội Thất Chi Tiết & Thuật Toán Kê Đồ Thông Minh Theo Phong Cách Hệ Thống
+
+#### 📌 Story 7.1: Bộ Thư Viện 3D Asset Nội Thất Chi Tiết Cao (Detailed ArchViz Kit)
+- **Mã:** `STORY-THUAN-BP14`
+- **Mô tả:**  
+  *Là một* Người dùng,  
+  *Tôi muốn* khi mở bản vẽ ra thì thấy các đồ vật thật như giường có ga gối nhăn, vách lam gỗ, chậu cây ban công, bồn cầu liền khối và tủ bếp inox/đá,  
+  *Để* căn hộ hiện lên sinh động như một bức ảnh chụp nội thất cao cấp.
+- **Tiêu chí chấp nhận (AC):**
+  - [x] Cung cấp đủ 12 model GLB chi tiết cao (dung lượng nén $< 800\text{KB}$/file): Giường nệm đôi ga nhăn, Vách lam gỗ nan dọc, Sofa nỉ chữ L, Bàn trà tròn mặt đá, Vách tắm kính góc $90^\circ$, Tủ lavabo đôi + gương led, Bồn cầu sứ treo tường, Module bếp (bồn rửa + bếp từ + tủ lạnh), Bàn làm việc kèm ghế xoay, Tủ áo mở, Bồn hoa ban công, Thảm dệt tròn.
+- **Công việc (Tasks):**
+  - [x] **Task 7.1.1:** Chuẩn hóa và nén Draco cho 12 model GLB lưu trữ tại `frontend/public/models/archviz/`.
+  - [x] **Task 7.1.2:** Cập nhật danh mục `furniture-catalog.json` hỗ trợ bộ asset mới.
+
+#### 📌 Story 7.2: Thuật Toán Bố Trí Thông Minh Theo Phong Cách Hệ Thống (Smart Auto-Staging Engine)
+- **Mã:** `STORY-THUAN-BP15`
+- **Mô tả:**  
+  *Là một* Người dùng chọn phong cách thiết kế từ danh mục (Scandinavian, Luxury, Japandi, Minimalist),  
+  *Tôi muốn* hệ thống tự động bốc bộ đồ nội thất và gán chất liệu sàn/tường phù hợp phong cách đó, đồng thời tự động kê giường, sofa, tủ vào đúng vị trí nhân trắc học,  
+  *Để* tôi có ngay một căn hộ hoàn thiện 100% đúng gu thẩm mỹ mà không cần tự kéo thả từng món đồ.
+- **Tiêu chí chấp nhận (AC):**
+  - [x] Đổi phong cách thiết kế sẽ tự động cập nhật tông màu gỗ, vân đá, chất liệu vải sofa và bộ phụ kiện trang trí tương ứng.
+  - [x] Tự động định vị: Giường áp tường dài nhất, Sofa hướng về vách tivi, Vách kính tắm đặt vào góc WC.
+- **Công việc (Tasks):**
+  - [x] **Task 7.2.1:** Xây dựng module `floorplan-auto-staging.ts` thực thi các quy tắc hình học nhân trắc học và style preset adapter.
+  - [x] **Task 7.2.2:** Tích hợp bộ chọn phong cách trực quan (Style Picker) trong `BlueprintInputModal.tsx`.
+
+#### 📌 Story 7.3: Nút 1-Click "Xuất Ảnh AI Render 4K (ControlNet Depth)"
+- **Mã:** `STORY-THUAN-BP16`
+- **Mô tả:**  
+  *Là một* Kiến trúc sư / Gia chủ,  
+  *Tôi muốn* bấm nút "AI Render 4K" từ góc nhìn 3D hiện tại để nhận về bức ảnh chụp nội thất sắc nét từng vân gỗ và ánh sáng lung linh như Ảnh 2,  
+  *Để* tải về in ấn hoặc gửi cho khách hàng xem trước.
+- **Tiêu chí chấp nhận (AC):**
+  - [x] Chụp khung nhìn canvas 3D hiện tại thành ảnh base64 kèm Depth Map.
+  - [x] Gửi ảnh tới AI Image Generation Pipeline với prompt phong cách nội thất đã chọn.
+  - [x] Trả về bức ảnh photorealistic chất lượng cao trong vòng dưới 5 giây.
+- **Công việc (Tasks):**
+  - [x] **Task 7.3.1:** Viết endpoint backend `POST /api/blueprint/ai-render-4k`.
+  - [x] **Task 7.3.2:** Thêm nút "📸 AI Render Siêu Thực" trên thanh công cụ Viewer kèm modal preview và tải về ảnh 4K.
+
+---
+
 ## 7. TỔNG HỢP DANH SÁCH STORIES CỦA THUẬN
 
 | Story ID | Tên Story | Giai Đoạn | Độ Phức Tạp | Ưu Tiên |
 | :--- | :--- | :---: | :---: | :---: |
-| `STORY-THUAN-BP01` | Định nghĩa chuẩn `layout_data.json` và Schema Validator | GĐ 1 | M (Vừa) | 🔥 P0 |
-| `STORY-THUAN-BP02` | Thư viện 3D Asset nội thất & khung cửa chuẩn hóa | GĐ 1 | M (Vừa) | 🔥 P0 |
-| `STORY-THUAN-BP03` | Prompt Gemini Vision trích xuất vector tường & cửa | GĐ 2 | L (Lớn) | 🔥 P0 |
-| `STORY-THUAN-BP04` | Thuật toán nắn chỉnh vector (Orthogonalization & Snapping) | GĐ 2 | L (Lớn) | 🔥 P0 |
-| `STORY-THUAN-BP05` | Dựng tường bằng Segmented Wall Extrusion & tạo sàn phòng | GĐ 3 | XL (Rất Lớn) | 🔥 P0 |
-| `STORY-THUAN-BP06` | Đặt nội thất 3D & đóng gói xuất tệp `.GLB` nén Draco | GĐ 3 | L (Lớn) | 🔥 P0 |
-| `STORY-THUAN-BP07` | Bộ công cụ 2D Correction Canvas (Nắn chỉnh trước khi dựng) | GĐ 4 | XL (Rất Lớn) | 🟡 P1 |
-| `STORY-THUAN-BP08` | Nâng cấp 3D Viewer (Orbit, Top-Down, Walkthrough & Layers) | GĐ 4 | L (Lớn) | 🟡 P1 |
-| `STORY-THUAN-BP09` | Benchmark 10 loại bản vẽ & kiểm soát giải phóng WebGL Memory | GĐ 5 | M (Vừa) | 🔵 P2 |
-| `STORY-THUAN-BP10` | Hàng đợi bất đồng bộ & CDN Hosting cho mô hình `.GLB` | GĐ 5 | M (Vừa) | 🔵 P2 |
+| `STORY-THUAN-BP01` | Định nghĩa chuẩn `layout_data.json` và Schema Validator | GĐ 1 | M (Vừa) | 🔥 P0 (Xong) |
+| `STORY-THUAN-BP02` | Thư viện 3D Asset nội thất & khung cửa chuẩn hóa | GĐ 1 | M (Vừa) | 🔥 P0 (Xong) |
+| `STORY-THUAN-BP03` | Prompt Gemini Vision trích xuất vector tường & cửa | GĐ 2 | L (Lớn) | 🔥 P0 (Xong) |
+| `STORY-THUAN-BP04` | Thuật toán nắn chỉnh vector (Orthogonalization & Snapping) | GĐ 2 | L (Lớn) | 🔥 P0 (Xong) |
+| `STORY-THUAN-BP05` | Dựng tường bằng Segmented Wall Extrusion & tạo sàn phòng | GĐ 3 | XL (Rất Lớn) | 🔥 P0 (Xong) |
+| `STORY-THUAN-BP06` | Đặt nội thất 3D & đóng gói xuất tệp `.GLB` nén Draco | GĐ 3 | L (Lớn) | 🔥 P0 (Xong) |
+| `STORY-THUAN-BP07` | Bộ công cụ 2D Correction Canvas (Nắn chỉnh trước khi dựng) | GĐ 4 | XL (Rất Lớn) | 🟡 P1 (Xong) |
+| `STORY-THUAN-BP08` | Nâng cấp 3D Viewer (Orbit, Top-Down, Walkthrough & Layers) | GĐ 4 | L (Lớn) | 🟡 P1 (Xong) |
+| `STORY-THUAN-BP09` | Benchmark 10 loại bản vẽ & kiểm soát giải phóng WebGL Memory | GĐ 5 | M (Vừa) | 🔵 P2 (Xong) |
+| `STORY-THUAN-BP10` | Hàng đợi bất đồng bộ & CDN Hosting cho mô hình `.GLB` | GĐ 5 | M (Vừa) | 🔵 P2 (Xong) |
+| `STORY-THUAN-BP11` | Hệ thống Vật Liệu PBR Thực Tế (Sàn gỗ, gạch đá, kính trong) | GĐ 6 | M (Vừa) | 🔥 P0 (Xong) |
+| `STORY-THUAN-BP12` | Chế độ Sa Bàn 3D Dollhouse Cutaway ở cao độ 1.5m | GĐ 6 | M (Vừa) | 🔥 P0 (Xong) |
+| `STORY-THUAN-BP13` | Ánh Sáng Kiến Trúc Đa Tầng & Hiệu Ứng Chiều Sâu SSAO | GĐ 6 | L (Lớn) | 🟡 P1 (Xong) |
+| `STORY-THUAN-BP14` | Kho 3D Asset Nội Thất Chi Tiết Cao (12 Models ArchViz) | GĐ 7 | L (Lớn) | 🔥 P0 (Xong) |
+| `STORY-THUAN-BP15` | Thuật toán Kê Đồ Tự Động (Smart Auto-Staging) theo Phong Cách | GĐ 7 | XL (Rất Lớn) | 🔥 P0 (Xong) |
+| `STORY-THUAN-BP16` | Nút 1-Click Xuất Ảnh AI Render 4K (ControlNet Depth) | GĐ 7 | M (Vừa) | 🟡 P1 (Xong) |
 
