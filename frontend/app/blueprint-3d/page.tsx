@@ -11,7 +11,7 @@ const CasaSerraViewer = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-full min-h-[580px] bg-[#f7f4ec] flex flex-col items-center justify-center font-mono text-xs text-neutral-600 space-y-3">
+      <div className="w-full h-full min-h-[580px] bg-[#ece5d8] flex flex-col items-center justify-center font-mono text-xs text-neutral-600 space-y-3">
         <div className="w-8 h-8 rounded-lg bg-neutral-900 flex items-center justify-center text-[#FF4D00] font-black text-sm animate-pulse">
           3D
         </div>
@@ -172,10 +172,10 @@ export default function Blueprint3DStudioPage() {
     <div 
       className="relative w-full h-[calc(100vh-64px)] overflow-hidden select-none"
       style={{
-        backgroundColor: "#f7f4ec",
+        backgroundColor: "#ece5d8",
         backgroundImage: `
-          linear-gradient(#e5dfd3 1px, transparent 1px),
-          linear-gradient(90deg, #e5dfd3 1px, transparent 1px)
+          linear-gradient(#ded6c5 1px, transparent 1px),
+          linear-gradient(90deg, #ded6c5 1px, transparent 1px)
         `,
         backgroundSize: "32px 32px"
       }}
