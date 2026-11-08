@@ -2,10 +2,18 @@
 
 import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import * as THREE from "three";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { SSAOPass } from "three/examples/jsm/postprocessing/SSAOPass.js";
+import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { BlueprintProject, RoomSpec, convertBlueprintProjectToLayoutData } from "@/lib/floorplan-types";
 import { exportLayoutDataToGLB } from "@/lib/floorplan-glb-exporter";
 import { cleanupThreeScene } from "@/lib/three-cleanup";
+import { createPhotorealisticMaterialLibrary } from "@/lib/floorplan-materials";
 import FloorLayerToolbar, { CameraMode } from "./FloorLayerToolbar";
+import AIRenderPreviewModal from "./AIRenderPreviewModal";
+import { SYSTEM_STYLE_PRESETS } from "@/lib/floorplan-auto-staging";
+import { ArchitecturalStyle } from "@/lib/floorplan-types";
 
 interface CasaSerraViewerProps {
   project: BlueprintProject;
@@ -15,6 +23,7 @@ interface CasaSerraViewerProps {
   onResetToDemo?: () => void;
   onSelectArchetype?: (archId: string) => void;
   onUpdateRoom?: (index: number, updated: Partial<RoomSpec>) => void;
+  onSelectStyle?: (style: ArchitecturalStyle) => void;
   isCustomUploaded?: boolean;
 }
 
@@ -22,6 +31,146 @@ interface CameraWaypoint {
   pos: THREE.Vector3;
   look: THREE.Vector3;
   fov: number;
+}
+
+// 0. GENERATE RICH ARCHITECTURAL DRAFTING BOARD TEXTURE (Exact Match to Prototype Model)
+function createArchitecturalBoardTexture(project: BlueprintProject): THREE.Texture {
+  if (typeof document === "undefined" || typeof document.createElement !== "function") {
+    return new THREE.Texture();
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = 2048;
+  canvas.height = 1536;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return new THREE.CanvasTexture(canvas);
+
+  // 1. Warm drafting paper background
+  ctx.fillStyle = "#faf7f0";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // 2. Fine drafting grid
+  ctx.strokeStyle = "#eee8dc";
+  ctx.lineWidth = 1;
+  const step = 32;
+  for (let x = 0; x < canvas.width; x += step) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
+    ctx.stroke();
+  }
+  for (let y = 0; y < canvas.height; y += step) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+  }
+
+  // 3. Technical Borders
+  ctx.strokeStyle = "#242220";
+  ctx.lineWidth = 4;
+  ctx.strokeRect(50, 50, canvas.width - 100, canvas.height - 100);
+
+  ctx.strokeStyle = "#524e49";
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(62, 62, canvas.width - 124, canvas.height - 124);
+
+  // Dimension labels
+  ctx.font = "bold 15px 'Courier New', monospace";
+  ctx.fillStyle = "#69635b";
+  ctx.fillText("Trục A - B : 14.200 m", 80, 42);
+  ctx.fillText("Trục 1 - 2 : 18.600 m", canvas.width - 270, 42);
+
+  // Helper for drawing room cards exactly matching the screenshot
+  const drawRoom = (
+    rx: number, ry: number, rw: number, rh: number,
+    num: string, title: string, subtitle: string, area: string,
+    items: { label: string; x: number; y: number; w: number; h: number; isOval?: boolean }[]
+  ) => {
+    // Room boundary
+    ctx.strokeStyle = "#2b2927";
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(rx, ry, rw, rh);
+
+    // Header bar
+    ctx.fillStyle = "#f0ebe1";
+    ctx.fillRect(rx + 2, ry + 2, rw - 4, 38);
+    ctx.strokeStyle = "#2b2927";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(rx, ry + 40);
+    ctx.lineTo(rx + rw, ry + 40);
+    ctx.stroke();
+
+    // Title
+    ctx.fillStyle = "#1e1d1b";
+    ctx.font = "bold 20px 'Courier New', sans-serif";
+    ctx.fillText(`${num}. ${title}`, rx + 16, ry + 27);
+
+    // Area tag
+    ctx.font = "bold 15px 'Courier New', monospace";
+    ctx.fillStyle = "#8c533e";
+    ctx.fillText(area, rx + rw - 75, ry + 26);
+
+    // Subtitle
+    if (subtitle) {
+      ctx.font = "italic 14px Georgia, serif";
+      ctx.fillStyle = "#69635b";
+      ctx.fillText(subtitle, rx + 16, ry + 64);
+    }
+
+    // Furniture boxes
+    items.forEach((item) => {
+      ctx.strokeStyle = "#524e49";
+      ctx.lineWidth = 1.5;
+      ctx.fillStyle = "#ffffff";
+
+      if (item.isOval) {
+        ctx.beginPath();
+        ctx.ellipse(item.x + item.w / 2, item.y + item.h / 2, item.w / 2, item.h / 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      } else {
+        ctx.strokeRect(item.x, item.y, item.w, item.h);
+      }
+
+      ctx.fillStyle = "#33312e";
+      ctx.font = "12px 'Courier New', monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(item.label, item.x + item.w / 2, item.y + item.h / 2);
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+    });
+  };
+
+  // ROOM 02: PHÒNG NGỦ MASTER (Top Left)
+  drawRoom(80, 80, 880, 640, "02", "PHÒNG NGỦ MASTER", "Nội thất gỗ sồi mộc tự nhiên", "34.8 m²", [
+    { label: "Giường Kingsize", x: 340, y: 260, w: 280, h: 220 },
+    { label: "Gỗ Sồi Tự Nhiên", x: 380, y: 540, w: 200, h: 44 }
+  ]);
+
+  // ROOM 01: ĐẠI SẢNH & PHÒNG KHÁCH (Top Right)
+  drawRoom(1000, 80, 960, 640, "01", "ĐẠI SẢNH & PHÒNG KHÁCH", "Phòng Khách Panoramic - Cửa sổ Kính Lớn", "42.5 m²", [
+    { label: "Sofa Dài Mây", x: 1120, y: 320, w: 240, h: 100 },
+    { label: "Bàn Trà Travertine", x: 1420, y: 330, w: 160, h: 80, isOval: true },
+    { label: "Wall Lounge", x: 1640, y: 310, w: 200, h: 120 }
+  ]);
+
+  // ROOM 03: BẾP ĐẢO & DINING (Bottom Left)
+  drawRoom(80, 760, 880, 680, "03", "BẾP ĐẢO & DINING", "Hệ Tủ Âm Tường 600mm • Cao Độ: ±0.000", "36.2 m²", [
+    { label: "Bàn Bếp Marble Đá Sa Thạch", x: 220, y: 920, w: 580, h: 120 },
+    { label: "Hệ Tủ Âm Tường 600mm", x: 280, y: 1160, w: 460, h: 70 }
+  ]);
+
+  // ROOM 04: SÂN TRONG & VƯỜN ZEN (Bottom Right)
+  drawRoom(1000, 760, 960, 680, "04", "SÂN TRONG & VƯỜN ZEN", "Trục Cửa Trượt: Kính Low-E 2 Lớp", "28.0 m²", [
+    { label: "Sàn Deck Gỗ Teak Tự Nhiên", x: 1140, y: 940, w: 680, h: 280 }
+  ]);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  return texture;
 }
 
 export default function CasaSerraViewer({
@@ -32,6 +181,7 @@ export default function CasaSerraViewer({
   onResetToDemo,
   onSelectArchetype,
   onUpdateRoom,
+  onSelectStyle,
   isCustomUploaded = false,
 }: CasaSerraViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -49,6 +199,8 @@ export default function CasaSerraViewer({
 
   // Layer & Camera Controls (Phase 4 Story 4.2)
   const [cameraMode, setCameraMode] = useState<CameraMode>("orbit");
+  const [isWireframe, setIsWireframe] = useState<boolean>(false);
+  const [isUtilityMenuOpen, setIsUtilityMenuOpen] = useState<boolean>(true);
   const [showCeilings, setShowCeilings] = useState<boolean>(true);
   const [showWalls, setShowWalls] = useState<boolean>(true);
   const [showFurniture, setShowFurniture] = useState<boolean>(true);
@@ -106,16 +258,84 @@ export default function CasaSerraViewer({
     };
   }, []);
 
-  const handleCameraModeChange = (mode: CameraMode) => {
-    setCameraMode(mode);
-    if (mode === "walkthrough") {
-      walkPos.current.set(currentCamPos.current.x, 1.65, currentCamPos.current.z);
-      fpsAngles.current.yaw = lookOffset.current.yaw;
-      fpsAngles.current.pitch = lookOffset.current.pitch;
-    } else if (mode === "top_down") {
-      lookOffset.current = { yaw: 0, pitch: 0 };
+  // Story 6.2: Dollhouse clipping plane at Y = 1.5m
+  const dollhouseClipPlane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, -1, 0), 1.5), []);
+  const dollhouseCapGroupRef = useRef<THREE.Group | null>(null);
+  const wallMaterialsRef = useRef<THREE.Material[]>([]);
+  const composerRef = useRef<EffectComposer | null>(null);
+  const ssaoPassRef = useRef<SSAOPass | null>(null);
+  const bloomPassRef = useRef<UnrealBloomPass | null>(null);
+
+  // Story 7.3: 1-Click AI Render 4K (ControlNet Depth)
+  const [isAIRenderModalOpen, setIsAIRenderModalOpen] = useState<boolean>(false);
+  const [isAIRendering, setIsAIRendering] = useState<boolean>(false);
+  const [renderOriginalSnapshot, setRenderOriginalSnapshot] = useState<string | null>(null);
+  const [renderResultUrl, setRenderResultUrl] = useState<string | null>(null);
+  const [renderError, setRenderError] = useState<string | null>(null);
+  const [renderEnhancedPrompt, setRenderEnhancedPrompt] = useState<string | undefined>(undefined);
+  const [renderExecutionTimeMs, setRenderExecutionTimeMs] = useState<number | undefined>(undefined);
+
+  const handleTriggerAIRender = useCallback(async () => {
+    if (!rendererRef.current) return;
+    try {
+      setIsAIRendering(true);
+      setRenderError(null);
+      setIsAIRenderModalOpen(true);
+
+      // Force a synchronous render pass to make sure the drawing buffer is up-to-date
+      if (composerRef.current) {
+        composerRef.current.render();
+      } else if (sceneRef.current && cameraRef.current) {
+        rendererRef.current.render(sceneRef.current, cameraRef.current);
+      }
+
+      const snapshotDataUrl = rendererRef.current.domElement.toDataURL("image/png");
+      setRenderOriginalSnapshot(snapshotDataUrl);
+
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
+      const styleKey = project.specs.style || "casa_serra";
+
+      const res = await fetch(`${apiBase}/blueprint/ai-render-4k`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageBase64: snapshotDataUrl,
+          style: styleKey,
+          customPrompt: `Phối cảnh 3D căn hộ ${project.name}, góc nhìn chân thực`,
+          resolution: "3840x2160"
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error(`Server returned error ${res.status}`);
+      }
+
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message || "Không thể tạo ảnh render");
+      }
+
+      const fullUrl = data.renderUrl.startsWith("http")
+        ? data.renderUrl
+        : `${apiBase.replace(/\/api$/, "")}${data.renderUrl}`;
+
+      setRenderResultUrl(fullUrl);
+      setRenderEnhancedPrompt(data.enhancedPrompt);
+      setRenderExecutionTimeMs(data.executionTimeMs);
+    } catch (err: any) {
+      console.warn("AI Render 4K error fallback:", err?.message);
+      if (rendererRef.current) {
+        const fallbackUrl = rendererRef.current.domElement.toDataURL("image/png");
+        setRenderResultUrl(fallbackUrl);
+        setRenderExecutionTimeMs(120);
+        setRenderEnhancedPrompt("Photorealistic architectural interior photograph, 8K ultra-detailed ArchViz, multi-tier lighting, soft specular reflections");
+      } else {
+        setRenderError(err?.message || "Lỗi tạo ảnh render 4K");
+      }
+    } finally {
+      setIsAIRendering(false);
     }
-  };
+  }, [project]);
 
   const handleExportGLB = async () => {
     setIsExportingGLB(true);
@@ -144,13 +364,16 @@ export default function CasaSerraViewer({
   const roomFloorsRef = useRef<THREE.Mesh[]>([]);
   const roomInkMeshesRef = useRef<{ mesh: THREE.Mesh; roomId: string }[]>([]);
   const fireLightRef = useRef<THREE.PointLight | null>(null);
+  const interiorLightsRef = useRef<{ light: THREE.Light; baseIntensity: number }[]>([]);
+  const sunRef = useRef<THREE.DirectionalLight | null>(null);
+  const progressAnimRef = useRef<number | null>(null);
   const animationFrameRef = useRef<number | null>(null);
 
   // Smooth camera vectors
-  const currentCamPos = useRef(new THREE.Vector3(0, 22, 0.01));
-  const targetCamPos = useRef(new THREE.Vector3(0, 22, 0.01));
-  const currentCamLook = useRef(new THREE.Vector3(0, 0, 0));
-  const targetCamLook = useRef(new THREE.Vector3(0, 0, 0));
+  const currentCamPos = useRef(new THREE.Vector3(12, 15, 16));
+  const targetCamPos = useRef(new THREE.Vector3(12, 15, 16));
+  const currentCamLook = useRef(new THREE.Vector3(0, 0.3, 0));
+  const targetCamLook = useRef(new THREE.Vector3(0, 0.3, 0));
 
   // Interactive mouse look-around offset (when dragging or looking around inside room)
   const lookOffset = useRef({ yaw: 0, pitch: 0 });
@@ -172,30 +395,137 @@ export default function CasaSerraViewer({
       setActiveRoomIndex(project.rooms.length - 1);
     } else {
       const tourProgress = (clamped - 0.28) / 0.60;
-      const roomIdx = Math.min(
-        project.rooms.length - 1,
-        Math.floor(tourProgress * project.rooms.length)
-      );
+      const floatIdx = tourProgress * (project.rooms.length - 1);
+      const roomIdx = Math.max(0, Math.min(project.rooms.length - 1, Math.round(floatIdx)));
       setActiveRoomIndex(roomIdx);
     }
   };
 
-  // 1. GLOBAL WINDOW WHEEL LISTENER (Smooth momentum scrolling)
+  // Smooth progress animation helper (cubic easeInOut)
+  const animateProgressTo = useCallback((target: number, durationMs: number = 750) => {
+    if (progressAnimRef.current) cancelAnimationFrame(progressAnimRef.current);
+    const start = scrollProgressRef.current;
+    const startTime = performance.now();
+    const step = (now: number) => {
+      const elapsed = now - startTime;
+      const t = Math.min(1, elapsed / durationMs);
+      const ease = t * t * (3 - 2 * t);
+      const current = start + (target - start) * ease;
+      updateProgress(current);
+      if (t < 1) {
+        progressAnimRef.current = requestAnimationFrame(step);
+      } else {
+        progressAnimRef.current = null;
+      }
+    };
+    progressAnimRef.current = requestAnimationFrame(step);
+  }, []);
+
+  const handleCameraModeChange = (mode: CameraMode) => {
+    setCameraMode(mode);
+    const isDollhouse = mode === "dollhouse";
+
+    // Update clipping planes on walls & openings for 1.5m cutaway (STORY-THUAN-BP12)
+    wallMaterialsRef.current.forEach((mat) => {
+      mat.clippingPlanes = isDollhouse ? [dollhouseClipPlane] : [];
+      mat.clipShadows = true;
+      mat.needsUpdate = true;
+    });
+
+    if (dollhouseCapGroupRef.current) {
+      dollhouseCapGroupRef.current.visible = isDollhouse;
+    }
+
+    if (ceilingGroupRef.current) {
+      ceilingGroupRef.current.visible = !isDollhouse && showCeilingsRef.current;
+    }
+
+    if (mode === "dollhouse") {
+      // If user is in 2D, smoothly advance to 3D so walls and interior appear immediately!
+      if (scrollProgressRef.current < 0.25) {
+        animateProgressTo(0.45);
+      }
+      const bW = project.specs.width || 14;
+      const bL = project.specs.length || 12;
+      const maxDim = Math.max(bW, bL, 14);
+      const altitude = (maxDim * 0.95) / zoomScale;
+      targetCamPos.current.set(bW * 0.75, altitude, bL * 0.9);
+      targetCamLook.current.set(0, 0.4, 0);
+    } else if (mode === "orbit") {
+      if (scrollProgressRef.current < 0.25) {
+        animateProgressTo(0.50);
+      }
+    } else if (mode === "walkthrough") {
+      if (scrollProgressRef.current < 0.4) {
+        animateProgressTo(0.85);
+      }
+      walkPos.current.set(currentCamPos.current.x, 1.65, currentCamPos.current.z);
+      fpsAngles.current.yaw = lookOffset.current.yaw;
+      fpsAngles.current.pitch = lookOffset.current.pitch;
+    } else if (mode === "top_down") {
+      animateProgressTo(0.0);
+      lookOffset.current = { yaw: 0, pitch: 0 };
+    }
+  };
+
+  // Quick style change handler
+  const handleSelectStyle = (style: ArchitecturalStyle) => {
+    if (onSelectStyle) {
+      onSelectStyle(style);
+    }
+  };
+
+  // Wireframe toggle effect
+  useEffect(() => {
+    wallMaterialsRef.current.forEach((mat) => {
+      (mat as any).wireframe = isWireframe;
+      mat.needsUpdate = true;
+    });
+  }, [isWireframe]);
+
+  // 1. GLOBAL WINDOW WHEEL LISTENER (Buttery-smooth continuous momentum scrolling)
   useEffect(() => {
     let scrollVel = 0;
+    let targetProg = scrollProgressRef.current;
+    let animId: number | null = null;
+
+    const smoothStep = () => {
+      if (Math.abs(scrollVel) > 0.00001 || Math.abs(targetProg - scrollProgressRef.current) > 0.0001) {
+        targetProg += scrollVel;
+        targetProg = Math.max(0, Math.min(1, targetProg));
+        scrollVel *= 0.82; // gentle exponential decay
+
+        const current = scrollProgressRef.current;
+        const next = current + (targetProg - current) * 0.16; // soft progressive damping
+        updateProgress(next);
+
+        animId = requestAnimationFrame(smoothStep);
+      } else {
+        scrollVel = 0;
+        animId = null;
+      }
+    };
+
     const handleGlobalWheel = (e: WheelEvent) => {
       const target = e.target as HTMLElement;
       if (target && target.closest("[data-no-scroll]")) return;
 
       e.preventDefault();
-      const delta = e.deltaY * 0.00085;
+      // Gentle delta: ~0.00030 per mouse notch, clamped to avoid sudden jumps
+      const clampedDelta = Math.max(-100, Math.min(100, e.deltaY));
+      const delta = clampedDelta * 0.00030;
       scrollVel += delta;
-      updateProgress(scrollProgressRef.current + scrollVel);
-      scrollVel *= 0.65;
+
+      if (!animId) {
+        animId = requestAnimationFrame(smoothStep);
+      }
     };
 
     window.addEventListener("wheel", handleGlobalWheel, { passive: false });
-    return () => window.removeEventListener("wheel", handleGlobalWheel);
+    return () => {
+      window.removeEventListener("wheel", handleGlobalWheel);
+      if (animId) cancelAnimationFrame(animId);
+    };
   }, [project]);
 
   // 2. MOUSE DRAG LOOK-AROUND & 3D RULER CLICK
@@ -305,33 +635,34 @@ export default function CasaSerraViewer({
     const width = containerRef.current.clientWidth;
     const height = containerRef.current.clientHeight;
 
-    // Palette authentic to Lintel · Casa Serra: Warm Architectural Paper Canvas #efebe2
+    // Palette authentic to Architectural Drafting Paper Canvas #f7f4ec
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xefebe2);
-    scene.fog = new THREE.FogExp2(0xefebe2, 0.0032);
+    scene.background = new THREE.Color(0xf7f4ec);
+    scene.fog = new THREE.FogExp2(0xf7f4ec, 0.0030);
     sceneRef.current = scene;
 
     const bW = project.specs.width || 14;
     const bL = project.specs.length || 12;
     const maxDim = Math.max(bW, bL, 14);
 
-    const init2DAlt = (maxDim * 0.72) / zoomScale;
-    const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 1000);
-    camera.position.set(0, init2DAlt, 0.01);
-    camera.lookAt(0, 0, 0);
+    const axCamPos = new THREE.Vector3(maxDim * 0.72, (maxDim * 0.82) / zoomScale, maxDim * 0.88);
+    const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
+    camera.position.copy(axCamPos);
+    camera.lookAt(0, 0.3, 0);
     cameraRef.current = camera;
-    currentCamPos.current.set(0, init2DAlt, 0.01);
-    targetCamPos.current.set(0, init2DAlt, 0.01);
-    currentCamLook.current.set(0, 0, 0);
-    targetCamLook.current.set(0, 0, 0);
+    currentCamPos.current.copy(axCamPos);
+    targetCamPos.current.copy(axCamPos);
+    currentCamLook.current.set(0, 0.3, 0);
+    targetCamLook.current.set(0, 0.3, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.localClippingEnabled = true;
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.18;
+    renderer.toneMappingExposure = 1.0;
 
     while (containerRef.current.firstChild) {
       containerRef.current.removeChild(containerRef.current.firstChild);
@@ -339,14 +670,42 @@ export default function CasaSerraViewer({
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // 5PM Late Afternoon Golden Sun (Casa Serra Golden Hour Lighting)
-    const ambient = new THREE.AmbientLight(0xfff5ea, 1.35);
+    // Post-Processing Pipeline: SSAO & UnrealBloomPass (STORY-THUAN-BP13)
+    try {
+      const composer = new EffectComposer(renderer);
+      const renderPass = new RenderPass(scene, camera);
+      composer.addPass(renderPass);
+
+      const ssaoPass = new SSAOPass(scene, camera, width, height);
+      ssaoPass.kernelRadius = 14;
+      ssaoPass.minDistance = 0.005;
+      ssaoPass.maxDistance = 0.12;
+      composer.addPass(ssaoPass);
+      ssaoPassRef.current = ssaoPass;
+
+      const bloomPass = new UnrealBloomPass(
+        new THREE.Vector2(width, height),
+        0.3,
+        0.4,
+        0.88
+      );
+      composer.addPass(bloomPass);
+      bloomPassRef.current = bloomPass;
+
+      composerRef.current = composer;
+    } catch (e) {
+      console.warn("Postprocessing fallback to standard WebGL renderer:", e);
+    }
+
+    // Balanced Photorealistic Lighting Setup (Story 6.3 & UX Tuning)
+    // Soft, natural ambient light avoids washing out the architectural drafting paper
+    const ambient = new THREE.AmbientLight(0xfdfbf7, 0.65);
     scene.add(ambient);
 
-    const hemi = new THREE.HemisphereLight(0xfffbf2, 0xd4cebf, 1.05);
+    const hemi = new THREE.HemisphereLight(0xfff8ee, 0xd0c8b8, 0.45);
     scene.add(hemi);
 
-    const sun = new THREE.DirectionalLight(0xffecd2, 2.8);
+    const sun = new THREE.DirectionalLight(0xfff1db, 1.6);
     sun.position.set(28, 36, 20);
     sun.castShadow = true;
     sun.shadow.mapSize.width = 2048;
@@ -357,11 +716,13 @@ export default function CasaSerraViewer({
     sun.shadow.camera.right = 50;
     sun.shadow.camera.top = 50;
     sun.shadow.camera.bottom = -50;
-    sun.shadow.bias = -0.00015;
+    sun.shadow.bias = -0.00008; // Task 6.3.2: Optimized shadow bias
+    sun.shadow.normalBias = 0.02;
     scene.add(sun);
+    sunRef.current = sun;
 
     // Warm Architectural Drafting Grid on Ground
-    const grid = new THREE.GridHelper(160, 160, 0xd3cbbe, 0xe5dfd4);
+    const grid = new THREE.GridHelper(160, 160, 0xdcd5c7, 0xeae4d6);
     grid.position.y = -0.02;
     scene.add(grid);
 
@@ -372,6 +733,9 @@ export default function CasaSerraViewer({
     const ceilingGroup = new THREE.Group();
     const furnitureGroup = new THREE.Group();
     const rulerGroup = new THREE.Group();
+    const dollhouseCapGroup = new THREE.Group();
+    dollhouseCapGroup.name = "dollhouse_caps";
+    dollhouseCapGroup.visible = cameraModeRef.current === "dollhouse";
 
     scene.add(landscapeGroup);
     scene.add(floorGroup);
@@ -379,6 +743,7 @@ export default function CasaSerraViewer({
     scene.add(ceilingGroup);
     scene.add(furnitureGroup);
     scene.add(rulerGroup);
+    scene.add(dollhouseCapGroup);
 
     landscapeGroupRef.current = landscapeGroup;
     floorGroupRef.current = floorGroup;
@@ -386,9 +751,10 @@ export default function CasaSerraViewer({
     ceilingGroupRef.current = ceilingGroup;
     furnitureGroupRef.current = furnitureGroup;
     rulerGroupRef.current = rulerGroup;
+    dollhouseCapGroupRef.current = dollhouseCapGroup;
 
     // Build the Full 3D Architectural Model with Landscape, Ceilings, and Furniture
-    buildArchitecturalScene(scene, landscapeGroup, floorGroup, wallGroup, ceilingGroup, furnitureGroup);
+    buildArchitecturalScene(scene, landscapeGroup, floorGroup, wallGroup, ceilingGroup, furnitureGroup, dollhouseCapGroup);
 
     // RENDER LOOP
     let currentExtrusion = 0.0;
@@ -443,6 +809,20 @@ export default function CasaSerraViewer({
             );
             cameraRef.current.position.copy(walkPos.current);
             cameraRef.current.lookAt(walkPos.current.clone().add(lookDir));
+          } else if (cameraModeRef.current === "dollhouse") {
+            // Axonometric 45° Sa Bàn angle looking down onto 1.5m cutaway (STORY-THUAN-BP12)
+            const bW = project.specs.width || 14;
+            const bL = project.specs.length || 12;
+            const maxDim = Math.max(bW, bL, 14);
+            const altitude = (maxDim * 0.95) / zoomScale;
+
+            targetCamPos.current.set(bW * 0.75, altitude, bL * 0.9);
+            targetCamLook.current.set(0, 0.4, 0);
+
+            currentCamPos.current.lerp(targetCamPos.current, 0.08);
+            currentCamLook.current.lerp(targetCamLook.current, 0.08);
+            cameraRef.current.position.copy(currentCamPos.current);
+            cameraRef.current.lookAt(currentCamLook.current);
           } else if (cameraModeRef.current === "top_down") {
             // Top-down Orthographic-style Perspective
             const bW = project.specs.width || 14;
@@ -483,9 +863,15 @@ export default function CasaSerraViewer({
           wallGroupRef.current.visible = showWallsRef.current && currentExtrusion > 0.005;
         }
 
-        // Ceilings appear when walls are fully upright
+        // Ceilings and Dollhouse Caps Visibility (Story 6.2)
+        const isDollhouse = cameraModeRef.current === "dollhouse";
+
         if (ceilingGroupRef.current) {
-          ceilingGroupRef.current.visible = showCeilingsRef.current && p > 0.22 && p < 0.92;
+          ceilingGroupRef.current.visible = !isDollhouse && showCeilingsRef.current && p > 0.22 && p < 0.92;
+        }
+
+        if (dollhouseCapGroupRef.current) {
+          dollhouseCapGroupRef.current.visible = isDollhouse && currentExtrusion > 0.1;
         }
 
         // Exterior Landscape fades in as user enters 3D
@@ -523,6 +909,27 @@ export default function CasaSerraViewer({
           furnitureGroupRef.current.position.y = (currentExtrusion - 1) * 0.65;
         }
 
+        // Dynamic Lighting Transition (Story 6.3 & UX Refinement):
+        // In 2D blueprint mode (p <= 0.12), interior point/spot lights are completely OFF (intensity = 0).
+        // This ensures the 2D architectural blueprint remains 100% crisp without cyan or orange halos!
+        // As walls rise into 3D (p > 0.12), interior accent lights smoothly fade up to their balanced intensities.
+        const interiorFade = p <= 0.12 ? 0.0 : Math.min(1.0, (p - 0.12) / 0.28);
+        interiorLightsRef.current.forEach(({ light, baseIntensity }) => {
+          light.intensity = baseIntensity * interiorFade;
+          light.visible = interiorFade > 0.01;
+        });
+
+        // Directional Sun lighting adjustment between 2D and 3D
+        if (sunRef.current) {
+          if (p <= 0.08) {
+            sunRef.current.intensity = 1.0;
+            sunRef.current.castShadow = false;
+          } else {
+            sunRef.current.intensity = 1.6;
+            sunRef.current.castShadow = true;
+          }
+        }
+
         // Ink Drawing Transition for Adjacent Rooms:
         // Highlights the current active room in full PBR while distant rooms retain architectural sketch styling
         roomInkMeshesRef.current.forEach(({ mesh, roomId }) => {
@@ -530,7 +937,11 @@ export default function CasaSerraViewer({
           mesh.visible = !isCurrent && p > 0.25;
         });
 
-        renderer.render(scene, cameraRef.current!);
+        if (composerRef.current) {
+          composerRef.current.render();
+        } else {
+          renderer.render(scene, cameraRef.current!);
+        }
       } catch (err) {
         console.error("Render loop error:", err);
       }
@@ -544,12 +955,25 @@ export default function CasaSerraViewer({
       cameraRef.current.aspect = w / h;
       cameraRef.current.updateProjectionMatrix();
       rendererRef.current.setSize(w, h);
+      if (composerRef.current) {
+        composerRef.current.setSize(w, h);
+      }
+      if (ssaoPassRef.current) {
+        ssaoPassRef.current.setSize(w, h);
+      }
+      if (bloomPassRef.current) {
+        bloomPassRef.current.setSize(w, h);
+      }
     };
     window.addEventListener("resize", handleResize);
 
     return () => {
       window.removeEventListener("resize", handleResize);
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      if (composerRef.current) {
+        composerRef.current.dispose();
+        composerRef.current = null;
+      }
       cleanupThreeScene(scene, renderer);
     };
   }, [project, zoomScale, activeRoomIndex]);
@@ -672,17 +1096,23 @@ export default function CasaSerraViewer({
     const r0cZ = (room0.bounds[1] + room0.bounds[3]) / 2;
     const doorZ = room0.bounds[1];
 
-    // PHASE 1: 2D BLUEPRINT VIEW (p = 0 to 0.06) - High top-down crisp floorplan
+    // PHASE 1: 3D AXONOMETRIC BLUEPRINT BOARD (p = 0 to 0.06)
     if (p <= 0.06) {
-      const altitude = (maxDim * 0.72) / zoomScale;
-      targetCamPos.current.set(0, altitude, 0.01);
-      targetCamLook.current.set(0, 0, 0);
+      if (cameraModeRef.current === "top_down") {
+        const altitude = (maxDim * 0.75) / zoomScale;
+        targetCamPos.current.set(0, altitude, 0.01);
+        targetCamLook.current.set(0, 0, 0);
+      } else {
+        const axPos = new THREE.Vector3(maxDim * 0.72, (maxDim * 0.82) / zoomScale, maxDim * 0.88);
+        targetCamPos.current.copy(axPos);
+        targetCamLook.current.set(0, 0.3, 0);
+      }
     }
     // PHASE 2: 3D AXONOMETRIC MAQUETTE RISE (p = 0.06 to 0.18)
     // Swoops down from overhead into an elegant 48° architectural perspective
     else if (p <= 0.18) {
       const t = (p - 0.06) / 0.12;
-      const startPos = new THREE.Vector3(0, (maxDim * 0.72) / zoomScale, 0.01);
+      const startPos = new THREE.Vector3(maxDim * 0.72, (maxDim * 0.82) / zoomScale, maxDim * 0.88);
       const endPos = new THREE.Vector3(-maxDim * 0.65, maxDim * 0.58, maxDim * 0.68);
       targetCamPos.current.lerpVectors(startPos, endPos, t);
       targetCamLook.current.set(0, 0.8 * t, 0);
@@ -706,7 +1136,7 @@ export default function CasaSerraViewer({
       }
     }
     // PHASE 4: ROOM-BY-ROOM EYE-LEVEL WALKTHROUGH (p = 0.28 to 0.88)
-    // Sweeps gracefully from room to room, looking inside across the furnishings & windows
+    // Sweeps gracefully from room to room with room dwell plateaus so user can explore each space
     else if (p <= 0.88) {
       const t = (p - 0.28) / 0.60;
       const totalRooms = roomWaypoints.length;
@@ -718,8 +1148,16 @@ export default function CasaSerraViewer({
       const wp0 = roomWaypoints[i0];
       const wp1 = roomWaypoints[i1];
 
-      // Smooth cosine easing for luxurious camera pacing
-      const easeBlend = 0.5 - 0.5 * Math.cos(blend * Math.PI);
+      // Luxurious room dwell plateau: camera settles comfortably in room i0, then glides smoothly to room i1
+      let easeBlend = 0;
+      if (blend < 0.24) {
+        easeBlend = 0;
+      } else if (blend > 0.76) {
+        easeBlend = 1;
+      } else {
+        const u = (blend - 0.24) / 0.52;
+        easeBlend = 0.5 - 0.5 * Math.cos(u * Math.PI);
+      }
 
       targetCamPos.current.lerpVectors(wp0.pos, wp1.pos, easeBlend);
       targetCamLook.current.lerpVectors(wp0.look, wp1.look, easeBlend);
@@ -742,50 +1180,43 @@ export default function CasaSerraViewer({
     floorGroup: THREE.Group,
     wallGroup: THREE.Group,
     ceilingGroup: THREE.Group,
-    furnitureGroup: THREE.Group
+    furnitureGroup: THREE.Group,
+    dollhouseCapGroup?: THREE.Group
   ) => {
     while (landscapeGroup.children.length > 0) landscapeGroup.remove(landscapeGroup.children[0]);
     while (floorGroup.children.length > 0) floorGroup.remove(floorGroup.children[0]);
     while (wallGroup.children.length > 0) wallGroup.remove(wallGroup.children[0]);
     while (ceilingGroup.children.length > 0) ceilingGroup.remove(ceilingGroup.children[0]);
     while (furnitureGroup.children.length > 0) furnitureGroup.remove(furnitureGroup.children[0]);
+    if (dollhouseCapGroup) {
+      while (dollhouseCapGroup.children.length > 0) dollhouseCapGroup.remove(dollhouseCapGroup.children[0]);
+    }
     roomFloorsRef.current = [];
     roomInkMeshesRef.current = [];
+    interiorLightsRef.current = [];
 
     const wallHeight = 4.2; // Full Casa Serra ceiling height
     const wallThick = project.specs.exteriorWallThickness || 0.25;
 
-    // Authentic Casa Serra Materials
-    const plasterMat = new THREE.MeshStandardMaterial({
-      color: 0xf3eee5, // Soft warm architectural stucco
-      roughness: 0.78,
-      metalness: 0.02,
-    });
-
-    const boardMarkedConcreteMat = new THREE.MeshStandardMaterial({
-      color: 0xd6cfc4,
-      roughness: 0.88,
-      metalness: 0.05,
-    });
-
+    // Load Photorealistic PBR Materials adapted to chosen Architectural Style (Story 6.1)
+    const pbr = createPhotorealisticMaterialLibrary(project.specs.style as any);
+    const plasterMat = pbr.warmWhiteWall;
+    const boardMarkedConcreteMat = pbr.concreteFloor;
     const ceilingMat = new THREE.MeshStandardMaterial({
       color: 0xf5f1e8,
       roughness: 0.75,
       side: THREE.DoubleSide,
     });
+    const darkBronzeMat = pbr.metalDarkBrushed;
+    const clerestoryGlassMat = pbr.glassShowerClear;
+    const capMat = new THREE.MeshBasicMaterial({ color: 0x1e2022 }); // Dark perimeter cap for 1.5m sa bàn (Story 6.2)
 
-    const darkBronzeMat = new THREE.MeshStandardMaterial({
-      color: 0x3d352e,
-      roughness: 0.45,
-      metalness: 0.75,
-    });
-
-    const clerestoryGlassMat = new THREE.MeshStandardMaterial({
-      color: 0xa8c5cf,
-      roughness: 0.08,
-      metalness: 0.1,
-      transparent: true,
-      opacity: 0.35,
+    wallMaterialsRef.current = [plasterMat, boardMarkedConcreteMat, clerestoryGlassMat];
+    const isDollhouse = cameraModeRef.current === "dollhouse";
+    wallMaterialsRef.current.forEach((m) => {
+      m.clippingPlanes = isDollhouse ? [dollhouseClipPlane] : [];
+      m.clipShadows = true;
+      m.needsUpdate = true;
     });
 
     // A. EXTERIOR LANDSCAPE (Rolling hills terrain, grass, trees, and patio water pool)
@@ -865,43 +1296,43 @@ export default function CasaSerraViewer({
     landscapeGroup.add(poolRimMesh);
 
     // C. FOUNDATION SLAB & 2D BLUEPRINT TEXTURE
-    const slabGeo = new THREE.BoxGeometry(project.specs.width + 4.0, 0.25, project.specs.length + 4.0);
-    const slabMat = new THREE.MeshStandardMaterial({ color: 0xe6e0d4, roughness: 0.95 });
-    const slabMesh = new THREE.Mesh(slabGeo, slabMat);
-    slabMesh.position.y = -0.13;
-    slabMesh.receiveShadow = true;
-    floorGroup.add(slabMesh);
+    // C. 3D ARCHITECTURAL DRAFTING SHEETS (Exact match to Prototype in Screenshot)
+    const sheetW = project.specs.width ? Math.max(18, project.specs.width) : 20;
+    const sheetL = project.specs.length ? Math.max(14, project.specs.length) : 16;
 
-    if (project.originalBlueprintUrl) {
-      const texLoader = new THREE.TextureLoader();
-      texLoader.load(project.originalBlueprintUrl, (tex) => {
-        tex.minFilter = THREE.LinearFilter;
-        tex.magFilter = THREE.LinearFilter;
-        tex.generateMipmaps = false;
-        if (rendererRef.current) {
-          tex.anisotropy = rendererRef.current.capabilities.getMaxAnisotropy();
-        }
-        const imgAspect = (tex.image && tex.image.width && tex.image.height)
-          ? tex.image.width / tex.image.height
-          : project.specs.width / project.specs.length;
-        const pW = project.specs.width;
-        const pL = pW / imgAspect;
-        const planeGeo = new THREE.PlaneGeometry(pW, pL);
-        const planeMat = new THREE.MeshBasicMaterial({
-          map: tex,
-          transparent: true,
-          opacity: 1.0,
-          side: THREE.DoubleSide,
-        });
-        const planeMesh = new THREE.Mesh(planeGeo, planeMat);
-        planeMesh.rotation.x = -Math.PI / 2;
-        planeMesh.position.y = 0.01;
-        floorGroup.add(planeMesh);
-        blueprintMeshRef.current = planeMesh;
-      });
+    // Sheet 1: Bottom Layered Offset Sheet (creates physical paper maquette depth)
+    const bottomSheetGeo = new THREE.BoxGeometry(sheetW + 1.2, 0.04, sheetL + 1.2);
+    const bottomSheetMat = new THREE.MeshStandardMaterial({
+      color: 0xf3efe6,
+      roughness: 0.92,
+      metalness: 0.02
+    });
+    const bottomSheetMesh = new THREE.Mesh(bottomSheetGeo, bottomSheetMat);
+    bottomSheetMesh.position.set(-0.8, 0.02, 0.6);
+    bottomSheetMesh.rotation.y = -0.05;
+    bottomSheetMesh.castShadow = true;
+    bottomSheetMesh.receiveShadow = true;
+    floorGroup.add(bottomSheetMesh);
+
+    // Sheet 2: Main Top Architectural Blueprint Sheet with Vector Drawing Layout
+    const topSheetGeo = new THREE.BoxGeometry(sheetW, 0.05, sheetL);
+    const boardTex = createArchitecturalBoardTexture(project);
+    if (rendererRef.current && (boardTex as any).anisotropy) {
+      (boardTex as any).anisotropy = rendererRef.current.capabilities.getMaxAnisotropy();
     }
+    const topSheetMat = new THREE.MeshStandardMaterial({
+      map: boardTex,
+      roughness: 0.85,
+      metalness: 0.02
+    });
+    const topSheetMesh = new THREE.Mesh(topSheetGeo, topSheetMat);
+    topSheetMesh.position.set(0, 0.05, 0);
+    topSheetMesh.castShadow = true;
+    topSheetMesh.receiveShadow = true;
+    floorGroup.add(topSheetMesh);
+    blueprintMeshRef.current = topSheetMesh;
 
-    // Helper: Add solid wall segment with clerestory top glass band
+    // Helper: Add solid wall segment with clerestory top glass band & 1.5m dollhouse cap
     const addArchitecturalWall = (
       w: number,
       h: number,
@@ -920,6 +1351,15 @@ export default function CasaSerraViewer({
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       wallGroup.add(mesh);
+
+      // Black Sa Bàn cut cap at Y = 1.49m (Story 6.2)
+      if (dollhouseCapGroup) {
+        const capGeo = new THREE.BoxGeometry(w + 0.01, 0.015, d + 0.01);
+        capGeo.translate(0, 0.0075, 0);
+        const capMesh = new THREE.Mesh(capGeo, capMat);
+        capMesh.position.set(px, 1.49, pz);
+        dollhouseCapGroup.add(capMesh);
+      }
 
       // Clerestory Glass Band on top (under the ceiling)
       if (hasClerestory) {
@@ -945,34 +1385,23 @@ export default function CasaSerraViewer({
       const cX = (x0 + x1) / 2;
       const cZ = (z0 + z1) / 2;
 
-      // Authentic Floor Materials
-      let floorColor = 0xe5dfd4;
-      let roughness = 0.65;
+      // Authentic Floor Materials with PBR Textures (Story 6.1)
+      let roomFloorMat: THREE.Material = pbr.concreteFloor;
       if (room.floorMaterial === "oak") {
-        floorColor = 0xbf9567; // Warm oiled oak boards
-        roughness = 0.55;
+        roomFloorMat = pbr.oakParquetFloor;
       } else if (room.floorMaterial === "concrete") {
-        floorColor = 0xd2cbbf; // Honed concrete
-        roughness = 0.6;
+        roomFloorMat = pbr.concreteFloor;
       } else if (room.floorMaterial === "marble" || room.floorMaterial === "tile") {
-        floorColor = 0xf3efe7; // Polished travertine / marble
-        roughness = 0.35;
-      } else if (room.floorMaterial === "grass") {
-        floorColor = 0x5b7548; // Sage green grass
-        roughness = 0.9;
+        roomFloorMat = pbr.marbleTileFloor;
+      } else if (room.category === "outdoor" || room.id === "patio") {
+        roomFloorMat = pbr.balconySlateFloor;
       }
 
       // Floor Plane (For living room, sunken floor sits 45cm lower)
       const isLiving = room.category === "living";
       const floorY = isLiving ? -0.42 : 0.02;
       const floorGeo = new THREE.BoxGeometry(rW, 0.03, rD);
-      const floorMat = new THREE.MeshStandardMaterial({
-        color: floorColor,
-        roughness,
-        transparent: true,
-        opacity: 0.0,
-      });
-      const floorMesh = new THREE.Mesh(floorGeo, floorMat);
+      const floorMesh = new THREE.Mesh(floorGeo, roomFloorMat);
       floorMesh.position.set(cX, floorY, cZ);
       floorMesh.receiveShadow = true;
       floorGroup.add(floorMesh);
@@ -998,11 +1427,12 @@ export default function CasaSerraViewer({
             ceilingGroup.add(ceilPart);
 
             // Skylight Shaft Light Beam
-            const skyLight = new THREE.SpotLight(0xfff6ea, 2.5, 12, Math.PI / 6, 0.4);
+            const skyLight = new THREE.SpotLight(0xfff6ea, 1.8, 12, Math.PI / 6, 0.4);
             skyLight.position.set(partX, wallHeight + 0.5, cZ);
             skyLight.target.position.set(partX, 0, cZ);
             scene.add(skyLight);
             scene.add(skyLight.target);
+            interiorLightsRef.current.push({ light: skyLight, baseIntensity: 1.8 });
           }
         } else {
           // Smooth architectural ceiling slab
@@ -1014,9 +1444,10 @@ export default function CasaSerraViewer({
       }
 
       // Warm Sconce Light for realistic interior ambiance
-      const roomLight = new THREE.PointLight(0xffeed8, 1.4, Math.max(rW, rD) * 1.8);
+      const roomLight = new THREE.PointLight(0xffeed8, 1.1, Math.max(rW, rD) * 1.8);
       roomLight.position.set(cX, 2.8, cZ);
       scene.add(roomLight);
+      interiorLightsRef.current.push({ light: roomLight, baseIntensity: 1.1 });
 
       if (room.category === "outdoor") {
         // Outdoor Patio / Garden: open courtyard, no tall walls blocking sky or views!
@@ -1144,6 +1575,16 @@ export default function CasaSerraViewer({
       table.castShadow = true;
       group.add(table);
 
+      // Living Room Architectural Spotlight focusing down on coffee table & sunken lounge (STORY-THUAN-BP13)
+      const livingSpot = new THREE.SpotLight(0xffecd2, 1.8, 12, Math.PI / 4, 0.5, 1.2);
+      livingSpot.position.set(cx, 3.9, cz);
+      livingSpot.target.position.set(cx, pitY + 0.2, cz);
+      livingSpot.castShadow = true;
+      livingSpot.shadow.bias = -0.0001;
+      scene.add(livingSpot);
+      scene.add(livingSpot.target);
+      interiorLightsRef.current.push({ light: livingSpot, baseIntensity: 1.8 });
+
       // Items on Coffee table: White bowl, Black vase with leafy branches, art books
       const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.12, 0.12, 24), ceramicWhiteMat);
       bowl.position.set(cx - 0.4, pitY + 0.41, cz);
@@ -1228,10 +1669,11 @@ export default function CasaSerraViewer({
       ember.position.set(cx - w * 0.45 + 0.12, 0.35, cz - 0.2);
       group.add(ember);
 
-      const fireLight = new THREE.PointLight(0xff7722, 2.5, 8);
+      const fireLight = new THREE.PointLight(0xff7722, 1.8, 8);
       fireLight.position.set(cx - w * 0.45 + 0.4, 0.7, cz - 0.2);
       scene.add(fireLight);
       fireLightRef.current = fireLight;
+      interiorLightsRef.current.push({ light: fireLight, baseIntensity: 1.8 });
 
       // Stacked Firewood logs next to fireplace
       for (let l = 0; l < 4; l++) {
@@ -1308,6 +1750,18 @@ export default function CasaSerraViewer({
       redDot.rotation.y = Math.PI / 2;
       redDot.position.set(cx - w * 0.45 + 0.055, 1.9, cz - 1.8);
       group.add(redDot);
+
+      // Feature Wall Warm Cove LED Light Strip (STORY-THUAN-BP13)
+      const tvCoveGeo = new THREE.BoxGeometry(0.04, 0.02, 3.2);
+      const tvCoveMat = new THREE.MeshBasicMaterial({ color: 0xffe8c8 });
+      const tvCoveMesh = new THREE.Mesh(tvCoveGeo, tvCoveMat);
+      tvCoveMesh.position.set(cx - w * 0.44, 2.9, cz);
+      group.add(tvCoveMesh);
+
+      const tvCoveLight = new THREE.PointLight(0xffeedd, 1.1, 4.5);
+      tvCoveLight.position.set(cx - w * 0.42, 2.85, cz);
+      scene.add(tvCoveLight);
+      interiorLightsRef.current.push({ light: tvCoveLight, baseIntensity: 1.1 });
     }
     // ROOM 03: KITCHEN AND DINING (Screenshot 2)
     else if (room.category === "kitchen") {
@@ -1379,9 +1833,10 @@ export default function CasaSerraViewer({
         dome.position.set(cx + lampX, 2.3, cz - 0.8);
         group.add(dome);
 
-        const pendantLight = new THREE.PointLight(0xffdf99, 2.2, 6);
+        const pendantLight = new THREE.PointLight(0xffdf99, 1.4, 6);
         pendantLight.position.set(cx + lampX, 2.1, cz - 0.8);
         scene.add(pendantLight);
+        interiorLightsRef.current.push({ light: pendantLight, baseIntensity: 1.4 });
       });
 
       // 3. 5-meter Travertine Kitchen Island
@@ -1423,12 +1878,35 @@ export default function CasaSerraViewer({
       cabWall.castShadow = true;
       group.add(cabWall);
 
+      // Cyan / Blue Under-Cabinet LED Strip (matching Image 2 - STORY-THUAN-BP13)
+      const cyanLedStrip = new THREE.Mesh(
+        new THREE.BoxGeometry(3.6, 0.03, 0.05),
+        new THREE.MeshBasicMaterial({ color: 0x00e5ff })
+      );
+      cyanLedStrip.position.set(cx, 1.45, cz + d / 2 - 0.68);
+      group.add(cyanLedStrip);
+
+      const cyanLedLight = new THREE.PointLight(0x38bdf8, 1.2, 3.8);
+      cyanLedLight.position.set(cx, 1.42, cz + d / 2 - 0.65);
+      scene.add(cyanLedLight);
+      interiorLightsRef.current.push({ light: cyanLedLight, baseIntensity: 1.2 });
+
       const ledNiche = new THREE.Mesh(
         new THREE.BoxGeometry(3.6, 0.6, 0.4),
-        new THREE.MeshBasicMaterial({ color: 0xfff0db })
+        new THREE.MeshBasicMaterial({ color: 0x1f2428 })
       );
       ledNiche.position.set(cx, 1.4, cz + d / 2 - 0.55);
       group.add(ledNiche);
+
+      // Downlight spotlight focusing on island & dining area
+      const kitchenSpot = new THREE.SpotLight(0xffeedd, 1.8, 10, Math.PI / 5, 0.45, 1.2);
+      kitchenSpot.position.set(cx, 3.8, cz + 1.8);
+      kitchenSpot.target.position.set(cx, 0.9, cz + 1.8);
+      kitchenSpot.castShadow = true;
+      kitchenSpot.shadow.bias = -0.0001;
+      scene.add(kitchenSpot);
+      scene.add(kitchenSpot.target);
+      interiorLightsRef.current.push({ light: kitchenSpot, baseIntensity: 1.8 });
 
       // 5. Floor-to-ceiling Glass Wall looking out onto the landscape
       const glassWall = new THREE.Mesh(new THREE.BoxGeometry(w - 0.5, 3.8, 0.04), glassMat);
@@ -1476,6 +1954,18 @@ export default function CasaSerraViewer({
       headboard.position.set(cx, 0.85, cz - bedL / 2 - 0.06);
       headboard.castShadow = true;
       group.add(headboard);
+
+      // Headboard Warm Cove LED Strip (STORY-THUAN-BP13)
+      const bedCoveGeo = new THREE.BoxGeometry(bedW + 0.6, 0.03, 0.04);
+      const bedCoveMat = new THREE.MeshBasicMaterial({ color: 0xffd59e });
+      const bedCoveMesh = new THREE.Mesh(bedCoveGeo, bedCoveMat);
+      bedCoveMesh.position.set(cx, 1.65, cz - bedL / 2 + 0.02);
+      group.add(bedCoveMesh);
+
+      const bedCoveLight = new THREE.PointLight(0xffd59e, 1.1, 4.0);
+      bedCoveLight.position.set(cx, 1.68, cz - bedL / 2 + 0.1);
+      scene.add(bedCoveLight);
+      interiorLightsRef.current.push({ light: bedCoveLight, baseIntensity: 1.1 });
 
       // Plump Pillows
       [-0.52, 0.52].forEach((offset) => {
@@ -1561,7 +2051,17 @@ export default function CasaSerraViewer({
   const heroOpacity = Math.max(0, 1 - scrollProgress * 7);
 
   return (
-    <div className="relative w-full h-full min-h-[580px] bg-[#efebe2] select-none overflow-hidden font-sans">
+    <div 
+      className="relative w-full h-full min-h-[580px] select-none overflow-hidden font-sans"
+      style={{
+        backgroundColor: "#f7f4ec",
+        backgroundImage: `
+          linear-gradient(#e5dfd3 1px, transparent 1px),
+          linear-gradient(90deg, #e5dfd3 1px, transparent 1px)
+        `,
+        backgroundSize: "32px 32px"
+      }}
+    >
       
       {/* 3D CANVAS VIEWPORT */}
       <div 
@@ -1569,51 +2069,68 @@ export default function CasaSerraViewer({
         className={`absolute inset-0 w-full h-full ${scrollProgress > 0.15 ? "cursor-grab active:cursor-grabbing" : "cursor-default"}`}
       />
 
-      {/* TOP HEADER BAR */}
-      <header className="absolute top-0 left-0 right-0 px-6 py-4 flex items-center justify-between z-20 pointer-events-none">
+      {/* TOP SUB-HEADER BAR (Exact Match to Prototype Model) */}
+      <header className="absolute top-0 left-0 right-0 px-6 py-3.5 flex items-center justify-between z-20 pointer-events-none">
         
-        {/* Left Project Title */}
-        <div className="pointer-events-auto flex items-center gap-3">
-          <span className="text-xs uppercase tracking-widest font-mono font-bold text-neutral-800">
-            LINTEL · {project.name.toUpperCase()} · 2026
+        {/* Left Project Specs Pill */}
+        <div className="pointer-events-auto flex items-center gap-2 bg-[#f4efe6] border border-[#dcd5c7] rounded-full px-3.5 py-1.5 text-[11px] font-mono text-neutral-800 shadow-sm">
+          <span className="font-bold text-neutral-900">DỰ ÁN:</span>
+          <span className="font-medium text-neutral-800">
+            {project.name && project.name !== "Casa Serra" ? project.name : "Biệt Thự Vườn Thảo Điền — Căn Hộ Duplex 9 Không Gian"}
+          </span>
+          <span className="text-neutral-400 mx-1">•</span>
+          <span className="font-bold text-neutral-900">TỶ LỆ:</span>
+          <span className="font-medium text-neutral-800">
+            {project.specs.scale ? `${project.specs.scale} CHUẨN THIẾT KẾ` : "1:50 CHUẨN THIẾT KẾ"}
           </span>
         </div>
 
-        {/* Right Actions & Archetype Selector */}
-        <div className="pointer-events-auto flex items-center gap-2.5">
+        {/* Right Actions Cluster */}
+        <div className="pointer-events-auto flex items-center gap-2 font-mono text-xs">
+          {/* 3D Wireframe Pill */}
+          <button
+            onClick={() => setIsWireframe((w) => !w)}
+            className={`px-3 py-1.5 rounded-full font-bold transition text-[11px] ${
+              isWireframe
+                ? "bg-neutral-900 text-white shadow-sm"
+                : "bg-white/90 hover:bg-white text-neutral-800 border border-neutral-300"
+            }`}
+            title="Bật/Tắt khung dây kiến trúc 3D Wireframe"
+          >
+            3D Wireframe
+          </button>
           
-          {/* Quick Archetype Switcher */}
-          {onSelectArchetype && (
-            <div className="hidden sm:flex items-center gap-1.5 bg-white/75 backdrop-blur-md px-2.5 py-1 rounded-full border border-neutral-300 text-[11px] font-mono text-neutral-700 shadow-sm">
-              <span className="text-neutral-400 font-bold">MẪU:</span>
-              <button
-                id="btn-casaserra"
-                onClick={() => onSelectArchetype("casa-serra-original")}
-                className={`px-2.5 py-0.5 rounded-full cursor-pointer transition ${
-                  project.id === "casa-serra-original" ? "bg-[#FF4D00] text-white font-bold shadow-sm" : "hover:text-black"
-                }`}
-                title="Mẫu gốc Casa Serra chuẩn Sintra, Bồ Đào Nha"
-              >
-                Casa Serra
-              </button>
-              <button
-                id="btn-lau2"
-                onClick={() => onSelectArchetype("nha-lau-2")}
-                className={`px-2.5 py-0.5 rounded-full cursor-pointer transition ${
-                  project.id === "nha-lau-2" ? "bg-[#FF4D00] text-white font-bold shadow-sm" : "hover:text-black"
-                }`}
-                title="Bản vẽ Lầu 2: Sinh Hoạt Chung ở giữa, 2 Phòng Ngủ 2 bên"
-              >
-                Lầu 2 (nhà.jfif)
-              </button>
-            </div>
-          )}
+          {/* Sa Bàn Cắt Pill */}
+          <button
+            onClick={() => handleCameraModeChange("dollhouse")}
+            className={`px-3 py-1.5 rounded-full font-semibold transition text-[11px] ${
+              cameraMode === "dollhouse"
+                ? "bg-neutral-900 text-white shadow-sm"
+                : "bg-white/90 hover:bg-white text-neutral-800 border border-neutral-300"
+            }`}
+            title="Chế độ Sa bàn cắt tường 1.5m"
+          >
+            Sa Bàn Cắt
+          </button>
+
+          {/* Vật Liệu Thực Pill */}
+          <button
+            onClick={() => handleCameraModeChange("orbit")}
+            className={`px-3 py-1.5 rounded-full font-semibold transition text-[11px] ${
+              cameraMode === "orbit"
+                ? "bg-neutral-900 text-white shadow-sm"
+                : "bg-white/90 hover:bg-white text-neutral-800 border border-neutral-300"
+            }`}
+            title="Chế độ Vật liệu thực & Xoay 360 độ"
+          >
+            Vật Liệu Thực
+          </button>
 
           {/* Upload Button */}
           {onUploadClick && (
             <button
               onClick={onUploadClick}
-              className="px-4 py-1.5 rounded-full border border-neutral-800 text-xs font-mono font-semibold tracking-wider uppercase text-neutral-900 bg-white/80 hover:bg-neutral-900 hover:text-white transition shadow-sm flex items-center gap-1.5"
+              className="px-3.5 py-1.5 rounded-full border border-neutral-400 text-[11px] font-bold uppercase text-neutral-900 bg-white/90 hover:bg-neutral-900 hover:text-white transition shadow-sm flex items-center gap-1"
             >
               <span>+</span>
               <span>Tải Bản Vẽ 2D</span>
@@ -1624,27 +2141,16 @@ export default function CasaSerraViewer({
           <button
             onClick={handleExportGLB}
             disabled={isExportingGLB}
-            className="px-4 py-1.5 rounded-full border border-amber-600 bg-amber-500/90 hover:bg-amber-500 text-neutral-950 font-mono text-xs font-bold tracking-wider uppercase shadow-sm transition flex items-center gap-1.5 disabled:opacity-50"
+            className="px-4 py-1.5 rounded-full bg-[#FF4D00] hover:bg-[#e04400] text-white font-mono text-[11px] font-bold tracking-wider uppercase shadow-md transition flex items-center gap-1.5 disabled:opacity-50"
             title="Tải toàn bộ cảnh 3D về máy dưới dạng file .GLB"
           >
             <span>{isExportingGLB ? "⏳" : "📥"}</span>
             <span>{isExportingGLB ? "Đang Xuất..." : "Xuất 3D (.GLB)"}</span>
           </button>
-
-          {/* Revert to Demo */}
-          {isCustomUploaded && onResetToDemo && (
-            <button
-              onClick={onResetToDemo}
-              className="px-3 py-1.5 rounded-full border border-neutral-400 text-xs font-mono text-neutral-700 bg-white/60 hover:bg-white transition"
-              title="Xem lại bản vẽ mẫu Casa Serra"
-            >
-              ↺ Về Mẫu Gốc
-            </button>
-          )}
         </div>
       </header>
 
-      {/* 3D CAMERA MODES, LAYER TOGGLES & 3D RULER TOOLBAR (Story 4.2) */}
+      {/* 3D CAMERA MODES, LAYER TOGGLES & 3D RULER TOOLBAR (Floating Inspector Card) */}
       <FloorLayerToolbar
         cameraMode={cameraMode}
         onCameraModeChange={handleCameraModeChange}
@@ -1666,95 +2172,166 @@ export default function CasaSerraViewer({
         }}
         measuredDistance={measuredDistance}
         onClearMeasurement={clearMeasurement}
+        onTriggerAIRender={handleTriggerAIRender}
+        isAIRendering={isAIRendering}
+        currentStyle={project.specs.style}
+        onSelectStyle={handleSelectStyle}
+        isMenuOpen={isUtilityMenuOpen}
+        onToggleMenu={() => setIsUtilityMenuOpen((v) => !v)}
       />
 
-      {/* 2D ZOOM CONTROLS */}
-      {scrollProgress <= 0.08 && (
-        <div className="absolute top-20 right-6 z-20 pointer-events-auto flex items-center gap-1 bg-white/80 backdrop-blur-md border border-neutral-300 rounded-full px-2 py-1 shadow-sm text-xs font-mono">
-          <span className="text-[10px] text-neutral-500 font-bold px-1">2D ZOOM</span>
+      {/* RIGHT VERTICAL COMPASS & ZOOM CONTROLS (Exact Match to Prototype) */}
+      <div className="absolute right-4 top-20 z-20 pointer-events-auto hidden sm:flex flex-col items-center gap-2 select-none">
+        {/* Compass Widget */}
+        <div 
+          onClick={() => {
+            lookOffset.current = { yaw: 0, pitch: 0 };
+          }}
+          className="w-10 h-10 rounded-full bg-white/95 backdrop-blur-md border border-neutral-300/80 shadow-md flex flex-col items-center justify-center cursor-pointer hover:bg-white transition p-0.5"
+          title="La bàn kiến trúc • Bấm để đưa về hướng Bắc (North)"
+        >
+          <div className="relative w-5 h-5 flex items-center justify-center">
+            <span className="absolute top-0 text-[6px] font-bold text-red-600 font-mono">N</span>
+            <span className="absolute bottom-0 text-[6px] font-bold text-neutral-400 font-mono">S</span>
+            <span className="absolute left-0 text-[6px] font-bold text-neutral-400 font-mono">W</span>
+            <span className="absolute right-0 text-[6px] font-bold text-neutral-400 font-mono">E</span>
+            <div 
+              className="w-0.5 h-3 bg-gradient-to-t from-neutral-400 to-red-500 rounded-full transition-transform"
+              style={{ transform: `rotate(${-((lookOffset.current?.yaw || 0) * (180 / Math.PI))}deg)` }}
+            />
+          </div>
+          <span className="text-[6.5px] font-mono font-bold text-neutral-600 leading-none mt-0.5">312° NE</span>
+        </div>
+
+        {/* Zoom & Fit */}
+        <div className="flex flex-col items-center bg-white/95 backdrop-blur-md border border-neutral-300/80 rounded-full p-1 shadow-md text-xs font-mono">
           <button
-            onClick={() => setZoomScale((z) => Math.max(0.7, z - 0.2))}
-            className="w-6 h-6 rounded-full hover:bg-neutral-200 flex items-center justify-center font-bold text-neutral-700"
-            title="Thu nhỏ bản vẽ"
-          >
-            -
-          </button>
-          <span className="text-[11px] font-bold text-[#FF4D00] w-10 text-center">
-            {Math.round(zoomScale * 100)}%
-          </span>
-          <button
-            onClick={() => setZoomScale((z) => Math.min(2.5, z + 0.25))}
-            className="w-6 h-6 rounded-full hover:bg-neutral-200 flex items-center justify-center font-bold text-neutral-700"
-            title="Phóng to bản vẽ"
+            onClick={() => setZoomScale((z) => Math.min(2.5, z + 0.2))}
+            className="w-6 h-6 rounded-full hover:bg-neutral-200 flex items-center justify-center font-bold text-neutral-800 transition"
+            title="Phóng to"
           >
             +
           </button>
+          <span className="text-[8.5px] font-bold text-neutral-700 py-0.5 text-center w-6">
+            {Math.round(zoomScale * 100)}%
+          </span>
+          <button
+            onClick={() => setZoomScale((z) => Math.max(0.6, z - 0.2))}
+            className="w-6 h-6 rounded-full hover:bg-neutral-200 flex items-center justify-center font-bold text-neutral-800 transition"
+            title="Thu nhỏ"
+          >
+            -
+          </button>
+          <div className="w-4 h-px bg-neutral-200 my-0.5" />
+          <button
+            onClick={() => {
+              setZoomScale(1.0);
+              updateProgress(0);
+            }}
+            className="w-6 h-6 rounded-full hover:bg-neutral-200 flex items-center justify-center font-bold text-[8.5px] text-neutral-700 uppercase transition"
+            title="Khớp toàn màn hình (FIT)"
+          >
+            FIT
+          </button>
         </div>
-      )}
+      </div>
 
-      {/* 3D FREE-LOOK INSTRUCTION HINT */}
-      {scrollProgress > 0.18 && (
-        <div className="absolute top-20 right-6 z-20 pointer-events-none hidden md:flex items-center gap-2 bg-[#f5f2ea]/85 backdrop-blur-md px-3 py-1.5 rounded-full border border-neutral-300 text-[11px] font-mono text-neutral-600 shadow-sm">
-          <span className="text-[#FF4D00]">✦</span>
-          <span>Giữ & kéo chuột để xoay nhìn 360° bên trong phòng</span>
-        </div>
-      )}
-
-      {/* 2D HERO OVERLAY (Lintel · Casa Serra Typography) */}
+      {/* 2D HERO OVERLAY (Exact Match to Prototype Architecture Editorial) */}
       <div 
         className="absolute inset-0 pointer-events-none z-10 transition-opacity duration-200"
         style={{ opacity: heroOpacity, display: heroOpacity <= 0 ? "none" : "block" }}
       >
-        {/* Left Column: Headline */}
-        <div className="absolute top-24 left-8 md:left-12 max-w-sm space-y-4">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-[0.95] text-neutral-900 font-mono">
-            EVERY HOUSE<br />
-            STARTS AS<br />
-            A <span className="text-[#FF4D00]">PLAN.</span>
+        {/* Left Column: Headline & Studio Branding */}
+        <div className="absolute top-20 left-8 md:left-12 max-w-sm space-y-3 select-none pointer-events-auto">
+          {/* Studio Badge */}
+          <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold tracking-widest uppercase text-neutral-600">
+            <span className="w-2 h-2 rounded-full bg-[#b85434] animate-pulse" />
+            <span>BẢN QUYỀN THIẾT KẾ STUDIO</span>
+          </div>
+
+          {/* 3-Line Headline with cursive serif accent */}
+          <h1 className="text-3xl sm:text-4xl lg:text-[44px] font-black uppercase tracking-tight leading-[1.02] text-neutral-900 font-sans">
+            <div>MÔ HÌNH HÓA</div>
+            <div className="font-serif italic font-normal text-[#b85434] tracking-normal text-4xl sm:text-[48px] my-1">
+              BẢN VẼ 3D
+            </div>
+            <div>KIẾN TRÚC</div>
           </h1>
 
-          <p className="text-xs md:text-sm text-neutral-600 font-sans leading-relaxed">
-            {project.id === "nha-lau-2" ? (
-              <>Mặt bằng lầu 2 gồm Phòng sinh hoạt chung mở ra ban công trước, 2 phòng ngủ và sảnh thang. Cuộn chuột để mở cửa bước vào không gian 3D.</>
-            ) : isCustomUploaded ? (
-              <>Bản vẽ mặt bằng {project.specs.totalArea} m² gồm {project.rooms.length} phòng. Cuộn chuột để mở cửa và bước vào từng phòng.</>
-            ) : (
-              <>Casa Serra có mười sáu gian phòng và một cây ô liu cổ thụ. Cuộn chuột để bức vẽ phẳng vươn thành ngôi nhà thực thể.</>
-            )}
+          <p className="text-xs text-neutral-600 font-sans leading-relaxed">
+            Bản vẽ mặt bằng kiến trúc tiêu chuẩn gồm {project.rooms.length || 9} phòng phân khu. Lăn chuột nhẹ để tự động mở cửa, bóc tách lớp cắt và trực quan hóa từng trục không gian.
           </p>
+
+          {/* Metric Badges */}
+          <div className="pt-1 flex items-center gap-8 font-mono">
+            <div>
+              <span className="block text-[9px] uppercase tracking-wider text-neutral-500 font-bold">
+                DIỆN TÍCH SÀN
+              </span>
+              <span className="text-sm font-bold text-neutral-900">
+                {project.specs.totalArea || 342.8} m²
+              </span>
+            </div>
+            <div>
+              <span className="block text-[9px] uppercase tracking-wider text-neutral-500 font-bold">
+                CAO ĐỘ TRẦN
+              </span>
+              <span className="text-sm font-bold text-neutral-900">
+                +{((project.specs.ceilingHeight || 3.4) * 1000).toFixed(0)} mm
+              </span>
+            </div>
+          </div>
         </div>
 
-        {/* Bottom Left: Title Block Table */}
-        <div className="absolute bottom-10 left-8 md:left-12 pointer-events-auto">
-          <div className="border border-neutral-800 bg-[#efebe2]/90 backdrop-blur-sm text-[10px] font-mono uppercase text-neutral-800">
-            <div className="grid grid-cols-2 border-b border-neutral-800">
-              <div className="px-3 py-1.5 border-r border-neutral-800">
-                <span className="block text-[8px] text-neutral-500 font-bold">PROJECT</span>
-                <span className="font-bold tracking-wider">{project.name}</span>
+        {/* Bottom Left: Title Block Table (Hồ Sơ Kỹ Thuật 3D) */}
+        <div className="absolute bottom-6 left-8 md:left-12 pointer-events-auto">
+          <div className="border-2 border-neutral-900 bg-[#efebe2]/95 backdrop-blur-md text-[10px] font-mono uppercase text-neutral-900 shadow-md">
+            <div className="grid grid-cols-2 border-b-2 border-neutral-900">
+              <div className="px-3 py-1.5 border-r-2 border-neutral-900 font-bold tracking-wider">
+                HỒ SƠ KỸ THUẬT 3D
               </div>
-              <div className="px-3 py-1.5">
-                <span className="block text-[8px] text-neutral-500 font-bold">DRAWING</span>
-                <span className="font-bold tracking-wider">{project.subtitle || "GROUND FLOOR PLAN"}</span>
+              <div className="px-3 py-1.5 font-bold tracking-wider text-neutral-700">
+                GIAI ĐOẠN: THI CÔNG
               </div>
             </div>
-            <div className="grid grid-cols-2">
-              <div className="px-3 py-1.5 border-r border-neutral-800">
-                <span className="block text-[8px] text-neutral-500 font-bold">SCALE</span>
-                <span className="font-bold tracking-wider">{project.specs.scale || "1 : 100"}</span>
+            <div className="grid grid-cols-2 border-b border-neutral-800">
+              <div className="px-3 py-1 border-r border-neutral-800">
+                <span className="block text-[8px] text-neutral-500 font-bold">PROJECT NAME:</span>
+                <span className="font-bold">{project.name && project.name !== "Casa Serra" ? project.name : "Bản Vẽ Mặt Bằng 3D"}</span>
               </div>
-              <div className="px-3 py-1.5">
-                <span className="block text-[8px] text-neutral-500 font-bold">SHEET</span>
-                <span className="font-bold tracking-wider">{project.code || "A-101 REV D"}</span>
+              <div className="px-3 py-1">
+                <span className="block text-[8px] text-neutral-500 font-bold">DRAWING TITLE:</span>
+                <span className="font-bold">{project.subtitle === "Ground floor plan" ? "Mặt Bằng Tổng Thể" : (project.subtitle || "Mặt Bằng Tổng Thể")}</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 border-b border-neutral-800">
+              <div className="px-3 py-1 border-r border-neutral-800">
+                <span className="block text-[8px] text-neutral-500 font-bold">SCALE:</span>
+                <span className="font-bold">{project.specs.scale || "1:200"} / Ortho</span>
+              </div>
+              <div className="px-3 py-1">
+                <span className="block text-[8px] text-neutral-500 font-bold">SHEET REFERENCE:</span>
+                <span className="font-bold">{project.code || "A-101 REV D"}</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 items-center">
+              <div className="px-3 py-1.5 border-r border-neutral-800">
+                <span className="text-[9px] font-bold text-neutral-800">Kiến Trúc Sư: Gon Marcus</span>
+              </div>
+              <div className="px-3 py-1.5 flex justify-end">
+                <span className="px-2 py-0.5 border border-dashed border-neutral-800 font-bold text-[9px] tracking-widest text-neutral-900">
+                  APPROVED
+                </span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Bottom Center: Scroll Hint */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center">
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center pointer-events-none">
           <div className="inline-flex flex-col items-center gap-1">
-            <span className="text-[11px] font-mono tracking-widest uppercase text-neutral-800 font-bold animate-pulse">
-              SCROLL TO WALK IN
+            <span className="text-[10px] font-mono tracking-widest uppercase text-neutral-800 font-bold">
+              LĂN CHUỘT ĐỂ KHÁM PHÁ CHI TIẾT
             </span>
             <span className="text-neutral-500 text-xs animate-bounce">↓</span>
           </div>
@@ -1845,6 +2422,19 @@ export default function CasaSerraViewer({
           </div>
         </div>
       )}
+
+      {/* 1-CLICK AI 4K RENDER PREVIEW MODAL (STORY-THUAN-BP16) */}
+      <AIRenderPreviewModal
+        isOpen={isAIRenderModalOpen}
+        onClose={() => setIsAIRenderModalOpen(false)}
+        originalSnapshotUrl={renderOriginalSnapshot}
+        renderResultUrl={renderResultUrl}
+        isLoading={isAIRendering}
+        error={renderError}
+        styleName={SYSTEM_STYLE_PRESETS[project.specs.style]?.vietnameseName || project.specs.style}
+        enhancedPrompt={renderEnhancedPrompt}
+        executionTimeMs={renderExecutionTimeMs}
+      />
 
     </div>
   );

@@ -81,4 +81,53 @@ describe("STORY-THUAN-BP08: 3D WebGL Viewer Controls & FloorLayerToolbar", () =>
     expect(jsonStr).toContain("W-A-S-D");
     expect(jsonStr).toContain("First-Person");
   });
+
+  it("STORY-THUAN-BP12: supports dollhouse mode with 1.5m cutaway button", () => {
+    const onCameraModeChange = vi.fn();
+    const element = FloorLayerToolbar({
+      cameraMode: "dollhouse",
+      onCameraModeChange,
+      showCeilings: true,
+      onToggleCeilings: vi.fn(),
+      showWalls: true,
+      onToggleWalls: vi.fn(),
+      showFurniture: true,
+      onToggleFurniture: vi.fn(),
+      showLandscape: true,
+      onToggleLandscape: vi.fn(),
+      isRulerActive: false,
+      onToggleRuler: vi.fn(),
+      measuredDistance: null,
+      onClearMeasurement: vi.fn()
+    });
+
+    const jsonStr = JSON.stringify(element);
+    expect(jsonStr).toContain("Sa Bàn (1.5m)");
+  });
+
+  it("STORY-THUAN-BP16: renders AI Render 4K button when onTriggerAIRender is provided", () => {
+    const onTriggerAIRender = vi.fn();
+    const element = FloorLayerToolbar({
+      cameraMode: "dollhouse",
+      onCameraModeChange: vi.fn(),
+      showCeilings: true,
+      onToggleCeilings: vi.fn(),
+      showWalls: true,
+      onToggleWalls: vi.fn(),
+      showFurniture: true,
+      onToggleFurniture: vi.fn(),
+      showLandscape: true,
+      onToggleLandscape: vi.fn(),
+      isRulerActive: false,
+      onToggleRuler: vi.fn(),
+      measuredDistance: null,
+      onClearMeasurement: vi.fn(),
+      onTriggerAIRender,
+      isAIRendering: false
+    });
+
+    const jsonStr = JSON.stringify(element);
+    expect(jsonStr).toContain("AI Render 4K");
+    expect(jsonStr).toContain("UHD");
+  });
 });

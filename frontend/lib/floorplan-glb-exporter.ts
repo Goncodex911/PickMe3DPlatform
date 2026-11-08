@@ -9,24 +9,88 @@ import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 import { LayoutData } from "./floorplan-types";
 import { buildFull3DSceneFromLayout } from "./floorplan-mesh-generator";
 
-// Node.js FileReader polyfill for test/SSR environments
-if (typeof globalThis !== "undefined" && typeof globalThis.FileReader === "undefined") {
-  class NodeFileReader {
-    result: ArrayBuffer | string | null = null;
-    onload: ((e: any) => void) | null = null;
-    onloadend: ((e: any) => void) | null = null;
+// Node.js FileReader, Canvas & Document polyfills for test/SSR environments
+if (typeof window === "undefined" && typeof globalThis !== "undefined") {
+  if (typeof (globalThis as any).FileReader === "undefined") {
+    class NodeFileReader {
+      result: ArrayBuffer | string | null = null;
+      onload: ((e: any) => void) | null = null;
+      onloadend: ((e: any) => void) | null = null;
 
-    readAsArrayBuffer(blob: any) {
-      if (blob && typeof blob.arrayBuffer === "function") {
-        blob.arrayBuffer().then((buf: ArrayBuffer) => {
-          this.result = buf;
-          if (this.onload) this.onload({ target: this });
-          if (this.onloadend) this.onloadend({ target: this });
-        });
+      readAsArrayBuffer(blob: any) {
+        if (blob && typeof blob.arrayBuffer === "function") {
+          blob.arrayBuffer().then((buf: ArrayBuffer) => {
+            this.result = buf;
+            if (this.onload) this.onload({ target: this });
+            if (this.onloadend) this.onloadend({ target: this });
+          });
+        }
       }
     }
+    (globalThis as any).FileReader = NodeFileReader;
   }
-  (globalThis as any).FileReader = NodeFileReader;
+
+  if (typeof (globalThis as any).HTMLCanvasElement === "undefined") {
+    class MockHTMLCanvasElement {}
+    (globalThis as any).HTMLCanvasElement = MockHTMLCanvasElement;
+  }
+
+  if (typeof (globalThis as any).HTMLImageElement === "undefined") {
+    class MockHTMLImageElement {}
+    (globalThis as any).HTMLImageElement = MockHTMLImageElement;
+  }
+
+  if (typeof (globalThis as any).document === "undefined") {
+    const CanvasProto = (globalThis as any).HTMLCanvasElement?.prototype || {};
+    (globalThis as any).document = {
+      createElement: (tag: string) => {
+        const elem = Object.create(CanvasProto);
+        elem.width = 1;
+        elem.height = 1;
+        elem.getContext = () => ({
+          drawImage: () => {},
+          fillRect: () => {},
+          clearRect: () => {},
+          beginPath: () => {},
+          moveTo: () => {},
+          lineTo: () => {},
+          stroke: () => {},
+          save: () => {},
+          restore: () => {},
+          translate: () => {},
+          scale: () => {},
+          rotate: () => {},
+          getImageData: (x: number, y: number, w: number, h: number) => ({
+            data: new Uint8ClampedArray(Math.max(1, (w || 1) * (h || 1) * 4))
+          }),
+          putImageData: () => {}
+        });
+        elem.toBlob = (cb: any) => {
+          const dummyBuf = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+          const blob = typeof Blob !== "undefined" ? new Blob([dummyBuf], { type: "image/png" }) : null;
+          cb(blob);
+        };
+        elem.toDataURL = () => "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+        return elem;
+      },
+      querySelector: () => null,
+      querySelectorAll: () => [],
+      getElementById: () => null,
+      getElementsByTagName: () => [],
+      getElementsByClassName: () => [],
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      documentElement: { style: {} },
+      head: { appendChild: () => {}, removeChild: () => {} },
+      body: { appendChild: () => {}, removeChild: () => {} }
+    };
+  } else {
+    const doc = (globalThis as any).document;
+    if (typeof doc.querySelector !== "function") doc.querySelector = () => null;
+    if (typeof doc.querySelectorAll !== "function") doc.querySelectorAll = () => [];
+    if (typeof doc.getElementById !== "function") doc.getElementById = () => null;
+    if (typeof doc.getElementsByTagName !== "function") doc.getElementsByTagName = () => [];
+  }
 }
 
 export interface GLBExportOptions {
