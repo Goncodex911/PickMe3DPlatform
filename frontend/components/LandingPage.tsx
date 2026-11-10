@@ -15,6 +15,8 @@ if (typeof window !== "undefined") {
 
 import { useRouter } from "next/navigation";
 
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api").replace(/\/$/, "");
+
 interface LandingPageProps {
   onLoginSuccess?: (token: string, user: any) => void;
   user?: any;
@@ -72,7 +74,7 @@ export default function LandingPage({
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/auth/admin", {
+      const res = await fetch(`${API_BASE}/auth/admin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -103,7 +105,7 @@ export default function LandingPage({
     setLoading(true);
     setError("");
     try {
-      const endpoint = "/api/auth/google";
+      const endpoint = `${API_BASE}/auth/google`;
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

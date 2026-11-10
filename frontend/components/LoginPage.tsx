@@ -8,6 +8,7 @@ import styles from "./LoginPage.module.css";
 import { trackEvent } from "@/lib/gtag";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api").replace(/\/$/, "");
 
 type LoginPageProps = {
   onLoginSuccess: (token: string, user: Record<string, unknown>) => void;
@@ -23,7 +24,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch(`${basePath}/api/auth/google`, {
+      const response = await fetch(`${API_BASE}/auth/google`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: credential }),
@@ -47,7 +48,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch(`${basePath}/api/auth/guest`, {
+      const response = await fetch(`${API_BASE}/auth/guest`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: guestName.trim() || "Designer" }),
@@ -75,7 +76,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch(`${basePath}/api/auth/admin`, {
+      const response = await fetch(`${API_BASE}/auth/admin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
