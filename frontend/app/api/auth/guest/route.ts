@@ -3,7 +3,10 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
-    const backendUrl = process.env.BACKEND_GUEST_URL || "http://localhost:5001/api/auth/guest";
+    const defaultBackend = process.env.NEXT_PUBLIC_API_URL 
+      ? `${process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "")}/auth/guest`
+      : "http://localhost:5001/api/auth/guest";
+    const backendUrl = process.env.BACKEND_GUEST_URL || defaultBackend;
     const res = await fetch(backendUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
