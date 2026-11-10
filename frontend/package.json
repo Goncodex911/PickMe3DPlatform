@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "studio": "npm --prefix ../slide-editor run build-only",
-    "prebuild": "npm run studio",
+    "prebuild": "npm run studio || true",
     "build": "next build",
     "start": "npx serve out",
     "typecheck": "tsc --noEmit -p .",

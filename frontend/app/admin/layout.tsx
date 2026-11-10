@@ -6,6 +6,8 @@ import { usePathname, useRouter } from "next/navigation";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
 import { trackEvent } from "@/lib/gtag";
 
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api").replace(/\/$/, "");
+
 interface AdminUserSession {
   id?: string;
   _id?: string;
@@ -50,7 +52,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setLoginLoading(true);
     setLoginError("");
     try {
-      const res = await fetch("/api/auth/admin", {
+      const res = await fetch(`${API_BASE}/auth/admin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -77,7 +79,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setLoginLoading(true);
     setLoginError("");
     try {
-      const res = await fetch("/api/auth/google", {
+      const res = await fetch(`${API_BASE}/auth/google`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: credentialResponse.credential }),
