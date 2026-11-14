@@ -150,8 +150,58 @@ export function downloadGLBBlob(arrayBuffer: ArrayBuffer, filename: string = "mo
   URL.revokeObjectURL(url);
 }
 
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api").replace(/\/$/, "");
+
+export interface DracoCompressionResult {
+  arrayBuffer: ArrayBuffer;
+  originalBytes: number;
+  compressedBytes: number;
+  ratio: number;
+}
+
+/**
+ * Nén Draco file GLB qua backend (`POST /api/blueprint/compress-glb`, cần đăng nhập).
+ * Ném lỗi kèm lý do rõ ràng nếu thất bại để nơi gọi quyết định tải bản chưa nén.
+ */
+export async function compressGLBWithDraco(arrayBuffer: ArrayBuffer): Promise<DracoCompressionResult> {
+  const headers: Record<string, string> = { "Content-Type": "model/gltf-binary" };
+  try {
+    const token = typeof localStorage !== "undefined" ? localStorage.getItem("pickme3d_token") : null;
+    if (token) headers.Authorization = `Bearer ${token}`;
+  } catch {
+    // localStorage bị chặn: backend sẽ trả 401
+  }
+
+  const res = await fetch(`${API_BASE}/blueprint/compress-glb`, { method: "POST", headers, body: arrayBuffer });
+  if (res.status === 401) throw new Error("cần đăng nhập để nén Draco");
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data?.message || `máy chủ trả về mã ${res.status}`);
+  }
+  const compressed = await res.arrayBuffer();
+  return {
+    arrayBuffer: compressed,
+    originalBytes: Number(res.headers.get("X-Original-Bytes")) || arrayBuffer.byteLength,
+    compressedBytes: compressed.byteLength,
+    ratio: Number(res.headers.get("X-Compression-Ratio")) || arrayBuffer.byteLength / Math.max(1, compressed.byteLength)
+  };
+}
+
+export interface LayoutGLBExportResult {
+  arrayBuffer: ArrayBuffer;
+  filename: string;
+  sizeKb: number;
+  /** Kích thước trước khi nén (KB) */
+  originalSizeKb: number;
+  /** true nếu file đã được nén Draco */
+  dracoCompressed: boolean;
+  /** Lý do không nén được (nếu có yêu cầu nén mà thất bại) */
+  dracoError?: string;
+}
+
 /**
  * 1-Click Pipeline: Converts LayoutData into a complete 3D Scene and exports it to a .GLB file
+ * Với `draco: true`, file được nén Draco qua backend; nếu nén lỗi vẫn trả/tải bản chưa nén kèm `dracoError`.
  */
 export async function exportLayoutDataToGLB(
   layout: LayoutData,
@@ -159,8 +209,9 @@ export async function exportLayoutDataToGLB(
     includeCeilings?: boolean;
     includeFoundation?: boolean;
     autoDownload?: boolean;
+    draco?: boolean;
   } = {}
-): Promise<{ arrayBuffer: ArrayBuffer; filename: string; sizeKb: number }> {
+): Promise<LayoutGLBExportResult> {
   // 1. Build the full 3D architectural scene
   const scene = buildFull3DSceneFromLayout(layout, undefined, {
     includeCeilings: options.includeCeilings !== false,
@@ -168,19 +219,40 @@ export async function exportLayoutDataToGLB(
   });
 
   // 2. Export to GLB binary
-  const arrayBuffer = await exportSceneToGLB(scene, { binary: true });
+  const rawBuffer = await exportSceneToGLB(scene, { binary: true });
+  const originalSizeKb = Number((rawBuffer.byteLength / 1024).toFixed(1));
+
+  // 3. Nén Draco (tuỳ chọn); lỗi thì giữ bản chưa nén
+  let arrayBuffer = rawBuffer;
+  let dracoCompressed = false;
+  let dracoError: string | undefined;
+  if (options.draco) {
+    try {
+      arrayBuffer = (await compressGLBWithDraco(rawBuffer)).arrayBuffer;
+      dracoCompressed = true;
+    } catch (err) {
+      dracoError = (err as Error)?.message || "không rõ lỗi";
+    }
+  }
   const sizeKb = Number((arrayBuffer.byteLength / 1024).toFixed(1));
 
-  // 3. Format safe filename
+  // 4. Format safe filename (bỏ dấu tiếng Việt thay vì xoá mất ký tự)
   const rawName = layout.metadata.project_name || "pickme3d_architecture";
-  const safeName = rawName.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
-  const filename = `${safeName}.glb`;
+  const safeName =
+    rawName
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/đ/gi, "d")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "") || "pickme3d_architecture";
+  const filename = `${safeName}${dracoCompressed ? "_draco" : ""}.glb`;
 
-  // 4. Trigger download if in browser and enabled
+  // 5. Trigger download if in browser and enabled
   if (options.autoDownload && typeof window !== "undefined") {
     downloadGLBBlob(arrayBuffer, filename);
   }
 
-  return { arrayBuffer, filename, sizeKb };
+  return { arrayBuffer, filename, sizeKb, originalSizeKb, dracoCompressed, dracoError };
 }
 
