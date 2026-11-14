@@ -108,13 +108,17 @@ export interface AdminTemplate {
 
 export interface IncidentReport {
   _id: string;
+  ticketType?: "REPORT" | "APPEAL";
   reporter?: { _id: string; name: string; email: string; picture?: string };
   reporterName: string;
-  targetType: "template" | "user" | "comment" | "system";
+  senderEmail?: string;
+  targetType: "template" | "user" | "creator" | "review" | "comment" | "system" | "presentation" | string;
   targetId: string;
   targetTitle?: string;
+  appealCategory?: string;
   reason: string;
   description: string;
+  attachments?: string[];
   status: "pending" | "investigating" | "resolved" | "dismissed";
   priority: "low" | "medium" | "high" | "critical";
   resolutionNotes?: string;
@@ -209,6 +213,7 @@ export interface PayoutItem {
   };
   status: "PENDING" | "PAID" | "REJECTED";
   adminNote?: string;
+  paymentProof?: string;
   processedAt?: string | null;
   processedBy?: { _id: string; name: string; email: string } | null;
   createdAt: string;
@@ -507,6 +512,7 @@ export async function fetchAdminReportsApi(params?: {
   status?: string;
   priority?: string;
   targetType?: string;
+  ticketType?: string;
   search?: string;
 }): Promise<{
   success: boolean;
@@ -521,6 +527,7 @@ export async function fetchAdminReportsApi(params?: {
     if (params?.status && params.status !== "all") query.set("status", params.status);
     if (params?.priority && params.priority !== "all") query.set("priority", params.priority);
     if (params?.targetType && params.targetType !== "all") query.set("targetType", params.targetType);
+    if (params?.ticketType && params.ticketType !== "all") query.set("ticketType", params.ticketType);
     if (params?.search) query.set("search", params.search);
 
     const res = await fetch(`${API_BASE}/admin/reports?${query.toString()}`, {
@@ -834,7 +841,7 @@ export async function fetchAdminPayoutsApi(params?: {
 
 export async function updatePayoutStatusApi(
   id: string,
-  payload: { status: "PAID" | "REJECTED"; adminNote?: string }
+  payload: { status: "PAID" | "REJECTED"; adminNote?: string; paymentProof?: string }
 ): Promise<{ success: boolean; data?: PayoutItem; message?: string }> {
   try {
     const res = await fetch(`${API_BASE}/admin/payouts/${id}`, {

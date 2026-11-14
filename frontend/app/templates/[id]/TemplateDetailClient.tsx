@@ -20,6 +20,7 @@ import { DEFAULT_THEME, paletteOf } from "@/lib/tokens";
 import CommentThread from "@/components/CommentThread";
 import { AddToCollectionModal } from "@/components/CollectionManager";
 import DesignThumbnail from "@/components/DesignThumbnail";
+import ReportModal from "@/components/ReportModal";
 
 interface TemplateDetailClientProps {
   id: string;
@@ -63,6 +64,19 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
 
   // Collection modal state
   const [collectionModalOpen, setCollectionModalOpen] = useState(false);
+
+  // Report modal state
+  const [reportModalData, setReportModalData] = useState<{
+    isOpen: boolean;
+    targetType: "template" | "review" | "creator";
+    targetId: string;
+    targetTitle: string;
+  }>({
+    isOpen: false,
+    targetType: "template",
+    targetId: "",
+    targetTitle: "",
+  });
 
   useEffect(() => {
     if (!templateId) return;
@@ -295,6 +309,23 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() =>
+              setReportModalData({
+                isOpen: true,
+                targetType: "template",
+                targetId: template._id || templateId,
+                targetTitle: template.title || "Mẫu thiết kế",
+              })
+            }
+            className="px-2.5 py-1.5 rounded-md bg-slate-800/80 hover:bg-red-500/10 text-slate-400 hover:text-red-400 text-xs font-medium border border-white/10 flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="Báo cáo vi phạm mẫu này"
+          >
+            <span className="material-symbols-rounded text-sm text-red-400">flag</span>
+            <span className="hidden md:inline">Báo cáo</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setShareModalOpen(true)}
@@ -550,12 +581,29 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                         )}
                         <span className="font-semibold text-white">{rev.userName}</span>
                       </div>
-                      <div className="flex items-center text-amber-400 text-xs">
-                        {Array.from({ length: rev.rating }).map((_, i) => (
-                          <span key={i} className="material-symbols-rounded text-sm">
-                            star
-                          </span>
-                        ))}
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center text-amber-400 text-xs">
+                          {Array.from({ length: rev.rating }).map((_, i) => (
+                            <span key={i} className="material-symbols-rounded text-sm">
+                              star
+                            </span>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setReportModalData({
+                              isOpen: true,
+                              targetType: "review",
+                              targetId: (rev as any)._id || (rev as any).id || rev.user || `${templateId}-review-${idx}`,
+                              targetTitle: `Đánh giá của ${rev.userName || "Người dùng"} cho "${template.title || 'Mẫu thiết kế'}"`,
+                            })
+                          }
+                          className="text-slate-500 hover:text-red-400 p-1 rounded hover:bg-white/5 transition-colors"
+                          title="Báo cáo đánh giá này"
+                        >
+                          <span className="material-symbols-rounded text-sm">flag</span>
+                        </button>
                       </div>
                     </div>
                     {rev.comment && <p className="text-slate-300 leading-relaxed pl-8">{rev.comment}</p>}
@@ -747,6 +795,23 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                 <span className="material-symbols-rounded text-sm">bookmark</span>
                 <span>Lưu vào Bộ Sưu Tập</span>
               </button>
+
+              {/* Report Template Trigger */}
+              <button
+                type="button"
+                onClick={() =>
+                  setReportModalData({
+                    isOpen: true,
+                    targetType: "template",
+                    targetId: template._id || templateId,
+                    targetTitle: template.title || "Mẫu thiết kế",
+                  })
+                }
+                className="w-full py-2 px-3 text-slate-500 hover:text-red-400 text-[11px] font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <span className="material-symbols-rounded text-sm">flag</span>
+                <span>Báo cáo vi phạm mẫu này</span>
+              </button>
             </div>
           </div>
         </aside>
@@ -832,6 +897,15 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
         templateId={templateId}
         isOpen={collectionModalOpen}
         onClose={() => setCollectionModalOpen(false)}
+      />
+
+      {/* Report Modal */}
+      <ReportModal
+        isOpen={reportModalData.isOpen}
+        onClose={() => setReportModalData((prev) => ({ ...prev, isOpen: false }))}
+        targetType={reportModalData.targetType}
+        targetId={reportModalData.targetId}
+        targetTitle={reportModalData.targetTitle}
       />
     </div>
   );

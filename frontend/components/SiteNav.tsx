@@ -109,6 +109,8 @@ export default function SiteNav() {
           </Link>
         )}
         {authenticated && <Link href="/activity/" aria-current={current("/activity") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Activity</Link>}
+        {authenticated && role !== "admin" && <Link href="/creator/wallet/" aria-current={current("/creator/wallet") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Ví Creator</Link>}
+        {authenticated && <Link href="/appeals/" aria-current={current("/appeals") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Khiếu nại</Link>}
         {authenticated && <NotificationBell />}
         {authenticated
           ? <><Link href="/profile/" aria-current={current("/profile") ? "page" : undefined} className={styles.account} title={name}>{name || "Account"}</Link><button onClick={() => { logout(); setMenuOpen(false); router.push("/"); router.refresh(); }} className={styles.logout}>Sign out</button></>

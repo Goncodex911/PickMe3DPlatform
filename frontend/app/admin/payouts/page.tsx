@@ -6,6 +6,7 @@ import {
   updatePayoutStatusApi,
   PayoutItem,
 } from "@/lib/adminService";
+import { uploadFileToCloudinary } from "@/lib/mediaUpload";
 
 export default function AdminPayoutsPage() {
   const [payouts, setPayouts] = useState<PayoutItem[]>([]);
@@ -28,6 +29,9 @@ export default function AdminPayoutsPage() {
   const [activePayout, setActivePayout] = useState<PayoutItem | null>(null);
   const [actionType, setActionType] = useState<"PAID" | "REJECTED" | null>(null);
   const [adminNote, setAdminNote] = useState("");
+  const [paymentProof, setPaymentProof] = useState("");
+  const [uploadingProof, setUploadingProof] = useState(false);
+  const [proofError, setProofError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -67,6 +71,9 @@ export default function AdminPayoutsPage() {
   const openActionModal = (payout: PayoutItem, type: "PAID" | "REJECTED") => {
     setActivePayout(payout);
     setActionType(type);
+    setPaymentProof(payout.paymentProof || "");
+    setProofError("");
+    setUploadingProof(false);
     setAdminNote(
       type === "PAID"
         ? "Đã chuyển khoản thành công qua cổng thanh toán liên ngân hàng Napas 24/7."
@@ -78,6 +85,30 @@ export default function AdminPayoutsPage() {
     setActivePayout(null);
     setActionType(null);
     setAdminNote("");
+    setPaymentProof("");
+    setProofError("");
+    setUploadingProof(false);
+  };
+
+  const handleUploadProof = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setProofError("Vui lòng chọn tệp hình ảnh hợp lệ (PNG, JPG, WEBP)");
+      return;
+    }
+
+    try {
+      setUploadingProof(true);
+      setProofError("");
+      const url = await uploadFileToCloudinary(file, "pickme3d/payout-proofs");
+      setPaymentProof(url);
+    } catch (err: any) {
+      setProofError(err?.message || "Không thể tải lên ảnh thanh toán");
+    } finally {
+      setUploadingProof(false);
+    }
   };
 
   const handleConfirmAction = async (e: React.FormEvent) => {
@@ -89,6 +120,7 @@ export default function AdminPayoutsPage() {
       const res = await updatePayoutStatusApi(activePayout._id, {
         status: actionType,
         adminNote: adminNote.trim(),
+        paymentProof: paymentProof || undefined,
       });
 
       if (res.success) {
@@ -411,8 +443,21 @@ export default function AdminPayoutsPage() {
                             </button>
                           </div>
                         ) : (
-                          <div className="text-[11px] text-zinc-500 italic max-w-xs ml-auto truncate" title={payout.adminNote}>
-                            {payout.adminNote || "Đã xử lý"}
+                          <div className="flex flex-col items-end gap-1">
+                            <div className="text-[11px] text-zinc-500 italic max-w-xs truncate" title={payout.adminNote}>
+                              {payout.adminNote || "Đã xử lý"}
+                            </div>
+                            {payout.paymentProof && (
+                              <a
+                                href={payout.paymentProof}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-[10px] font-semibold transition-colors"
+                              >
+                                <span className="material-symbols-rounded text-xs">receipt_long</span>
+                                <span>Xem bill CK</span>
+                              </a>
+                            )}
                           </div>
                         )}
                       </td>
@@ -494,6 +539,68 @@ export default function AdminPayoutsPage() {
                   placeholder="Nhập ghi chú hoặc mã giao dịch ngân hàng..."
                 />
               </div>
+
+              {actionType === "PAID" && (
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-medium text-zinc-300">
+                      Ảnh chụp màn hình thanh toán / Bill chuyển khoản
+                    </label>
+                    {uploadingProof && (
+                      <span className="text-emerald-400 text-[11px] animate-pulse">
+                        Đang tải ảnh...
+                      </span>
+                    )}
+                  </div>
+
+                  {proofError && (
+                    <div className="mb-2 p-2 rounded-lg bg-rose-500/10 border border-rose-500/30 text-[11px] text-rose-300">
+                      {proofError}
+                    </div>
+                  )}
+
+                  {paymentProof ? (
+                    <div className="relative group w-full h-36 rounded-xl overflow-hidden border border-emerald-500/40 bg-zinc-950 flex items-center justify-center">
+                      <img
+                        src={paymentProof}
+                        alt="Bill chuyển khoản"
+                        className="w-full h-full object-contain"
+                      />
+                      <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <a
+                          href={paymentProof}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-semibold"
+                        >
+                          Xem phóng to
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => setPaymentProof("")}
+                          className="px-3 py-1.5 rounded-lg bg-rose-600/90 hover:bg-rose-500 text-white text-xs font-semibold cursor-pointer"
+                        >
+                          Xóa ảnh
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="flex items-center justify-center gap-2 w-full py-3 px-3 border border-dashed border-white/20 hover:border-emerald-500/50 hover:bg-emerald-500/5 rounded-xl cursor-pointer bg-zinc-950 transition-colors text-xs text-zinc-300">
+                      <span className="material-symbols-rounded text-base text-emerald-400">
+                        add_photo_alternate
+                      </span>
+                      <span>Tải ảnh bill chuyển khoản thành công (PNG, JPG)</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleUploadProof}
+                        disabled={uploadingProof || submitting}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+              )}
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
                 <button

@@ -12,6 +12,7 @@ const presentationRoutes = require('./presentationRoutes');
 const uploadRoutes = require('./uploadRoutes');
 const adminRoutes = require('./adminRoutes');
 const reportRoutes = require('./reportRoutes');
+const payoutRoutes = require('./payoutRoutes');
 const marketplaceRoutes = require('./marketplaceRoutes');
 const blueprintRoutes = require('./blueprintRoutes');
 
@@ -31,6 +32,7 @@ router.use('/presentations', presentationRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/admin', adminRoutes);
 router.use('/reports', reportRoutes);
+router.use('/payouts', payoutRoutes);
 router.use('/marketplace', marketplaceRoutes);
 router.use('/blueprint', blueprintRoutes);
 

@@ -2,6 +2,12 @@ const mongoose = require('mongoose');
 
 const reportSchema = new mongoose.Schema(
   {
+    ticketType: {
+      type: String,
+      enum: ['REPORT', 'APPEAL'],
+      default: 'REPORT',
+      index: true,
+    },
     reporter: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -12,15 +18,20 @@ const reportSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    senderEmail: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     targetType: {
       type: String,
-      enum: ['template', 'presentation', 'user', 'comment', 'system'],
-      required: true,
+      enum: ['template', 'presentation', 'user', 'creator', 'comment', 'review', 'system'],
+      default: 'system',
       index: true,
     },
     targetId: {
       type: String,
-      required: true,
+      default: '',
       index: true,
     },
     targetTitle: {
@@ -28,24 +39,25 @@ const reportSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
+    appealCategory: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     reason: {
       type: String,
-      enum: [
-        'spam',
-        'inappropriate_content',
-        'copyright_infringement',
-        'harassment',
-        'bug_report',
-        'security_vulnerability',
-        'other',
-      ],
       required: true,
+      trim: true,
     },
     description: {
       type: String,
       required: [true, 'Please describe the incident or issue'],
       trim: true,
       maxlength: [2000, 'Description cannot exceed 2000 characters'],
+    },
+    attachments: {
+      type: [String],
+      default: [],
     },
     status: {
       type: String,

@@ -16,6 +16,7 @@ export default function AdminReportsPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Filters
+  const [ticketType, setTicketType] = useState("all");
   const [status, setStatus] = useState("all");
   const [priority, setPriority] = useState("all");
   const [targetType, setTargetType] = useState("all");
@@ -35,6 +36,7 @@ export default function AdminReportsPage() {
     const res = await fetchAdminReportsApi({
       page,
       limit: pagination.limit,
+      ticketType,
       status,
       priority,
       targetType,
@@ -52,7 +54,7 @@ export default function AdminReportsPage() {
 
   useEffect(() => {
     loadReports(1);
-  }, [status, priority, targetType]);
+  }, [ticketType, status, priority, targetType]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,6 +140,28 @@ export default function AdminReportsPage() {
           <span className="material-symbols-rounded text-base text-black">download</span>
           <span>{downloadingCsv ? "Đang xuất..." : "Xuất Báo Cáo CSV"}</span>
         </button>
+      </div>
+
+      {/* Ticket Type Tabs */}
+      <div className="flex items-center gap-2">
+        {[
+          { label: "Tất cả đơn phản ánh", value: "all" },
+          { label: "Báo cáo vi phạm (Reports)", value: "REPORT" },
+          { label: "Khiếu nại & Kháng nghị (Appeals)", value: "APPEAL" },
+        ].map((tab) => (
+          <button
+            key={tab.value}
+            type="button"
+            onClick={() => setTicketType(tab.value)}
+            className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              ticketType === tab.value
+                ? "bg-white text-black shadow-md font-bold"
+                : "bg-zinc-900/60 hover:bg-zinc-900 text-zinc-400 hover:text-white border border-white/10"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* Filter Bar */}
@@ -249,8 +273,19 @@ export default function AdminReportsPage() {
                       <div className="font-medium text-white truncate max-w-xs" title={r.targetTitle || r.targetId}>
                         {r.targetTitle || r.targetId}
                       </div>
-                      <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">
-                        {r.targetType}
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        {r.ticketType === "APPEAL" ? (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                            KHIẾU NẠI
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                            BÁO CÁO
+                          </span>
+                        )}
+                        <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">
+                          {r.targetType}
+                        </span>
                       </div>
                     </td>
 
@@ -391,6 +426,26 @@ export default function AdminReportsPage() {
                   {new Date(detailReport.createdAt).toLocaleString("vi-VN")}
                 </div>
               </div>
+
+              {/* Attachments if any */}
+              {detailReport.attachments && detailReport.attachments.length > 0 && (
+                <div className="p-3.5 rounded-xl bg-zinc-950 border border-white/10 space-y-1.5">
+                  <span className="font-medium text-zinc-400 block">Ảnh bằng chứng đính kèm:</span>
+                  <div className="flex flex-wrap gap-2">
+                    {detailReport.attachments.map((url, i) => (
+                      <a
+                        key={i}
+                        href={url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="w-16 h-16 rounded-lg overflow-hidden border border-white/20 hover:border-white/50 transition-colors inline-block"
+                      >
+                        <img src={url} alt="Bằng chứng" className="w-full h-full object-cover" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {detailReport.resolvedByName && (
                 <div className="p-3 rounded-xl bg-zinc-800/80 border border-white/10 text-zinc-300 text-[11px]">
