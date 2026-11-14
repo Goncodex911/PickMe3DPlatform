@@ -11,6 +11,7 @@ import {
 } from "@/lib/templateService";
 import Link from "next/link";
 import DesignThumbnail from "./DesignThumbnail";
+import ReportModal from "./ReportModal";
 
 interface TemplateDetailModalProps {
   template: TemplateItem | null;
@@ -40,6 +41,35 @@ export default function TemplateDetailModal({
   const [reviewsList, setReviewsList] = useState<TemplateReview[]>([]);
   const [avgRating, setAvgRating] = useState<number>(0);
   const [ratingsCount, setRatingsCount] = useState<number>(0);
+
+  // Report Modal & Review Menu states
+  const [reportModalData, setReportModalData] = useState<{
+    isOpen: boolean;
+    targetType: "template" | "review";
+    targetId: string;
+    targetTitle: string;
+  }>({
+    isOpen: false,
+    targetType: "template",
+    targetId: "",
+    targetTitle: "",
+  });
+  const [openReviewMenu, setOpenReviewMenu] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-review-menu]")) {
+        setOpenReviewMenu(null);
+      }
+    };
+    if (openReviewMenu) {
+      document.addEventListener("click", handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener("click", handleOutsideClick);
+    };
+  }, [openReviewMenu]);
 
   useEffect(() => {
     if (template) {
@@ -136,14 +166,33 @@ export default function TemplateDetailModal({
 
       {/* Modal Dialog Content */}
       <div className="relative w-full max-w-4xl max-h-[92vh] overflow-y-auto bg-[#0d131f] border border-white/15 rounded-3xl shadow-2xl z-10 flex flex-col md:flex-row overflow-hidden scrollbar-none">
-        {/* Close Button Top Right */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-black/60 hover:bg-white/20 text-slate-300 hover:text-white backdrop-blur-md flex items-center justify-center transition-all border border-white/10"
-          title="Close (Esc)"
-        >
-          <span className="material-symbols-rounded text-lg">close</span>
-        </button>
+        {/* Top Right Actions: Report & Close */}
+        <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() =>
+              setReportModalData({
+                isOpen: true,
+                targetType: "template",
+                targetId: templateId,
+                targetTitle: template.title || "Mẫu thiết kế",
+              })
+            }
+            className="h-9 px-3 rounded-full bg-black/60 hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 backdrop-blur-md flex items-center gap-1.5 text-xs font-medium transition-all border border-white/10 hover:border-rose-500/30 cursor-pointer"
+            title="Báo cáo vi phạm mẫu này"
+          >
+            <span className="material-symbols-rounded text-sm text-rose-400">flag</span>
+            <span>Báo cáo</span>
+          </button>
+
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-full bg-black/60 hover:bg-white/20 text-slate-300 hover:text-white backdrop-blur-md flex items-center justify-center transition-all border border-white/10"
+            title="Close (Esc)"
+          >
+            <span className="material-symbols-rounded text-lg">close</span>
+          </button>
+        </div>
 
         {/* Left Side: Preview Gallery & Specs */}
         <div className="w-full md:w-1/2 p-6 bg-[#090d16]/90 flex flex-col items-center justify-between border-b md:border-b-0 md:border-r border-white/10">
@@ -353,20 +402,61 @@ export default function TemplateDetailModal({
 
               {/* Reviews List */}
               {reviewsList.length > 0 && (
-                <div className="mt-3 space-y-2 max-h-36 overflow-y-auto pr-1">
-                  {reviewsList.slice(0, 5).map((rev, idx) => (
-                    <div key={idx} className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 text-xs space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold text-slate-200">{rev.userName}</span>
-                        <div className="flex items-center text-amber-400 text-xs">
-                          {Array.from({ length: rev.rating }).map((_, i) => (
-                            <span key={i} className="material-symbols-rounded text-xs">star</span>
-                          ))}
+                <div className="mt-3 space-y-2 max-h-40 overflow-y-auto pr-1">
+                  {reviewsList.slice(0, 10).map((rev, idx) => {
+                    const reviewId = (rev as any)._id || (rev as any).id || rev.user || `${templateId}-review-${idx}`;
+                    return (
+                      <div key={idx} className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 text-xs space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-slate-200">{rev.userName}</span>
+                          <div className="flex items-center gap-1.5">
+                            <div className="flex items-center text-amber-400 text-xs">
+                              {Array.from({ length: rev.rating }).map((_, i) => (
+                                <span key={i} className="material-symbols-rounded text-xs">star</span>
+                              ))}
+                            </div>
+
+                            {/* Three-dots menu for reporting review */}
+                            <div className="relative" data-review-menu>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenReviewMenu(openReviewMenu === reviewId ? null : reviewId);
+                                }}
+                                className="text-slate-500 hover:text-white p-0.5 rounded hover:bg-white/10 transition-colors cursor-pointer"
+                                title="Tùy chọn đánh giá"
+                              >
+                                <span className="material-symbols-rounded text-sm">more_vert</span>
+                              </button>
+                              {openReviewMenu === reviewId && (
+                                <div className="absolute right-0 top-full mt-1 w-36 rounded-lg bg-slate-800 border border-white/15 shadow-2xl py-1 z-30 animate-fadeIn">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenReviewMenu(null);
+                                      setReportModalData({
+                                        isOpen: true,
+                                        targetType: "review",
+                                        targetId: reviewId,
+                                        targetTitle: `Đánh giá của ${rev.userName || "Người dùng"} cho "${template.title}"`,
+                                      });
+                                    }}
+                                    className="w-full flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-rose-400 hover:bg-white/10 hover:text-rose-300 transition-colors cursor-pointer text-left"
+                                  >
+                                    <span className="material-symbols-rounded text-xs">flag</span>
+                                    <span>Báo cáo đánh giá</span>
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
+                        {rev.comment && <p className="text-slate-400 text-[11px]">{rev.comment}</p>}
                       </div>
-                      {rev.comment && <p className="text-slate-400 text-[11px]">{rev.comment}</p>}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -422,9 +512,45 @@ export default function TemplateDetailModal({
                 <span>Download JSON</span>
               </button>
             </div>
+
+            {/* Quick Links & Report Trigger */}
+            <div className="flex items-center justify-between pt-1 text-xs">
+              <Link
+                href={`/templates/${templateId}`}
+                className="text-slate-400 hover:text-white flex items-center gap-1 text-[11px] transition-colors"
+              >
+                <span className="material-symbols-rounded text-xs">open_in_new</span>
+                <span>Xem trang chi tiết đầy đủ</span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setReportModalData({
+                    isOpen: true,
+                    targetType: "template",
+                    targetId: templateId,
+                    targetTitle: template.title || "Mẫu thiết kế",
+                  })
+                }
+                className="text-slate-500 hover:text-rose-400 flex items-center gap-1 transition-colors cursor-pointer text-[11px]"
+              >
+                <span className="material-symbols-rounded text-xs">flag</span>
+                <span>Báo cáo vi phạm mẫu này</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Report Modal */}
+      <ReportModal
+        isOpen={reportModalData.isOpen}
+        onClose={() => setReportModalData((prev) => ({ ...prev, isOpen: false }))}
+        targetType={reportModalData.targetType}
+        targetId={reportModalData.targetId}
+        targetTitle={reportModalData.targetTitle}
+      />
     </div>
   );
 }
