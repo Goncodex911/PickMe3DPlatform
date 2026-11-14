@@ -195,7 +195,7 @@ export function PartsPalette({
         border: `1px solid ${p.outlineVariant}`,
         cursor: "grab",
       }}
-      title="Nhấp để thêm hoặc kéo thả vào màn hình canvas"
+      title={t("animCardHint", lang)}
     >
       <AnimationAvatar template={tmpl} primaryColor={p.primary} />
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -241,7 +241,7 @@ export function PartsPalette({
           cursor: "pointer",
           flexShrink: 0,
         }}
-        title="Thêm nhanh vào màn hình"
+        title={t("animQuickAdd", lang)}
       >
         <span className="msr" style={{ fontSize: 18 }}>add</span>
       </button>
@@ -264,7 +264,7 @@ export function PartsPalette({
 
         {/* ─── ANIMATION SECTION (UI MARKETPLACE ITEMS) ─── */}
         {!q && (
-          <Section id="cat:animation" icon="auto_awesome" title="Animation" p={p}>
+          <Section id="cat:animation" icon="auto_awesome" title={t("animSection", lang)} p={p}>
             {purchased.length === 0 ? (
               <div
                 style={{
@@ -293,10 +293,10 @@ export function PartsPalette({
                   <span className="msr" style={{ fontSize: 22 }}>storefront</span>
                 </div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: p.onSurface }}>
-                  Chưa có Animation đã mua
+                  {t("animEmptyTitle", lang)}
                 </div>
                 <p style={{ fontSize: 11, color: p.onSurfaceVariant, margin: 0, lineHeight: 1.45 }}>
-                  Khám phá các animation tương tác từ UI Marketplace để đưa vào giao diện.
+                  {t("animEmptyBody", lang)}
                 </p>
                 <Link
                   href="/ui-marketplace/"
@@ -315,7 +315,7 @@ export function PartsPalette({
                     textDecoration: "none",
                   }}
                 >
-                  <span>Khám phá Marketplace</span>
+                  <span>{t("animBrowse", lang)}</span>
                   <span className="msr" style={{ fontSize: 13 }}>open_in_new</span>
                 </Link>
               </div>
@@ -333,7 +333,7 @@ export function PartsPalette({
             {filteredAnimations.length > 0 && (
               <div>
                 <div style={{ fontSize: 11, fontWeight: 700, color: p.onSurfaceVariant, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 6 }}>
-                  Animations ({filteredAnimations.length})
+                  {t("animResults", lang).replace("{n}", String(filteredAnimations.length))}
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   {filteredAnimations.map(renderAnimationCard)}
@@ -343,7 +343,7 @@ export function PartsPalette({
             {filtered.length > 0 && (
               <div>
                 <div style={{ fontSize: 11, fontWeight: 700, color: p.onSurfaceVariant, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 6 }}>
-                  Components ({filtered.length})
+                  {t("partResults", lang).replace("{n}", String(filtered.length))}
                 </div>
                 <div style={grid}>{filtered.map(tile)}</div>
               </div>

@@ -170,8 +170,9 @@ import { collabClient } from "@/lib/collaborationClient";
 
 import { DeviceConfig, findDeviceById } from "@/constants/devices";
 import { TemplateFile } from "@/types/template-file";
-import { UITemplate, translateTemplateSource, getCategoryLabel } from "@/lib/ui-marketplace-data";
+import { UITemplate } from "@/lib/ui-marketplace-data";
 import { getPurchasedTemplates, purchaseTemplate } from "@/lib/purchased-animations";
+import { ANIMATION_QUICK_COLORS, ANIMATION_SPEEDS, REPLAY_ANIMATION_EVENT, TOGGLE_LIVE_ANIMATION_EVENT, createAnimationItem, nextInCycle, normalizeAnimationSpeed } from "@/lib/animationItem";
 
 /** the screens while a model drafts: primary, tertiary and primary container, drifting */
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
@@ -2205,59 +2206,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     e.preventDefault();
     e.stopPropagation();
     flushPending();
-    const cleanTitle = template.titleEn || template.title;
-    const cat = getCategoryLabel(template.category);
-    const { html, js } = translateTemplateSource(template);
-
-    const isSingleButton =
-      template.id === "001" ||
-      template.id === "002" ||
-      (template.id !== "003" && template.id !== "004" && template.id !== "005" && (cat.toLowerCase().includes("button") || cleanTitle.toLowerCase().includes("button")));
-
-    let defaultW = 280;
-    let defaultH = 170;
-
-    if (template.id === "001" || template.id === "002") {
-      defaultW = 260;
-      defaultH = 80;
-    } else if (template.id === "003") {
-      defaultW = 280;
-      defaultH = 170;
-    } else if (template.id === "004") {
-      defaultW = 280;
-      defaultH = 150;
-    } else if (template.shape === "tall") {
-      defaultW = Math.min(320, PHONE_W - 32);
-      defaultH = 280;
-    } else if (isSingleButton) {
-      defaultW = 260;
-      defaultH = 80;
-    } else {
-      defaultW = Math.min(320, PHONE_W - 32);
-      defaultH = 190;
-    }
-
-    const customText = (template as any).customText || cleanTitle;
-    const customColor = (template as any).customColor || p.primary;
-    const customSpeed = (template as any).customSpeed ?? 1;
-    const customInteractive = (template as any).customInteractive !== undefined ? (template as any).customInteractive : true;
-
-    const item: Item = {
-      ...makeItem("animation"),
-      id: uid(),
-      label: customText,
-      animationText: customText,
-      supporting: cat,
-      animationId: template.id,
-      animationHtml: html,
-      animationJs: js,
-      animationDemo: template.demo || [],
-      animationColor: customColor,
-      animationSpeed: customSpeed,
-      animationInteractive: customInteractive,
-      size: defaultW,
-      size2: defaultH,
-    };
+    const item = createAnimationItem(template, p.primary, PHONE_W);
     const pt = toWorld(e.clientX, e.clientY);
     const sz = sizeOf(item, widthsRef.current);
     const offX = Math.min(sz.w / 2, 90);
@@ -2292,59 +2241,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
 
   const onAddAnimation = (template: UITemplate) => {
     flushPending();
-    const cleanTitle = template.titleEn || template.title;
-    const cat = getCategoryLabel(template.category);
-    const { html, js } = translateTemplateSource(template);
-
-    const isSingleButton =
-      template.id === "001" ||
-      template.id === "002" ||
-      (template.id !== "003" && template.id !== "004" && template.id !== "005" && (cat.toLowerCase().includes("button") || cleanTitle.toLowerCase().includes("button")));
-
-    let defaultW = 280;
-    let defaultH = 170;
-
-    if (template.id === "001" || template.id === "002") {
-      defaultW = 260;
-      defaultH = 80;
-    } else if (template.id === "003") {
-      defaultW = 280;
-      defaultH = 170;
-    } else if (template.id === "004") {
-      defaultW = 280;
-      defaultH = 150;
-    } else if (template.shape === "tall") {
-      defaultW = Math.min(320, PHONE_W - 32);
-      defaultH = 280;
-    } else if (isSingleButton) {
-      defaultW = 260;
-      defaultH = 80;
-    } else {
-      defaultW = Math.min(320, PHONE_W - 32);
-      defaultH = 190;
-    }
-
-    const customText = (template as any).customText || cleanTitle;
-    const customColor = (template as any).customColor || p.primary;
-    const customSpeed = (template as any).customSpeed ?? 1;
-    const customInteractive = (template as any).customInteractive !== undefined ? (template as any).customInteractive : true;
-
-    const item: Item = {
-      ...makeItem("animation"),
-      id: uid(),
-      label: customText,
-      animationText: customText,
-      supporting: cat,
-      animationId: template.id,
-      animationHtml: html,
-      animationJs: js,
-      animationDemo: template.demo || [],
-      animationColor: customColor,
-      animationSpeed: customSpeed,
-      animationInteractive: customInteractive,
-      size: defaultW,
-      size2: defaultH,
-    };
+    const item = createAnimationItem(template, p.primary, PHONE_W);
     const sz = sizeOf(item, widthsRef.current);
     const f = selectedFrameId
       ? framesRef.current.find((x) => x.id === selectedFrameId) || framesRef.current[0]
@@ -3976,7 +3873,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
           onAddAnimation(template);
           setLeftTab("parts");
           setLeftOpen(true);
-          showToast(`Đã chèn animation "${template.titleEn || template.title}" vào Canvas!`, 3000, "check");
+          showToast(t("animInserted", getLang()).replace("{name}", template.titleEn || template.title), 3000, "check");
           if (insertMarketplaceId) {
             const cleanUrl = new URL(window.location.href);
             cleanUrl.searchParams.delete("insertMarketplace");
@@ -4008,26 +3905,26 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     }
   }, []);
 
-  // Listen to double-click on animation node to toggle direct interaction mode
+  /* An animation part asks to switch live mode on (double-click on it) or off (its LIVE badge). */
   useEffect(() => {
     const handleToggleInteractive = (e: Event) => {
-      const customEvent = e as CustomEvent<{ id: string }>;
-      const id = customEvent.detail?.id;
-      if (id) {
-        setGroups((prev) =>
-          prev.map((g) => ({
-            ...g,
-            items: g.items.map((it) =>
-              it.id === id ? { ...it, animationInteractive: !it.animationInteractive } : it
-            ),
-          }))
-        );
-        setSelectedIds([id]);
-        showToast("⚡ Đã bật Chế độ Tương tác trực tiếp: Nhấp hoặc chạm để thử nghiệm!", 2400, "check");
-      }
+      const id = (e as CustomEvent<{ id?: string }>).detail?.id;
+      if (!id) return;
+      const current = groupsRef.current.flatMap((g) => g.items).find((it) => it.id === id);
+      if (!current || current.kind !== "animation") return;
+      const next = !current.animationInteractive;
+      snapshot();
+      setGroups((prev) =>
+        prev.map((g) => ({
+          ...g,
+          items: g.items.map((it) => (it.id === id ? { ...it, animationInteractive: next } : it)),
+        }))
+      );
+      setSelectedIds([id]);
+      showToast(t(next ? "animLiveOn" : "animLiveOff", getLang()), 2400, next ? "check" : "info");
     };
-    window.addEventListener("pm:toggle_interactive", handleToggleInteractive);
-    return () => window.removeEventListener("pm:toggle_interactive", handleToggleInteractive);
+    window.addEventListener(TOGGLE_LIVE_ANIMATION_EVENT, handleToggleInteractive);
+    return () => window.removeEventListener(TOGGLE_LIVE_ANIMATION_EVENT, handleToggleInteractive);
   }, []);
 
   const updateAiSettings = (s: AiSettings) => {
@@ -5704,7 +5601,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                   if (!g) return null;
                   const b = groupBounds(g, widths);
                   const isInteractive = Boolean(selected.animationInteractive);
-                  const currentSpeed = selected.animationSpeed ?? 1;
+                  const currentSpeed = normalizeAnimationSpeed(selected.animationSpeed ?? 1);
                   const currentColor = selected.animationColor || p.primary;
 
                   return (
@@ -5740,13 +5637,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                           e.stopPropagation();
                           const nextInteractive = !isInteractive;
                           patchSelected({ animationInteractive: nextInteractive });
-                          showToast(
-                            nextInteractive
-                              ? "⚡ Đã bật Chế độ Tương tác: Bấm & test trực tiếp animation trên Canvas!"
-                              : "✋ Đã chuyển sang Chế độ Di chuyển: Kéo thả và đổi vị trí bình thường.",
-                            2500,
-                            nextInteractive ? "check" : "info"
-                          );
+                          showToast(t(nextInteractive ? "animLiveOn" : "animLiveOff", lang), 2500, nextInteractive ? "check" : "info");
                         }}
                         style={{
                           display: "inline-flex",
@@ -5762,23 +5653,21 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                           fontSize: 11,
                           boxShadow: isInteractive ? "0 2px 8px rgba(34,197,94,0.4)" : "none",
                         }}
-                        title={isInteractive ? "Chuyển về chế độ kéo di chuyển" : "Tương tác bấm trực tiếp trên Canvas"}
+                        title={t(isInteractive ? "animLiveExitTitle" : "animLiveEnterTitle", lang)}
                       >
                         <span className="msr" style={{ fontSize: 15 }}>
                           {isInteractive ? "touch_app" : "pan_tool"}
                         </span>
-                        <span>{isInteractive ? "Đang Tương Tác ⚡" : "Bật Tương Tác ⚡"}</span>
+                        <span>{t(isInteractive ? "animLiveActive" : "animLiveEnter", lang)}</span>
                       </button>
 
                       {/* Speed Switcher */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          const speeds = [0.5, 1, 1.5, 2];
-                          const nextIdx = (speeds.indexOf(currentSpeed) + 1) % speeds.length;
-                          const nextSpeed = speeds[nextIdx];
+                          const nextSpeed = nextInCycle(ANIMATION_SPEEDS, currentSpeed as (typeof ANIMATION_SPEEDS)[number]);
                           patchSelected({ animationSpeed: nextSpeed });
-                          showToast(`Tốc độ animation: ${nextSpeed}x`, 1200);
+                          showToast(t("animSpeedToast", lang).replace("{speed}", String(nextSpeed)), 1200);
                         }}
                         style={{
                           display: "inline-flex",
@@ -5793,7 +5682,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                           fontSize: 11,
                           fontWeight: 700,
                         }}
-                        title="Đổi tốc độ chuyển động (0.5x, 1x, 1.5x, 2x)"
+                        title={t("animSpeedTitle", lang)}
                       >
                         <span className="msr" style={{ fontSize: 13 }}>speed</span>
                         <span>{currentSpeed}x</span>
@@ -5803,9 +5692,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          const colors = [p.primary, "#6366f1", "#10b981", "#f59e0b", "#ef4444", "#ec4899", "#8b5cf6", "#06b6d4"];
-                          const nextIdx = (colors.indexOf(currentColor) + 1) % colors.length;
-                          patchSelected({ animationColor: colors[nextIdx] });
+                          patchSelected({ animationColor: nextInCycle([p.primary, ...ANIMATION_QUICK_COLORS], currentColor) });
                         }}
                         style={{
                           display: "inline-flex",
@@ -5819,7 +5706,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                           cursor: "pointer",
                           fontSize: 11,
                         }}
-                        title="Đổi màu sắc chủ đạo của Animation"
+                        title={t("animColorTitle", lang)}
                       >
                         <span
                           style={{
@@ -5831,15 +5718,15 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                             boxShadow: "0 0 0 1px rgba(0,0,0,0.2)",
                           }}
                         />
-                        <span>Màu</span>
+                        <span>{t("animColor", lang)}</span>
                       </button>
 
                       {/* Replay Demo */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          patchSelected({ animationSpeed: currentSpeed });
-                          showToast("Đã tải lại animation", 1000, "check");
+                          window.dispatchEvent(new CustomEvent(REPLAY_ANIMATION_EVENT, { detail: { id: selected.id } }));
+                          showToast(t("animReplayed", lang), 1000, "check");
                         }}
                         style={{
                           display: "inline-flex",
@@ -5851,7 +5738,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                           color: p.onSurface,
                           cursor: "pointer",
                         }}
-                        title="Chạy lại hiệu ứng animation"
+                        title={t("animReplayTitle", lang)}
                       >
                         <span className="msr" style={{ fontSize: 14 }}>replay</span>
                       </button>
@@ -5873,7 +5760,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                           color: isInteractive ? "#aaa" : p.onSurfaceVariant,
                           cursor: "pointer",
                         }}
-                        title="Mở toàn bộ tùy chỉnh chi tiết ở bảng bên phải"
+                        title={t("openPanel", lang)}
                       >
                         <span className="msr" style={{ fontSize: 15 }}>tune</span>
                       </button>
