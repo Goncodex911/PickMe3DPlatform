@@ -9,6 +9,13 @@ const { notifyAdmins } = require('../helpers/notificationHelper');
 // @access  Private
 exports.createReport = async (req, res, next) => {
   try {
+    if (req.user && req.user.role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Tài khoản Quản trị viên (Admin) không thực hiện gửi báo cáo hoặc khiếu nại. Vui lòng sử dụng /admin/reports để quản lý.',
+      });
+    }
+
     const {
       ticketType = 'REPORT',
       targetType,
@@ -19,9 +26,10 @@ exports.createReport = async (req, res, next) => {
       priority = 'medium',
       appealCategory = '',
       attachments = [],
+      targetUrl = '',
     } = req.body;
 
-    const normalizedTicketType = ticketType.toUpperCase() === 'APPEAL' ? 'APPEAL' : 'REPORT';
+    const normalizedTicketType = ticketType && String(ticketType).toUpperCase() === 'APPEAL' ? 'APPEAL' : 'REPORT';
 
     if (!reason || !description) {
       return res.status(400).json({
@@ -30,7 +38,7 @@ exports.createReport = async (req, res, next) => {
       });
     }
 
-    let finalTargetType = targetType || (normalizedTicketType === 'APPEAL' ? 'system' : '');
+    let finalTargetType = targetType ? String(targetType).toLowerCase() : (normalizedTicketType === 'APPEAL' ? 'system' : '');
     let finalTargetId = targetId || '';
     let targetTitle = incomingTargetTitle || '';
 
@@ -74,6 +82,17 @@ exports.createReport = async (req, res, next) => {
       }
     }
 
+    let finalTargetUrl = targetUrl || '';
+    if (!finalTargetUrl) {
+      if (finalTargetType === 'template') {
+        finalTargetUrl = `/templates/${finalTargetId}`;
+      } else if (finalTargetType === 'creator' || finalTargetType === 'user') {
+        finalTargetUrl = `/creator/${finalTargetId}`;
+      } else if (finalTargetType === 'review' && finalTargetId && finalTargetId.includes('-review-')) {
+        finalTargetUrl = `/templates/${finalTargetId.split('-review-')[0]}`;
+      }
+    }
+
     const report = await Report.create({
       ticketType: normalizedTicketType,
       reporter: req.user._id,
@@ -82,6 +101,7 @@ exports.createReport = async (req, res, next) => {
       targetType: finalTargetType,
       targetId: finalTargetId,
       targetTitle,
+      targetUrl: finalTargetUrl,
       appealCategory: appealCategory || '',
       reason,
       description,

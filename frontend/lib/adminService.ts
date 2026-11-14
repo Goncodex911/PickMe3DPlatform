@@ -115,6 +115,18 @@ export interface IncidentReport {
   targetType: "template" | "user" | "creator" | "review" | "comment" | "system" | "presentation" | string;
   targetId: string;
   targetTitle?: string;
+  targetUrl?: string;
+  reviewDetails?: {
+    _id: string;
+    templateId: string;
+    templateTitle: string;
+    templateThumbnail?: string;
+    userName: string;
+    userAvatar?: string;
+    rating: number;
+    comment: string;
+    createdAt?: string;
+  };
   appealCategory?: string;
   reason: string;
   description: string;
@@ -872,5 +884,25 @@ export async function fetchSystemHealthApi(): Promise<{
     return await res.json();
   } catch (err: any) {
     return { success: false, message: err.message || "Lỗi kiểm tra trạng thái hệ thống" };
+  }
+}
+
+// ==========================================
+// J. DIRECT REVIEW MODERATION API
+// ==========================================
+
+export async function deleteAdminReviewApi(
+  reviewId: string,
+  templateId?: string
+): Promise<{ success: boolean; message?: string }> {
+  try {
+    const query = templateId ? `?templateId=${encodeURIComponent(templateId)}` : "";
+    const res = await fetch(`${API_BASE}/admin/reviews/${encodeURIComponent(reviewId)}${query}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, message: err.message || "Lỗi xóa đánh giá vi phạm" };
   }
 }

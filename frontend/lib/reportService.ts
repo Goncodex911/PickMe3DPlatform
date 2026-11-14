@@ -20,6 +20,7 @@ export interface ReportItem {
   targetType: "template" | "review" | "creator" | "user" | "comment" | "system" | "presentation";
   targetId?: string;
   targetTitle?: string;
+  targetUrl?: string;
   appealCategory?: string;
   reason: string;
   description: string;
@@ -38,6 +39,7 @@ export interface CreateReportPayload {
   targetType?: "template" | "review" | "creator" | "user" | "comment" | "system" | "presentation";
   targetId?: string;
   targetTitle?: string;
+  targetUrl?: string;
   appealCategory?: string;
   reason: string;
   description: string;
@@ -95,6 +97,19 @@ export async function fetchMyReportsApi(ticketType?: "REPORT" | "APPEAL"): Promi
     return json;
   } catch (err: any) {
     return { success: false, message: err?.message || "Lỗi kết nối khi tải danh sách báo cáo" };
+  }
+}
+
+/**
+ * Check if the currently logged-in user is an administrator
+ */
+export function isCurrentUserAdmin(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const user = JSON.parse(localStorage.getItem("pickme3d_user") || "null");
+    return user?.role === "admin";
+  } catch {
+    return false;
   }
 }
 

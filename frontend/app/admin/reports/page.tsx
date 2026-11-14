@@ -5,6 +5,7 @@ import {
   fetchAdminReportsApi,
   updateReportStatusApi,
   downloadReportsCsv,
+  deleteAdminReviewApi,
   IncidentReport,
   PaginationMeta,
 } from "@/lib/adminService";
@@ -29,6 +30,25 @@ export default function AdminReportsPage() {
   const [resolutionNotes, setResolutionNotes] = useState("");
   const [actionBusy, setActionBusy] = useState(false);
   const [downloadingCsv, setDownloadingCsv] = useState(false);
+  const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
+
+  const handleDeleteReview = async (reviewId: string, templateId?: string, reportId?: string) => {
+    if (!confirm("Bạn có chắc chắn muốn xóa đánh giá này khỏi mẫu thiết kế? Hành động này sẽ cập nhật lại điểm đánh giá trung bình.")) {
+      return;
+    }
+    setDeletingReviewId(reviewId);
+    const res = await deleteAdminReviewApi(reviewId, templateId);
+    if (res.success) {
+      alert("Đã xóa đánh giá vi phạm thành công!");
+      if (detailReport && detailReport._id === reportId) {
+        setDetailReport((prev) => (prev ? { ...prev, reviewDetails: undefined } : null));
+      }
+      loadReports(pagination.page);
+    } else {
+      alert("Lỗi: " + (res.message || "Không thể xóa đánh giá"));
+    }
+    setDeletingReviewId(null);
+  };
 
   const loadReports = async (page = 1) => {
     setLoading(true);
@@ -114,6 +134,39 @@ export default function AdminReportsPage() {
 
   const getStatusBadge = (_s: string) => {
     return "bg-zinc-800 text-zinc-200 border-white/10";
+  };
+
+  const getTargetActionLink = (r: IncidentReport): { url: string; label: string; icon: string } | null => {
+    if (r.targetUrl) {
+      if (r.targetType === "template") return { url: r.targetUrl, label: "Xem Mẫu thiết kế", icon: "palette" };
+      if (r.targetType === "review") return { url: r.targetUrl, label: "Xem Mẫu có Đánh giá", icon: "rate_review" };
+      if (r.targetType === "creator" || r.targetType === "user") return { url: r.targetUrl, label: "Xem Hồ sơ Creator", icon: "person" };
+      return { url: r.targetUrl, label: "Xem Đối tượng", icon: "open_in_new" };
+    }
+
+    // Fallbacks if targetUrl is empty
+    if (r.targetType === "template" && r.targetId) {
+      return { url: `/templates/${r.targetId}`, label: "Xem Mẫu thiết kế", icon: "palette" };
+    }
+    if (r.targetType === "review") {
+      if (r.targetId && r.targetId.includes("-review-")) {
+        return { url: `/templates/${r.targetId.split("-review-")[0]}`, label: "Xem Mẫu có Đánh giá", icon: "rate_review" };
+      }
+      if (r.targetTitle) {
+        const match = r.targetTitle.match(/cho "([^"]+)"/);
+        if (match && match[1]) {
+          return { url: `/templates?search=${encodeURIComponent(match[1])}`, label: "Xem Mẫu có Đánh giá", icon: "rate_review" };
+        }
+      }
+    }
+    if ((r.targetType === "creator" || r.targetType === "user") && r.targetId) {
+      return { url: `/creator/${r.targetId}`, label: "Xem Hồ sơ Creator", icon: "person" };
+    }
+    if (r.ticketType === "APPEAL" && (r.reporter?.email || r.reporterName)) {
+      return { url: `/admin/users?search=${encodeURIComponent(r.reporter?.email || r.reporterName)}`, label: "Xem User gửi đơn", icon: "account_circle" };
+    }
+
+    return null;
   };
 
   return (
@@ -273,7 +326,7 @@ export default function AdminReportsPage() {
                       <div className="font-medium text-white truncate max-w-xs" title={r.targetTitle || r.targetId}>
                         {r.targetTitle || r.targetId}
                       </div>
-                      <div className="flex items-center gap-1.5 mt-0.5">
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
                         {r.ticketType === "APPEAL" ? (
                           <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                             KHIẾU NẠI
@@ -286,7 +339,69 @@ export default function AdminReportsPage() {
                         <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">
                           {r.targetType}
                         </span>
+
+                        {/* One-click Button to Map Directly to Target */}
+                        {(() => {
+                          const action = getTargetActionLink(r);
+                          if (!action) return null;
+                          return (
+                            <a
+                              href={action.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/15 hover:bg-blue-500/30 text-blue-300 hover:text-white border border-blue-500/30 text-[10px] font-semibold transition-all shadow-sm group"
+                              title={`One-click: Xem ${action.label} (Mở tab mới)`}
+                            >
+                              <span className="material-symbols-rounded text-xs">{action.icon}</span>
+                              <span>{action.label}</span>
+                              <span className="material-symbols-rounded text-[10px] opacity-70 group-hover:translate-x-0.5 transition-transform">
+                                open_in_new
+                              </span>
+                            </a>
+                          );
+                        })()}
                       </div>
+
+                      {/* Direct Reported Review Box (View directly without searching on template) */}
+                      {r.reviewDetails && (
+                        <div className="w-full mt-2.5 p-2.5 rounded-xl bg-zinc-950/90 border border-amber-500/30 space-y-1.5 shadow-md">
+                          <div className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-1.5">
+                              {r.reviewDetails.userAvatar ? (
+                                <img src={r.reviewDetails.userAvatar} alt="" className="w-4 h-4 rounded-full object-cover border border-white/10" />
+                              ) : (
+                                <div className="w-4 h-4 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center text-[9px] font-bold">
+                                  {r.reviewDetails.userName[0]}
+                                </div>
+                              )}
+                              <span className="font-semibold text-white">{r.reviewDetails.userName}</span>
+                            </div>
+                            <div className="flex items-center text-amber-400 text-xs">
+                              {Array.from({ length: r.reviewDetails.rating }).map((_, i) => (
+                                <span key={i} className="material-symbols-rounded text-xs">star</span>
+                              ))}
+                            </div>
+                          </div>
+                          <p className="text-zinc-200 text-[11px] leading-relaxed bg-white/[0.03] p-2 rounded-lg border border-white/5 whitespace-pre-wrap">
+                            {r.reviewDetails.comment || <span className="text-zinc-500 italic">(Người dùng không nhập văn bản nhận xét)</span>}
+                          </p>
+                          <div className="flex items-center justify-between pt-1 border-t border-white/5 text-[10px]">
+                            <span className="text-zinc-400 truncate max-w-[170px]" title={r.reviewDetails.templateTitle}>
+                              Mẫu: <strong className="text-zinc-200 font-medium">{r.reviewDetails.templateTitle}</strong>
+                            </span>
+                            <button
+                              type="button"
+                              disabled={deletingReviewId === r.reviewDetails._id}
+                              onClick={() => handleDeleteReview(r.reviewDetails!._id, r.reviewDetails!.templateId, r._id)}
+                              className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold transition-all shadow-sm flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                              title="Xóa vĩnh viễn đánh giá này khỏi mẫu thiết kế"
+                            >
+                              <span className="material-symbols-rounded text-xs">delete</span>
+                              <span>{deletingReviewId === r.reviewDetails._id ? "Đang xóa..." : "Xóa đánh giá"}</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </td>
 
                     {/* Reason */}
@@ -340,12 +455,29 @@ export default function AdminReportsPage() {
 
                     {/* Action */}
                     <td className="py-3 px-4 text-right">
-                      <button
-                        onClick={() => openResolutionModal(r)}
-                        className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 hover:text-white font-medium text-xs border border-white/10 transition-colors cursor-pointer"
-                      >
-                        Xử lý
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        {(() => {
+                          const action = getTargetActionLink(r);
+                          if (!action) return null;
+                          return (
+                            <a
+                              href={action.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="p-1.5 rounded-xl bg-zinc-900 hover:bg-blue-600/20 text-zinc-400 hover:text-blue-300 border border-white/10 hover:border-blue-500/40 transition-all inline-flex items-center justify-center"
+                              title={`Xem ${action.label} (Mở tab mới)`}
+                            >
+                              <span className="material-symbols-rounded text-sm">open_in_new</span>
+                            </a>
+                          );
+                        })()}
+                        <button
+                          onClick={() => openResolutionModal(r)}
+                          className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 hover:text-white font-medium text-xs border border-white/10 transition-colors cursor-pointer"
+                        >
+                          Xử lý
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -399,7 +531,7 @@ export default function AdminReportsPage() {
             </div>
 
             <div className="space-y-3.5 text-xs mb-5">
-              <div className="p-3.5 rounded-xl bg-zinc-950 border border-white/10 space-y-2">
+              <div className="p-3.5 rounded-xl bg-zinc-950 border border-white/10 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-medium uppercase text-zinc-400">
                     {detailReport.targetType}
@@ -414,6 +546,86 @@ export default function AdminReportsPage() {
                 <div className="text-zinc-400">
                   Lý do: <span className="font-medium text-white capitalize">{detailReport.reason.replace(/_/g, " ")}</span>
                 </div>
+
+                {/* Direct One-Click Button Inside Resolution Modal */}
+                {(() => {
+                  const action = getTargetActionLink(detailReport);
+                  if (!action) return null;
+                  return (
+                    <div className="pt-2 border-t border-white/5 flex flex-wrap items-center gap-2">
+                      <a
+                        href={action.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer group"
+                      >
+                        <span className="material-symbols-rounded text-sm">{action.icon}</span>
+                        <span>Mở trực tiếp {action.label}</span>
+                        <span className="material-symbols-rounded text-xs group-hover:translate-x-0.5 transition-transform">
+                          open_in_new
+                        </span>
+                      </a>
+                      {(detailReport.targetType === "creator" || detailReport.targetType === "user") && (
+                        <a
+                          href={`/admin/users?search=${encodeURIComponent(detailReport.targetId)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-white/10 text-xs font-medium transition-colors"
+                        >
+                          <span className="material-symbols-rounded text-xs">manage_accounts</span>
+                          <span>Quản lý User</span>
+                        </a>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Reported Review Card in Resolution Modal */}
+                {detailReport.reviewDetails && (
+                  <div className="pt-2.5 border-t border-white/10 space-y-2">
+                    <span className="text-[11px] font-bold text-amber-400 block uppercase tracking-wider">
+                      Chi tiết Đánh giá bị báo cáo:
+                    </span>
+                    <div className="p-3 rounded-xl bg-zinc-900 border border-amber-500/30 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {detailReport.reviewDetails.userAvatar ? (
+                            <img src={detailReport.reviewDetails.userAvatar} alt="" className="w-6 h-6 rounded-full object-cover" />
+                          ) : (
+                            <div className="w-6 h-6 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold text-xs">
+                              {detailReport.reviewDetails.userName[0]}
+                            </div>
+                          )}
+                          <div>
+                            <span className="font-semibold text-white block">{detailReport.reviewDetails.userName}</span>
+                            <span className="text-[10px] text-zinc-400">Trên mẫu: {detailReport.reviewDetails.templateTitle}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center text-amber-400">
+                          {Array.from({ length: detailReport.reviewDetails.rating }).map((_, i) => (
+                            <span key={i} className="material-symbols-rounded text-sm">star</span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-black/50 border border-white/5 text-zinc-200 text-xs">
+                        {detailReport.reviewDetails.comment || <span className="text-zinc-500 italic">(Không có văn bản bình luận)</span>}
+                      </div>
+
+                      <div className="pt-1 flex items-center justify-end">
+                        <button
+                          type="button"
+                          disabled={deletingReviewId === detailReport.reviewDetails._id}
+                          onClick={() => handleDeleteReview(detailReport.reviewDetails!._id, detailReport.reviewDetails!.templateId, detailReport._id)}
+                          className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        >
+                          <span className="material-symbols-rounded text-sm">delete</span>
+                          <span>{deletingReviewId === detailReport.reviewDetails._id ? "Đang xóa..." : "Xóa Đánh Giá Vi Phạm Này"}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="p-3.5 rounded-xl bg-zinc-950 border border-white/10 space-y-1">

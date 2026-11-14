@@ -39,6 +39,11 @@ const reportSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
+    targetUrl: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     appealCategory: {
       type: String,
       default: '',
