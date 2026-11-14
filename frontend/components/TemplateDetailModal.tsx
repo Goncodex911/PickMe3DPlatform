@@ -12,6 +12,7 @@ import {
 import Link from "next/link";
 import DesignThumbnail from "./DesignThumbnail";
 import ReportModal from "./ReportModal";
+import { isCurrentUserAdmin } from "@/lib/reportService";
 
 interface TemplateDetailModalProps {
   template: TemplateItem | null;
@@ -41,6 +42,11 @@ export default function TemplateDetailModal({
   const [reviewsList, setReviewsList] = useState<TemplateReview[]>([]);
   const [avgRating, setAvgRating] = useState<number>(0);
   const [ratingsCount, setRatingsCount] = useState<number>(0);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    setIsAdmin(isCurrentUserAdmin());
+  }, []);
 
   // Report Modal & Review Menu states
   const [reportModalData, setReportModalData] = useState<{
@@ -170,23 +176,25 @@ export default function TemplateDetailModal({
       <div className="relative w-full max-w-4xl max-h-[92vh] overflow-y-auto bg-[#0d131f] border border-white/15 rounded-3xl shadow-2xl z-10 flex flex-col md:flex-row overflow-hidden scrollbar-none">
         {/* Top Right Actions: Report & Close */}
         <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() =>
-              setReportModalData({
-                isOpen: true,
-                targetType: "template",
-                targetId: templateId,
-                targetTitle: template.title || "Mẫu thiết kế",
-                targetUrl: `/templates/${templateId}`,
-              })
-            }
-            className="h-9 px-3 rounded-full bg-black/60 hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 backdrop-blur-md flex items-center gap-1.5 text-xs font-medium transition-all border border-white/10 hover:border-rose-500/30 cursor-pointer"
-            title="Báo cáo vi phạm mẫu này"
-          >
-            <span className="material-symbols-rounded text-sm text-rose-400">flag</span>
-            <span>Báo cáo</span>
-          </button>
+          {!isAdmin && (
+            <button
+              type="button"
+              onClick={() =>
+                setReportModalData({
+                  isOpen: true,
+                  targetType: "template",
+                  targetId: templateId,
+                  targetTitle: template.title || "Mẫu thiết kế",
+                  targetUrl: `/templates/${templateId}`,
+                })
+              }
+              className="h-9 px-3 rounded-full bg-black/60 hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 backdrop-blur-md flex items-center gap-1.5 text-xs font-medium transition-all border border-white/10 hover:border-rose-500/30 cursor-pointer"
+              title="Báo cáo vi phạm mẫu này"
+            >
+              <span className="material-symbols-rounded text-sm text-rose-400">flag</span>
+              <span>Báo cáo</span>
+            </button>
+          )}
 
           <button
             onClick={onClose}
@@ -420,41 +428,43 @@ export default function TemplateDetailModal({
                             </div>
 
                             {/* Three-dots menu for reporting review */}
-                            <div className="relative" data-review-menu>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setOpenReviewMenu(openReviewMenu === reviewId ? null : reviewId);
-                                }}
-                                className="text-slate-500 hover:text-white p-0.5 rounded hover:bg-white/10 transition-colors cursor-pointer"
-                                title="Tùy chọn đánh giá"
-                              >
-                                <span className="material-symbols-rounded text-sm">more_vert</span>
-                              </button>
-                              {openReviewMenu === reviewId && (
-                                <div className="absolute right-0 top-full mt-1 w-36 rounded-lg bg-slate-800 border border-white/15 shadow-2xl py-1 z-30 animate-fadeIn">
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setOpenReviewMenu(null);
-                                      setReportModalData({
-                                        isOpen: true,
-                                        targetType: "review",
-                                        targetId: reviewId,
-                                        targetTitle: `Đánh giá của ${rev.userName || "Người dùng"} cho "${template.title}"`,
-                                        targetUrl: `/templates/${templateId}`,
-                                      });
-                                    }}
-                                    className="w-full flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-rose-400 hover:bg-white/10 hover:text-rose-300 transition-colors cursor-pointer text-left"
-                                  >
-                                    <span className="material-symbols-rounded text-xs">flag</span>
-                                    <span>Báo cáo đánh giá</span>
-                                  </button>
-                                </div>
-                              )}
-                            </div>
+                            {!isAdmin && (
+                              <div className="relative" data-review-menu>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenReviewMenu(openReviewMenu === reviewId ? null : reviewId);
+                                  }}
+                                  className="text-slate-500 hover:text-white p-0.5 rounded hover:bg-white/10 transition-colors cursor-pointer"
+                                  title="Tùy chọn đánh giá"
+                                >
+                                  <span className="material-symbols-rounded text-sm">more_vert</span>
+                                </button>
+                                {openReviewMenu === reviewId && (
+                                  <div className="absolute right-0 top-full mt-1 w-36 rounded-lg bg-slate-800 border border-white/15 shadow-2xl py-1 z-30 animate-fadeIn">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setOpenReviewMenu(null);
+                                        setReportModalData({
+                                          isOpen: true,
+                                          targetType: "review",
+                                          targetId: reviewId,
+                                          targetTitle: `Đánh giá của ${rev.userName || "Người dùng"} cho "${template.title}"`,
+                                          targetUrl: `/templates/${templateId}`,
+                                        });
+                                      }}
+                                      className="w-full flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-rose-400 hover:bg-white/10 hover:text-rose-300 transition-colors cursor-pointer text-left"
+                                    >
+                                      <span className="material-symbols-rounded text-xs">flag</span>
+                                      <span>Báo cáo đánh giá</span>
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                         {rev.comment && <p className="text-slate-400 text-[11px]">{rev.comment}</p>}
@@ -527,22 +537,24 @@ export default function TemplateDetailModal({
                 <span>Xem trang chi tiết đầy đủ</span>
               </Link>
 
-              <button
-                type="button"
-                onClick={() =>
-                  setReportModalData({
-                    isOpen: true,
-                    targetType: "template",
-                    targetId: templateId,
-                    targetTitle: template.title || "Mẫu thiết kế",
-                    targetUrl: `/templates/${templateId}`,
-                  })
-                }
-                className="text-slate-500 hover:text-rose-400 flex items-center gap-1 transition-colors cursor-pointer text-[11px]"
-              >
-                <span className="material-symbols-rounded text-xs">flag</span>
-                <span>Báo cáo vi phạm mẫu này</span>
-              </button>
+              {!isAdmin && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setReportModalData({
+                      isOpen: true,
+                      targetType: "template",
+                      targetId: templateId,
+                      targetTitle: template.title || "Mẫu thiết kế",
+                      targetUrl: `/templates/${templateId}`,
+                    })
+                  }
+                  className="text-slate-500 hover:text-rose-400 flex items-center gap-1 transition-colors cursor-pointer text-[11px]"
+                >
+                  <span className="material-symbols-rounded text-xs">flag</span>
+                  <span>Báo cáo vi phạm mẫu này</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

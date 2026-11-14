@@ -100,3 +100,16 @@ export async function fetchMyReportsApi(ticketType?: "REPORT" | "APPEAL"): Promi
   }
 }
 
+/**
+ * Check if the currently logged-in user is an administrator
+ */
+export function isCurrentUserAdmin(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const user = JSON.parse(localStorage.getItem("pickme3d_user") || "null");
+    return user?.role === "admin";
+  } catch {
+    return false;
+  }
+}
+

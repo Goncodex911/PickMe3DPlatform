@@ -9,6 +9,13 @@ const { notifyAdmins } = require('../helpers/notificationHelper');
 // @access  Private
 exports.createReport = async (req, res, next) => {
   try {
+    if (req.user && req.user.role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Tài khoản Quản trị viên (Admin) không thực hiện gửi báo cáo hoặc khiếu nại. Vui lòng sử dụng /admin/reports để quản lý.',
+      });
+    }
+
     const {
       ticketType = 'REPORT',
       targetType,

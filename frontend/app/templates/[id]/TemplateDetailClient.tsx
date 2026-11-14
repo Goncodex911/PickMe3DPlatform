@@ -21,6 +21,7 @@ import CommentThread from "@/components/CommentThread";
 import { AddToCollectionModal } from "@/components/CollectionManager";
 import DesignThumbnail from "@/components/DesignThumbnail";
 import ReportModal from "@/components/ReportModal";
+import { isCurrentUserAdmin } from "@/lib/reportService";
 
 interface TemplateDetailClientProps {
   id: string;
@@ -61,6 +62,11 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
   const [reviewsList, setReviewsList] = useState<TemplateReview[]>([]);
   const [avgRating, setAvgRating] = useState<number>(0);
   const [ratingsCount, setRatingsCount] = useState<number>(0);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    setIsAdmin(isCurrentUserAdmin());
+  }, []);
 
   // Collection modal state
   const [collectionModalOpen, setCollectionModalOpen] = useState(false);
@@ -329,23 +335,25 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() =>
-              setReportModalData({
-                isOpen: true,
-                targetType: "template",
-                targetId: template._id || templateId,
-                targetTitle: template.title || "Mẫu thiết kế",
-                targetUrl: `/templates/${templateId}`,
-              })
-            }
-            className="px-2.5 py-1.5 rounded-md bg-slate-800/80 hover:bg-red-500/10 text-slate-400 hover:text-red-400 text-xs font-medium border border-white/10 flex items-center gap-1.5 transition-colors cursor-pointer"
-            title="Báo cáo vi phạm mẫu này"
-          >
-            <span className="material-symbols-rounded text-sm text-red-400">flag</span>
-            <span className="hidden md:inline">Báo cáo</span>
-          </button>
+          {!isAdmin && (
+            <button
+              type="button"
+              onClick={() =>
+                setReportModalData({
+                  isOpen: true,
+                  targetType: "template",
+                  targetId: template._id || templateId,
+                  targetTitle: template.title || "Mẫu thiết kế",
+                  targetUrl: `/templates/${templateId}`,
+                })
+              }
+              className="px-2.5 py-1.5 rounded-md bg-slate-800/80 hover:bg-red-500/10 text-slate-400 hover:text-red-400 text-xs font-medium border border-white/10 flex items-center gap-1.5 transition-colors cursor-pointer"
+              title="Báo cáo vi phạm mẫu này"
+            >
+              <span className="material-symbols-rounded text-sm text-red-400">flag</span>
+              <span className="hidden md:inline">Báo cáo</span>
+            </button>
+          )}
 
           <button
             type="button"
@@ -614,41 +622,43 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                           </div>
 
                           {/* Three-dots menu for reporting review */}
-                          <div className="relative" data-review-menu>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOpenReviewMenu(openReviewMenu === reviewId ? null : reviewId);
-                              }}
-                              className="text-slate-400 hover:text-white p-1 rounded hover:bg-white/5 transition-colors cursor-pointer"
-                              title="Tùy chọn khác"
-                            >
-                              <span className="material-symbols-rounded text-base">more_vert</span>
-                            </button>
-                            {openReviewMenu === reviewId && (
-                              <div className="absolute right-0 top-full mt-1 w-36 rounded-lg bg-slate-800 border border-white/10 shadow-xl py-1 z-20 animate-fadeIn">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setOpenReviewMenu(null);
-                                    setReportModalData({
-                                      isOpen: true,
-                                      targetType: "review",
-                                      targetId: reviewId,
-                                      targetTitle: `Đánh giá của ${rev.userName || "Người dùng"} cho "${template.title || 'Mẫu thiết kế'}"`,
-                                      targetUrl: `/templates/${templateId}`,
-                                    });
-                                  }}
-                                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-rose-400 hover:bg-white/5 hover:text-rose-300 transition-colors cursor-pointer text-left"
-                                >
-                                  <span className="material-symbols-rounded text-sm">flag</span>
-                                  <span>Báo cáo đánh giá</span>
-                                </button>
-                              </div>
-                            )}
-                          </div>
+                          {!isAdmin && (
+                            <div className="relative" data-review-menu>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenReviewMenu(openReviewMenu === reviewId ? null : reviewId);
+                                }}
+                                className="text-slate-400 hover:text-white p-1 rounded hover:bg-white/5 transition-colors cursor-pointer"
+                                title="Tùy chọn khác"
+                              >
+                                <span className="material-symbols-rounded text-base">more_vert</span>
+                              </button>
+                              {openReviewMenu === reviewId && (
+                                <div className="absolute right-0 top-full mt-1 w-36 rounded-lg bg-slate-800 border border-white/10 shadow-xl py-1 z-20 animate-fadeIn">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenReviewMenu(null);
+                                      setReportModalData({
+                                        isOpen: true,
+                                        targetType: "review",
+                                        targetId: reviewId,
+                                        targetTitle: `Đánh giá của ${rev.userName || "Người dùng"} cho "${template.title || 'Mẫu thiết kế'}"`,
+                                        targetUrl: `/templates/${templateId}`,
+                                      });
+                                    }}
+                                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-rose-400 hover:bg-white/5 hover:text-rose-300 transition-colors cursor-pointer text-left"
+                                  >
+                                    <span className="material-symbols-rounded text-sm">flag</span>
+                                    <span>Báo cáo đánh giá</span>
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                       {rev.comment && <p className="text-slate-300 leading-relaxed pl-8">{rev.comment}</p>}
@@ -843,22 +853,24 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
               </button>
 
               {/* Report Template Trigger */}
-              <button
-                type="button"
-                onClick={() =>
-                  setReportModalData({
-                    isOpen: true,
-                    targetType: "template",
-                    targetId: template._id || templateId,
-                    targetTitle: template.title || "Mẫu thiết kế",
-                    targetUrl: `/templates/${templateId}`,
-                  })
-                }
-                className="w-full py-2 px-3 text-slate-500 hover:text-red-400 text-[11px] font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <span className="material-symbols-rounded text-sm">flag</span>
-                <span>Báo cáo vi phạm mẫu này</span>
-              </button>
+              {!isAdmin && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setReportModalData({
+                      isOpen: true,
+                      targetType: "template",
+                      targetId: template._id || templateId,
+                      targetTitle: template.title || "Mẫu thiết kế",
+                      targetUrl: `/templates/${templateId}`,
+                    })
+                  }
+                  className="w-full py-2 px-3 text-slate-500 hover:text-red-400 text-[11px] font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <span className="material-symbols-rounded text-sm">flag</span>
+                  <span>Báo cáo vi phạm mẫu này</span>
+                </button>
+              )}
             </div>
           </div>
         </aside>
