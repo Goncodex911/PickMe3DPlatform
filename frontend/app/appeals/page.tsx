@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { createReportApi, fetchMyReportsApi, ReportItem } from "@/lib/reportService";
+import { useRouter } from "next/navigation";
+import { createReportApi, fetchMyReportsApi, ReportItem, isCurrentUserAdmin } from "@/lib/reportService";
 import { uploadFileToCloudinary } from "@/lib/mediaUpload";
 
 const APPEAL_CATEGORIES = [
@@ -14,6 +15,8 @@ const APPEAL_CATEGORIES = [
 ];
 
 export default function AppealsPage() {
+  const router = useRouter();
+  const [isAdmin, setIsAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState<"submit" | "history">("submit");
   const [category, setCategory] = useState(APPEAL_CATEGORIES[0].value);
   const [title, setTitle] = useState("");
@@ -42,6 +45,13 @@ export default function AppealsPage() {
       loadHistory();
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    if (isCurrentUserAdmin()) {
+      setIsAdmin(true);
+      router.replace("/admin/reports");
+    }
+  }, [router]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -112,6 +122,29 @@ export default function AppealsPage() {
     if (ticketFilter === "ALL") return true;
     return item.ticketType === ticketFilter;
   });
+
+  if (isAdmin) {
+    return (
+      <div className="min-h-screen bg-[#070b14] text-slate-200 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-[#0e1422] border border-white/10 rounded-2xl p-6 text-center space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto">
+            <span className="material-symbols-rounded text-2xl">admin_panel_settings</span>
+          </div>
+          <h2 className="text-lg font-bold text-white">Chức năng dành cho Người dùng / Creator</h2>
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Tài khoản Quản trị viên (Admin) không thực hiện gửi khiếu nại cá nhân. Vui lòng sử dụng trang Quản Trị để tiếp nhận và kiểm duyệt sự cố hoặc phản ánh.
+          </p>
+          <Link
+            href="/admin/reports"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-colors"
+          >
+            <span>Vào Quản Lý Sự Cố & Báo Cáo</span>
+            <span className="material-symbols-rounded text-sm">arrow_forward</span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#070b14] text-white flex flex-col">
