@@ -544,3 +544,34 @@ export async function addTemplateReviewApi(
     message: "Đã lưu đánh giá mẫu thiết kế",
   };
 }
+
+/**
+ * Deletes a review from a template (Admin or review author)
+ */
+export async function deleteTemplateReviewApi(
+  id: string,
+  reviewId: string
+): Promise<{
+  success: boolean;
+  data?: { avgRating: number; ratingsCount: number; reviews: TemplateReview[] };
+  message?: string;
+}> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("pickme3d_token") : null;
+  if (!token) {
+    return { success: false, message: "Vui lòng đăng nhập" };
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/templates/${id}/review/${encodeURIComponent(reviewId)}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const json = await res.json();
+    return json;
+  } catch (err: any) {
+    console.warn("Failed to delete review on API:", err);
+    return { success: false, message: err?.message || "Lỗi kết nối máy chủ" };
+  }
+}
