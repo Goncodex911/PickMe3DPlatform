@@ -68,6 +68,11 @@ export interface BlueprintProject {
   specs: BuildingSpecs;
   rooms: RoomSpec[];
   originalBlueprintUrl?: string;
+  /**
+   * Tường / cửa / phòng thật trích xuất từ bản vẽ (AI hoặc nắn chỉnh tay).
+   * Khi có, viewer dựng tường từ đây thay vì suy ra từ khung chữ nhật của `rooms`.
+   */
+  layoutData?: LayoutData;
 }
 
 /**

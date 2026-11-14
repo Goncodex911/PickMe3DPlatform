@@ -2,9 +2,29 @@
  * AI Controller - Proxies AI generation requests and tests connection
  */
 
+const GEMINI_RETRYABLE = new Set([404, 429, 500, 503, 504]);
+const AI_CALL_TIMEOUT_MS = Number(process.env.AI_CALL_TIMEOUT_MS) || 75_000;
+// Model dự phòng khi model được yêu cầu quá tải/không có. Cấu hình bằng GEMINI_FALLBACK_MODELS (phân tách dấu phẩy).
+// (gemini-2.5-flash đã ngừng với tài khoản mới; gemini-flash-latest hay quá tải nên để cuối)
+const DEFAULT_GEMINI_FALLBACKS = ['gemini-3.5-flash', 'gemini-3-flash-preview', 'gemini-flash-latest'];
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function geminiFallbackChain(requestedModel) {
+  const configured = (process.env.GEMINI_FALLBACK_MODELS || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const list = configured.length > 0 ? configured : DEFAULT_GEMINI_FALLBACKS;
+  return [...new Set(list)].filter((m) => m !== requestedModel);
+}
+exports.geminiFallbackChain = geminiFallbackChain;
+
 exports.complete = async (req, res, next) => {
   try {
-    const { provider, baseUrl, model, key, system, user, messages, maxTokens = 4096 } = req.body;
+    const { provider, baseUrl, model, key, system, user, messages, maxTokens = 4096, responseFormat } = req.body;
+    // Chỉ chấp nhận chế độ JSON chuẩn của API tương thích OpenAI (Gemini/OpenAI/DeepSeek)
+    const responseFormatParam =
+      responseFormat && responseFormat.type === "json_object" ? { response_format: { type: "json_object" } } : {};
 
     const effectiveKey =
       (key && key.trim()) ||
@@ -92,29 +112,36 @@ exports.complete = async (req, res, next) => {
       { role: "user", content: user },
     ];
 
-    let response = await fetch(`${base}/chat/completions`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        model: effectiveModel,
-        ...(provider === "openai" && effectiveModel.includes("gpt-4o") ? {} : { max_tokens: Math.min(maxTokens, 8192) }),
-        messages: formattedMessages,
-      }),
-    });
+    const callModel = async (modelId) => {
+      try {
+        return await fetch(`${base}/chat/completions`, {
+          method: "POST",
+          headers,
+          // Một model treo không được chặn cả request: hết giờ => 504 để chuyển sang model dự phòng.
+          signal: AbortSignal.timeout(AI_CALL_TIMEOUT_MS),
+          body: JSON.stringify({
+            model: modelId,
+            ...(provider === "openai" && modelId.includes("gpt-4o") ? {} : { max_tokens: Math.min(maxTokens, 8192) }),
+            ...responseFormatParam,
+            messages: formattedMessages,
+          }),
+        });
+      } catch (err) {
+        if (err && (err.name === "TimeoutError" || err.name === "AbortError")) {
+          return new Response(`Model ${modelId} không phản hồi sau ${AI_CALL_TIMEOUT_MS / 1000}s`, { status: 504 });
+        }
+        throw err;
+      }
+    };
 
-    if (!response.ok && provider === "gemini" && (response.status === 503 || response.status === 404)) {
-      const fallback = "gemini-flash-latest";
-      const fallbackRes = await fetch(`${base}/chat/completions`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          model: fallback,
-          max_tokens: Math.min(maxTokens, 8192),
-          messages: formattedMessages,
-        }),
-      });
-      if (fallbackRes.ok) {
-        response = fallbackRes;
+    let response = await callModel(effectiveModel);
+
+    // Gemini hay trả 503 (quá tải) / 429 (giới hạn) theo từng model: thử lần lượt các model dự phòng.
+    if (!response.ok && provider === "gemini" && GEMINI_RETRYABLE.has(response.status)) {
+      const chain = geminiFallbackChain(effectiveModel);
+      for (let i = 0; i < chain.length && !response.ok && GEMINI_RETRYABLE.has(response.status); i++) {
+        await sleep(400 * (i + 1));
+        response = await callModel(chain[i]);
       }
     }
 
