@@ -6,17 +6,33 @@
 export interface NotificationItem {
   _id: string;
   recipient: string;
-  actor: {
+  actor?: {
     _id: string;
     name: string;
-    picture: string;
-  };
-  type: 'like' | 'fork' | 'review' | 'comment' | 'reply';
+    picture?: string;
+  } | null;
+  type:
+    | 'like'
+    | 'fork'
+    | 'review'
+    | 'comment'
+    | 'reply'
+    | 'payout_request'
+    | 'payout_paid'
+    | 'payout_rejected'
+    | 'report_submitted'
+    | 'report_resolved'
+    | 'appeal_submitted'
+    | 'appeal_resolved'
+    | 'system'
+    | string;
   template?: {
     _id: string;
     title: string;
     thumbnailUrl: string;
   };
+  link?: string;
+  metadata?: Record<string, any>;
   message: string;
   isRead: boolean;
   createdAt: string;

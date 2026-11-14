@@ -11,17 +11,40 @@ const notificationSchema = new mongoose.Schema(
     actor: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      default: null,
     },
     type: {
       type: String,
-      enum: ['like', 'fork', 'review', 'comment', 'reply'],
+      enum: [
+        'like',
+        'fork',
+        'review',
+        'comment',
+        'reply',
+        'payout_request',
+        'payout_paid',
+        'payout_rejected',
+        'report_submitted',
+        'report_resolved',
+        'appeal_submitted',
+        'appeal_resolved',
+        'system',
+      ],
       required: true,
     },
     template: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Template',
       default: null,
+    },
+    link: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    metadata: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
     },
     message: {
       type: String,

@@ -9,6 +9,7 @@ const Order = require('../models/Order');
 const Presentation = require('../models/Presentation');
 const Payout = require('../models/Payout');
 const { logAdminAction } = require('../helpers/auditLogger');
+const { notifyUser } = require('../helpers/notificationHelper');
 
 // Fixed sole administrator of the system
 const SOLE_ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'phantrongquy23032005@gmail.com').toLowerCase().trim();
@@ -895,9 +896,13 @@ exports.getAdminReports = async (req, res, next) => {
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 10));
     const skip = (page - 1) * limit;
 
-    const { status, priority, targetType, search } = req.query;
+    const { status, priority, targetType, search, ticketType } = req.query;
 
     const query = {};
+
+    if (ticketType && ticketType !== 'all') {
+      query.ticketType = ticketType.toUpperCase();
+    }
 
     if (status && status !== 'all') {
       query.status = status;
@@ -981,6 +986,37 @@ exports.updateReportStatus = async (req, res, next) => {
       targetLabel: `${report.targetType}: ${report.targetTitle || report.reason}`,
       details: { previousStatus, newStatus: report.status, resolutionNotes: report.resolutionNotes },
     });
+
+    // Notify the reporter about the resolution/status change
+    if (report.reporter) {
+      const isAppeal = report.ticketType === 'APPEAL';
+      const statusText =
+        report.status === 'resolved'
+          ? 'Đã xử lý xong'
+          : report.status === 'dismissed'
+          ? 'Đã từ chối / bác bỏ'
+          : report.status === 'investigating'
+          ? 'Đang tiếp nhận và điều tra'
+          : 'Đã cập nhật';
+
+      const notifMsg = isAppeal
+        ? `Khiếu nại/Đề xuất của bạn (${report.reason || report.targetTitle || 'Yêu cầu hỗ trợ'}) đã được Admin xử lý: ${statusText}.${report.resolutionNotes ? ' Phản hồi: ' + report.resolutionNotes : ''}`
+        : `Báo cáo vi phạm của bạn (${report.targetTitle || report.reason}) đã được Admin xử lý: ${statusText}.${report.resolutionNotes ? ' Phản hồi: ' + report.resolutionNotes : ''}`;
+
+      await notifyUser({
+        recipientId: report.reporter,
+        actorId: req.user ? req.user._id : null,
+        type: isAppeal ? 'appeal_resolved' : 'report_resolved',
+        message: notifMsg,
+        link: '/appeals',
+        metadata: {
+          reportId: report._id,
+          ticketType: report.ticketType,
+          status: report.status,
+          resolutionNotes: report.resolutionNotes,
+        },
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -1633,7 +1669,7 @@ exports.getAdminPayouts = async (req, res, next) => {
 exports.updatePayoutStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { status, adminNote } = req.body;
+    const { status, adminNote, paymentProof } = req.body;
 
     if (!['PAID', 'REJECTED'].includes(status)) {
       return res.status(400).json({ success: false, message: 'Trạng thái không hợp lệ. Chỉ chấp nhận PAID hoặc REJECTED.' });
@@ -1646,6 +1682,7 @@ exports.updatePayoutStatus = async (req, res, next) => {
 
     payout.status = status;
     if (adminNote !== undefined) payout.adminNote = adminNote;
+    if (paymentProof !== undefined) payout.paymentProof = paymentProof;
     payout.processedAt = new Date();
     payout.processedBy = req.user ? req.user._id : null;
     await payout.save();
@@ -1660,8 +1697,32 @@ exports.updatePayoutStatus = async (req, res, next) => {
         amount: payout.amount,
         creatorEmail: payout.creatorEmail,
         adminNote: payout.adminNote,
+        paymentProof: payout.paymentProof,
       },
     });
+
+    // Notify the creator about the payout result
+    if (payout.creatorId) {
+      const isPaid = status === 'PAID';
+      const notifMsg = isPaid
+        ? `Yêu cầu rút ${payout.amount.toLocaleString('vi-VN')} VNĐ của bạn đã được Admin duyệt và giải ngân thành công!`
+        : `Yêu cầu rút ${payout.amount.toLocaleString('vi-VN')} VNĐ của bạn đã bị từ chối.${payout.adminNote ? ' Lý do: ' + payout.adminNote : ''}`;
+
+      await notifyUser({
+        recipientId: payout.creatorId,
+        actorId: req.user ? req.user._id : null,
+        type: isPaid ? 'payout_paid' : 'payout_rejected',
+        message: notifMsg,
+        link: '/creator/wallet',
+        metadata: {
+          payoutId: payout._id,
+          amount: payout.amount,
+          status,
+          adminNote: payout.adminNote,
+          paymentProof: payout.paymentProof,
+        },
+      });
+    }
 
     res.status(200).json({
       success: true,

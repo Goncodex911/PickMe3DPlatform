@@ -81,6 +81,27 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    walletBalance: {
+      type: Number,
+      default: 0,
+    },
+    savedBankInfo: {
+      bankName: {
+        type: String,
+        default: '',
+        trim: true,
+      },
+      accountNumber: {
+        type: String,
+        default: '',
+        trim: true,
+      },
+      accountHolder: {
+        type: String,
+        default: '',
+        trim: true,
+      },
+    },
   },
   {
     timestamps: true,

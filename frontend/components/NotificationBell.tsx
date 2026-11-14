@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   NotificationItem,
   fetchNotificationsApi,
@@ -15,6 +16,14 @@ const NOTIFICATION_ICONS: Record<string, string> = {
   review: "star",
   comment: "chat_bubble",
   reply: "reply",
+  payout_request: "payments",
+  payout_paid: "account_balance_wallet",
+  payout_rejected: "money_off",
+  report_submitted: "flag",
+  report_resolved: "verified",
+  appeal_submitted: "gavel",
+  appeal_resolved: "mark_email_read",
+  system: "campaign",
 };
 
 const NOTIFICATION_COLORS: Record<string, string> = {
@@ -23,6 +32,14 @@ const NOTIFICATION_COLORS: Record<string, string> = {
   review: "text-amber-400",
   comment: "text-blue-400",
   reply: "text-purple-400",
+  payout_request: "text-amber-400",
+  payout_paid: "text-emerald-400",
+  payout_rejected: "text-rose-400",
+  report_submitted: "text-orange-400",
+  report_resolved: "text-emerald-400",
+  appeal_submitted: "text-indigo-400",
+  appeal_resolved: "text-sky-400",
+  system: "text-cyan-400",
 };
 
 function timeAgo(dateStr: string): string {
@@ -44,6 +61,7 @@ interface NotificationBellProps {
 }
 
 export default function NotificationBell({ className }: NotificationBellProps) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -101,6 +119,14 @@ export default function NotificationBell({ className }: NotificationBellProps) {
         prev.map((n) => (n._id === notification._id ? { ...n, isRead: true } : n))
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
+    }
+  };
+
+  const handleNotificationClick = async (notification: NotificationItem) => {
+    await handleMarkRead(notification);
+    setIsOpen(false);
+    if (notification.link) {
+      router.push(notification.link);
     }
   };
 
@@ -164,12 +190,12 @@ export default function NotificationBell({ className }: NotificationBellProps) {
               notifications.map((notif) => (
                 <div
                   key={notif._id}
-                  onClick={() => handleMarkRead(notif)}
+                  onClick={() => handleNotificationClick(notif)}
                   className={`flex items-start gap-3 px-4 py-3 border-b border-white/5 cursor-pointer transition-colors hover:bg-white/5 ${
                     !notif.isRead ? "bg-blue-500/5" : ""
                   }`}
                 >
-                  {/* Actor avatar */}
+                  {/* Actor avatar / System Icon */}
                   <div className="relative shrink-0">
                     {notif.actor?.picture ? (
                       <img
@@ -179,7 +205,7 @@ export default function NotificationBell({ className }: NotificationBellProps) {
                       />
                     ) : (
                       <div className="w-9 h-9 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center text-[11px] text-slate-300 font-bold">
-                        {notif.actor?.name?.[0] || "?"}
+                        {notif.actor?.name?.[0] || "P"}
                       </div>
                     )}
                     {/* Type icon badge */}
