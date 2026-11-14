@@ -116,6 +116,39 @@ export default function AdminReportsPage() {
     return "bg-zinc-800 text-zinc-200 border-white/10";
   };
 
+  const getTargetActionLink = (r: IncidentReport): { url: string; label: string; icon: string } | null => {
+    if (r.targetUrl) {
+      if (r.targetType === "template") return { url: r.targetUrl, label: "Xem Mẫu thiết kế", icon: "palette" };
+      if (r.targetType === "review") return { url: r.targetUrl, label: "Xem Mẫu có Đánh giá", icon: "rate_review" };
+      if (r.targetType === "creator" || r.targetType === "user") return { url: r.targetUrl, label: "Xem Hồ sơ Creator", icon: "person" };
+      return { url: r.targetUrl, label: "Xem Đối tượng", icon: "open_in_new" };
+    }
+
+    // Fallbacks if targetUrl is empty
+    if (r.targetType === "template" && r.targetId) {
+      return { url: `/templates/${r.targetId}`, label: "Xem Mẫu thiết kế", icon: "palette" };
+    }
+    if (r.targetType === "review") {
+      if (r.targetId && r.targetId.includes("-review-")) {
+        return { url: `/templates/${r.targetId.split("-review-")[0]}`, label: "Xem Mẫu có Đánh giá", icon: "rate_review" };
+      }
+      if (r.targetTitle) {
+        const match = r.targetTitle.match(/cho "([^"]+)"/);
+        if (match && match[1]) {
+          return { url: `/templates?search=${encodeURIComponent(match[1])}`, label: "Xem Mẫu có Đánh giá", icon: "rate_review" };
+        }
+      }
+    }
+    if ((r.targetType === "creator" || r.targetType === "user") && r.targetId) {
+      return { url: `/creator/${r.targetId}`, label: "Xem Hồ sơ Creator", icon: "person" };
+    }
+    if (r.ticketType === "APPEAL" && (r.reporter?.email || r.reporterName)) {
+      return { url: `/admin/users?search=${encodeURIComponent(r.reporter?.email || r.reporterName)}`, label: "Xem User gửi đơn", icon: "account_circle" };
+    }
+
+    return null;
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -273,7 +306,7 @@ export default function AdminReportsPage() {
                       <div className="font-medium text-white truncate max-w-xs" title={r.targetTitle || r.targetId}>
                         {r.targetTitle || r.targetId}
                       </div>
-                      <div className="flex items-center gap-1.5 mt-0.5">
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
                         {r.ticketType === "APPEAL" ? (
                           <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                             KHIẾU NẠI
@@ -286,6 +319,27 @@ export default function AdminReportsPage() {
                         <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">
                           {r.targetType}
                         </span>
+
+                        {/* One-click Button to Map Directly to Target */}
+                        {(() => {
+                          const action = getTargetActionLink(r);
+                          if (!action) return null;
+                          return (
+                            <a
+                              href={action.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/15 hover:bg-blue-500/30 text-blue-300 hover:text-white border border-blue-500/30 text-[10px] font-semibold transition-all shadow-sm group"
+                              title={`One-click: Xem ${action.label} (Mở tab mới)`}
+                            >
+                              <span className="material-symbols-rounded text-xs">{action.icon}</span>
+                              <span>{action.label}</span>
+                              <span className="material-symbols-rounded text-[10px] opacity-70 group-hover:translate-x-0.5 transition-transform">
+                                open_in_new
+                              </span>
+                            </a>
+                          );
+                        })()}
                       </div>
                     </td>
 
@@ -340,12 +394,29 @@ export default function AdminReportsPage() {
 
                     {/* Action */}
                     <td className="py-3 px-4 text-right">
-                      <button
-                        onClick={() => openResolutionModal(r)}
-                        className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 hover:text-white font-medium text-xs border border-white/10 transition-colors cursor-pointer"
-                      >
-                        Xử lý
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        {(() => {
+                          const action = getTargetActionLink(r);
+                          if (!action) return null;
+                          return (
+                            <a
+                              href={action.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="p-1.5 rounded-xl bg-zinc-900 hover:bg-blue-600/20 text-zinc-400 hover:text-blue-300 border border-white/10 hover:border-blue-500/40 transition-all inline-flex items-center justify-center"
+                              title={`Xem ${action.label} (Mở tab mới)`}
+                            >
+                              <span className="material-symbols-rounded text-sm">open_in_new</span>
+                            </a>
+                          );
+                        })()}
+                        <button
+                          onClick={() => openResolutionModal(r)}
+                          className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 hover:text-white font-medium text-xs border border-white/10 transition-colors cursor-pointer"
+                        >
+                          Xử lý
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -399,7 +470,7 @@ export default function AdminReportsPage() {
             </div>
 
             <div className="space-y-3.5 text-xs mb-5">
-              <div className="p-3.5 rounded-xl bg-zinc-950 border border-white/10 space-y-2">
+              <div className="p-3.5 rounded-xl bg-zinc-950 border border-white/10 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-medium uppercase text-zinc-400">
                     {detailReport.targetType}
@@ -414,6 +485,39 @@ export default function AdminReportsPage() {
                 <div className="text-zinc-400">
                   Lý do: <span className="font-medium text-white capitalize">{detailReport.reason.replace(/_/g, " ")}</span>
                 </div>
+
+                {/* Direct One-Click Button Inside Resolution Modal */}
+                {(() => {
+                  const action = getTargetActionLink(detailReport);
+                  if (!action) return null;
+                  return (
+                    <div className="pt-2 border-t border-white/5 flex flex-wrap items-center gap-2">
+                      <a
+                        href={action.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer group"
+                      >
+                        <span className="material-symbols-rounded text-sm">{action.icon}</span>
+                        <span>Mở trực tiếp {action.label}</span>
+                        <span className="material-symbols-rounded text-xs group-hover:translate-x-0.5 transition-transform">
+                          open_in_new
+                        </span>
+                      </a>
+                      {(detailReport.targetType === "creator" || detailReport.targetType === "user") && (
+                        <a
+                          href={`/admin/users?search=${encodeURIComponent(detailReport.targetId)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-white/10 text-xs font-medium transition-colors"
+                        >
+                          <span className="material-symbols-rounded text-xs">manage_accounts</span>
+                          <span>Quản lý User</span>
+                        </a>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="p-3.5 rounded-xl bg-zinc-950 border border-white/10 space-y-1">

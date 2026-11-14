@@ -48,11 +48,13 @@ export default function TemplateDetailModal({
     targetType: "template" | "review";
     targetId: string;
     targetTitle: string;
+    targetUrl?: string;
   }>({
     isOpen: false,
     targetType: "template",
     targetId: "",
     targetTitle: "",
+    targetUrl: "",
   });
   const [openReviewMenu, setOpenReviewMenu] = useState<string | null>(null);
 
@@ -176,6 +178,7 @@ export default function TemplateDetailModal({
                 targetType: "template",
                 targetId: templateId,
                 targetTitle: template.title || "Mẫu thiết kế",
+                targetUrl: `/templates/${templateId}`,
               })
             }
             className="h-9 px-3 rounded-full bg-black/60 hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 backdrop-blur-md flex items-center gap-1.5 text-xs font-medium transition-all border border-white/10 hover:border-rose-500/30 cursor-pointer"
@@ -441,6 +444,7 @@ export default function TemplateDetailModal({
                                         targetType: "review",
                                         targetId: reviewId,
                                         targetTitle: `Đánh giá của ${rev.userName || "Người dùng"} cho "${template.title}"`,
+                                        targetUrl: `/templates/${templateId}`,
                                       });
                                     }}
                                     className="w-full flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-rose-400 hover:bg-white/10 hover:text-rose-300 transition-colors cursor-pointer text-left"
@@ -531,6 +535,7 @@ export default function TemplateDetailModal({
                     targetType: "template",
                     targetId: templateId,
                     targetTitle: template.title || "Mẫu thiết kế",
+                    targetUrl: `/templates/${templateId}`,
                   })
                 }
                 className="text-slate-500 hover:text-rose-400 flex items-center gap-1 transition-colors cursor-pointer text-[11px]"
@@ -550,6 +555,7 @@ export default function TemplateDetailModal({
         targetType={reportModalData.targetType}
         targetId={reportModalData.targetId}
         targetTitle={reportModalData.targetTitle}
+        targetUrl={reportModalData.targetUrl}
       />
     </div>
   );

@@ -385,6 +385,7 @@ function CreatorProfileClient({ username }: CreatorProfileClientProps) {
         targetType="creator"
         targetId={user._id}
         targetTitle={`${user.name} (@${user.username || user.name})`}
+        targetUrl={`/creator/${user.username || user._id}`}
       />
     </div>
   );

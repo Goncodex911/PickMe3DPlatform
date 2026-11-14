@@ -115,6 +115,7 @@ export interface IncidentReport {
   targetType: "template" | "user" | "creator" | "review" | "comment" | "system" | "presentation" | string;
   targetId: string;
   targetTitle?: string;
+  targetUrl?: string;
   appealCategory?: string;
   reason: string;
   description: string;

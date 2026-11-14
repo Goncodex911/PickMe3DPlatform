@@ -19,6 +19,7 @@ exports.createReport = async (req, res, next) => {
       priority = 'medium',
       appealCategory = '',
       attachments = [],
+      targetUrl = '',
     } = req.body;
 
     const normalizedTicketType = ticketType && String(ticketType).toUpperCase() === 'APPEAL' ? 'APPEAL' : 'REPORT';
@@ -74,6 +75,17 @@ exports.createReport = async (req, res, next) => {
       }
     }
 
+    let finalTargetUrl = targetUrl || '';
+    if (!finalTargetUrl) {
+      if (finalTargetType === 'template') {
+        finalTargetUrl = `/templates/${finalTargetId}`;
+      } else if (finalTargetType === 'creator' || finalTargetType === 'user') {
+        finalTargetUrl = `/creator/${finalTargetId}`;
+      } else if (finalTargetType === 'review' && finalTargetId && finalTargetId.includes('-review-')) {
+        finalTargetUrl = `/templates/${finalTargetId.split('-review-')[0]}`;
+      }
+    }
+
     const report = await Report.create({
       ticketType: normalizedTicketType,
       reporter: req.user._id,
@@ -82,6 +94,7 @@ exports.createReport = async (req, res, next) => {
       targetType: finalTargetType,
       targetId: finalTargetId,
       targetTitle,
+      targetUrl: finalTargetUrl,
       appealCategory: appealCategory || '',
       reason,
       description,

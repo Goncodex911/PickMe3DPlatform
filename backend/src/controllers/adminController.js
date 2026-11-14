@@ -933,9 +933,44 @@ exports.getAdminReports = async (req, res, next) => {
         .lean(),
     ]);
 
+    const enrichedReports = await Promise.all(
+      reports.map(async (r) => {
+        if (!r.targetUrl) {
+          if (r.targetType === 'template') {
+            r.targetUrl = `/templates/${r.targetId}`;
+          } else if (r.targetType === 'creator' || r.targetType === 'user') {
+            r.targetUrl = `/creator/${r.targetId}`;
+          } else if (r.targetType === 'review') {
+            if (r.targetId && r.targetId.includes('-review-')) {
+              r.targetUrl = `/templates/${r.targetId.split('-review-')[0]}`;
+            } else if (mongoose.isValidObjectId(r.targetId)) {
+              const tmpl = await Template.findOne({ 'reviews._id': r.targetId }).select('_id title');
+              if (tmpl) {
+                r.targetUrl = `/templates/${tmpl._id}`;
+              }
+            }
+            if (!r.targetUrl && r.targetTitle) {
+              const match = r.targetTitle.match(/cho "([^"]+)"/);
+              if (match && match[1]) {
+                const tmpl = await Template.findOne({ title: match[1] }).select('_id title');
+                if (tmpl) {
+                  r.targetUrl = `/templates/${tmpl._id}`;
+                }
+              }
+            }
+          } else if (r.targetType === 'comment') {
+            if (r.targetId && r.targetId.includes('-comment-')) {
+              r.targetUrl = `/templates/${r.targetId.split('-comment-')[0]}`;
+            }
+          }
+        }
+        return r;
+      })
+    );
+
     res.status(200).json({
       success: true,
-      data: reports,
+      data: enrichedReports,
       pagination: {
         total,
         page,
