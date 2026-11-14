@@ -10,6 +10,7 @@ interface ReportModalProps {
   targetType: "template" | "review" | "creator" | "TEMPLATE" | "REVIEW" | "CREATOR" | string;
   targetId: string;
   targetTitle: string;
+  targetUrl?: string;
   onSuccess?: () => void;
 }
 
@@ -47,6 +48,7 @@ export default function ReportModal({
   targetType,
   targetId,
   targetTitle,
+  targetUrl,
   onSuccess,
 }: ReportModalProps) {
   const normalizedTargetType = (targetType ? String(targetType).toLowerCase() : "template") as "template" | "review" | "creator";
@@ -101,6 +103,7 @@ export default function ReportModal({
         targetType: normalizedTargetType,
         targetId,
         targetTitle,
+        targetUrl,
         reason,
         description: description.trim(),
         attachments,

@@ -20,6 +20,7 @@ export interface ReportItem {
   targetType: "template" | "review" | "creator" | "user" | "comment" | "system" | "presentation";
   targetId?: string;
   targetTitle?: string;
+  targetUrl?: string;
   appealCategory?: string;
   reason: string;
   description: string;
@@ -38,6 +39,7 @@ export interface CreateReportPayload {
   targetType?: "template" | "review" | "creator" | "user" | "comment" | "system" | "presentation";
   targetId?: string;
   targetTitle?: string;
+  targetUrl?: string;
   appealCategory?: string;
   reason: string;
   description: string;

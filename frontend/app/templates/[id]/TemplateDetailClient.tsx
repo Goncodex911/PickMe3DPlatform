@@ -74,11 +74,13 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
     targetType: "template" | "review" | "creator";
     targetId: string;
     targetTitle: string;
+    targetUrl?: string;
   }>({
     isOpen: false,
     targetType: "template",
     targetId: "",
     targetTitle: "",
+    targetUrl: "",
   });
 
   useEffect(() => {
@@ -335,6 +337,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                 targetType: "template",
                 targetId: template._id || templateId,
                 targetTitle: template.title || "Mẫu thiết kế",
+                targetUrl: `/templates/${templateId}`,
               })
             }
             className="px-2.5 py-1.5 rounded-md bg-slate-800/80 hover:bg-red-500/10 text-slate-400 hover:text-red-400 text-xs font-medium border border-white/10 flex items-center gap-1.5 transition-colors cursor-pointer"
@@ -635,6 +638,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                                       targetType: "review",
                                       targetId: reviewId,
                                       targetTitle: `Đánh giá của ${rev.userName || "Người dùng"} cho "${template.title || 'Mẫu thiết kế'}"`,
+                                      targetUrl: `/templates/${templateId}`,
                                     });
                                   }}
                                   className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-rose-400 hover:bg-white/5 hover:text-rose-300 transition-colors cursor-pointer text-left"
@@ -847,6 +851,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                     targetType: "template",
                     targetId: template._id || templateId,
                     targetTitle: template.title || "Mẫu thiết kế",
+                    targetUrl: `/templates/${templateId}`,
                   })
                 }
                 className="w-full py-2 px-3 text-slate-500 hover:text-red-400 text-[11px] font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
@@ -948,6 +953,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
         targetType={reportModalData.targetType}
         targetId={reportModalData.targetId}
         targetTitle={reportModalData.targetTitle}
+        targetUrl={reportModalData.targetUrl}
       />
     </div>
   );
