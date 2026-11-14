@@ -50,6 +50,11 @@ const payoutSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
+    paymentProof: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     processedAt: {
       type: Date,
       default: null,

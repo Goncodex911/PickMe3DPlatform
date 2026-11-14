@@ -9,6 +9,7 @@ const Order = require('../models/Order');
 const Presentation = require('../models/Presentation');
 const Payout = require('../models/Payout');
 const { logAdminAction } = require('../helpers/auditLogger');
+const { notifyUser } = require('../helpers/notificationHelper');
 
 // Fixed sole administrator of the system
 const SOLE_ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'phantrongquy23032005@gmail.com').toLowerCase().trim();
@@ -895,9 +896,13 @@ exports.getAdminReports = async (req, res, next) => {
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 10));
     const skip = (page - 1) * limit;
 
-    const { status, priority, targetType, search } = req.query;
+    const { status, priority, targetType, search, ticketType } = req.query;
 
     const query = {};
+
+    if (ticketType && ticketType !== 'all') {
+      query.ticketType = ticketType.toUpperCase();
+    }
 
     if (status && status !== 'all') {
       query.status = status;
@@ -928,9 +933,83 @@ exports.getAdminReports = async (req, res, next) => {
         .lean(),
     ]);
 
+    const enrichedReports = await Promise.all(
+      reports.map(async (r) => {
+        if (r.targetType === 'review') {
+          let tmpl = null;
+          let matchedReview = null;
+
+          if (r.targetId && r.targetId.includes('-review-')) {
+            const tId = r.targetId.split('-review-')[0];
+            tmpl = await Template.findById(tId).select('_id title thumbnailUrl reviews');
+          } else if (mongoose.isValidObjectId(r.targetId)) {
+            tmpl = await Template.findOne({ 'reviews._id': r.targetId }).select('_id title thumbnailUrl reviews');
+            if (!tmpl) {
+              tmpl = await Template.findOne({ 'reviews.user': r.targetId }).select('_id title thumbnailUrl reviews');
+            }
+          }
+
+          if (!tmpl && r.targetTitle) {
+            const match = r.targetTitle.match(/cho "([^"]+)"/);
+            if (match && match[1]) {
+              tmpl = await Template.findOne({ title: match[1] }).select('_id title thumbnailUrl reviews');
+            }
+          }
+
+          if (tmpl) {
+            r.targetUrl = `/templates/${tmpl._id}`;
+            if (tmpl.reviews && tmpl.reviews.length > 0) {
+              matchedReview = tmpl.reviews.find(
+                (rev, idx) =>
+                  (rev._id && rev._id.toString() === r.targetId) ||
+                  (rev.user && rev.user.toString() === r.targetId) ||
+                  (`${tmpl._id}-review-${idx}` === r.targetId)
+              );
+
+              if (!matchedReview && r.targetTitle) {
+                const nameMatch = r.targetTitle.match(/Đánh giá của (.+?) cho "/);
+                if (nameMatch && nameMatch[1]) {
+                  matchedReview = tmpl.reviews.find((rev) => rev.userName === nameMatch[1].trim());
+                }
+              }
+
+              if (!matchedReview && tmpl.reviews.length === 1) {
+                matchedReview = tmpl.reviews[0];
+              }
+
+              if (matchedReview) {
+                r.reviewDetails = {
+                  _id: (matchedReview._id || matchedReview.user).toString(),
+                  templateId: tmpl._id.toString(),
+                  templateTitle: tmpl.title,
+                  templateThumbnail: tmpl.thumbnailUrl,
+                  userName: matchedReview.userName,
+                  userAvatar: matchedReview.userAvatar,
+                  rating: matchedReview.rating,
+                  comment: matchedReview.comment,
+                  createdAt: matchedReview.createdAt,
+                };
+              }
+            }
+          }
+        } else if (!r.targetUrl) {
+          if (r.targetType === 'template') {
+            r.targetUrl = `/templates/${r.targetId}`;
+          } else if (r.targetType === 'creator' || r.targetType === 'user') {
+            r.targetUrl = `/creator/${r.targetId}`;
+          } else if (r.targetType === 'comment') {
+            if (r.targetId && r.targetId.includes('-comment-')) {
+              r.targetUrl = `/templates/${r.targetId.split('-comment-')[0]}`;
+            }
+          }
+        }
+        return r;
+      })
+    );
+
     res.status(200).json({
       success: true,
-      data: reports,
+      data: enrichedReports,
       pagination: {
         total,
         page,
@@ -981,6 +1060,37 @@ exports.updateReportStatus = async (req, res, next) => {
       targetLabel: `${report.targetType}: ${report.targetTitle || report.reason}`,
       details: { previousStatus, newStatus: report.status, resolutionNotes: report.resolutionNotes },
     });
+
+    // Notify the reporter about the resolution/status change
+    if (report.reporter) {
+      const isAppeal = report.ticketType === 'APPEAL';
+      const statusText =
+        report.status === 'resolved'
+          ? 'Đã xử lý xong'
+          : report.status === 'dismissed'
+          ? 'Đã từ chối / bác bỏ'
+          : report.status === 'investigating'
+          ? 'Đang tiếp nhận và điều tra'
+          : 'Đã cập nhật';
+
+      const notifMsg = isAppeal
+        ? `Khiếu nại/Đề xuất của bạn (${report.reason || report.targetTitle || 'Yêu cầu hỗ trợ'}) đã được Admin xử lý: ${statusText}.${report.resolutionNotes ? ' Phản hồi: ' + report.resolutionNotes : ''}`
+        : `Báo cáo vi phạm của bạn (${report.targetTitle || report.reason}) đã được Admin xử lý: ${statusText}.${report.resolutionNotes ? ' Phản hồi: ' + report.resolutionNotes : ''}`;
+
+      await notifyUser({
+        recipientId: report.reporter,
+        actorId: req.user ? req.user._id : null,
+        type: isAppeal ? 'appeal_resolved' : 'report_resolved',
+        message: notifMsg,
+        link: '/appeals',
+        metadata: {
+          reportId: report._id,
+          ticketType: report.ticketType,
+          status: report.status,
+          resolutionNotes: report.resolutionNotes,
+        },
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -1633,7 +1743,7 @@ exports.getAdminPayouts = async (req, res, next) => {
 exports.updatePayoutStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { status, adminNote } = req.body;
+    const { status, adminNote, paymentProof } = req.body;
 
     if (!['PAID', 'REJECTED'].includes(status)) {
       return res.status(400).json({ success: false, message: 'Trạng thái không hợp lệ. Chỉ chấp nhận PAID hoặc REJECTED.' });
@@ -1646,6 +1756,7 @@ exports.updatePayoutStatus = async (req, res, next) => {
 
     payout.status = status;
     if (adminNote !== undefined) payout.adminNote = adminNote;
+    if (paymentProof !== undefined) payout.paymentProof = paymentProof;
     payout.processedAt = new Date();
     payout.processedBy = req.user ? req.user._id : null;
     await payout.save();
@@ -1660,8 +1771,32 @@ exports.updatePayoutStatus = async (req, res, next) => {
         amount: payout.amount,
         creatorEmail: payout.creatorEmail,
         adminNote: payout.adminNote,
+        paymentProof: payout.paymentProof,
       },
     });
+
+    // Notify the creator about the payout result
+    if (payout.creatorId) {
+      const isPaid = status === 'PAID';
+      const notifMsg = isPaid
+        ? `Yêu cầu rút ${payout.amount.toLocaleString('vi-VN')} VNĐ của bạn đã được Admin duyệt và giải ngân thành công!`
+        : `Yêu cầu rút ${payout.amount.toLocaleString('vi-VN')} VNĐ của bạn đã bị từ chối.${payout.adminNote ? ' Lý do: ' + payout.adminNote : ''}`;
+
+      await notifyUser({
+        recipientId: payout.creatorId,
+        actorId: req.user ? req.user._id : null,
+        type: isPaid ? 'payout_paid' : 'payout_rejected',
+        message: notifMsg,
+        link: '/creator/wallet',
+        metadata: {
+          payoutId: payout._id,
+          amount: payout.amount,
+          status,
+          adminNote: payout.adminNote,
+          paymentProof: payout.paymentProof,
+        },
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -1758,6 +1893,92 @@ exports.getSystemHealth = async (req, res, next) => {
             ...serverStatus,
           },
         },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Direct delete review by reviewId or templateId + reviewId
+ * @route   DELETE /api/admin/reviews/:reviewId
+ * @access  Private (Admin)
+ */
+exports.deleteAdminReview = async (req, res, next) => {
+  try {
+    const { reviewId } = req.params;
+    const { templateId } = req.query;
+
+    let template = null;
+    if (templateId) {
+      template = await Template.findById(templateId);
+    }
+
+    if (!template) {
+      if (reviewId.includes('-review-')) {
+        const tId = reviewId.split('-review-')[0];
+        template = await Template.findById(tId);
+      } else if (mongoose.isValidObjectId(reviewId)) {
+        template = await Template.findOne({ 'reviews._id': reviewId });
+        if (!template) {
+          template = await Template.findOne({ 'reviews.user': reviewId });
+        }
+      }
+    }
+
+    if (!template) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy mẫu thiết kế chứa đánh giá này' });
+    }
+
+    const reviewIndex = template.reviews.findIndex((r, idx) => {
+      if (r._id && r._id.toString() === reviewId) return true;
+      if (r.user && r.user.toString() === reviewId) return true;
+      if (`${template._id}-review-${idx}` === reviewId) return true;
+      if (String(idx) === reviewId) return true;
+      return false;
+    });
+
+    if (reviewIndex === -1) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy đánh giá cần xóa' });
+    }
+
+    const deletedReview = template.reviews.splice(reviewIndex, 1)[0];
+    template.ratingsCount = template.reviews.length;
+    if (template.ratingsCount > 0) {
+      const totalScore = template.reviews.reduce((sum, r) => sum + r.rating, 0);
+      template.avgRating = Number((totalScore / template.ratingsCount).toFixed(1));
+    } else {
+      template.avgRating = 0;
+    }
+
+    await template.save();
+
+    await logAdminAction({
+      actor: req.user._id,
+      actorName: req.user.name || 'Admin',
+      actorEmail: req.user.email || '',
+      action: 'DELETE_REVIEW_MODERATION',
+      targetType: 'template',
+      targetId: template._id.toString(),
+      targetLabel: `Đánh giá của ${deletedReview.userName} trên "${template.title}"`,
+      details: {
+        reviewId,
+        reviewerName: deletedReview.userName,
+        rating: deletedReview.rating,
+        comment: deletedReview.comment,
+      },
+      req,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Đã xóa đánh giá vi phạm thành công',
+      data: {
+        templateId: template._id,
+        avgRating: template.avgRating,
+        ratingsCount: template.ratingsCount,
+        reviews: template.reviews,
       },
     });
   } catch (error) {

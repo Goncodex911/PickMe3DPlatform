@@ -14,6 +14,8 @@ import {
   fetchUserPublicCollectionsApi,
 } from "@/lib/collectionService";
 import { CollectionCard } from "@/components/CollectionManager";
+import ReportModal from "@/components/ReportModal";
+import { isCurrentUserAdmin } from "@/lib/reportService";
 
 function timeAgo(dateStr: string): string {
   const now = Date.now();
@@ -43,6 +45,12 @@ function CreatorProfileClient({ username }: CreatorProfileClientProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"designs" | "collections">("designs");
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    setIsAdmin(isCurrentUserAdmin());
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -181,7 +189,20 @@ function CreatorProfileClient({ username }: CreatorProfileClientProps) {
               {user.username && (
                 <p className="text-sm text-red-400 font-medium mt-0.5">@{user.username}</p>
               )}
-              <FollowCreator creatorId={user._id} />
+              <div className="flex items-center justify-center sm:justify-start gap-3 mt-3">
+                <FollowCreator creatorId={user._id} />
+                {!isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => setReportModalOpen(true)}
+                    className="px-3 py-1.5 rounded-full border border-white/10 hover:border-red-500/30 bg-white/5 hover:bg-red-500/10 text-slate-400 hover:text-red-400 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                    title="Báo cáo tài khoản Creator này"
+                  >
+                    <span className="material-symbols-rounded text-sm">flag</span>
+                    <span>Báo cáo</span>
+                  </button>
+                )}
+              </div>
               {user.jobRole && (
                 <div className="flex items-center justify-center sm:justify-start gap-1.5 mt-1.5 text-xs text-slate-400">
                   <span className="material-symbols-rounded text-xs">work</span>
@@ -364,6 +385,16 @@ function CreatorProfileClient({ username }: CreatorProfileClientProps) {
       <footer className="border-t border-white/10 bg-[#05080e] px-4 sm:px-8 py-8 text-center text-xs text-slate-500">
         <p>PickMe3D Fashion Platform • Hồ sơ công khai của @{user.username || user.name}</p>
       </footer>
+
+      {/* Report Modal */}
+      <ReportModal
+        isOpen={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        targetType="creator"
+        targetId={user._id}
+        targetTitle={`${user.name} (@${user.username || user.name})`}
+        targetUrl={`/creator/${user.username || user._id}`}
+      />
     </div>
   );
 }
