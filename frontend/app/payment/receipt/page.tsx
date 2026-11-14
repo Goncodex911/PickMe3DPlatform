@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Receipt, fetchReceipt, formatVnd } from "@/lib/paymentService";
+import { Receipt, fetchReceipt, formatVnd, orderItemLabel } from "@/lib/paymentService";
 import s from "./receipt.module.css";
 export default function ReceiptPage() {
   const [receipt, setReceipt] = useState<Receipt | null>(null);
@@ -23,16 +23,22 @@ export default function ReceiptPage() {
         </div>
         <span className={s.documentLabel}>BIÊN LAI ĐIỆN TỬ</span>
       </header>
-      <div className={s.successMark}><span className="material-symbols-rounded" aria-hidden="true">check_circle</span>Đã thanh toán</div>
-      <h1>Thanh toán thành công</h1><p className={s.receiptNumber}>Số biên lai <strong>{receipt.receiptNumber}</strong></p>
+      <div className={s.successMark}><span className="material-symbols-rounded" aria-hidden="true">{receipt.status === "REFUNDED" ? "currency_exchange" : "check_circle"}</span>{receipt.status === "REFUNDED" ? "Đã hoàn tiền" : "Đã thanh toán"}</div>
+      <h1>{receipt.status === "REFUNDED" ? "Giao dịch đã được hoàn tiền" : "Thanh toán thành công"}</h1><p className={s.receiptNumber}>Số biên lai <strong>{receipt.receiptNumber}</strong></p>
       <dl className={s.details}><dt>Khách hàng</dt><dd>{receipt.customer.name}</dd><dt>Email</dt><dd>{receipt.customer.email}</dd>
         <dt>Mã đơn hàng</dt><dd>{receipt.orderCode}</dd><dt>Ngày thanh toán</dt><dd>{receipt.paidAt ? new Date(receipt.paidAt).toLocaleString("vi-VN") : "—"}</dd>
-        <dt>Gói dịch vụ</dt><dd>{receipt.planId.toUpperCase()} · {receipt.months} tháng</dd>
+        <dt>{receipt.orderType && receipt.orderType !== "SUBSCRIPTION" ? "Sản phẩm" : "Gói dịch vụ"}</dt><dd>{orderItemLabel(receipt)}</dd>
         <dt>Tạm tính</dt><dd>{formatVnd(receipt.subtotal)}</dd>
         <dt>Giảm giá{receipt.promoCode ? ` (${receipt.promoCode})` : ""}</dt><dd>-{formatVnd(receipt.discount)}</dd>
         <dt>Tổng đã thanh toán</dt><dd><strong>{formatVnd(receipt.amount)}</strong></dd>
+        {receipt.gatewayReference && <><dt>Mã giao dịch ngân hàng</dt><dd>{receipt.gatewayReference}</dd></>}
+        {receipt.status === "REFUNDED" && receipt.refund && <>
+          <dt>Đã hoàn</dt><dd><strong>{formatVnd(receipt.refund.amount || receipt.amount)}</strong></dd>
+          <dt>Ngày hoàn</dt><dd>{receipt.refund.completedAt ? new Date(receipt.refund.completedAt).toLocaleString("vi-VN") : "—"}</dd>
+          {receipt.refund.reference && <><dt>Mã GD hoàn tiền</dt><dd>{receipt.refund.reference}</dd></>}
+        </>}
       </dl>
-      <footer><span className="material-symbols-rounded" aria-hidden="true">verified_user</span><p>Biên lai xác nhận thanh toán dịch vụ PickMe3D. Đây không phải hóa đơn giá trị gia tăng.</p></footer>
+      <footer><span className="material-symbols-rounded" aria-hidden="true">verified_user</span><p>Biên lai xác nhận thanh toán dịch vụ PickMe3D. Đây không phải hóa đơn giá trị gia tăng.{receipt.orderType && receipt.orderType !== "SUBSCRIPTION" ? " Sản phẩm số không áp dụng hoàn tiền." : ""}</p></footer>
     </article>}
   </main>;
 }

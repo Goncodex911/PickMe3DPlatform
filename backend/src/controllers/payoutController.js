@@ -30,12 +30,16 @@ const calculateCreatorBalances = async (user) => {
     else if (p.status === 'REJECTED') rejectedPayout += Number(p.amount) || 0;
   });
 
-  const availableBalance = Math.max(0, totalEarnings - pendingPayout - paidPayout);
+  // Can go negative when an order already withdrawn is later voided (duplicate payment returned to the buyer).
+  const rawBalance = totalEarnings - pendingPayout - paidPayout;
+  const availableBalance = Math.max(0, rawBalance);
+  const shortfall = Math.max(0, -rawBalance);
 
   return {
     metrics: {
       totalEarnings,
       availableBalance,
+      shortfall,
       pendingPayout,
       paidPayout,
       rejectedPayout,
@@ -108,17 +112,45 @@ exports.requestPayout = async (req, res, next) => {
       });
     }
 
-    const user = await User.findById(req.user._id);
+    // Take the creator's payout lock: the balance check and the insert below must not interleave with another request
+    // (double click, two tabs). The lock expires on its own if the process dies.
+    const now = new Date();
+    const user = await User.findOneAndUpdate(
+      { _id: req.user._id, $or: [{ payoutLockUntil: null }, { payoutLockUntil: { $lt: now } }] },
+      { $set: { payoutLockUntil: new Date(now.getTime() + 30 * 1000) } },
+      { new: true }
+    );
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+      const exists = await User.exists({ _id: req.user._id });
+      if (!exists) return res.status(404).json({ success: false, message: 'User not found' });
+      return res.status(409).json({
+        success: false,
+        code: 'PAYOUT_IN_PROGRESS',
+        message: 'Đang xử lý một yêu cầu rút tiền khác của bạn. Vui lòng đợi vài giây rồi thử lại.',
+      });
     }
+    const releaseLock = () => User.updateOne({ _id: user._id }, { $set: { payoutLockUntil: null } }).catch(() => {});
 
+    try {
     const { metrics } = await calculateCreatorBalances(user);
 
-    if (numAmount > metrics.availableBalance) {
+    if (metrics.shortfall > 0) {
+      await releaseLock();
       return res.status(400).json({
         success: false,
+        code: 'NEGATIVE_BALANCE',
+        message: `Ví đang âm ${metrics.shortfall.toLocaleString('vi-VN')} VNĐ do có đơn đã rút tiền bị trả lại cho người mua. Bạn chưa thể rút cho đến khi doanh thu mới bù đủ khoản này.`,
+        metrics,
+      });
+    }
+
+    if (numAmount > metrics.availableBalance) {
+      await releaseLock();
+      return res.status(400).json({
+        success: false,
+        code: 'INSUFFICIENT_BALANCE',
         message: `Số dư khả dụng (${metrics.availableBalance.toLocaleString('vi-VN')} VNĐ) không đủ để yêu cầu rút ${numAmount.toLocaleString('vi-VN')} VNĐ.`,
+        metrics,
       });
     }
 
@@ -158,11 +190,16 @@ exports.requestPayout = async (req, res, next) => {
       },
     });
 
+    await releaseLock();
     res.status(201).json({
       success: true,
       message: 'Yêu cầu rút tiền đã được tạo thành công và gửi tới ban quản trị.',
       data: payout,
     });
+    } catch (inner) {
+      await releaseLock();
+      throw inner;
+    }
   } catch (error) {
     next(error);
   }
@@ -204,3 +241,5 @@ exports.updateSavedBankInfo = async (req, res, next) => {
   }
 };
 
+
+exports.calculateCreatorBalances = calculateCreatorBalances;

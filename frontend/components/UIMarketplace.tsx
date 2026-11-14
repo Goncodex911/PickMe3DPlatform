@@ -11,11 +11,55 @@ import {
   subscribePurchasedTemplates,
   syncPurchasedTemplatesWithServer,
 } from "@/lib/purchased-animations";
+import { confirmDigitalPurchase } from "@/lib/paymentService";
+import { checkoutUiProduct, fetchUiPrices, formatVnd, type UiPriceMap } from "@/lib/uiMarketPricing";
 
 /* ───────────────────────────────────────────────── */
 /*  Tokens CSS Context                              */
 /* ───────────────────────────────────────────────── */
 const TokensCtx = createContext<string>("");
+
+/* Prices set by Admin on the fixed catalogue; ids not listed are free. */
+const PricesCtx = createContext<UiPriceMap>({});
+function useUiPrice(id: string): number {
+  return useContext(PricesCtx)[id] || 0;
+}
+/* Admin owns the UI Marketplace: the buy action becomes "edit price" (BR-06). */
+const AdminViewCtx = createContext(false);
+function actionLabel(price: number, isAdmin: boolean, short = false): string {
+  if (isAdmin) return !short && price > 0 ? `Sửa giá · ${formatVnd(price)}` : "Sửa giá";
+  return buyLabel(price, short);
+}
+/** Price chip shown on every product: the price, or "Miễn phí". */
+function PriceTag({ price, owned }: { price: number; owned?: boolean }) {
+  const paid = price > 0;
+  return (
+    <span
+      title={paid ? (owned ? "Giá sản phẩm (bạn đã mua)" : "Giá bán") : "Đang tải giá"}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        height: 30,
+        padding: "0 10px",
+        borderRadius: 8,
+        fontSize: 12,
+        fontWeight: 700,
+        whiteSpace: "nowrap",
+        fontVariantNumeric: "tabular-nums",
+        color: paid ? (owned ? "#9ca3af" : "#fbbf24") : "#34d399",
+        background: paid ? (owned ? "rgba(255,255,255,0.05)" : "rgba(251,191,36,0.12)") : "rgba(52,211,153,0.10)",
+        border: `1px solid ${paid ? (owned ? "rgba(255,255,255,0.12)" : "rgba(251,191,36,0.35)") : "rgba(52,211,153,0.3)"}`,
+      }}
+    >
+      {paid ? formatVnd(price) : "—"}
+    </span>
+  );
+}
+
+function buyLabel(price: number, short = false): string {
+  if (price > 0) return short ? "Mua" : `Mua Animation · ${formatVnd(price)}`;
+  return short ? "Mua" : "Mua Animation";
+}
 
 /* ───────────────────────────────────────────────── */
 /*  Live iframe Component                           */
@@ -86,6 +130,8 @@ function DetailDialog({
   onInsert: (template: UITemplate) => void;
 }) {
   const tokensCSS = useContext(TokensCtx);
+  const price = useUiPrice(template.id);
+  const isAdminView = useContext(AdminViewCtx);
   const [tab, setTab] = useState<"demo" | "analysis" | "prompt" | "code">("demo");
   const [copied, setCopied] = useState(false);
   const [customText, setCustomText] = useState(template.titleEn || template.title);
@@ -166,6 +212,7 @@ Please implement this animated UI component in my project. Adapt the code above 
               </span>
               <span>·</span>
               <span style={{ textTransform: "uppercase", letterSpacing: "1px" }}>{catLabel}</span>
+              <PriceTag price={price} owned={isPurchased} />
               <span>·</span>
               <span style={{ color: "#34d399", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}>
                 <span className={styles.cardLiveDot} /> LIVE DEMO
@@ -495,7 +542,7 @@ Please implement this animated UI component in my project. Adapt the code above 
                 className={styles.modalBuyBtn}
               >
                 <span className="material-symbols-rounded" style={{ fontSize: 16 }}>shopping_bag</span>
-                Mua Animation (Miễn phí)
+                {actionLabel(price, isAdminView)}
               </button>
             )}
             {template.html && (
@@ -568,6 +615,8 @@ function SystemTemplateCard({
   onInsert: (template: UITemplate) => void;
 }) {
   const [isVisible, setIsVisible] = useState(idx < 12);
+  const price = useUiPrice(template.id);
+  const isAdminView = useContext(AdminViewCtx);
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -656,6 +705,7 @@ function SystemTemplateCard({
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+            <PriceTag price={price} owned={isPurchased} />
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -701,10 +751,10 @@ function SystemTemplateCard({
                   e.stopPropagation();
                   onBuy(template);
                 }}
-                title="Mua mẫu animation này để đưa vào Editor"
+                title={price > 0 ? `Thanh toán ${formatVnd(price)} để sở hữu mẫu này` : "Mua mẫu animation này để đưa vào Editor"}
               >
                 <span className="material-symbols-rounded" style={{ fontSize: 14 }}>shopping_bag</span>
-                <span>Mua</span>
+                <span>{actionLabel(price, isAdminView, true)}</span>
               </button>
             )}
             <button className={styles.cardUseBtn} onClick={onClick}>
@@ -732,6 +782,11 @@ export default function UIMarketplacePage() {
   const [visibleCount, setVisibleCount] = useState(24);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [purchasedIds, setPurchasedIds] = useState<string[]>([]);
+  const [prices, setPrices] = useState<UiPriceMap>({});
+
+  useEffect(() => {
+    void fetchUiPrices().then(setPrices);
+  }, []);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -746,15 +801,36 @@ export default function UIMarketplacePage() {
     });
   }, []);
 
-  const handleBuy = useCallback((tmpl: UITemplate) => {
-    const ok = purchaseTemplate(tmpl);
-    if (ok) {
-      setToastMessage(`Đã mua thành công "${tmpl.titleEn || tmpl.title}"! Mẫu đã được lưu vào tài khoản & sẵn sàng dùng trong Editor.`);
-      setTimeout(() => setToastMessage(null), 4500);
+  const handleBuy = useCallback(async (tmpl: UITemplate) => {
+    if (currentUser?.role === "admin") {
+      window.location.href = `/admin/ui-market/?q=${encodeURIComponent(tmpl.id)}`;
+      return;
     }
-  }, []);
+    // Every UI product is paid: "Mua" always opens the existing payment page (payOS or the mock page).
+    // The server owns the price; ownership is granted only when the order becomes PAID.
+    if (!confirmDigitalPurchase("sản phẩm UI Marketplace")) return;
+    const res = await checkoutUiProduct(tmpl.id);
+    if (res.success && res.checkoutUrl) {
+      window.location.href = res.checkoutUrl;
+      return;
+    }
+    if (res.code === "LOGIN_REQUIRED") {
+      window.location.href = "/login/";
+      return;
+    }
+    if (res.code === "ALREADY_ENTITLED") {
+      void syncPurchasedTemplatesWithServer().then((list) => setPurchasedIds(list.map((t) => t.id)));
+    }
+    setToastMessage(res.message || "Không thể tạo thanh toán, vui lòng thử lại.");
+    setTimeout(() => setToastMessage(null), 4500);
+  }, [currentUser]);
 
   const handleInsert = useCallback((tmpl: UITemplate) => {
+    // Admin owns every UI product (BR-09 style owner access); others must buy priced products first.
+    if (currentUser?.role !== "admin" && !purchasedIds.includes(tmpl.id)) {
+      void handleBuy(tmpl);
+      return;
+    }
     purchaseTemplate(tmpl);
     const { html, js } = translateTemplateSource(tmpl);
     const cat = getCategoryLabel(tmpl.category);
@@ -773,7 +849,7 @@ export default function UIMarketplacePage() {
       console.warn("Could not write to sessionStorage:", err);
     }
     window.open(`/editor/?insertMarketplace=${encodeURIComponent(tmpl.id)}`, "_blank");
-  }, []);
+  }, [prices, purchasedIds, handleBuy, currentUser]);
 
   // Authenticated user state
   useEffect(() => {
@@ -840,6 +916,8 @@ export default function UIMarketplacePage() {
 
   return (
     <TokensCtx.Provider value={tokensCSS}>
+    <PricesCtx.Provider value={prices}>
+    <AdminViewCtx.Provider value={currentUser?.role === "admin"}>
       <div className={styles.page} lang="en">
         {/* ─── SYSTEM HEADER / NAVBAR ───────────── */}
 
@@ -1034,6 +1112,7 @@ export default function UIMarketplacePage() {
                         <span style={{ textTransform: "uppercase" }}>{catLabel}</span>
                         <span>·</span>
                         <span style={{ color: "#34d399", fontWeight: 700 }}>LIVE</span>
+                        <span style={{ marginLeft: "auto" }}><PriceTag price={prices[template.id] || 0} owned={purchasedIds.includes(template.id)} /></span>
                       </div>
                       <h3 style={{ fontSize: 16, fontWeight: 600, color: "#fff", margin: "0 0 4px" }}>
                         {template.titleEn}
@@ -1087,10 +1166,10 @@ export default function UIMarketplacePage() {
                             e.stopPropagation();
                             handleBuy(template);
                           }}
-                          title="Mua mẫu animation này để đưa vào Editor"
+                          title={(prices[template.id] || 0) > 0 ? `Thanh toán ${formatVnd(prices[template.id])} để sở hữu mẫu này` : "Mua mẫu animation này để đưa vào Editor"}
                         >
                           <span className="material-symbols-rounded" style={{ fontSize: 14 }}>shopping_bag</span>
-                          <span>Mua</span>
+                          <span>{actionLabel(prices[template.id] || 0, currentUser?.role === "admin", true)}</span>
                         </button>
                       )}
                       <span className="material-symbols-rounded" style={{ fontSize: 20, color: "#777" }}>
@@ -1188,6 +1267,8 @@ export default function UIMarketplacePage() {
           </div>
         )}
       </div>
+    </AdminViewCtx.Provider>
+    </PricesCtx.Provider>
     </TokensCtx.Provider>
   );
 }

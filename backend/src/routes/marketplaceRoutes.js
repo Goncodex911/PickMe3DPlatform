@@ -5,8 +5,12 @@ const {
   getMyPurchases,
   checkPurchaseStatus,
   syncLocalPurchases,
+  getUiPrices,
 } = require('../controllers/marketplaceController');
 const { protect } = require('../middlewares/authMiddleware');
+
+// Public: UI Marketplace price list (catalogue ids priced by Admin; others are free).
+router.get('/ui-prices', getUiPrices);
 
 router.use(protect);
 

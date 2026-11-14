@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import StudioShell, { Icon } from "@/components/slides/StudioShell";
 import s from "@/components/slides/studio.module.css";
-import { confirmMockPayment, fetchAccount, fetchOrderStatus, formatVnd, type AccountPlan } from "@/lib/paymentService";
+import { confirmMockPayment, fetchAccount, fetchOrderStatus, formatVnd, orderItemLabel, type AccountPlan } from "@/lib/paymentService";
 
 const PLAN_NAME: Record<string, string> = { pro: "Pro", studio: "Studio" };
 
@@ -43,6 +43,7 @@ export default function MockPaymentPage() {
   const [orderCode, setOrderCode] = useState("");
   const [amount, setAmount] = useState(0);
   const [planId, setPlanId] = useState("");
+  const [itemLabel, setItemLabel] = useState("");
   const [error, setError] = useState("");
   const [paying, setPaying] = useState(false);
 
@@ -54,8 +55,10 @@ export default function MockPaymentPage() {
     fetchOrderStatus(code)
       .then((order) => {
         setAmount(order.amount);
-        setPlanId(order.planId);
-        if (order.status === "PAID") window.location.href = `/payment/result/?orderCode=${code}`;
+        setPlanId(order.planId || "");
+        if (order.orderType && order.orderType !== "SUBSCRIPTION") setItemLabel(orderItemLabel(order));
+        // Only an open order can be confirmed; anything else is shown on the result page.
+        if (order.status !== "PENDING" || order.displayStatus === "EXPIRED") window.location.href = `/payment/result/?orderCode=${code}`;
       })
       .catch((err) => setError(err.message));
   }, []);
@@ -64,7 +67,7 @@ export default function MockPaymentPage() {
     setError("");
     setPaying(true);
     try {
-      await confirmMockPayment(orderCode, amount);
+      await confirmMockPayment(orderCode);
       window.location.href = `/payment/result/?orderCode=${orderCode}`;
     } catch (err) {
       setPaying(false);
@@ -82,11 +85,11 @@ export default function MockPaymentPage() {
             <a className={s.back} href="/pricing/"><Icon name="arrow_back" />Pricing</a>
             <div>
               <p className={s.kicker}>Order {orderCode || "—"}</p>
-              <h1 className={s.payTitle} id="payTitle">{planName ? `Upgrade to ${planName}` : "PickMe3D payment"}</h1>
+              <h1 className={s.payTitle} id="payTitle">{itemLabel ? `Thanh toán ${itemLabel}` : planName ? `Upgrade to ${planName}` : "PickMe3D payment"}</h1>
             </div>
             <dl className={s.kv}>
-              <dt>Plan</dt><dd>{planName || "—"}</dd>
-              <dt>Period</dt><dd>30 days</dd>
+              <dt>{itemLabel ? "Item" : "Plan"}</dt><dd>{itemLabel || planName || "—"}</dd>
+              {!itemLabel && <><dt>Period</dt><dd>30 days</dd></>}
               <dt>Method</dt><dd>Bank QR (payOS)</dd>
             </dl>
             <div>

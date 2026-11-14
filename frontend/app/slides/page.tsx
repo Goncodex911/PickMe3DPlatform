@@ -64,15 +64,20 @@ export default function SlidesPage() {
   }, []);
 
   const handleError = (err: unknown) => {
-    const coded = err as Error & { code?: string };
-    if (coded.code === "QUOTA" || coded.code === "UPGRADE_REQUIRED" || coded.code === "READ_ONLY") setUpgrade(coded.message);
+    const coded = err as Error & { code?: string; feature?: string };
+    if (coded.code === "UPGRADE_REQUIRED") setUpgrade(coded.feature || coded.message);
+    else if (coded.code === "QUOTA" || coded.code === "READ_ONLY") setUpgrade(coded.message);
     else setError(coded.message || "Something went wrong. Please try again.");
   };
 
   const list = decks || [];
   const quotas = account?.quotas;
   const deckLimit = quotas ? quotas.slides : 3;
-  const aiLimit = account ? account.aiLimit : 3;
+  // AI slide generation is a Pro feature (unknown account: assume locked until it loads).
+  const aiAllowed = Boolean(
+    account?.features?.aiSlides ?? (account?.role === "admin" || account?.plan === "pro" || account?.plan === "studio")
+  );
+  const aiLimit = account ? account.aiLimit : 0;
   const aiUsed = account?.aiUsed || 0;
   const aiLeft = aiLimit == null ? Infinity : Math.max(0, aiLimit - aiUsed);
   const deckFull = deckLimit != null && list.length >= deckLimit;
@@ -93,6 +98,15 @@ export default function SlidesPage() {
   const onGenerate = async (event: React.FormEvent) => {
     event.preventDefault();
     setError("");
+    // Not on Pro (or out of credits): explain why instead of silently doing nothing.
+    if (!aiAllowed) {
+      setUpgrade("ai-slides");
+      return;
+    }
+    if (aiLeft === 0) {
+      setUpgrade("ai-credits");
+      return;
+    }
     const value = topic.trim();
     if (!value) {
       setHintError("Enter a topic first, for example: Silk L’Heure lookbook for a distributor meeting.");
@@ -180,7 +194,8 @@ export default function SlidesPage() {
 
   let hint: React.ReactNode = `AI writes a 6–8 slide deck on your topic (about 15–40 seconds), then opens it in the studio.${aiLimit == null ? "" : ` ${aiLeft} AI ${aiLeft === 1 ? "credit" : "credits"} left this month.`}`;
   let hintWarn = false;
-  if (hintError) { hint = hintError; hintWarn = true; }
+  if (!aiAllowed) { hint = <>AI slide generation is part of the <strong>Pro</strong> plan. You can still build a blank deck by hand, or <a href="/pricing/">upgrade to Pro</a> to generate decks with AI.</>; }
+  else if (hintError) { hint = hintError; hintWarn = true; }
   else if (deckFull) { hint = <>You have reached the {deckLimit}-deck limit of the {planName} plan. Delete a deck or <a href="/pricing/">upgrade</a> to create more.</>; hintWarn = true; }
   else if (aiLeft === 0) { hint = "No AI credits left this month. You can still create a blank deck."; hintWarn = true; }
 
@@ -215,8 +230,19 @@ export default function SlidesPage() {
                 placeholder="Topic for AI, e.g. Silk L’Heure lookbook for a distributor meeting"
               />
             </label>
-            <button className={`${s.btn} ${s.primary}`} type="submit" disabled={busy || aiLeft === 0 || deckFull}>
-              {busy ? "AI is writing…" : "Generate with AI"} <Arrow />
+            {/* Always clickable: without Pro (or credits) it opens the upgrade notice instead of being greyed out. */}
+            <button
+              className={`${s.btn} ${s.primary}`}
+              type="submit"
+              disabled={busy || deckFull}
+              title={aiAllowed ? undefined : "AI slide generation needs the Pro plan"}
+            >
+              {!aiAllowed && <Icon name="lock" />}
+              {busy ? "AI is writing…" : "Generate with AI"}
+              {!aiAllowed && (
+                <span style={{ marginLeft: 6, padding: "2px 6px", fontSize: 10, fontWeight: 700, letterSpacing: 1, background: "#FF4D00", color: "#fff" }}>PRO</span>
+              )}
+              <Arrow />
             </button>
             <button className={s.btn} type="button" onClick={onBlank} disabled={busy || deckFull}>
               Blank deck <span className={s.arrow} aria-hidden="true">+</span>
@@ -226,7 +252,7 @@ export default function SlidesPage() {
             <p className={`${s.hint} ${hintWarn ? s.warn : ""}`}>{hint}</p>
             <div className={s.usage}>
               <Meter label="Deck" used={list.length} limit={deckLimit} />
-              <Meter label={`AI · ${new Date().toLocaleString("en-US", { month: "short" })}`} used={aiUsed} limit={aiLimit} />
+              {aiAllowed && <Meter label={`AI · ${new Date().toLocaleString("en-US", { month: "short" })}`} used={aiUsed} limit={aiLimit} />}
             </div>
           </div>
         </form>

@@ -23,7 +23,7 @@ const connectDB = async () => {
             name: 'Phan Trọng Quý',
             role: 'admin',
             status: 'active',
-            plan: 'studio',
+            plan: 'pro',
           },
         },
         { upsert: true }

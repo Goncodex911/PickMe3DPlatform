@@ -11,19 +11,30 @@ const {
   toggleLikeTemplate,
   addTemplateReview,
   deleteTemplateReview,
+  updateTemplatePrice,
+  getTemplatePriceHistory,
 } = require('../controllers/templateController');
 const {
   getComments,
   createComment,
 } = require('../controllers/commentController');
 const versionRoutes = require('./versionRoutes');
-const { protect } = require('../middlewares/authMiddleware');
+const { protect, optionalProtect, requirePermission } = require('../middlewares/authMiddleware');
 
-router.route('/').get(getTemplates).post(protect, createTemplate);
-router.route('/public').get(getTemplates);
+// Every USER may create templates for personal use; publish/sell rights are checked in the controller
+// (Creator only). Admin has no template:listing:create (BR-05) and manages the catalogue via /api/admin.
+router.route('/').get(optionalProtect, getTemplates).post(protect, requirePermission('template:listing:create'), createTemplate);
+router.route('/public').get(optionalProtect, getTemplates);
 router.route('/my-templates').get(protect, getUserTemplates);
-router.route('/:id').get(getTemplateById).put(protect, updateTemplate).delete(protect, deleteTemplate);
+router
+  .route('/:id')
+  .get(optionalProtect, getTemplateById)
+  .put(protect, requirePermission('template:listing:edit:own'), updateTemplate)
+  .delete(protect, requirePermission('template:listing:delete:own'), deleteTemplate);
 router.route('/:id/like').post(protect, toggleLikeTemplate);
+// Pricing: owner only (Creator for own templates, Admin for the system catalogue); history = versions of the price.
+router.route('/:id/price').put(protect, updateTemplatePrice);
+router.route('/:id/price-history').get(protect, getTemplatePriceHistory);
 router.route('/:id/cover').post(coverTemplate);
 router.route('/:id/review').post(protect, addTemplateReview);
 router.route('/:id/review/:reviewId').delete(protect, deleteTemplateReview);

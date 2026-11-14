@@ -28,6 +28,8 @@ const notificationSchema = new mongoose.Schema(
         'report_resolved',
         'appeal_submitted',
         'appeal_resolved',
+        'refund_request',
+        'refund_update',
         'system',
       ],
       required: true,

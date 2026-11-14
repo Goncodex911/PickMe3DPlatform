@@ -19,11 +19,34 @@ export interface PaginationMeta {
   limit: number;
 }
 
+export type AccountType = "REGULAR" | "CREATOR";
+export type CreatorStatus = "NONE" | "PENDING" | "APPROVED" | "SUSPENDED";
+export type TemplateReviewStatus = "DRAFT" | "PENDING_REVIEW" | "APPROVED" | "REJECTED" | "TAKEN_DOWN";
+
 export interface AdminUser {
   _id: string;
   name: string;
   email: string;
   role: "user" | "admin";
+  accountType?: AccountType;
+  creatorStatus?: CreatorStatus;
+  creatorAppliedAt?: string | null;
+  creatorReviewNote?: string;
+  creatorApplication?: {
+    displayName?: string;
+    phone?: string;
+    specialties?: string[];
+    experience?: string;
+    portfolioUrl?: string;
+    sampleLinks?: string[];
+    introduction?: string;
+    bankBranch?: string;
+    policyVersion?: string;
+    policyAcceptedAt?: string | null;
+    submittedAt?: string | null;
+  };
+  savedBankInfo?: { bankName?: string; accountNumber?: string; accountHolder?: string };
+  creatorApplicationHistory?: Array<{ event: string; at: string; note?: string; code?: string }>;
   status: "active" | "banned";
   plan?: "free" | "pro" | "studio";
   planExpiresAt?: string | null;
@@ -47,7 +70,9 @@ export interface AdminOrder {
   userName?: string;
   userEmail?: string;
   userPicture?: string | null;
-  orderType?: "SUBSCRIPTION" | "TEMPLATE_PURCHASE";
+  orderType?: "SUBSCRIPTION" | "TEMPLATE_PURCHASE" | "UI_PURCHASE";
+  productId?: string;
+  productTitle?: string;
   planId?: "pro" | "studio" | null;
   months?: number;
   templateId?: string | null;
@@ -64,10 +89,81 @@ export interface AdminOrder {
   adminRevenue?: number;
   discount?: number;
   promoCode?: string;
-  status: "PENDING" | "PAID" | "CANCELLED";
+  status: AdminOrderStatus;
+  displayStatus?: string;
   paidAt?: string | null;
   createdAt: string;
   updatedAt?: string;
+  expiresAt?: string | null;
+  paymentMode?: string;
+  paidAmount?: number | null;
+  gatewayReference?: string;
+  gatewayStatus?: string;
+  fulfillmentStatus?: "NONE" | "PENDING" | "PROCESSING" | "DONE" | "FAILED";
+  fulfillmentAttempts?: number;
+  fulfillmentError?: string;
+  needsReview?: boolean;
+  reviewReason?: string;
+  cancelReason?: string;
+  customer?: { name?: string; email?: string };
+  refund?: {
+    status: "NONE" | "REQUESTED" | "APPROVED" | "REJECTED" | "COMPLETED";
+    reason?: string; amount?: number; requestedAt?: string | null; reviewedAt?: string | null;
+    adminNote?: string; reference?: string; proof?: string; completedAt?: string | null;
+  };
+  excessReturn?: {
+    status: "NONE" | "PENDING" | "COMPLETED" | "CANCELLED";
+    type?: ExcessReturnType | "";
+    amount?: number; receivedTotal?: number; keepOrderCode?: number | null; reason?: string;
+    createdAt?: string | null; reference?: string; proof?: string; note?: string; completedAt?: string | null;
+  };
+  extraTransactions?: { reference: string; amount: number; at: string; source: string }[];
+  statusHistory?: { from: string; to: string; at: string; source: string; note: string; actor?: { name?: string; email?: string } | null }[];
+}
+
+export type ExcessReturnType = "DUPLICATE_ORDER" | "OVERPAID" | "PARTIAL_PAYMENT";
+export interface ExcessReturnOption { type: ExcessReturnType; amount: number; reason: string; keepOrderCode?: number }
+export interface ExcessInfo {
+  received: { total: number; local: number; gateway: number | null; source: string; gatewayError?: string } | null;
+  options: ExcessReturnOption[];
+  error?: string;
+}
+
+export type AdminOrderStatus = "PENDING" | "VERIFYING" | "PAID" | "CANCELLED" | "EXPIRED" | "FAILED" | "REFUNDED" | "VOIDED";
+
+export interface PaymentEventItem {
+  _id: string;
+  orderCode: number | null;
+  type: string;
+  source: string;
+  result: string;
+  message?: string;
+  signatureValid?: boolean | null;
+  amount?: number | null;
+  gatewayStatus?: string;
+  reference?: string;
+  actor?: { name?: string; email?: string } | null;
+  createdAt: string;
+  payload?: any;
+}
+
+export interface ReconcileIssue {
+  orderCode: number;
+  code: string;
+  message: string;
+  status?: string;
+  amount?: number;
+  userId?: string;
+  orders?: number[];
+}
+
+export interface ReconcileReport {
+  summary: {
+    from: string; to: string; checkedOrders: number; gatewayChecked: number; gatewayEnabled: boolean; truncated: boolean;
+    totals: Record<string, number>; issueCount: number; issuesByCode: Record<string, number>;
+  };
+  issues: ReconcileIssue[];
+  fixed: { orderCode: number; action: string; result: string }[];
 }
 
 export interface AdminPresentation {
@@ -95,6 +191,10 @@ export interface AdminTemplate {
   isPublic: boolean;
   isFeatured: boolean;
   isSystem: boolean;
+  sellerType?: "ADMIN" | "CREATOR";
+  price?: number;
+  reviewStatus?: TemplateReviewStatus;
+  reviewNote?: string;
   likesCount: number;
   viewsCount: number;
   forksCount: number;
@@ -316,6 +416,7 @@ export async function fetchAdminUsersApi(params?: {
   role?: string;
   status?: string;
   plan?: string;
+  creatorStatus?: string;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
 }): Promise<{
@@ -331,6 +432,7 @@ export async function fetchAdminUsersApi(params?: {
     if (params?.search) query.set("search", params.search);
     if (params?.role && params.role !== "all") query.set("role", params.role);
     if (params?.status && params.status !== "all") query.set("status", params.status);
+    if (params?.creatorStatus && params.creatorStatus !== "all") query.set("creatorStatus", params.creatorStatus);
     if (params?.sortBy) query.set("sortBy", params.sortBy);
     if (params?.sortOrder) query.set("sortOrder", params.sortOrder);
 
@@ -398,6 +500,65 @@ export async function updateUserRoleApi(
   }
 }
 
+/** Approve (APPROVED), suspend (SUSPENDED) or reject / revoke (NONE) Creator rights. Role stays 'user'. */
+export interface CreatorRejectionInput {
+  reasons: string[];
+  requiredFields: string[];
+  message: string;
+  resubmitAfterDays: number;
+}
+
+export async function updateCreatorStatusApi(
+  id: string,
+  status: "APPROVED" | "SUSPENDED" | "NONE",
+  note = "",
+  rejection?: CreatorRejectionInput
+): Promise<{ success: boolean; data?: Partial<AdminUser>; message?: string; errors?: Record<string, string> }> {
+  try {
+    const res = await fetch(`${API_BASE}/admin/users/${id}/creator-status`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ status, note, ...(rejection ? { rejection } : {}) }),
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, message: err.message || "Lỗi kết nối máy chủ" };
+  }
+}
+
+/** Marks a pending Creator application as "in review" (applicant sees it on their tracker). Idempotent. */
+export async function startCreatorReviewApi(
+  id: string
+): Promise<{ success: boolean; stage?: string; history?: AdminUser["creatorApplicationHistory"]; message?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/admin/users/${id}/creator-review`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, message: err.message || "Lỗi kết nối máy chủ" };
+  }
+}
+
+/** Marketplace moderation: approve / reject a Creator listing, or take any listing down. */
+export async function reviewTemplateApi(
+  id: string,
+  decision: "APPROVED" | "REJECTED" | "TAKEN_DOWN",
+  note = ""
+): Promise<{ success: boolean; data?: AdminTemplate; message?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/admin/templates/${id}/review`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ decision, note }),
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, message: err.message || "Lỗi kết nối máy chủ" };
+  }
+}
+
 export async function importUsersApi(
   users: Array<{ name: string; email: string; jobRole?: string; bio?: string }>
 ): Promise<{
@@ -433,6 +594,7 @@ export async function fetchAdminTemplatesApi(params?: {
   category?: string;
   isSystem?: string;
   isPublic?: string;
+  reviewStatus?: string;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
 }): Promise<{
@@ -447,6 +609,7 @@ export async function fetchAdminTemplatesApi(params?: {
     if (params?.limit) query.set("limit", String(params.limit));
     if (params?.search) query.set("search", params.search);
     if (params?.category && params.category !== "all") query.set("category", params.category);
+    if (params?.reviewStatus && params.reviewStatus !== "all") query.set("reviewStatus", params.reviewStatus);
     if (params?.isSystem !== undefined && params.isSystem !== "all") query.set("isSystem", params.isSystem);
     if (params?.isPublic !== undefined && params.isPublic !== "all") query.set("isPublic", params.isPublic);
     if (params?.sortBy) query.set("sortBy", params.sortBy);
@@ -689,6 +852,9 @@ export async function fetchAdminOrdersApi(params?: {
   orderType?: string;
   sellerType?: string;
   transactionSource?: string;
+  review?: boolean;
+  refund?: string;
+  excess?: string;
   search?: string;
 }): Promise<{
   success: boolean;
@@ -698,8 +864,15 @@ export async function fetchAdminOrdersApi(params?: {
     totalGrossVolume?: number;
     totalAdminRevenue?: number;
     totalCreatorEarnings?: number;
+    totalRefunded?: number;
     paidOrdersCount: number;
     pendingOrdersCount: number;
+    statusCounts?: Record<string, number>;
+    needsReviewCount?: number;
+    openRefundsCount?: number;
+    excessReturned?: number;
+    excessPendingAmount?: number;
+    openExcessCount?: number;
     breakdown?: any;
   };
   pagination?: PaginationMeta;
@@ -714,6 +887,9 @@ export async function fetchAdminOrdersApi(params?: {
     if (params?.orderType && params.orderType !== "all") query.append("orderType", params.orderType);
     if (params?.sellerType && params.sellerType !== "all") query.append("sellerType", params.sellerType);
     if (params?.transactionSource && params.transactionSource !== "all") query.append("transactionSource", params.transactionSource);
+    if (params?.review) query.append("review", "true");
+    if (params?.refund && params.refund !== "all") query.append("refund", params.refund);
+    if (params?.excess && params.excess !== "all") query.append("excess", params.excess);
     if (params?.search) query.append("search", params.search);
 
     const res = await fetch(`${API_BASE}/admin/orders?${query.toString()}`, {
@@ -741,6 +917,58 @@ export async function downloadOrdersCsv(): Promise<void> {
   a.click();
   a.remove();
   window.URL.revokeObjectURL(url);
+}
+
+// ==========================================
+// PAYMENT OPERATIONS (verify, fulfillment retry, manual confirm, refunds, reconciliation)
+// ==========================================
+
+async function adminJson<T = any>(path: string, init: RequestInit = {}): Promise<{ success: boolean; data?: T; message?: string; error?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}${path}`, { ...init, headers: getAuthHeaders(), cache: "no-store" });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok && body.success !== false) return { success: false, message: body.message || body.error || `HTTP ${res.status}` };
+    return { ...body, message: body.message || body.error };
+  } catch (err: any) {
+    return { success: false, message: err.message || "Lỗi kết nối máy chủ" };
+  }
+}
+
+export function fetchPaymentDetailApi(orderCode: number) {
+  return adminJson<{ order: AdminOrder; events: PaymentEventItem[]; customer: any; excess?: ExcessInfo }>(`/admin/payments/${orderCode}`);
+}
+
+/** Return money collected by mistake (duplicate order / overpaid / partial payment). Not a refund. */
+export function excessReturnApi(
+  orderCode: number,
+  body: { action: "CREATE" | "COMPLETE" | "CANCEL"; type?: ExcessReturnType; amount?: number; note?: string; reference?: string; proof?: string }
+) {
+  return adminJson<AdminOrder>(`/admin/payments/${orderCode}/excess-return`, { method: "POST", body: JSON.stringify(body) });
+}
+
+export function paymentActionApi(
+  orderCode: number,
+  action: "verify" | "retry-fulfillment" | "mark-paid" | "cancel" | "resolve-review",
+  body: Record<string, unknown> = {}
+) {
+  return adminJson<AdminOrder>(`/admin/payments/${orderCode}/${action}`, { method: "POST", body: JSON.stringify(body) });
+}
+
+export function processRefundApi(
+  orderCode: number,
+  body: { action: "APPROVE" | "REJECT" | "COMPLETE"; note?: string; reference?: string; proof?: string; revokeAccess?: boolean }
+) {
+  return adminJson<AdminOrder>(`/admin/refunds/${orderCode}`, { method: "PUT", body: JSON.stringify(body) });
+}
+
+export function reconcilePaymentsApi(body: { from?: string; to?: string; autoFix?: boolean }) {
+  return adminJson<ReconcileReport>(`/admin/payments/reconcile`, { method: "POST", body: JSON.stringify(body) });
+}
+
+export function fetchPaymentEventsApi(params: { type?: string; result?: string; orderCode?: number; limit?: number } = {}) {
+  const q = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== "" && v !== "all") q.append(k, String(v)); });
+  return adminJson<PaymentEventItem[]>(`/admin/payments/events?${q.toString()}`);
 }
 
 // ==========================================
