@@ -462,3 +462,68 @@ exports.addTemplateReview = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * @desc    Delete review from a template (Admin or review author)
+ * @route   DELETE /api/templates/:id/review/:reviewId
+ * @access  Private
+ */
+exports.deleteTemplateReview = async (req, res, next) => {
+  try {
+    const { id: templateId, reviewId } = req.params;
+    const template = await Template.findById(templateId);
+    if (!template) {
+      return res.status(404).json({ success: false, message: 'Template not found' });
+    }
+
+    if (!template.reviews || template.reviews.length === 0) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy đánh giá nào' });
+    }
+
+    const reviewIndex = template.reviews.findIndex((r, idx) => {
+      if (r._id && r._id.toString() === reviewId.toString()) return true;
+      if (r.user && r.user.toString() === reviewId.toString()) return true;
+      if (`${templateId}-review-${idx}` === reviewId) return true;
+      if (String(idx) === reviewId) return true;
+      return false;
+    });
+
+    if (reviewIndex === -1) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy đánh giá cần xóa' });
+    }
+
+    const review = template.reviews[reviewIndex];
+    const isOwner = req.user && review.user && req.user._id.toString() === review.user.toString();
+    const isAdmin = req.user && req.user.role === 'admin';
+
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ success: false, message: 'Bạn không có quyền xóa đánh giá này' });
+    }
+
+    // Remove review
+    template.reviews.splice(reviewIndex, 1);
+
+    // Recalculate rating stats
+    template.ratingsCount = template.reviews.length;
+    if (template.ratingsCount > 0) {
+      const totalScore = template.reviews.reduce((sum, r) => sum + r.rating, 0);
+      template.avgRating = Number((totalScore / template.ratingsCount).toFixed(1));
+    } else {
+      template.avgRating = 0;
+    }
+
+    await template.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Đã xóa đánh giá thành công',
+      data: {
+        avgRating: template.avgRating,
+        ratingsCount: template.ratingsCount,
+        reviews: template.reviews,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};

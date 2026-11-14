@@ -12,6 +12,7 @@ import {
   trackCoverTemplateApi,
   toggleLikeTemplateApi,
   addTemplateReviewApi,
+  deleteTemplateReviewApi,
   isAuthorFollowed,
   toggleFollowAuthor,
 } from "@/lib/templateService";
@@ -63,6 +64,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
   const [avgRating, setAvgRating] = useState<number>(0);
   const [ratingsCount, setRatingsCount] = useState<number>(0);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
 
   useEffect(() => {
     setIsAdmin(isCurrentUserAdmin());
@@ -207,6 +209,32 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
       setUserComment("");
     } else {
       setReviewMessage({ text: res.message || "Không thể gửi đánh giá.", error: true });
+    }
+  };
+
+  const handleDeleteReviewByAdmin = async (reviewId: string) => {
+    if (!confirm("Bạn có chắc chắn muốn xóa đánh giá này khỏi mẫu thiết kế? Điểm đánh giá trung bình sẽ được tính toán lại.")) {
+      return;
+    }
+    setDeletingReviewId(reviewId);
+    const res = await deleteTemplateReviewApi(templateId, reviewId);
+    setDeletingReviewId(null);
+    if (res.success && res.data) {
+      setAvgRating(res.data.avgRating);
+      setRatingsCount(res.data.ratingsCount);
+      setReviewsList(res.data.reviews || []);
+      setTemplate((prev) =>
+        prev
+          ? {
+              ...prev,
+              avgRating: res.data!.avgRating,
+              ratingsCount: res.data!.ratingsCount,
+              reviews: res.data!.reviews,
+            }
+          : null
+      );
+    } else {
+      alert("Không thể xóa đánh giá: " + (res.message || "Lỗi không xác định"));
     }
   };
 
@@ -620,6 +648,19 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                               </span>
                             ))}
                           </div>
+
+                          {/* Admin direct delete review button */}
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              disabled={deletingReviewId === reviewId}
+                              onClick={() => handleDeleteReviewByAdmin(reviewId)}
+                              className="p-1 rounded text-rose-400 hover:text-rose-300 hover:bg-rose-500/20 transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center"
+                              title="Xóa đánh giá này (Admin)"
+                            >
+                              <span className="material-symbols-rounded text-sm">delete</span>
+                            </button>
+                          )}
 
                           {/* Three-dots menu for reporting review */}
                           {!isAdmin && (

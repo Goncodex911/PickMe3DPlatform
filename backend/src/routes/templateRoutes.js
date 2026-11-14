@@ -10,6 +10,7 @@ const {
   coverTemplate,
   toggleLikeTemplate,
   addTemplateReview,
+  deleteTemplateReview,
 } = require('../controllers/templateController');
 const {
   getComments,
@@ -25,6 +26,7 @@ router.route('/:id').get(getTemplateById).put(protect, updateTemplate).delete(pr
 router.route('/:id/like').post(protect, toggleLikeTemplate);
 router.route('/:id/cover').post(coverTemplate);
 router.route('/:id/review').post(protect, addTemplateReview);
+router.route('/:id/review/:reviewId').delete(protect, deleteTemplateReview);
 
 // Comments nested under template
 router.route('/:templateId/comments').get(getComments).post(protect, createComment);

@@ -935,29 +935,68 @@ exports.getAdminReports = async (req, res, next) => {
 
     const enrichedReports = await Promise.all(
       reports.map(async (r) => {
-        if (!r.targetUrl) {
+        if (r.targetType === 'review') {
+          let tmpl = null;
+          let matchedReview = null;
+
+          if (r.targetId && r.targetId.includes('-review-')) {
+            const tId = r.targetId.split('-review-')[0];
+            tmpl = await Template.findById(tId).select('_id title thumbnailUrl reviews');
+          } else if (mongoose.isValidObjectId(r.targetId)) {
+            tmpl = await Template.findOne({ 'reviews._id': r.targetId }).select('_id title thumbnailUrl reviews');
+            if (!tmpl) {
+              tmpl = await Template.findOne({ 'reviews.user': r.targetId }).select('_id title thumbnailUrl reviews');
+            }
+          }
+
+          if (!tmpl && r.targetTitle) {
+            const match = r.targetTitle.match(/cho "([^"]+)"/);
+            if (match && match[1]) {
+              tmpl = await Template.findOne({ title: match[1] }).select('_id title thumbnailUrl reviews');
+            }
+          }
+
+          if (tmpl) {
+            r.targetUrl = `/templates/${tmpl._id}`;
+            if (tmpl.reviews && tmpl.reviews.length > 0) {
+              matchedReview = tmpl.reviews.find(
+                (rev, idx) =>
+                  (rev._id && rev._id.toString() === r.targetId) ||
+                  (rev.user && rev.user.toString() === r.targetId) ||
+                  (`${tmpl._id}-review-${idx}` === r.targetId)
+              );
+
+              if (!matchedReview && r.targetTitle) {
+                const nameMatch = r.targetTitle.match(/Đánh giá của (.+?) cho "/);
+                if (nameMatch && nameMatch[1]) {
+                  matchedReview = tmpl.reviews.find((rev) => rev.userName === nameMatch[1].trim());
+                }
+              }
+
+              if (!matchedReview && tmpl.reviews.length === 1) {
+                matchedReview = tmpl.reviews[0];
+              }
+
+              if (matchedReview) {
+                r.reviewDetails = {
+                  _id: (matchedReview._id || matchedReview.user).toString(),
+                  templateId: tmpl._id.toString(),
+                  templateTitle: tmpl.title,
+                  templateThumbnail: tmpl.thumbnailUrl,
+                  userName: matchedReview.userName,
+                  userAvatar: matchedReview.userAvatar,
+                  rating: matchedReview.rating,
+                  comment: matchedReview.comment,
+                  createdAt: matchedReview.createdAt,
+                };
+              }
+            }
+          }
+        } else if (!r.targetUrl) {
           if (r.targetType === 'template') {
             r.targetUrl = `/templates/${r.targetId}`;
           } else if (r.targetType === 'creator' || r.targetType === 'user') {
             r.targetUrl = `/creator/${r.targetId}`;
-          } else if (r.targetType === 'review') {
-            if (r.targetId && r.targetId.includes('-review-')) {
-              r.targetUrl = `/templates/${r.targetId.split('-review-')[0]}`;
-            } else if (mongoose.isValidObjectId(r.targetId)) {
-              const tmpl = await Template.findOne({ 'reviews._id': r.targetId }).select('_id title');
-              if (tmpl) {
-                r.targetUrl = `/templates/${tmpl._id}`;
-              }
-            }
-            if (!r.targetUrl && r.targetTitle) {
-              const match = r.targetTitle.match(/cho "([^"]+)"/);
-              if (match && match[1]) {
-                const tmpl = await Template.findOne({ title: match[1] }).select('_id title');
-                if (tmpl) {
-                  r.targetUrl = `/templates/${tmpl._id}`;
-                }
-              }
-            }
           } else if (r.targetType === 'comment') {
             if (r.targetId && r.targetId.includes('-comment-')) {
               r.targetUrl = `/templates/${r.targetId.split('-comment-')[0]}`;
@@ -1854,6 +1893,92 @@ exports.getSystemHealth = async (req, res, next) => {
             ...serverStatus,
           },
         },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Direct delete review by reviewId or templateId + reviewId
+ * @route   DELETE /api/admin/reviews/:reviewId
+ * @access  Private (Admin)
+ */
+exports.deleteAdminReview = async (req, res, next) => {
+  try {
+    const { reviewId } = req.params;
+    const { templateId } = req.query;
+
+    let template = null;
+    if (templateId) {
+      template = await Template.findById(templateId);
+    }
+
+    if (!template) {
+      if (reviewId.includes('-review-')) {
+        const tId = reviewId.split('-review-')[0];
+        template = await Template.findById(tId);
+      } else if (mongoose.isValidObjectId(reviewId)) {
+        template = await Template.findOne({ 'reviews._id': reviewId });
+        if (!template) {
+          template = await Template.findOne({ 'reviews.user': reviewId });
+        }
+      }
+    }
+
+    if (!template) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy mẫu thiết kế chứa đánh giá này' });
+    }
+
+    const reviewIndex = template.reviews.findIndex((r, idx) => {
+      if (r._id && r._id.toString() === reviewId) return true;
+      if (r.user && r.user.toString() === reviewId) return true;
+      if (`${template._id}-review-${idx}` === reviewId) return true;
+      if (String(idx) === reviewId) return true;
+      return false;
+    });
+
+    if (reviewIndex === -1) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy đánh giá cần xóa' });
+    }
+
+    const deletedReview = template.reviews.splice(reviewIndex, 1)[0];
+    template.ratingsCount = template.reviews.length;
+    if (template.ratingsCount > 0) {
+      const totalScore = template.reviews.reduce((sum, r) => sum + r.rating, 0);
+      template.avgRating = Number((totalScore / template.ratingsCount).toFixed(1));
+    } else {
+      template.avgRating = 0;
+    }
+
+    await template.save();
+
+    await logAdminAction({
+      actor: req.user._id,
+      actorName: req.user.name || 'Admin',
+      actorEmail: req.user.email || '',
+      action: 'DELETE_REVIEW_MODERATION',
+      targetType: 'template',
+      targetId: template._id.toString(),
+      targetLabel: `Đánh giá của ${deletedReview.userName} trên "${template.title}"`,
+      details: {
+        reviewId,
+        reviewerName: deletedReview.userName,
+        rating: deletedReview.rating,
+        comment: deletedReview.comment,
+      },
+      req,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Đã xóa đánh giá vi phạm thành công',
+      data: {
+        templateId: template._id,
+        avgRating: template.avgRating,
+        ratingsCount: template.ratingsCount,
+        reviews: template.reviews,
       },
     });
   } catch (error) {

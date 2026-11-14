@@ -26,6 +26,7 @@ const {
   getAdminPayouts,
   updatePayoutStatus,
   getSystemHealth,
+  deleteAdminReview,
 } = require('../controllers/adminController');
 const { protect, authorize } = require('../middlewares/authMiddleware');
 
@@ -60,6 +61,7 @@ router.get('/orders', getAdminOrders);
 router.get('/reports/export', exportReportsCsv);
 router.get('/reports', getAdminReports);
 router.put('/reports/:id', updateReportStatus);
+router.delete('/reviews/:reviewId', deleteAdminReview);
 
 // Audit Logs
 router.get('/audit-logs/export', exportAuditLogsCsv);
