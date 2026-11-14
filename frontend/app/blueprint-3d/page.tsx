@@ -15,7 +15,7 @@ const CasaSerraViewer = dynamic(
         <div className="w-8 h-8 rounded-lg bg-neutral-900 flex items-center justify-center text-[#FF4D00] font-black text-sm animate-pulse">
           3D
         </div>
-        <span className="tracking-widest uppercase text-neutral-500">Đang khởi tạo không gian 3D kiến trúc...</span>
+        <span className="tracking-widest uppercase text-neutral-500">Preparing the architectural 3D workspace...</span>
       </div>
     )
   }
@@ -23,8 +23,8 @@ const CasaSerraViewer = dynamic(
 
 const DEFAULT_BLUEPRINT_PROJECT: BlueprintProject = {
   ...CASA_SERRA_PRESET,
-  name: "BẢN VẼ MẶT BẰNG 3D",
-  subtitle: "MẶT BẰNG TỔNG THỂ"
+  name: "3D FLOOR PLAN",
+  subtitle: "MASTER FLOOR PLAN"
 };
 
 export default function Blueprint3DStudioPage() {
@@ -56,7 +56,7 @@ export default function Blueprint3DStudioPage() {
       setUploadedImage(b64);
       setIsAnalyzing(true);
       setAnalysisPercent(15);
-      setAnalysisStage("Đang nạp ảnh thiết kế 2D và quét tỉ lệ kích thước...");
+      setAnalysisStage("Loading the 2D plan and scanning its dimensions...");
 
       const lowerName = file.name.toLowerCase();
       const isLau2Blueprint = lowerName.includes("nhà") || lowerName.includes("nha") || lowerName.includes("lầu") || lowerName.includes("lau");
@@ -65,11 +65,11 @@ export default function Blueprint3DStudioPage() {
       const progressTimer = setInterval(() => {
         currentProgress += 18;
         if (currentProgress <= 45) {
-          setAnalysisStage("AI đang nhận diện tường chịu lực và chu vi công trình...");
+          setAnalysisStage("AI is identifying structural walls and the building perimeter...");
         } else if (currentProgress <= 75) {
-          setAnalysisStage("Đang bóc tách không gian: Phòng sinh hoạt chung, Phòng ngủ, Sảnh thang, WC...");
+          setAnalysisStage("Extracting spaces: living rooms, bedrooms, stair landings, and bathrooms...");
         } else if (currentProgress < 100) {
-          setAnalysisStage("Đang dựng cấu trúc 3D với góc mở cửa vào phòng...");
+          setAnalysisStage("Building the 3D structure with room entry openings...");
         } else {
           clearInterval(progressTimer);
         }
@@ -81,7 +81,7 @@ export default function Blueprint3DStudioPage() {
         setTimeout(() => {
           clearInterval(progressTimer);
           setAnalysisPercent(100);
-          setAnalysisStage("✓ Đã nhận diện: Mặt Bằng Lầu 2 (Sinh Hoạt Chung + 2 Phòng Ngủ + Sảnh Thang + WC)");
+          setAnalysisStage("✓ Floor plan identified: Second floor (living area + 2 bedrooms + stair landing + bathroom)");
 
           setTimeout(() => {
             const lau2Proj: BlueprintProject = JSON.parse(JSON.stringify(NHA_LAU2_PRESET));
@@ -106,7 +106,7 @@ export default function Blueprint3DStudioPage() {
         const newProj = await analyzePromise;
         clearInterval(progressTimer);
         setAnalysisPercent(100);
-        setAnalysisStage("✓ Hoàn tất! Đang hiển thị bản vẽ 2D...");
+        setAnalysisStage("✓ Complete! Displaying the 2D floor plan...");
 
         setTimeout(() => {
           setIsAnalyzing(false);
@@ -216,7 +216,7 @@ export default function Blueprint3DStudioPage() {
             <button
               onClick={() => setIsAnalyzing(false)}
               className="absolute top-4 right-4 text-neutral-400 hover:text-neutral-800 p-1 text-sm rounded-lg transition"
-              title="Đóng tiến trình"
+              title="Close progress"
             >
               ✕
             </button>
@@ -231,7 +231,7 @@ export default function Blueprint3DStudioPage() {
 
             <div>
               <h3 className="text-base font-bold font-mono tracking-tight text-neutral-900 mb-1">
-                ĐANG PHÂN TÍCH BẢN VẼ 2D
+                ANALYZING 2D FLOOR PLAN
               </h3>
               <p className="text-xs text-neutral-600 min-h-[36px]">
                 {analysisStage}
@@ -241,7 +241,7 @@ export default function Blueprint3DStudioPage() {
             {/* Progress Bar */}
             <div className="space-y-1.5 font-mono">
               <div className="flex justify-between text-xs font-bold">
-                <span className="text-neutral-500">Tiến trình chuẩn bị</span>
+                <span className="text-neutral-500">Preparation progress</span>
                 <span className="text-[#FF4D00]">{analysisPercent}%</span>
               </div>
               <div className="w-full h-2 rounded-full bg-neutral-300 overflow-hidden p-0.5">
@@ -253,7 +253,7 @@ export default function Blueprint3DStudioPage() {
             </div>
 
             <p className="text-[11px] font-sans text-neutral-500">
-              Bản vẽ 2D sẽ hiển thị rõ nét trước. Khi cuộn chuột, máy quay sẽ hạ tầm mắt xuống mở cửa ra và dẫn bạn bước vào từng phòng!
+              The 2D plan appears first. Scroll to lower the camera, open the doors, and explore each room.
             </p>
           </div>
         </div>

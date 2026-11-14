@@ -31,7 +31,7 @@ export default function DesignThumbnail({ docData, thumbnailUrl, title, classNam
   }, []);
 
   return (
-    <div ref={root} className={`${styles.thumbnail} ${className}`} role="img" aria-label={`Bản xem trước: ${title}`}>
+    <div ref={root} className={`${styles.thumbnail} ${className}`} role="img" aria-label={`Preview: ${title}`}>
       {hasCover ? (
         <img className={styles.cover} src={thumbnailUrl} alt="" loading="lazy" onError={() => setFailedSource(thumbnailUrl || "")} />
       ) : doc && visible ? (
@@ -39,7 +39,7 @@ export default function DesignThumbnail({ docData, thumbnailUrl, title, classNam
       ) : (
         <div className={styles.placeholder} aria-hidden="true">
           <span className="material-symbols-rounded">dashboard</span>
-          <span>{doc ? "Đang tải bản xem trước…" : "Chưa có bản xem trước"}</span>
+          <span>{doc ? "Loading preview…" : "No preview available"}</span>
         </div>
       )}
     </div>

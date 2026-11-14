@@ -100,10 +100,10 @@ export default function PrototypeWiresOverlay({
               id: `wire_swipe_${f.id}_${dir}`,
               sourceType: "frame",
               sourceId: f.id,
-              sourceName: `${f.name || "Màn hình"} (Vuốt ${dir.toUpperCase()})`,
+              sourceName: `${f.name || "Screen"} (Swipe ${dir.toUpperCase()})`,
               sourceRect,
               targetFrameId: targetId,
-              targetFrameName: isBack ? "Quay lại (Back)" : targetFrame?.name || targetId,
+              targetFrameName: isBack ? "Back" : targetFrame?.name || targetId,
               targetRect,
               transition: "slide",
               isBack,
@@ -142,7 +142,7 @@ export default function PrototypeWiresOverlay({
               sourceName: `${it.label || it.kind}${slotText}`,
               sourceRect,
               targetFrameId: action.to,
-              targetFrameName: isBack ? "Quay lại (Back)" : targetFrame?.name || action.to,
+              targetFrameName: isBack ? "Back" : targetFrame?.name || action.to,
               targetRect,
               transition: action.transition || "slide",
               url: action.url,
@@ -293,7 +293,7 @@ export default function PrototypeWiresOverlay({
                 textAnchor="middle"
                 style={{ userSelect: "none" }}
               >
-                {wire.isBack ? "Quay lại (Back)" : wire.transition}
+                {wire.isBack ? "Back" : wire.transition}
               </text>
             </g>
           </g>

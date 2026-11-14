@@ -720,7 +720,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
         {
           ...makeItem("topAppBar"),
           id: sid(),
-          label: file.metadata?.title ?? "Mẫu 3D SmartWatch Pro",
+          label: file.metadata?.title ?? "SmartWatch Pro 3D template",
           icon: "arrow_back",
         },
       ],
@@ -736,9 +736,9 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
         {
           ...makeItem("card"),
           id: sid(),
-          label: "Mô hình 3D - " + (file.metadata?.title ?? "SmartWatch"),
+          label: "3D model - " + (file.metadata?.title ?? "SmartWatch"),
           supporting:
-            file.metadata?.description ?? "Khung Titanium 3D & Kính Sapphire cao cấp",
+            file.metadata?.description ?? "Premium 3D titanium frame & sapphire glass",
           icon: "view_in_ar",
           size: targetW - margin * 2,
         },
@@ -749,7 +749,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     const tags =
       file.metadata?.tags && file.metadata.tags.length > 0
         ? file.metadata.tags
-        : ["Khung Titanium", "Kính Sapphire", "Chống nước 50M"];
+        : ["Titanium frame", "Sapphire glass", "50 m water resistance"];
     groups.push({
       id: sid(),
       x: frameX + margin,
@@ -769,8 +769,8 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
         ? file.layers
         : [
             { name: "Khung Titanium 3D", type: "mesh" },
-            { name: "Mặt Kính Sapphire & UI", type: "mesh" },
-            { name: "Dây đeo Silicon Thể thao", type: "mesh" },
+            { name: "Sapphire glass & UI", type: "mesh" },
+            { name: "Sport silicone strap", type: "mesh" },
           ];
     const layerItems = rawLayers.map((lay: any, idx: number) => ({
       ...makeItem("listItem"),
@@ -778,7 +778,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
       label: lay.name,
       supporting:
         lay.type === "mesh"
-          ? `Layer 3D Mesh | Tùy biến vật liệu`
+          ? `3D mesh layer | Material customization`
           : `Layer ${lay.type}`,
       icon: idx === 0 ? "layers" : idx === 1 ? "diamond" : "watch",
     }));
@@ -807,7 +807,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
         {
           ...makeItem("button"),
           id: sid(),
-          label: "Tùy biến vật liệu",
+          label: "Material customization",
           icon: "palette",
           variant: "filled",
         },
@@ -824,7 +824,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
         {
           ...makeItem("bottomNav"),
           id: sid(),
-          label: "Điều hướng",
+          label: "Navigation",
         },
       ],
     });
@@ -897,7 +897,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
             framesRef.current = docPartial.frames;
             setSelectedFrameId(docPartial.frames[0]?.id ?? fallbackFrameId);
             setSelectedIds([]);
-            showToast(`Đã thay thế bằng "${item.title}"`, 2500, "check");
+            showToast(`Replaced with "${item.title}"`, 2500, "check");
             setTimeout(() => fitRef.current?.(), 100);
             return;
           } catch (err) {
@@ -915,19 +915,19 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
           groupsRef.current = groups;
           setSelectedIds([]);
 
-          showToast(`Đã thay thế bằng "${item.title}"!`, 2500, "check");
+          showToast(`Replaced with "${item.title}"!`, 2500, "check");
           setTimeout(() => fitRef.current?.(), 100);
         } catch (err) {
           console.error("Error generating canvas UI from layers:", err);
-          showToast("Không thể nạp dữ liệu lên canvas.", 3000, "error");
+          showToast("Could not load data onto the canvas.", 3000, "error");
         }
       } else if (item.type === "projectDoc" && item.doc) {
         importDoc(item.doc);
-        showToast(`Đã thay thế bằng "${item.title}"!`, 2500, "check");
+        showToast(`Replaced with "${item.title}"!`, 2500, "check");
       }
     } else {
       // ─────────────────────────────────────────────────────────────────────────
-      // MODE: KEEP & IMPORT (Giữ nguyên tiến độ hiện tại, thêm Artboard mới bên cạnh)
+      // MODE: KEEP & IMPORT (Keep the current work and add a new artboard)
       // ─────────────────────────────────────────────────────────────────────────
       const startX = calcNextFrameX(framesRef.current);
       const baseFrame = framesRef.current[0];
@@ -1010,7 +1010,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
             setSelectedIds([]);
 
             showToast(
-              `Đã thêm Artboard "${item.title}" vào workspace!`,
+              `Added artboard "${item.title}" to the workspace!`,
               3000,
               "success"
             );
@@ -1053,7 +1053,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
           setSelectedIds([]);
 
           showToast(
-            `Đã thêm Artboard "${item.title}" vào workspace!`,
+            `Added artboard "${item.title}" to the workspace!`,
             3000,
             "success"
           );
@@ -1063,7 +1063,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
             "Error generating canvas UI from layers for keep mode:",
             err
           );
-          showToast("Không thể thêm artboard vào canvas.", 3000, "error");
+          showToast("Could not add the artboard to the canvas.", 3000, "error");
         }
       } else if (item.type === "projectDoc" && item.doc) {
         const incomingFrames: Frame[] =
@@ -1132,7 +1132,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
         setSelectedIds([]);
 
         showToast(
-          `Đã thêm ${remappedFrames.length} Artboard vào workspace!`,
+          `Added ${remappedFrames.length} artboards to the workspace!`,
           3000,
           "success"
         );
@@ -1149,8 +1149,8 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     const item = {
       type: "templateFile" as const,
       file,
-      title: file.metadata?.title || (preset ? preset.name : "Mẫu thiết kế"),
-      subtitle: `${file.layers?.length || 0} layers 3D • ${preset?.name ?? "Thiết bị"}`,
+      title: file.metadata?.title || (preset ? preset.name : "Design template"),
+      subtitle: `${file.layers?.length || 0} 3D layers • ${preset?.name ?? "Device"}`,
     };
 
     if (!isWorkspaceActive()) {
@@ -1169,10 +1169,10 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     const item = {
       type: "projectDoc" as const,
       doc: nextDoc,
-      title: nextDoc.title || filename || "Thiết kế PickMe3D",
-      subtitle: `${nextDoc.frames?.length || 1} khung màn hình • ${
+      title: nextDoc.title || filename || "PickMe3D design",
+      subtitle: `${nextDoc.frames?.length || 1} screens • ${
         nextDoc.groups?.length || 0
-      } nhóm đối tượng`,
+      } object groups`,
     };
 
     if (!isWorkspaceActive()) {
@@ -3580,7 +3580,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     const hasExistingDesign = framesRef.current.length > 0 || groupsRef.current.length > 0;
     if (!hasExistingDesign) {
       arrive(next);
-      showToast("Đã sinh giao diện thành công!", 3000, "success");
+      showToast("UI generated successfully!", 3000, "success");
       return;
     }
 
@@ -3649,8 +3649,8 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
 
     showToast(
       newFrames.length > 0
-        ? `Đã thêm ${newFrames.length} màn hình mới từ AI!`
-        : "Đã thêm giao diện mới từ AI!",
+        ? `Added ${newFrames.length} new screens from AI!`
+        : "Added a new AI-generated layout!",
       3000,
       "success"
     );
@@ -3689,7 +3689,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
       setTimeout(() => fit(), 400);
     } catch (e: any) {
       const m = e instanceof Error ? e.message : "";
-      showToast(m || "Không thể sinh giao diện, vui lòng thử lại.", 3500, "error");
+      showToast(m || "Could not generate the layout. Please try again.", 3500, "error");
       throw e;
     } finally {
       setDraftBusy(false);
@@ -3976,7 +3976,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
           onAddAnimation(template);
           setLeftTab("parts");
           setLeftOpen(true);
-          showToast(`Đã chèn animation "${template.titleEn || template.title}" vào Canvas!`, 3000, "check");
+          showToast(`Added animation "${template.titleEn || template.title}" to the canvas!`, 3000, "check");
           if (insertMarketplaceId) {
             const cleanUrl = new URL(window.location.href);
             cleanUrl.searchParams.delete("insertMarketplace");
@@ -4023,7 +4023,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
           }))
         );
         setSelectedIds([id]);
-        showToast("⚡ Đã bật Chế độ Tương tác trực tiếp: Nhấp hoặc chạm để thử nghiệm!", 2400, "check");
+        showToast("⚡ Interaction mode is on. Click or tap to try it!", 2400, "check");
       }
     };
     window.addEventListener("pm:toggle_interactive", handleToggleInteractive);
@@ -4204,7 +4204,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     mode: "folder" | "code" = "folder"
   ): Promise<string | void> => {
     const exportFrames = frames.length > 0 ? frames : (selectedFrame ? [selectedFrame] : []);
-    if (exportFrames.length === 0) throw new Error("Vui lòng chọn hoặc tạo ít nhất một màn hình để xuất.");
+    if (exportFrames.length === 0) throw new Error("Select or create at least one screen to export.");
 
     setIsExporting(true);
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(null))));
@@ -4238,7 +4238,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
       }
 
       if (screensData.length === 0) {
-        throw new Error("Không thể trích xuất giao diện màn hình.");
+        throw new Error("Could not capture the screen layout.");
       }
 
       const payload: MultiScreenExportPayload = {
@@ -4251,7 +4251,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
       if (format === "png") {
         if (exportFrames.length === 1) {
           const el = document.querySelector<HTMLElement>(`[data-export="${exportFrames[0].id}"]`);
-          if (!el) throw new Error("Không thể trích xuất giao diện màn hình.");
+          if (!el) throw new Error("Could not capture the screen layout.");
           const url = await toPng(el, { pixelRatio: 2, cacheBust: true, width: w, height: h });
           const res = await fetch(url);
           const blob = await res.blob();
@@ -4279,7 +4279,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
       if (format === "jpeg") {
         if (exportFrames.length === 1) {
           const el = document.querySelector<HTMLElement>(`[data-export="${exportFrames[0].id}"]`);
-          if (!el) throw new Error("Không thể trích xuất giao diện màn hình.");
+          if (!el) throw new Error("Could not capture the screen layout.");
           const url = await toJpeg(el, { pixelRatio: 2, cacheBust: true, width: w, height: h, quality: 0.95 });
           const res = await fetch(url);
           const blob = await res.blob();
@@ -4307,7 +4307,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
       if (format === "pdf") {
         if (exportFrames.length === 1) {
           const el = document.querySelector<HTMLElement>(`[data-export="${exportFrames[0].id}"]`);
-          if (!el) throw new Error("Không thể trích xuất giao diện màn hình.");
+          if (!el) throw new Error("Could not capture the screen layout.");
           const url = await toJpeg(el, { pixelRatio: 2, cacheBust: true, width: w, height: h, quality: 0.95 });
           const blob = imagePdf(url, w, h);
           download(blob, `${safeName(exportFrames[0].name || "screen")}.pdf`);
@@ -5742,8 +5742,8 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                           patchSelected({ animationInteractive: nextInteractive });
                           showToast(
                             nextInteractive
-                              ? "⚡ Đã bật Chế độ Tương tác: Bấm & test trực tiếp animation trên Canvas!"
-                              : "✋ Đã chuyển sang Chế độ Di chuyển: Kéo thả và đổi vị trí bình thường.",
+                              ? "⚡ Interaction mode enabled. Click to test animations on the canvas!"
+                              : "✋ Move mode enabled. Drag and reposition items as usual.",
                             2500,
                             nextInteractive ? "check" : "info"
                           );
@@ -5762,12 +5762,12 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                           fontSize: 11,
                           boxShadow: isInteractive ? "0 2px 8px rgba(34,197,94,0.4)" : "none",
                         }}
-                        title={isInteractive ? "Chuyển về chế độ kéo di chuyển" : "Tương tác bấm trực tiếp trên Canvas"}
+                        title={isInteractive ? "Switch to move mode" : "Interact directly with the canvas"}
                       >
                         <span className="msr" style={{ fontSize: 15 }}>
                           {isInteractive ? "touch_app" : "pan_tool"}
                         </span>
-                        <span>{isInteractive ? "Đang Tương Tác ⚡" : "Bật Tương Tác ⚡"}</span>
+                        <span>{isInteractive ? "Interacting ⚡" : "Enable interaction ⚡"}</span>
                       </button>
 
                       {/* Speed Switcher */}
@@ -5778,7 +5778,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                           const nextIdx = (speeds.indexOf(currentSpeed) + 1) % speeds.length;
                           const nextSpeed = speeds[nextIdx];
                           patchSelected({ animationSpeed: nextSpeed });
-                          showToast(`Tốc độ animation: ${nextSpeed}x`, 1200);
+                          showToast(`Animation speed: ${nextSpeed}x`, 1200);
                         }}
                         style={{
                           display: "inline-flex",
@@ -5793,7 +5793,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                           fontSize: 11,
                           fontWeight: 700,
                         }}
-                        title="Đổi tốc độ chuyển động (0.5x, 1x, 1.5x, 2x)"
+                        title="Change animation speed (0.5x, 1x, 1.5x, 2x)"
                       >
                         <span className="msr" style={{ fontSize: 13 }}>speed</span>
                         <span>{currentSpeed}x</span>
@@ -5819,7 +5819,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                           cursor: "pointer",
                           fontSize: 11,
                         }}
-                        title="Đổi màu sắc chủ đạo của Animation"
+                        title="Change the animation’s primary color"
                       >
                         <span
                           style={{
@@ -5831,7 +5831,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                             boxShadow: "0 0 0 1px rgba(0,0,0,0.2)",
                           }}
                         />
-                        <span>Màu</span>
+                        <span>Color</span>
                       </button>
 
                       {/* Replay Demo */}
@@ -5839,7 +5839,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                         onClick={(e) => {
                           e.stopPropagation();
                           patchSelected({ animationSpeed: currentSpeed });
-                          showToast("Đã tải lại animation", 1000, "check");
+                          showToast("Animation reloaded", 1000, "check");
                         }}
                         style={{
                           display: "inline-flex",
@@ -5851,7 +5851,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                           color: p.onSurface,
                           cursor: "pointer",
                         }}
-                        title="Chạy lại hiệu ứng animation"
+                        title="Replay animation"
                       >
                         <span className="msr" style={{ fontSize: 14 }}>replay</span>
                       </button>
@@ -5873,7 +5873,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                           color: isInteractive ? "#aaa" : p.onSurfaceVariant,
                           cursor: "pointer",
                         }}
-                        title="Mở toàn bộ tùy chỉnh chi tiết ở bảng bên phải"
+                        title="Open all detailed settings in the right panel"
                       >
                         <span className="msr" style={{ fontSize: 15 }}>tune</span>
                       </button>
@@ -6033,7 +6033,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                   canvasId={editingDesign?._id || editingDesign?.id || "draft-canvas"}
                   user={{
                     id: currentUser?.id || currentUser?._id || "guest",
-                    name: currentUser?.name || "Bạn",
+                    name: currentUser?.name || "You",
                     avatar: currentUser?.picture || currentUser?.googlePicture,
                     color: p.primary,
                   }}
@@ -6128,7 +6128,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                 {!toolsSidebarOpen ? (
                   <button
                     onClick={() => setToolsSidebarOpen(true)}
-                    title="Mở bảng công cụ & Viewport"
+                    title="Open tools & viewport"
                     style={{
                       position: "absolute",
                       left: 18,
@@ -6150,7 +6150,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                       userSelect: "none",
                     }}
                   >
-                    Công cụ & Viewport ▾
+                    Tools & Viewport ▾
                   </button>
                 ) : (
                   <div
@@ -6181,7 +6181,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                       }}
                     >
                       <span style={{ fontSize: 13, fontWeight: 700, color: p.onSurface }}>
-                        Công cụ & Viewport
+                        Tools & Viewport
                       </span>
                       <button
                         onClick={() => setToolsSidebarOpen(false)}
@@ -6196,14 +6196,14 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                           borderRadius: 6,
                         }}
                       >
-                        Thu gọn
+                        Collapse
                       </button>
                     </div>
 
                     {/* 1. Device Viewport */}
                     <div>
                       <div style={{ fontSize: 11, fontWeight: 600, color: p.onSurfaceVariant, marginBottom: 4 }}>
-                        Thiết bị Viewport:
+                        Viewport device:
                       </div>
                       <DeviceSelector
                         activeDeviceId={activeDeviceId}
@@ -6220,7 +6220,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                     {/* 2. Import Template */}
                     <button
                       onClick={() => setImportModalOpen(true)}
-                      title="Nhập file template (.json / .pickme3d)"
+                      title="Import a template file (.json / .pickme3d)"
                       style={{
                         width: "100%",
                         height: 36,
@@ -6238,14 +6238,14 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                         justifyContent: "space-between",
                       }}
                     >
-                      <span>Nhập file template</span>
+                      <span>Import template</span>
                       <span style={{ fontSize: 11, opacity: 0.6 }}>.json</span>
                     </button>
 
                     {/* 3. Embed Code */}
                     <button
                       onClick={() => setEmbedModalOpen(true)}
-                      title="Lấy mã nhúng iframe"
+                      title="Get iframe embed code"
                       style={{
                         width: "100%",
                         height: 36,
@@ -6263,14 +6263,14 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                         justifyContent: "space-between",
                       }}
                     >
-                      <span>Mã nhúng iframe</span>
+                      <span>Embed code</span>
                       <span style={{ fontSize: 11, opacity: 0.6 }}>embed</span>
                     </button>
 
                     {/* 4. Version History */}
                     <button
                       onClick={() => setVersionHistoryOpen(true)}
-                      title="Lịch sử phiên bản & Rollback"
+                      title="Version history & restore"
                       style={{
                         width: "100%",
                         height: 36,
@@ -6288,14 +6288,14 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                         justifyContent: "space-between",
                       }}
                     >
-                      <span>Lịch sử phiên bản</span>
+                      <span>Version history</span>
                       <span style={{ fontSize: 11, opacity: 0.6 }}>Rollback</span>
                     </button>
 
                     {/* 5. Prototype Wires */}
                     <button
                       onClick={() => setShowWires((v) => !v)}
-                      title={showWires ? "Tắt dây liên kết Prototype" : "Bật dây liên kết Prototype"}
+                      title={showWires ? "Hide prototype connections" : "Show prototype connections"}
                       style={{
                         width: "100%",
                         height: 36,
@@ -6313,9 +6313,9 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                         justifyContent: "space-between",
                       }}
                     >
-                      <span>Dây liên kết Prototype</span>
+                      <span>Prototype connections</span>
                       <span style={{ fontSize: 11, fontWeight: 700, color: showWires ? p.primary : p.onSurfaceVariant }}>
-                        {showWires ? "Bật" : "Tắt"}
+                        {showWires ? "On" : "Off"}
                       </span>
                     </button>
                   </div>
@@ -6622,7 +6622,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
           {/* Unified Import Conflict Confirmation Modal */}
           <ImportConflictModal
             open={pendingImportItem !== null}
-            importedTitle={pendingImportItem?.title ?? "Tệp thiết kế"}
+            importedTitle={pendingImportItem?.title ?? "Design file"}
             importedSubtitle={pendingImportItem?.subtitle}
             activeDesignTitle={editingDesign?.title || (frames[0]?.name ?? undefined)}
             palette={p}
@@ -6813,7 +6813,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
             if (restoredDocData) {
               applyDoc(restoredDocData, false);
               snapshot(true);
-              showToast("Đã khôi phục phiên bản thành công!", 2200, "check");
+              showToast("Version restored successfully!", 2200, "check");
             }
           }}
           primaryColor={p.primary}

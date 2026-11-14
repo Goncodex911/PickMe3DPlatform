@@ -187,7 +187,7 @@ Please implement this animated UI component in my project. Adapt the code above 
         <div className={styles.modalTabs}>
           {([
             { key: "demo" as const, icon: "play_circle", label: "Interactive Demo" },
-            { key: "analysis" as const, icon: "analytics", label: "Phân Tích UI & Tương Tác" },
+            { key: "analysis" as const, icon: "analytics", label: "UI & Interaction Analysis" },
             { key: "prompt" as const, icon: "auto_awesome", label: "AI Prompt" },
             { key: "code" as const, icon: "code", label: "Source Code" },
           ]).map((t) => (
@@ -240,11 +240,11 @@ Please implement this animated UI component in my project. Adapt the code above 
                   }}
                 >
                   <span className="material-symbols-rounded" style={{ fontSize: 14, color: "#34d399" }}>touch_app</span>
-                  <span>Tương tác trực tiếp: Thử click, hover và xem micro-animations</span>
+                  <span>Live preview: Test clicks, hover states, and micro-animations</span>
                 </div>
               </div>
 
-              {/* Bộ tùy biến nhanh trước khi chèn vào Canvas */}
+              {/* Quick customization before adding to the canvas */}
               <div
                 style={{
                   padding: "14px 18px",
@@ -259,7 +259,7 @@ Please implement this animated UI component in my project. Adapt the code above 
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span className="material-symbols-rounded" style={{ fontSize: 18, color: "#34d399" }}>tune</span>
-                    <strong style={{ fontSize: 13, color: "#fff" }}>Cấu hình trực tiếp trước khi chèn vào Canvas:</strong>
+                    <strong style={{ fontSize: 13, color: "#fff" }}>Configure before adding to the canvas:</strong>
                   </div>
                   <span style={{ fontSize: 11, color: "#34d399", background: "rgba(52,211,153,0.12)", padding: "2px 8px", borderRadius: 10, fontWeight: 700 }}>
                     ⚡ 100% Canvas Interactive Ready
@@ -268,12 +268,12 @@ Please implement this animated UI component in my project. Adapt the code above 
 
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, alignItems: "center" }}>
                   <div>
-                    <label style={{ display: "block", fontSize: 11, color: "#888", marginBottom: 4 }}>Nhãn văn bản hiển thị:</label>
+                    <label style={{ display: "block", fontSize: 11, color: "#888", marginBottom: 4 }}>Visible text label:</label>
                     <input
                       type="text"
                       value={customText}
                       onChange={(e) => setCustomText(e.target.value)}
-                      placeholder="Nhập chữ nút..."
+                      placeholder="Enter button text..."
                       style={{
                         width: "100%",
                         height: 34,
@@ -289,7 +289,7 @@ Please implement this animated UI component in my project. Adapt the code above 
                   </div>
 
                   <div>
-                    <label style={{ display: "block", fontSize: 11, color: "#888", marginBottom: 4 }}>Màu chủ đạo (Accent):</label>
+                    <label style={{ display: "block", fontSize: 11, color: "#888", marginBottom: 4 }}>Accent color:</label>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       {["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4"].map((c) => (
                         <button
@@ -305,14 +305,14 @@ Please implement this animated UI component in my project. Adapt the code above 
                             transform: customColor === c ? "scale(1.15)" : "scale(1)",
                             transition: "transform 0.15s ease",
                           }}
-                          title={`Chọn màu ${c}`}
+                          title={`Choose color ${c}`}
                         />
                       ))}
                     </div>
                   </div>
 
                   <div>
-                    <label style={{ display: "block", fontSize: 11, color: "#888", marginBottom: 4 }}>Tốc độ animation:</label>
+                    <label style={{ display: "block", fontSize: 11, color: "#888", marginBottom: 4 }}>Animation speed:</label>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       {[0.5, 1, 1.5, 2].map((s) => (
                         <button
@@ -363,62 +363,62 @@ Please implement this animated UI component in my project. Adapt the code above 
               )}
             </div>
           ) : tab === "analysis" ? (
-            /* Tab Phân tích Kỹ thuật & Tương tác UI */
+            /* Technical and interaction analysis tab */
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14 }}>
-                {/* 1. Kiến trúc component */}
+                {/* 1. Component architecture */}
                 <div style={{ padding: 16, background: "#16161a", border: "1px solid #2d2d38", borderRadius: 8 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                     <span className="material-symbols-rounded" style={{ color: "#6366f1", fontSize: 20 }}>architecture</span>
-                    <strong style={{ fontSize: 14, color: "#fff" }}>Kiến Trúc & Phân Loại UI</strong>
+                    <strong style={{ fontSize: 14, color: "#fff" }}>UI Architecture & Classification</strong>
                   </div>
                   <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: "#bbb", lineHeight: 1.8 }}>
-                    <li><strong>Mã định danh:</strong> #{template.id}</li>
-                    <li><strong>Danh mục:</strong> {catLabel}</li>
-                    <li><strong>Dạng hình học:</strong> {template.shape === "tall" ? "Tall Widget (Khung dọc)" : "Compact Component (Khung ngang)"}</li>
-                    <li><strong>Kích thước đề xuất Canvas:</strong> {template.shape === "tall" ? "320 × 360 px" : "260 × 80 px (Button) / 280 × 170 px (Card)"}</li>
-                    <li><strong>Tối ưu hóa:</strong> GPU Composited, Zero CPU Reflow</li>
+                    <li><strong>ID:</strong> #{template.id}</li>
+                    <li><strong>Category:</strong> {catLabel}</li>
+                    <li><strong>Geometry:</strong> {template.shape === "tall" ? "Tall widget" : "Compact component"}</li>
+                    <li><strong>Recommended canvas size:</strong> {template.shape === "tall" ? "320 × 360 px" : "260 × 80 px (button) / 280 × 170 px (card)"}</li>
+                    <li><strong>Optimization:</strong> GPU compositing, zero CPU reflow</li>
                   </ul>
                 </div>
 
-                {/* 2. Cơ chế tương tác */}
+                {/* 2. Interaction model */}
                 <div style={{ padding: 16, background: "#16161a", border: "1px solid #2d2d38", borderRadius: 8 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                     <span className="material-symbols-rounded" style={{ color: "#22c55e", fontSize: 20 }}>bolt</span>
-                    <strong style={{ fontSize: 14, color: "#fff" }}>Cơ Chế Kích Hoạt Tương Tác</strong>
+                    <strong style={{ fontSize: 14, color: "#fff" }}>Interaction Triggers</strong>
                   </div>
                   <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: "#bbb", lineHeight: 1.8 }}>
-                    <li><strong>Sự kiện chuột / cảm ứng:</strong> Click, Tap, Hover, Long Press</li>
-                    <li><strong>Vật lý chuyển động:</strong> Đường cong lò xo Spring Physics (cubic-bezier)</li>
-                    <li><strong>Hiệu ứng phản hồi:</strong> Dynamic Ripples, Sheen Glow, State Fill</li>
-                    <li><strong>Bộ điều khiển:</strong> Tự động kích hoạt khi bật chế độ Direct Interactive</li>
+                    <li><strong>Mouse / touch events:</strong> Click, tap, hover, long press</li>
+                    <li><strong>Motion physics:</strong> Spring curves (cubic-bezier)</li>
+                    <li><strong>Feedback effects:</strong> Dynamic ripples, sheen glow, state fill</li>
+                    <li><strong>Controls:</strong> Automatically enabled in Direct Interaction mode</li>
                   </ul>
                 </div>
 
-                {/* 3. Tương thích Canvas Editor */}
+                {/* 3. Canvas Editor compatibility */}
                 <div style={{ padding: 16, background: "#16161a", border: "1px solid #2d2d38", borderRadius: 8 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                     <span className="material-symbols-rounded" style={{ color: "#38bdf8", fontSize: 20 }}>dashboard_customize</span>
-                    <strong style={{ fontSize: 14, color: "#fff" }}>Tương Thích Canvas Editor</strong>
+                    <strong style={{ fontSize: 14, color: "#fff" }}>Canvas Editor Compatibility</strong>
                   </div>
                   <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: "#bbb", lineHeight: 1.8 }}>
-                    <li><strong>Đồng bộ Palette:</strong> Tự động phản hồi theo biến màu `--ux-accent`</li>
-                    <li><strong>Tự động co giãn (Fit):</strong> Tự scale theo tỷ lệ màn hình không thanh cuộn</li>
-                    <li><strong>Thanh công cụ nổi (Floating Bar):</strong> Bật/tắt tương tác trực tiếp 1-click</li>
-                    <li><strong>Nhấp đúp kích hoạt:</strong> Double-click trên Canvas để test tương tác</li>
+                    <li><strong>Palette sync:</strong> Automatically follows the `--ux-accent` color variable</li>
+                    <li><strong>Responsive fit:</strong> Scales to the screen without scrollbars</li>
+                    <li><strong>Floating bar:</strong> Toggle direct interaction with one click</li>
+                    <li><strong>Double-click activation:</strong> Test interactions on the canvas</li>
                   </ul>
                 </div>
 
-                {/* 4. Khả năng xuất & Tích hợp */}
+                {/* 4. Export and integrations */}
                 <div style={{ padding: 16, background: "#16161a", border: "1px solid #2d2d38", borderRadius: 8 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                     <span className="material-symbols-rounded" style={{ color: "#f59e0b", fontSize: 20 }}>output</span>
-                    <strong style={{ fontSize: 14, color: "#fff" }}>Khả Năng Xuất & Đa Nền Tảng</strong>
+                    <strong style={{ fontSize: 14, color: "#fff" }}>Export & Cross-Platform Support</strong>
                   </div>
                   <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: "#bbb", lineHeight: 1.8 }}>
-                    <li><strong>HTML / Pure CSS / JS:</strong> Mã độc lập, không phụ thuộc thư viện ngoài</li>
-                    <li><strong>React / Vue / Angular:</strong> Tích hợp trong gói mã xuất toàn màn hình</li>
-                    <li><strong>Độ mượt:</strong> Đạt chuẩn 60 - 120 FPS trên màn hình ProMotion</li>
+                    <li><strong>HTML / Pure CSS / JS:</strong> Standalone code with no external library dependencies</li>
+                    <li><strong>React / Vue / Angular:</strong> Included in the full-screen export package</li>
+                    <li><strong>Performance:</strong> 60–120 FPS on ProMotion displays</li>
                   </ul>
                 </div>
               </div>
@@ -475,10 +475,10 @@ Please implement this animated UI component in my project. Adapt the code above 
                 borderRadius: 8,
                 boxShadow: "0 4px 12px rgba(99,102,241,0.35)",
               }}
-              title="Tự động mở Canvas Editor và chèn ngay animation này"
+              title="Open Canvas Editor and add this animation"
             >
               <span className="material-symbols-rounded" style={{ fontSize: 16 }}>dashboard_customize</span>
-              Chèn vào Canvas ↗
+              Add to Canvas ↗
             </button>
             {isPurchased ? (
               <Link
@@ -487,7 +487,7 @@ Please implement this animated UI component in my project. Adapt the code above 
                 className={styles.modalOwnedBtn}
               >
                 <span className="material-symbols-rounded" style={{ fontSize: 16 }}>check_circle</span>
-                Đã sở hữu · Mở Editor ↗
+                Owned · Open Editor ↗
               </Link>
             ) : (
               <button
@@ -495,7 +495,7 @@ Please implement this animated UI component in my project. Adapt the code above 
                 className={styles.modalBuyBtn}
               >
                 <span className="material-symbols-rounded" style={{ fontSize: 16 }}>shopping_bag</span>
-                Mua Animation (Miễn phí)
+                Get Animation (Free)
               </button>
             )}
             {template.html && (
@@ -677,10 +677,10 @@ function SystemTemplateCard({
                 boxShadow: "0 2px 8px rgba(79,70,229,0.25)",
                 whiteSpace: "nowrap",
               }}
-              title="Chèn trực tiếp vào Canvas Editor"
+              title="Add directly to Canvas Editor"
             >
               <span className="material-symbols-rounded" style={{ fontSize: 13 }}>dashboard_customize</span>
-              <span>Chèn</span>
+              <span>Add</span>
             </button>
             {isPurchased ? (
               <button
@@ -689,10 +689,10 @@ function SystemTemplateCard({
                   e.stopPropagation();
                   window.open("/editor/", "_blank");
                 }}
-                title="Mẫu đã mua — Mở trong Canvas Editor"
+                title="Purchased template — Open in Canvas Editor"
               >
                 <span className="material-symbols-rounded" style={{ fontSize: 14 }}>check_circle</span>
-                <span>Đã mua ↗</span>
+                <span>Purchased ↗</span>
               </button>
             ) : (
               <button
@@ -701,7 +701,7 @@ function SystemTemplateCard({
                   e.stopPropagation();
                   onBuy(template);
                 }}
-                title="Mua mẫu animation này để đưa vào Editor"
+                title="Get this animation template for the editor"
               >
                 <span className="material-symbols-rounded" style={{ fontSize: 14 }}>shopping_bag</span>
                 <span>Mua</span>
@@ -749,7 +749,7 @@ export default function UIMarketplacePage() {
   const handleBuy = useCallback((tmpl: UITemplate) => {
     const ok = purchaseTemplate(tmpl);
     if (ok) {
-      setToastMessage(`Đã mua thành công "${tmpl.titleEn || tmpl.title}"! Mẫu đã được lưu vào tài khoản & sẵn sàng dùng trong Editor.`);
+      setToastMessage(`Successfully added "${tmpl.titleEn || tmpl.title}"! The template is saved to your account and ready to use in the editor.`);
       setTimeout(() => setToastMessage(null), 4500);
     }
   }, []);
@@ -1063,10 +1063,10 @@ export default function UIMarketplacePage() {
                           cursor: "pointer",
                           whiteSpace: "nowrap",
                         }}
-                        title="Chèn ngay vào Canvas Editor"
+                        title="Add to Canvas Editor"
                       >
                         <span className="material-symbols-rounded" style={{ fontSize: 15 }}>dashboard_customize</span>
-                        <span>Chèn vào Canvas ↗</span>
+                        <span>Add to Canvas ↗</span>
                       </button>
                       {purchasedIds.includes(template.id) ? (
                         <button
@@ -1075,10 +1075,10 @@ export default function UIMarketplacePage() {
                             e.stopPropagation();
                             window.open("/editor/", "_blank");
                           }}
-                          title="Mở trong Canvas Editor"
+                          title="Open in Canvas Editor"
                         >
                           <span className="material-symbols-rounded" style={{ fontSize: 14 }}>check_circle</span>
-                          <span>Đã mua</span>
+                          <span>Purchased</span>
                         </button>
                       ) : (
                         <button
@@ -1087,7 +1087,7 @@ export default function UIMarketplacePage() {
                             e.stopPropagation();
                             handleBuy(template);
                           }}
-                          title="Mua mẫu animation này để đưa vào Editor"
+                          title="Get this animation template for the editor"
                         >
                           <span className="material-symbols-rounded" style={{ fontSize: 14 }}>shopping_bag</span>
                           <span>Mua</span>
@@ -1145,7 +1145,7 @@ export default function UIMarketplacePage() {
                 check_circle
               </span>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>Mua thành công!</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>Added successfully!</div>
                 <div style={{ fontSize: 12, color: "#ccc", maxWidth: 420 }}>{toastMessage}</div>
               </div>
             </div>
@@ -1167,7 +1167,7 @@ export default function UIMarketplacePage() {
                   whiteSpace: "nowrap",
                 }}
               >
-                <span>Mở Editor</span>
+                <span>Open Editor</span>
                 <span className="material-symbols-rounded" style={{ fontSize: 14 }}>arrow_outward</span>
               </Link>
               <button

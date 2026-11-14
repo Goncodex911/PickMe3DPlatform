@@ -86,11 +86,11 @@ export default function LandingPage({
           onLoginSuccess(data.token, data.user);
         }
       } else {
-        setError("Đăng nhập thất bại: " + (data.message || "Xác thực không hợp lệ"));
+        setError("Sign-in failed: " + (data.message || "Invalid authentication response"));
       }
     } catch (err) {
       console.error(err);
-      setError("Đã xảy ra lỗi khi kết nối với máy chủ.");
+      setError("A server connection error occurred.");
     } finally {
       setLoading(false);
     }
@@ -231,7 +231,7 @@ export default function LandingPage({
           },
           "-=0.4"
         )
-        // Simulated tap on "Thêm vào giỏ" button
+        // Simulated tap on the "Add to cart" button
         .to(".tap-ripple", { scale: 2.5, opacity: 0, duration: 0.6 }, "-=0.3")
         .to(".phone-cart-badge", { scale: 1.3, duration: 0.2, yoyo: true, repeat: 1 })
         .to(".phone-cart-count", { innerText: "1", duration: 0.1 }, "-=0.2")
@@ -303,10 +303,10 @@ export default function LandingPage({
               className="text-3xl sm:text-4xl lg:text-5xl font-normal leading-tight text-white mb-3"
               style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic" }}
             >
-              Mặt kính điện thoại làm bàn vẽ sáng tạo.
+              Your phone screen becomes a creative canvas.
             </h2>
             <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Mỗi màn hình bắt đầu bằng một chiếc smartphone tỉ lệ chuẩn 412 × 892. Khung viền titanium tối giản giúp bạn nhìn thấy sản phẩm đúng như khách hàng nhìn thấy.
+              Every screen starts with a standard 412 × 892 smartphone. A minimal titanium frame lets you see the product just as your customers will.
             </p>
           </div>
 
@@ -317,10 +317,10 @@ export default function LandingPage({
               className="text-3xl sm:text-4xl lg:text-5xl font-normal leading-tight text-white mb-3"
               style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic" }}
             >
-              Thả Banner Haute Couture chỉ trong 1 thao tác.
+              Add a Haute Couture banner in one step.
             </h2>
             <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Kéo module ảnh bìa thời trang trực tiếp từ thanh công cụ bên trái vào vị trí đỉnh trang. Vùng chứa tự động bắt dính và bo góc hoàn hảo.
+              Drag the fashion cover module from the left toolbar to the top of the page. It snaps into place with perfectly rounded corners.
             </p>
           </div>
 
@@ -331,10 +331,10 @@ export default function LandingPage({
               className="text-3xl sm:text-4xl lg:text-5xl font-normal leading-tight text-white mb-3"
               style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic" }}
             >
-              Sắp xếp quần áo tự động vào lưới sản phẩm.
+              Arrange clothing automatically in a product grid.
             </h2>
             <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Áo khoác trench coat, đầm lụa, quần tây cao cấp lần lượt hạ cánh vào lưới 2 cột gọn gàng với nhãn giá, tag phân loại và các chấm màu sắc tùy biến.
+              Trench coats, silk dresses, and tailored trousers drop into a tidy two-column grid with price labels, category tags, and customizable color swatches.
             </p>
           </div>
 
@@ -345,10 +345,10 @@ export default function LandingPage({
               className="text-3xl sm:text-4xl lg:text-5xl font-normal leading-tight text-white mb-3"
               style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic" }}
             >
-              Biến hóa tông màu & phông chữ thương hiệu.
+              Shape your brand colors and typography.
             </h2>
             <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Bảng thanh tra bên phải mở ra: chuyển tức thì từ phong cách Minimalist sáng tinh tế sang Obsidian Noir huyền bí, tôn vinh độ tương phản của trang phục.
+              Open the inspector on the right and switch from a bright, refined minimalist style to mysterious Obsidian Noir to bring out each garment’s contrast.
             </p>
           </div>
 
@@ -359,10 +359,10 @@ export default function LandingPage({
               className="text-3xl sm:text-4xl lg:text-5xl font-normal leading-tight text-white mb-3"
               style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic" }}
             >
-              Thử nghiệm cảm ứng và giỏ hàng ngay lập tức.
+              Test touch interactions and the cart instantly.
             </h2>
             <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Phóng to màn hình để tương tác trực quan: bấm &ldquo;Thêm vào giỏ&rdquo; với hiệu ứng ripple mượt mà, số lượng giỏ hàng nhảy số trực tiếp như app native.
+              Zoom in and interact with the screen: tap &ldquo;Add to cart&rdquo; to see a smooth ripple effect and the cart count update like a native app.
             </p>
           </div>
 
@@ -373,10 +373,10 @@ export default function LandingPage({
               className="text-3xl sm:text-4xl lg:text-5xl font-normal leading-tight text-white mb-3"
               style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic" }}
             >
-              Xuất bản 1 chạm tới Cửa Hàng & Web.
+              Publish to your store and website in one tap.
             </h2>
             <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Cửa hàng trực tuyến của bạn đã sẵn sàng! Xuất mã nguồn React/Tailwind hoặc đồng bộ trực tiếp lên hệ thống thương mại trực tuyến với 1 cú click chuột.
+              Your online store is ready. Export React/Tailwind source code or sync directly to your commerce platform with one click.
             </p>
           </div>
         </div>
@@ -387,7 +387,7 @@ export default function LandingPage({
         <div className="hidden xl:flex flex-col gap-3 absolute left-[31%] 2xl:left-[33%] top-1/2 -translate-y-1/2 -translate-x-full w-48 p-3 rounded-2xl bg-[#111726]/80 border border-white/10 backdrop-blur-xl z-20 pointer-events-auto shadow-xl">
           <div className="flex items-center gap-1.5 pb-2 border-b border-white/10 text-[11px] font-mono tracking-wider text-slate-400">
             <span className="material-symbols-rounded text-sm text-red-400">widgets</span>
-            <span>KHO LINH KIỆN</span>
+            <span>COMPONENT LIBRARY</span>
           </div>
 
           {/* Draggable Item 1: Banner */}
@@ -403,7 +403,7 @@ export default function LandingPage({
           <div className="p-2.5 rounded-xl bg-white/10 border border-white/15 cursor-grab hover:scale-105 transition-all flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-cover bg-center shrink-0" style={{ backgroundImage: "url('/hero/card-noir.png')" }} />
             <div className="text-left overflow-hidden">
-              <span className="text-[11px] font-medium text-white block truncate">Áo Dạ Noir</span>
+              <span className="text-[11px] font-medium text-white block truncate">Noir Wool Coat</span>
               <span className="text-[9px] text-red-400 font-mono">$240.00</span>
             </div>
           </div>
@@ -412,7 +412,7 @@ export default function LandingPage({
           <div className="p-2.5 rounded-xl bg-white/10 border border-white/15 cursor-grab hover:scale-105 transition-all flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-cover bg-center shrink-0" style={{ backgroundImage: "url('/hero/card-still-life.png')" }} />
             <div className="text-left overflow-hidden">
-              <span className="text-[11px] font-medium text-white block truncate">Sơ Mi Silk</span>
+              <span className="text-[11px] font-medium text-white block truncate">Silk Shirt</span>
               <span className="text-[9px] text-red-400 font-mono">$180.00</span>
             </div>
           </div>
@@ -475,25 +475,25 @@ export default function LandingPage({
                 </div>
               </div>
 
-              {/* SECTION TITLE: Quần Áo & Trang Phục Mùa Mới */}
+              {/* SECTION TITLE: New-season apparel collection */}
               <div className="flex items-center justify-between pt-0.5">
                 <span className="text-xs font-semibold tracking-wide phone-dynamic-text text-slate-900">
-                  Bộ Sưu Tập Trang Phục
+                  Apparel Collection
                 </span>
                 <Link href="/templates" className="text-[10px] text-red-500 font-semibold hover:underline">
-                  Xem tất cả
+                  View all
                 </Link>
               </div>
 
               {/* PRODUCT GRID: 2 Columns of Fashion Clothing */}
               <div className="grid grid-cols-2 gap-2.5">
-                {/* Product 1: Áo Khoác Noir */}
+                {/* Product 1: Noir coat */}
                 <div className="phone-product-card-1 opacity-0 transform translate-y-6 scale-90 rounded-xl p-2 bg-white/70 dark:bg-white/5 border border-black/5 dark:border-white/10 shadow-sm flex flex-col transition-all">
                   <div className="relative w-full aspect-[3/4] rounded-lg overflow-hidden mb-2 bg-slate-200">
-                    <img src="/hero/card-noir.png" alt="Áo khoác Noir" className="w-full h-full object-cover" />
+                    <img src="/hero/card-noir.png" alt="Noir coat" className="w-full h-full object-cover" />
                     <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[8px] font-mono bg-black/75 text-white">NEW</span>
                   </div>
-                  <span className="text-[11px] font-medium phone-dynamic-text text-slate-900 truncate">Áo Dạ Chiffon Noir</span>
+                  <span className="text-[11px] font-medium phone-dynamic-text text-slate-900 truncate">Noir Chiffon Coat</span>
                   <div className="flex items-center justify-between mt-1">
                     <span className="text-[11px] font-bold text-red-600">$240</span>
                     <button className="relative overflow-hidden w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs phone-accent-btn">
@@ -503,13 +503,13 @@ export default function LandingPage({
                   </div>
                 </div>
 
-                {/* Product 2: Sơ Mi Lụa Still Life */}
+                {/* Product 2: Still Life silk shirt */}
                 <div className="phone-product-card-2 opacity-0 transform translate-y-6 scale-90 rounded-xl p-2 bg-white/70 dark:bg-white/5 border border-black/5 dark:border-white/10 shadow-sm flex flex-col transition-all">
                   <div className="relative w-full aspect-[3/4] rounded-lg overflow-hidden mb-2 bg-slate-200">
-                    <img src="/hero/card-still-life.png" alt="Sơ mi lụa" className="w-full h-full object-cover" />
+                    <img src="/hero/card-still-life.png" alt="Silk shirt" className="w-full h-full object-cover" />
                     <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[8px] font-mono bg-emerald-700 text-white">ORGANIC</span>
                   </div>
-                  <span className="text-[11px] font-medium phone-dynamic-text text-slate-900 truncate">Sơ Mi Silk L&apos;Heure</span>
+                  <span className="text-[11px] font-medium phone-dynamic-text text-slate-900 truncate">L&apos;Heure Silk Shirt</span>
                   <div className="flex items-center justify-between mt-1">
                     <span className="text-[11px] font-bold text-red-600">$180</span>
                     <button className="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs phone-accent-btn">
@@ -518,14 +518,14 @@ export default function LandingPage({
                   </div>
                 </div>
 
-                {/* Product 3: Quần Tây Pleated */}
+                {/* Product 3: Pleated trousers */}
                 <div className="phone-product-card-3 col-span-2 opacity-0 transform translate-y-6 scale-90 rounded-xl p-2.5 bg-white/70 dark:bg-white/5 border border-black/5 dark:border-white/10 shadow-sm flex items-center gap-3 transition-all">
                   <div className="w-14 h-16 rounded-lg overflow-hidden bg-slate-200 shrink-0">
-                    <img src="/hero/card-kinetic.png" alt="Quần tây kinetic" className="w-full h-full object-cover" />
+                    <img src="/hero/card-kinetic.png" alt="Kinetic trousers" className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1">
-                    <span className="text-[11px] font-semibold phone-dynamic-text text-slate-900 block">Quần Suông Kinetic Tailoring</span>
-                    <span className="text-[10px] text-slate-400 block mb-1">Chất liệu len Ý cao cấp</span>
+                    <span className="text-[11px] font-semibold phone-dynamic-text text-slate-900 block">Kinetic Tailored Trousers</span>
+                    <span className="text-[10px] text-slate-400 block mb-1">Premium Italian wool</span>
                     <span className="text-xs font-bold text-red-600">$210</span>
                   </div>
                   <button className="px-3 py-1.5 rounded-full bg-slate-900 text-white text-[10px] font-semibold phone-accent-btn">
@@ -538,7 +538,7 @@ export default function LandingPage({
             {/* Success Toast Notification inside Phone */}
             <div className="phone-success-toast absolute bottom-3 left-3 right-3 p-2 rounded-xl bg-emerald-600 text-white text-[11px] font-medium flex items-center gap-1.5 shadow-lg transform translate-y-16 opacity-0 transition-all z-40">
               <span className="material-symbols-rounded text-sm">check_circle</span>
-              <span>Đã thêm Áo Dạ Chiffon vào giỏ hàng!</span>
+              <span>Noir Chiffon Coat added to cart!</span>
             </div>
 
             {/* Bottom Home Indicator */}
@@ -615,10 +615,10 @@ export default function LandingPage({
               className="text-3xl sm:text-4xl font-normal text-white"
               style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic" }}
             >
-              Bộ sưu tập mẫu có sẵn
+              Ready-to-use templates
             </h2>
             <p className="text-sm text-slate-400 mt-2 max-w-xl leading-relaxed">
-              Duyệt các bộ trang phục thịnh hành được chia sẻ bởi cộng đồng thiết kế. Chọn mẫu yêu thích để mở trực tiếp trong Canvas Editor và may đo theo phong cách của bạn.
+              Browse popular designs shared by the community. Choose a favorite to open in Canvas Editor and tailor it to your style.
             </p>
           </div>
 
@@ -626,7 +626,7 @@ export default function LandingPage({
             href="/templates"
             className="px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-bold text-white transition-all flex items-center gap-2 self-start md:self-auto shrink-0 shadow-lg"
           >
-            <span>Xem toàn bộ bộ sưu tập</span>
+            <span>Explore the full collection</span>
             <span className="material-symbols-rounded text-sm">arrow_forward</span>
           </Link>
         </div>
@@ -648,11 +648,11 @@ export default function LandingPage({
             </div>
             <div className="p-4 flex flex-col gap-2">
               <h3 className="text-sm font-semibold text-white group-hover:text-red-400 transition-colors">Haute Couture Spring Blossom</h3>
-              <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">Bộ sưu tập dạ hội phong cách Haute Couture tinh tế với gam màu phấn và đường cắt may tối giản sang trọng.</p>
+              <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">An elegant Haute Couture eveningwear collection in soft pastels with refined, minimal tailoring.</p>
               <div className="pt-3 border-t border-white/5 flex items-center justify-between">
-                <span className="text-[11px] text-slate-400">Bởi <strong>Atelier Vivienne</strong></span>
+                <span className="text-[11px] text-slate-400">By <strong>Atelier Vivienne</strong></span>
                 <Link href="/templates" className="px-3 py-1.5 rounded-full bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/40 text-[11px] font-semibold transition-all">
-                  Xem mẫu
+                  View template
                 </Link>
               </div>
             </div>
@@ -673,11 +673,11 @@ export default function LandingPage({
             </div>
             <div className="p-4 flex flex-col gap-2">
               <h3 className="text-sm font-semibold text-white group-hover:text-red-400 transition-colors">Cyberpunk Streetwear Noir</h3>
-              <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">Phong cách đường phố vị lai kết hợp tông đen ánh kim, áo khoác Chiffon Noir và chất liệu phản quang.</p>
+              <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">A futuristic streetwear style with metallic black tones, a Noir Chiffon coat, and reflective materials.</p>
               <div className="pt-3 border-t border-white/5 flex items-center justify-between">
-                <span className="text-[11px] text-slate-400">Bởi <strong>Neo Tokyo Studio</strong></span>
+                <span className="text-[11px] text-slate-400">By <strong>Neo Tokyo Studio</strong></span>
                 <Link href="/templates" className="px-3 py-1.5 rounded-full bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/40 text-[11px] font-semibold transition-all">
-                  Xem mẫu
+                  View template
                 </Link>
               </div>
             </div>
@@ -698,11 +698,11 @@ export default function LandingPage({
             </div>
             <div className="p-4 flex flex-col gap-2">
               <h3 className="text-sm font-semibold text-white group-hover:text-red-400 transition-colors">Silk L&apos;Heure Organic Blouse</h3>
-              <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">Sơ mi lụa tơ tằm sinh thái L&apos;Heure nhẹ nhàng mềm mại, hoàn hảo cho phong cách thanh lịch công sở.</p>
+              <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">The lightweight, eco-conscious L&apos;Heure silk shirt is perfect for an elegant office look.</p>
               <div className="pt-3 border-t border-white/5 flex items-center justify-between">
-                <span className="text-[11px] text-slate-400">Bởi <strong>Élégance Paris</strong></span>
+                <span className="text-[11px] text-slate-400">By <strong>Élégance Paris</strong></span>
                 <Link href="/templates" className="px-3 py-1.5 rounded-full bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/40 text-[11px] font-semibold transition-all">
-                  Xem mẫu
+                  View template
                 </Link>
               </div>
             </div>
@@ -720,10 +720,10 @@ export default function LandingPage({
             className="text-4xl sm:text-5xl font-normal text-white mb-4"
             style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic" }}
           >
-            Mọi công cụ để bán thời trang trực tuyến.
+            Everything you need to sell fashion online.
           </h2>
           <p className="text-sm text-slate-400 leading-relaxed">
-            Kết hợp sự tự do của Figma, sức mạnh thương mại điện tử hiện đại và tốc độ của AI Studio.
+            Combine Figma-like creative freedom, modern commerce, and the speed of an AI studio.
           </p>
         </div>
 
@@ -734,9 +734,9 @@ export default function LandingPage({
               <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <span className="material-symbols-rounded text-2xl">drag_indicator</span>
               </div>
-              <h3 className="text-xl font-semibold text-white mb-3">Kéo Thả Không Cần Code</h3>
+              <h3 className="text-xl font-semibold text-white mb-3">No-code drag and drop</h3>
               <p className="text-xs sm:text-sm text-slate-400 leading-relaxed mb-6">
-                Tự do kéo các component thời trang: slider hình ảnh, bảng size quần áo, bộ lọc màu sắc và giỏ hàng mini.
+                Freely arrange fashion components: image sliders, size charts, color filters, and a mini cart.
               </p>
             </div>
             <span className="text-xs font-mono text-red-400 flex items-center gap-1">
@@ -751,9 +751,9 @@ export default function LandingPage({
               <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <span className="material-symbols-rounded text-2xl">sync_alt</span>
               </div>
-              <h3 className="text-xl font-semibold text-white mb-3">Đồng Bộ Đa Kênh Thương Mại</h3>
+              <h3 className="text-xl font-semibold text-white mb-3">Sync across commerce channels</h3>
               <p className="text-xs sm:text-sm text-slate-400 leading-relaxed mb-6">
-                Kết nối gian hàng trực tuyến có sẵn chỉ bằng API token: sản phẩm, giá bán, tồn kho tự động ánh xạ lên giao diện điện thoại.
+                Connect your online store with an API token. Products, prices, and inventory map automatically to your mobile storefront.
               </p>
             </div>
             <span className="text-xs font-mono text-blue-400 flex items-center gap-1">
@@ -770,7 +770,7 @@ export default function LandingPage({
               </div>
               <h3 className="text-xl font-semibold text-white mb-3">Vibe-Coding AI Prompting</h3>
               <p className="text-xs sm:text-sm text-slate-400 leading-relaxed mb-6">
-                Chuyển thiết kế bạn vừa kéo thả thành câu lệnh prompt chất lượng cao cho Claude, Gemini hay Cursor xây dựng ứng dụng hoàn chỉnh.
+                Turn your design into a high-quality prompt for Claude, Gemini, or Cursor to build a complete app.
               </p>
             </div>
             <span className="text-xs font-mono text-emerald-400 flex items-center gap-1">
@@ -789,17 +789,17 @@ export default function LandingPage({
           {/* Radiant background highlight */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-48 bg-red-600/20 blur-3xl pointer-events-none rounded-full" />
 
-          <span className="text-red-400 text-xs font-mono uppercase tracking-widest mb-3">Bắt Đầu Ngay Hôm Nay</span>
+          <span className="text-red-400 text-xs font-mono uppercase tracking-widest mb-3">GET STARTED TODAY</span>
 
           <h2
             className="text-4xl sm:text-6xl font-normal text-white max-w-2xl mb-4 leading-tight"
             style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic" }}
           >
-            Đưa thương hiệu thời trang của bạn vào kỷ nguyên 3D.
+            Bring your fashion brand into the 3D era.
           </h2>
 
           <p className="text-sm text-slate-400 max-w-lg mb-8 leading-relaxed">
-            Đăng nhập tài khoản Google để trải nghiệm trọn bộ studio kéo thả giao diện điện thoại và tải xuống các template thiết kế miễn phí.
+            Sign in with Google to explore the mobile design studio and download free design templates.
           </p>
 
           {currentUser ? (
@@ -807,7 +807,7 @@ export default function LandingPage({
               onClick={handleGoToEditor}
               className="px-10 py-4 rounded-full bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 hover:opacity-95 text-white text-sm font-bold tracking-wider shadow-[0_10px_40px_rgba(229,43,43,0.65)] hover:shadow-[0_10px_50px_rgba(229,43,43,0.9)] transition-all cursor-pointer flex items-center gap-3 group animate-pulse hover:animate-none"
             >
-              <span>START NOW — VÀO CHỈNH CANVAS</span>
+              <span>START NOW — OPEN CANVAS</span>
               <span className="material-symbols-rounded text-xl group-hover:translate-x-1 transition-transform">
                 arrow_forward
               </span>
@@ -817,7 +817,7 @@ export default function LandingPage({
               onClick={() => setAuthOpen(true)}
               className="px-9 py-4 rounded-full bg-red-600 hover:bg-red-500 text-white text-sm font-semibold tracking-wider shadow-[0_10px_35px_rgba(229,43,43,0.5)] hover:shadow-[0_10px_45px_rgba(229,43,43,0.7)] transition-all cursor-pointer flex items-center gap-2"
             >
-              <span>ĐĂNG NHẬP BẰNG GOOGLE</span>
+              <span>SIGN IN WITH GOOGLE</span>
               <span className="material-symbols-rounded text-lg">login</span>
             </button>
           )}
@@ -838,9 +838,9 @@ export default function LandingPage({
           <span>© 2026 PickMe3DPlatform. All rights reserved.</span>
         </div>
         <div className="flex items-center gap-6">
-          <a href="#" className="hover:text-slate-300 transition-colors">Chính sách bảo mật</a>
-          <a href="#" className="hover:text-slate-300 transition-colors">Điều khoản dịch vụ</a>
-          <a href="#" className="hover:text-slate-300 transition-colors">Tài liệu API</a>
+          <a href="#" className="hover:text-slate-300 transition-colors">Privacy policy</a>
+          <a href="#" className="hover:text-slate-300 transition-colors">Terms of service</a>
+          <a href="#" className="hover:text-slate-300 transition-colors">API documentation</a>
         </div>
       </footer>
 
@@ -856,7 +856,7 @@ export default function LandingPage({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setAuthOpen(false)}
-              className="absolute inset-0 bg-black/75 backdrop-blur-md"
+              className="absolute inset-0 bg-black/75"
             />
 
             {/* Modal Box */}
@@ -891,11 +891,11 @@ export default function LandingPage({
                 className="text-3xl sm:text-4xl font-normal text-white mb-2"
                 style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic" }}
               >
-                Đăng nhập Pick Me
+                Sign in to PickMe
               </h3>
 
               <p className="text-xs sm:text-sm text-slate-400 mb-8 max-w-xs leading-relaxed">
-                Đăng nhập bằng tài khoản Google để bắt đầu thiết kế giao diện điện thoại và đồng bộ không gian sáng tạo.
+                Sign in with Google to start designing mobile interfaces and sync your creative workspace.
               </p>
 
               {error && (
@@ -908,14 +908,14 @@ export default function LandingPage({
               {loading ? (
                 <div className="flex flex-col items-center justify-center h-14 w-full gap-2">
                   <div className="animate-spin rounded-full h-8 w-8 border-2 border-transparent border-t-red-500 border-r-white" />
-                  <span className="text-xs text-slate-400 animate-pulse">Đang kết nối xác thực Google...</span>
+                  <span className="text-xs text-slate-400 animate-pulse">Connecting to Google authentication...</span>
                 </div>
               ) : (
                 <div className="w-full flex justify-center py-2">
                   <div className="p-1 rounded-full border border-white/20 hover:border-red-500/60 transition-all">
                     <GoogleLogin
                       onSuccess={handleSuccess}
-                      onError={() => setError("Đăng nhập bằng Google không thành công.")}
+                      onError={() => setError("Google sign-in failed.")}
                       theme="filled_black"
                       size="large"
                       shape="pill"
@@ -928,7 +928,7 @@ export default function LandingPage({
 
               <div className="mt-6 pt-4 border-t border-white/10 w-full flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
                 <span className="material-symbols-rounded text-emerald-400 text-sm">lock</span>
-                <span>Bảo mật & mã hóa PickMe3D Platform</span>
+                <span>PickMe3D Platform security & encryption</span>
               </div>
             </motion.div>
           </div>

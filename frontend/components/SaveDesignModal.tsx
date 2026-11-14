@@ -38,13 +38,13 @@ export default function SaveDesignModal({
   useEffect(() => {
     if (open) {
       if (editingDesign) {
-        setTitle(editingDesign.title || docData?.title || "Thiết kế của tôi");
+        setTitle(editingDesign.title || docData?.title || "My design");
         setDescription(editingDesign.description || docData?.brief || "");
         setSelectedTags(editingDesign.tags || []);
         setIsPublic(editingDesign.isPublic ?? true);
         setSaveMode("overwrite");
       } else {
-        setTitle(docData?.title || "Thiết kế của tôi");
+        setTitle(docData?.title || "My design");
         setDescription(docData?.brief || "");
         setSelectedTags([]);
         setIsPublic(true);
@@ -75,7 +75,7 @@ export default function SaveDesignModal({
 
   const handleSave = async () => {
     if (!title.trim()) {
-      setErrorMessage("Vui lòng nhập tên thiết kế.");
+      setErrorMessage("Enter a design name.");
       return;
     }
     setSaving(true);
@@ -101,7 +101,7 @@ export default function SaveDesignModal({
           onClose();
         }, 1200);
       } else {
-        setErrorMessage("Không thể cập nhật thiết kế. Vui lòng thử lại.");
+        setErrorMessage("Could not update the design. Please try again.");
       }
     } else {
       // Save as new design
@@ -122,7 +122,7 @@ export default function SaveDesignModal({
           onClose();
         }, 1200);
       } else {
-        setErrorMessage(result.message || "Không thể lưu thiết kế. Vui lòng thử lại.");
+        setErrorMessage(result.message || "Could not save the design. Please try again.");
       }
     }
   };
@@ -139,7 +139,7 @@ export default function SaveDesignModal({
           <div className="flex items-center gap-2.5">
             <span className="material-symbols-rounded text-lg text-red-500">cloud_upload</span>
             <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-              {editingDesign && saveMode === "overwrite" ? "Cập Nhật Thiết Kế" : "Lưu Thiết Kế Mới"}
+              {editingDesign && saveMode === "overwrite" ? "Update Design" : "Save New Design"}
             </h2>
           </div>
           <button
@@ -160,15 +160,15 @@ export default function SaveDesignModal({
               </div>
               <h3 className="text-sm font-bold text-white">
                 {editingDesign && saveMode === "overwrite"
-                  ? "Đã lưu ghi đè thành công!"
-                  : "Đã lưu thiết kế thành công!"}
+                  ? "Design updated successfully!"
+                  : "Design saved successfully!"}
               </h3>
               <p className="text-xs text-slate-400">
                 {editingDesign && saveMode === "overwrite"
-                  ? "Bản gốc đã được cập nhật với các thay đổi mới nhất."
+                  ? "The original design now includes your latest changes."
                   : isPublic
-                  ? "Thiết kế đã được công khai trên bộ sưu tập."
-                  : "Thiết kế được lưu ở chế độ riêng tư."}
+                  ? "Your design is now public in the gallery."
+                  : "Your design is saved as private."}
               </p>
             </div>
           ) : (
@@ -177,7 +177,7 @@ export default function SaveDesignModal({
               {editingDesign && (
                 <div className="p-3 rounded-md bg-slate-900 border border-white/10 space-y-2">
                   <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block">
-                    Tùy chọn lưu:
+                    Save options:
                   </span>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <button
@@ -189,9 +189,9 @@ export default function SaveDesignModal({
                           : "bg-slate-950 border-white/10 text-slate-400 hover:text-white"
                       }`}
                     >
-                      <span className="block text-[11px] font-bold text-white">Ghi đè bản gốc</span>
+                      <span className="block text-[11px] font-bold text-white">Overwrite original</span>
                       <span className="text-[10px] text-slate-400 block truncate">
-                        Cập nhật: {editingDesign.title}
+                        Updating: {editingDesign.title}
                       </span>
                     </button>
                     <button
@@ -203,8 +203,8 @@ export default function SaveDesignModal({
                           : "bg-slate-950 border-white/10 text-slate-400 hover:text-white"
                       }`}
                     >
-                      <span className="block text-[11px] font-bold text-white">Lưu thành bản sao mới</span>
-                      <span className="text-[10px] text-slate-400 block">Tạo bản thiết kế mới</span>
+                      <span className="block text-[11px] font-bold text-white">Save as a new copy</span>
+                      <span className="text-[10px] text-slate-400 block">Create a new design</span>
                     </button>
                   </div>
                 </div>
@@ -213,13 +213,13 @@ export default function SaveDesignModal({
               {/* Title Input */}
               <div className="space-y-1">
                 <label className="text-xs text-slate-300 font-medium">
-                  Tên thiết kế <span className="text-red-400">*</span>
+                  Design name <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Nhập tên thiết kế..."
+                  placeholder="Enter a design name..."
                   className="w-full px-3 py-2 rounded-md bg-slate-950 border border-white/15  text-white text-xs outline-none transition-colors"
                   autoFocus
                 />
@@ -227,11 +227,11 @@ export default function SaveDesignModal({
 
               {/* Description Input */}
               <div className="space-y-1">
-                <label className="text-xs text-slate-300 font-medium">Mô tả</label>
+                <label className="text-xs text-slate-300 font-medium">Description</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Mô tả ý tưởng thiết kế..."
+                  placeholder="Describe your design..."
                   rows={2}
                   className="w-full px-3 py-2 rounded-md bg-slate-950 border border-white/15  text-white text-xs outline-none resize-none transition-colors"
                 />
@@ -239,7 +239,7 @@ export default function SaveDesignModal({
 
               {/* Privacy Toggle */}
               <div className="space-y-1">
-                <label className="text-xs text-slate-300 font-medium">Ai có thể xem?</label>
+                <label className="text-xs text-slate-300 font-medium">Who can see this?</label>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <button
                     type="button"
@@ -251,7 +251,7 @@ export default function SaveDesignModal({
                         : "bg-slate-950 border-white/10 text-slate-400 hover:text-white"
                     }`}
                   >
-                    <span className="inline-flex items-center justify-center gap-1.5"><span className="material-symbols-rounded text-sm" aria-hidden="true">public</span>Công khai</span>
+                    <span className="inline-flex items-center justify-center gap-1.5"><span className="material-symbols-rounded text-sm" aria-hidden="true">public</span>Public</span>
                   </button>
                   <button
                     type="button"
@@ -263,12 +263,12 @@ export default function SaveDesignModal({
                         : "bg-slate-950 border-white/10 text-slate-400 hover:text-white"
                     }`}
                   >
-                    <span className="inline-flex items-center justify-center gap-1.5"><span className="material-symbols-rounded text-sm" aria-hidden="true">lock</span>Riêng tư</span>
+                    <span className="inline-flex items-center justify-center gap-1.5"><span className="material-symbols-rounded text-sm" aria-hidden="true">lock</span>Private</span>
                   </button>
                 </div>
                 <p className="flex items-start gap-1.5 text-[11px] leading-5 text-slate-400">
                   <span className="material-symbols-rounded mt-0.5 text-sm text-slate-500" aria-hidden="true">info</span>
-                  {isPublic ? "Thiết kế sẽ xuất hiện trong thư viện và trang Creator của bạn." : "Chỉ bạn mới xem được thiết kế này."}
+                  {isPublic ? "Your design will appear in the gallery and on your creator page." : "Only you can see this design."}
                 </p>
               </div>
 
@@ -278,7 +278,7 @@ export default function SaveDesignModal({
                   <label className="text-xs text-slate-300 font-medium">Hashtags</label>
                   {selectedTags.length > 0 && (
                     <span className="text-[11px] text-red-400 font-mono">
-                      {selectedTags.length} đã chọn
+                      {selectedTags.length} selected
                     </span>
                   )}
                 </div>
@@ -320,7 +320,7 @@ export default function SaveDesignModal({
               onClick={onClose}
               className="px-4 py-2 rounded-md bg-slate-800 hover:bg-slate-700 text-white text-xs font-medium border border-white/10 transition-colors cursor-pointer"
             >
-              Hủy
+              Cancel
             </button>
             <button
               type="button"
@@ -331,13 +331,13 @@ export default function SaveDesignModal({
               {saving ? (
                 <>
                   <div className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                  <span>Đang lưu...</span>
+                  <span>Saving...</span>
                 </>
               ) : (
                 <>
                   <span className="material-symbols-rounded text-sm">cloud_upload</span>
                   <span>
-                    {editingDesign && saveMode === "overwrite" ? "Lưu ghi đè" : "Lưu thiết kế"}
+                    {editingDesign && saveMode === "overwrite" ? "Overwrite design" : "Save design"}
                   </span>
                 </>
               )}

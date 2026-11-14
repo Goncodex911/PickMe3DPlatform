@@ -6,9 +6,9 @@ import { OrderInfo, fetchOrders, formatVnd } from "@/lib/paymentService";
 import s from "@/app/settings/settings.module.css";
 
 function orderDate(value: string | null) {
-  if (!value) return "Ngày chưa xác định";
+  if (!value) return "Date unavailable";
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "Ngày chưa xác định" : date.toLocaleDateString("vi-VN", {
+  return Number.isNaN(date.getTime()) ? "Date unavailable" : date.toLocaleDateString("en-US", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -16,9 +16,9 @@ function orderDate(value: string | null) {
 }
 
 function statusLabel(status: OrderInfo["status"]) {
-  if (status === "PAID") return "Đã thanh toán";
-  if (status === "CANCELLED") return "Đã hủy";
-  return "Đang chờ";
+  if (status === "PAID") return "Paid";
+  if (status === "CANCELLED") return "Canceled";
+  return "Pending";
 }
 
 export default function BillingHistory() {
@@ -33,7 +33,7 @@ export default function BillingHistory() {
     setError("");
     fetchOrders()
       .then((rows) => { if (active) setOrders(rows); })
-      .catch((reason) => { if (active) setError(reason instanceof Error ? reason.message : "Không thể tải lịch sử thanh toán."); })
+      .catch((reason) => { if (active) setError(reason instanceof Error ? reason.message : "Could not load payment history."); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [retry]);
@@ -47,24 +47,24 @@ export default function BillingHistory() {
               <span className="material-symbols-rounded">receipt_long</span>
             </span>
             <div className={s.headingCopy}>
-              <h1 id="billing-title">Biên lai</h1>
-              <p>Đơn hàng và chứng từ thanh toán.</p>
+              <h1 id="billing-title">Billing history</h1>
+              <p>Orders and payment receipts.</p>
             </div>
           </div>
         </header>
         <div className={s.billingActions}>
           <Link className={s.buttonLink} href="/pricing/">
             <span className="material-symbols-rounded" aria-hidden="true">sell</span>
-            Mã giảm giá
+            Promo code
           </Link>
-          <button type="button" aria-label="Tải lại lịch sử thanh toán" onClick={() => setRetry((value) => value + 1)} disabled={loading}>
+          <button type="button" aria-label="Reload payment history" onClick={() => setRetry((value) => value + 1)} disabled={loading}>
             <span className="material-symbols-rounded" aria-hidden="true">refresh</span>
           </button>
         </div>
       </div>
 
       {loading && (
-        <div className={s.loadingRows} role="status" aria-label="Đang tải biên lai">
+        <div className={s.loadingRows} role="status" aria-label="Loading receipts">
           <div className={s.skeletonRow} />
           <div className={s.skeletonRow} />
         </div>
@@ -73,18 +73,18 @@ export default function BillingHistory() {
       {error && (
         <div className={s.emptyState} role="alert">
           <span className={s.iconTile} aria-hidden="true"><span className="material-symbols-rounded">cloud_off</span></span>
-          <h3>Chưa tải được biên lai</h3>
+          <h3>Could not load receipts</h3>
           <p>{error}</p>
-          <button type="button" className={s.primary} onClick={() => setRetry((value) => value + 1)}>Thử lại</button>
+          <button type="button" className={s.primary} onClick={() => setRetry((value) => value + 1)}>Try again</button>
         </div>
       )}
 
       {!loading && !error && orders.length === 0 && (
         <div className={s.emptyState}>
           <span className={s.iconTile} aria-hidden="true"><span className="material-symbols-rounded">receipt</span></span>
-          <h3>Chưa có thanh toán</h3>
-          <p>Biên lai sẽ xuất hiện tại đây sau khi bạn nâng cấp gói.</p>
-          <Link className={s.buttonLink} href="/pricing/">Xem các gói</Link>
+          <h3>No payments yet</h3>
+          <p>Your receipts will appear here after you upgrade your plan.</p>
+          <Link className={s.buttonLink} href="/pricing/">View plans</Link>
         </div>
       )}
 
@@ -96,26 +96,26 @@ export default function BillingHistory() {
             return (
               <article className={s.orderCard} key={order.orderCode}>
                 <div className={s.orderMain}>
-                  <strong className={s.orderTitle}>Gói {order.planId.toUpperCase()} · {order.months} tháng</strong>
+                  <strong className={s.orderTitle}>{order.planId.toUpperCase()} plan · {order.months} months</strong>
                   <span className={s.orderAmount}>{formatVnd(order.amount)}</span>
                   <time className={s.orderDate} dateTime={order.createdAt || undefined}>{orderDate(order.paidAt || order.createdAt)}</time>
                   <div className={s.orderDetails}>
-                    <span>Đơn #{order.orderCode}</span>
+                    <span>Order #{order.orderCode}</span>
                     <span className={s.orderStatus} data-status={paid ? "paid" : cancelled ? "cancelled" : "pending"}>
                       {statusLabel(order.status)}
                     </span>
-                    {order.discount > 0 && <span>Mã {order.promoCode}: −{formatVnd(order.discount)}</span>}
+                    {order.discount > 0 && <span>Code {order.promoCode}: −{formatVnd(order.discount)}</span>}
                   </div>
                 </div>
                 <div className={s.orderAction}>
                   {paid ? (
                     <Link className={s.buttonLink} href={`/payment/receipt/?orderCode=${order.orderCode}`}>
                       <span className="material-symbols-rounded" aria-hidden="true">download</span>
-                      Biên lai / PDF
+                      Receipt / PDF
                     </Link>
                   ) : (
                     <Link className={s.buttonLink} href={`/payment/result/?orderCode=${order.orderCode}`}>
-                      Kiểm tra đơn
+                      Check order
                     </Link>
                   )}
                 </div>

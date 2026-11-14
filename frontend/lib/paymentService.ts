@@ -44,6 +44,13 @@ export function authHeaders(): Record<string, string> {
   return headers;
 }
 
+export function clearInvalidAuthSession() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("pickme3d_token");
+  localStorage.removeItem("pickme3d_user");
+  window.dispatchEvent(new Event("storage"));
+}
+
 function storedUser() {
   if (typeof window === "undefined") return null;
   try {
@@ -87,6 +94,7 @@ export async function apiFetch(url: string, init: RequestInit = {}) {
   const send = () => fetch(url, { ...init, headers: { ...authHeaders(), ...(init.headers || {}) }, cache: "no-store" });
   let res = await send();
   if (res.status === 401 && (await ensureSession())) res = await send();
+  if (res.status === 401) clearInvalidAuthSession();
   return res;
 }
 

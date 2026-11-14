@@ -21,6 +21,7 @@ const NOTIFICATION_ICONS: Record<string, string> = {
   payout_rejected: "money_off",
   report_submitted: "flag",
   report_resolved: "verified",
+  creator_warning: "warning",
   appeal_submitted: "gavel",
   appeal_resolved: "mark_email_read",
   system: "campaign",
@@ -37,6 +38,7 @@ const NOTIFICATION_COLORS: Record<string, string> = {
   payout_rejected: "text-rose-400",
   report_submitted: "text-orange-400",
   report_resolved: "text-emerald-400",
+  creator_warning: "text-rose-400",
   appeal_submitted: "text-indigo-400",
   appeal_resolved: "text-sky-400",
   system: "text-cyan-400",
@@ -62,14 +64,19 @@ interface NotificationBellProps {
 
 export default function NotificationBell({ className }: NotificationBellProps) {
   const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const isLoggedIn =
-    typeof window !== "undefined" && !!localStorage.getItem("pickme3d_token");
+  useEffect(() => {
+    const syncAuth = () => setIsLoggedIn(Boolean(localStorage.getItem("pickme3d_token")));
+    syncAuth();
+    window.addEventListener("storage", syncAuth);
+    return () => window.removeEventListener("storage", syncAuth);
+  }, []);
 
   // Fetch unread count on mount and periodically
   const refreshUnreadCount = useCallback(async () => {

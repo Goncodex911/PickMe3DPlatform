@@ -15,12 +15,12 @@ export interface AiGenerateModalProps {
 }
 
 const SAMPLE_PROMPTS = [
-  { icon: "restaurant", label: "App Đặt đồ ăn", prompt: "Ứng dụng đặt đồ ăn nhanh gồm màn hình Khám phá món ngon, Danh mục nhà hàng và Giỏ hàng thanh toán." },
-  { icon: "shopping_bag", label: "Mua sắm E-commerce", prompt: "Giao diện shop thời trang hiện đại với banner khuyến mãi, danh sách sản phẩm nổi bật và bộ lọc danh mục." },
-  { icon: "account_balance_wallet", label: "Ví điện tử & Thẻ", prompt: "Ứng dụng ngân hàng số gồm màn hình Số dư tài khoản, Chuyển tiền nhanh và Lịch sử giao dịch chi tiết." },
-  { icon: "chat", label: "Trò chuyện & Tin nhắn", prompt: "Màn hình danh sách tin nhắn chat gần đây với avatar trạng thái online và màn hình khung chat chi tiết." },
-  { icon: "music_note", label: "Trình nghe nhạc", prompt: "Giao diện nghe nhạc gồm playlist tuyển chọn, thanh bài hát đang phát và màn hình Player điều khiển full." },
-  { icon: "fitness_center", label: "Theo dõi sức khỏe", prompt: "Màn hình theo dõi calo tiêu thụ, biểu đồ số bước chân hàng ngày và lịch trình tập luyện cá nhân." },
+  { icon: "restaurant", label: "Food delivery app", prompt: "A food delivery app with a Discover screen, restaurant categories, and a checkout cart." },
+  { icon: "shopping_bag", label: "Fashion store", prompt: "A modern fashion store with a promotion banner, featured products, and category filters." },
+  { icon: "account_balance_wallet", label: "Digital wallet", prompt: "A digital banking app with an account balance, quick transfers, and detailed transaction history." },
+  { icon: "chat", label: "Messaging app", prompt: "A recent chat list with online avatars and a detailed conversation screen." },
+  { icon: "music_note", label: "Music player", prompt: "A music app with curated playlists, a now-playing bar, and full playback controls." },
+  { icon: "fitness_center", label: "Fitness tracker", prompt: "A fitness app showing calories, daily steps, and a personal workout schedule." },
 ];
 
 export default function AiGenerateModal({
@@ -40,20 +40,20 @@ export default function AiGenerateModal({
   const handleSubmit = async () => {
     if (!prompt.trim() || busy) return;
     if (!aiReady) {
-      setErrorMsg("Vui lòng cấu hình API Key trong Cài đặt AI trước khi tạo màn hình.");
+      setErrorMsg("Add an API key in AI Settings before generating screens.");
       return;
     }
 
     setBusy(true);
     setErrorMsg(null);
-    setStatusText("AI đang phân tích ý tưởng mô tả...");
+    setStatusText("AI is analyzing your idea...");
 
     const t1 = setTimeout(() => {
-      setStatusText("Đang thiết kế các thành phần Material 3 Expressive...");
+      setStatusText("Designing Material 3 Expressive components...");
     }, 2500);
 
     const t2 = setTimeout(() => {
-      setStatusText("Đang hoàn tất bố cục và đồng bộ màn hình lên Canvas...");
+      setStatusText("Finishing the layout and syncing screens to Canvas...");
     }, 6000);
 
     try {
@@ -64,7 +64,7 @@ export default function AiGenerateModal({
     } catch (err: any) {
       clearTimeout(t1);
       clearTimeout(t2);
-      setErrorMsg(err?.message || "Không thể sinh giao diện lúc này. Vui lòng thử lại.");
+      setErrorMsg("Couldn’t generate the interface. Please try again.");
     } finally {
       setBusy(false);
       setStatusText("");
@@ -86,7 +86,6 @@ export default function AiGenerateModal({
             inset: 0,
             zIndex: 650,
             background: "rgba(0, 0, 0, 0.45)",
-            backdropFilter: "blur(4px)",
             display: "grid",
             placeItems: "center",
             padding: 20,
@@ -133,10 +132,10 @@ export default function AiGenerateModal({
               </div>
               <div style={{ flex: 1 }}>
                 <h2 style={{ margin: 0, fontSize: 19, fontWeight: 700, letterSpacing: -0.2 }}>
-                  Tạo màn hình bằng AI (AI Designer)
+                  Generate screens with AI
                 </h2>
                 <p style={{ margin: "2px 0 0", fontSize: 13, color: p.onSurfaceVariant }}>
-                  Nhập mô tả ý tưởng, AI sẽ tự động dựng và bố cục giao diện hoàn chỉnh.
+                  Describe your idea and AI will build a complete interface for you.
                 </p>
               </div>
               <button
@@ -153,7 +152,7 @@ export default function AiGenerateModal({
                   display: "grid",
                   placeItems: "center",
                 }}
-                title="Đóng"
+                title="Close"
               >
                 <Icon name="close" size={20} />
               </button>
@@ -172,12 +171,12 @@ export default function AiGenerateModal({
                   letterSpacing: 0.5,
                 }}
               >
-                Mô tả giao diện bạn muốn tạo
+                Describe the interface you want to create
               </label>
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Ví dụ: Thiết kế ứng dụng du lịch gồm màn hình Khám phá điểm đến với các thẻ ảnh lớn, và màn hình Chi tiết tour có nút Đặt vé nổi bật..."
+                placeholder="For example: Create a travel app with a destination discovery screen featuring large photo cards and a tour details screen with a prominent booking button..."
                 rows={4}
                 autoFocus
                 disabled={busy}
@@ -201,7 +200,7 @@ export default function AiGenerateModal({
             {/* Quick Suggestions */}
             <div>
               <div style={{ fontSize: 12, fontWeight: 600, color: p.onSurfaceVariant, marginBottom: 8 }}>
-                💡 Gợi ý chủ đề nhanh:
+                💡 Quick ideas:
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
                 {SAMPLE_PROMPTS.map((sample) => (
@@ -235,13 +234,13 @@ export default function AiGenerateModal({
             {/* Scope / Number of screens selector */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 4 }}>
               <span style={{ fontSize: 13, fontWeight: 600, color: p.onSurfaceVariant }}>
-                Quy mô giao diện:
+                Number of screens:
               </span>
               <div style={{ display: "flex", gap: 6 }}>
                 {[
-                  { count: 1, label: "1 Màn hình đơn lẻ" },
-                  { count: 2, label: "2 Màn hình liên kết" },
-                  { count: 3, label: "Toàn bộ luồng (3 màn hình)" },
+                  { count: 1, label: "1 standalone screen" },
+                  { count: 2, label: "2 connected screens" },
+                  { count: 3, label: "Full flow (3 screens)" },
                 ].map((item) => {
                   const active = screenCount === item.count;
                   return (
@@ -305,7 +304,7 @@ export default function AiGenerateModal({
                       whiteSpace: "nowrap",
                     }}
                   >
-                    Mở Cài đặt AI
+                    Open AI Settings
                   </button>
                 )}
               </div>
@@ -329,7 +328,7 @@ export default function AiGenerateModal({
                 <span className="m3-spin" style={{ display: "inline-flex" }}>
                   <Icon name="progress_activity" size={20} />
                 </span>
-                <span>{statusText || "Đang xử lý..."}</span>
+                <span>{statusText || "Working..."}</span>
               </div>
             )}
 
@@ -351,7 +350,7 @@ export default function AiGenerateModal({
                   cursor: busy ? "not-allowed" : "pointer",
                 }}
               >
-                Hủy
+                Cancel
               </button>
 
               <button
@@ -381,7 +380,7 @@ export default function AiGenerateModal({
                 }}
               >
                 <Icon name={busy ? "progress_activity" : "auto_awesome"} size={18} fill />
-                {busy ? "Đang sinh màn hình..." : "Sinh giao diện (Generate)"}
+                {busy ? "Generating screens..." : "Generate interface"}
               </button>
             </div>
           </motion.div>

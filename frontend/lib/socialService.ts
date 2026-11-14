@@ -1,12 +1,12 @@
-import { authHeaders } from "./paymentService";
+import { apiFetch } from "./paymentService";
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 export interface FollowState { following: boolean; followersCount: number }
 export interface ActivityItem {
   _id: string; title: string; thumbnailUrl: string; createdAt: string;
-  creator: { name: string; username?: string; picture?: string };
+  creator: { _id?: string; name: string; username?: string; picture?: string };
 }
 async function request(path: string, method = "GET") {
-  const res = await fetch(`${API}/users/${path}`, { method, headers: authHeaders(), cache: "no-store" });
+  const res = await apiFetch(`${API}/users/${path}`, { method });
   const json = await res.json();
   if (!res.ok || !json.success) throw new Error(json.message || json.error || "Không thể tải dữ liệu. Vui lòng đăng nhập và thử lại.");
   return json;

@@ -29,10 +29,10 @@ export interface FloorLayerToolbarProps {
 }
 
 const MATERIAL_STYLES: { id: ArchitecturalStyle; label: string }[] = [
-  { id: "scandinavian", label: "Bắc Âu Gỗ Sồi" },
+  { id: "scandinavian", label: "Scandinavian Oak" },
   { id: "luxury_marble", label: "Marble Travertine" },
-  { id: "casa_serra", label: "Mộc Mạc Brutalism" },
-  { id: "tropical", label: "Nhiệt Đới Xanh" }
+  { id: "casa_serra", label: "Rustic Brutalism" },
+  { id: "tropical", label: "Tropical Green" }
 ];
 
 export default function FloorLayerToolbar({
@@ -77,7 +77,7 @@ export default function FloorLayerToolbar({
                 TOOL
               </span>
               <span className="font-bold text-neutral-900 dark:text-neutral-100 text-sm tracking-tight">
-                Tiện Ích Kiến Trúc 3D
+                3D Architecture Tools
               </span>
             </div>
             <div className="flex items-center gap-1.5">
@@ -88,7 +88,7 @@ export default function FloorLayerToolbar({
                 <button
                   onClick={onToggleMenu}
                   className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 p-0.5 rounded transition text-xs"
-                  title="Ẩn bảng công cụ"
+                  title="Hide tools panel"
                 >
                   ✕
                 </button>
@@ -96,14 +96,14 @@ export default function FloorLayerToolbar({
             </div>
           </div>
 
-          {/* 1. CHẾ ĐỘ XEM KHÔNG GIAN */}
+          {/* 1. SPACE VIEW MODES */}
           <div>
             <div className="text-[10px] uppercase font-bold text-neutral-500 dark:text-neutral-400 tracking-wider mb-2">
-              1. CHẾ ĐỘ XEM KHÔNG GIAN
+              1. SPACE VIEW MODES
             </div>
             <div className="grid grid-cols-2 gap-1.5">
               
-              {/* Mặt Bằng (2D) */}
+              {/* Floor Plan (2D) */}
               <button
                 onClick={() => onCameraModeChange("top_down")}
                 className={`p-2.5 rounded-xl text-left border transition flex flex-col justify-between min-h-[66px] ${
@@ -111,20 +111,20 @@ export default function FloorLayerToolbar({
                     ? "border-neutral-900 dark:border-white bg-neutral-50 dark:bg-neutral-800 shadow-sm"
                     : "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                 }`}
-                title="Nhìn thẳng từ trên cao xuống"
+                title="View straight down from above"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-neutral-900 dark:text-neutral-100 text-[11px]">
-                    Mặt Bằng (2D)
+                    Floor Plan (2D)
                   </span>
                   <span className={`w-2 h-2 rounded-full ${cameraMode === "top_down" ? "bg-amber-500" : "bg-neutral-300 dark:bg-neutral-600"}`} />
                 </div>
                 <span className="text-[10px] text-neutral-500 dark:text-neutral-400 leading-tight">
-                  Nhìn thẳng từ trên cao xuống
+                  View straight down from above
                 </span>
               </button>
 
-              {/* Sa Bàn (1.5m) */}
+              {/* Cutaway Model (1.5 m) */}
               <button
                 onClick={() => onCameraModeChange("dollhouse")}
                 className={`p-2.5 rounded-xl text-left border transition flex flex-col justify-between min-h-[66px] ${
@@ -132,16 +132,16 @@ export default function FloorLayerToolbar({
                     ? "border-neutral-900 dark:border-white bg-neutral-50 dark:bg-neutral-800 shadow-sm"
                     : "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                 }`}
-                title="Cắt tường 1.5m chuẩn quy hoạch sa bàn kiến trúc"
+                title="Cut walls at 1.5 m for an architectural model view"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-neutral-900 dark:text-neutral-100 text-[11px]">
-                    Sa Bàn (1.5m)
+                    Cutaway Model (1.5 m)
                   </span>
                   <span className={`w-2 h-2 rounded-full ${cameraMode === "dollhouse" ? "bg-amber-500" : "bg-neutral-300 dark:bg-neutral-600"}`} />
                 </div>
                 <span className="text-[10px] text-neutral-500 dark:text-neutral-400 leading-tight">
-                  Cắt tường 1.5m chuẩn quy hoạch
+                  Cut walls at 1.5 m
                 </span>
               </button>
 
@@ -153,7 +153,7 @@ export default function FloorLayerToolbar({
                     ? "border-neutral-900 dark:border-white bg-neutral-50 dark:bg-neutral-800 shadow-sm ring-1 ring-neutral-900/10"
                     : "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                 }`}
-                title="Xoay tự do toàn cảnh công trình"
+                title="Freely rotate around the full building"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-neutral-900 dark:text-neutral-100 text-[11px]">
@@ -161,18 +161,18 @@ export default function FloorLayerToolbar({
                   </span>
                   {cameraMode === "orbit" ? (
                     <span className="text-[9px] text-[#FF4D00] font-bold tracking-tight">
-                      ● ĐANG BẬT
+                      ● ON
                     </span>
                   ) : (
                     <span className="w-2 h-2 rounded-full bg-neutral-300 dark:bg-neutral-600" />
                   )}
                 </div>
                 <span className="text-[10px] text-neutral-500 dark:text-neutral-400 leading-tight">
-                  Xoay tự do toàn cảnh công trình
+                  Freely rotate around the full building
                 </span>
               </button>
 
-              {/* Đi Dạo (WASD) */}
+              {/* Walkthrough (WASD) */}
               <button
                 onClick={() => onCameraModeChange("walkthrough")}
                 className={`p-2.5 rounded-xl text-left border transition flex flex-col justify-between min-h-[66px] ${
@@ -180,29 +180,29 @@ export default function FloorLayerToolbar({
                     ? "border-neutral-900 dark:border-white bg-neutral-50 dark:bg-neutral-800 shadow-sm"
                     : "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                 }`}
-                title="Khám phá góc nhìn thứ nhất (First-Person)"
+                title="Explore in first person"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-neutral-900 dark:text-neutral-100 text-[11px]">
-                    Đi Dạo (WASD)
+                    Walkthrough (WASD)
                   </span>
                   <span className="text-[9px] text-neutral-500 dark:text-neutral-400 font-bold">
                     1st POV
                   </span>
                 </div>
                 <span className="text-[10px] text-neutral-500 dark:text-neutral-400 leading-tight">
-                  Khám phá góc nhìn thực tế
+                  Explore in first person
                 </span>
               </button>
 
             </div>
           </div>
 
-          {/* 2. PHONG CÁCH HOÀN THIỆN VẬT LIỆU */}
+          {/* 2. MATERIAL FINISHES */}
           {onSelectStyle && (
             <div>
               <div className="text-[10px] uppercase font-bold text-neutral-500 dark:text-neutral-400 tracking-wider mb-2">
-                2. PHONG CÁCH HOÀN THIỆN VẬT LIỆU
+                2. MATERIAL FINISHES
               </div>
               <div className="grid grid-cols-2 gap-1.5">
                 {MATERIAL_STYLES.map((st) => {
@@ -230,10 +230,10 @@ export default function FloorLayerToolbar({
             </div>
           )}
 
-          {/* 3. QUẢN LÝ LỚP & THƯỚC ĐO 3D */}
+          {/* 3. LAYERS & 3D MEASUREMENTS */}
           <div>
             <div className="text-[10px] uppercase font-bold text-neutral-500 dark:text-neutral-400 tracking-wider mb-2">
-              3. QUẢN LÝ LỚP & THƯỚC ĐO 3D
+              3. LAYERS & 3D MEASUREMENTS
             </div>
             
             {/* Layer Pills Row */}
@@ -245,9 +245,9 @@ export default function FloorLayerToolbar({
                     ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-950 shadow-sm"
                     : "bg-neutral-100 dark:bg-neutral-800 text-neutral-400 border border-neutral-200 dark:border-neutral-700"
                 }`}
-                title="Bật/Tắt hiển thị trần và mái"
+                title="Toggle ceiling and roof visibility"
               >
-                Trần / Mái
+                Ceiling / Roof
               </button>
 
               <button
@@ -257,9 +257,9 @@ export default function FloorLayerToolbar({
                     ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-950 shadow-sm"
                     : "bg-neutral-100 dark:bg-neutral-800 text-neutral-400 border border-neutral-200 dark:border-neutral-700"
                 }`}
-                title="Bật/Tắt hiển thị tường"
+                title="Toggle wall visibility"
               >
-                Tường
+                Walls
               </button>
 
               <button
@@ -269,9 +269,9 @@ export default function FloorLayerToolbar({
                     ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-950 shadow-sm"
                     : "bg-neutral-100 dark:bg-neutral-800 text-neutral-400 border border-neutral-200 dark:border-neutral-700"
                 }`}
-                title="Bật/Tắt hiển thị nội thất"
+                title="Toggle furniture visibility"
               >
-                Nội Thất
+                Furniture
               </button>
 
               <button
@@ -281,9 +281,9 @@ export default function FloorLayerToolbar({
                     ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-950 shadow-sm"
                     : "bg-neutral-100 dark:bg-neutral-800 text-neutral-400 border border-neutral-200 dark:border-neutral-700"
                 }`}
-                title="Bật/Tắt hiển thị cảnh quan sân vườn"
+                title="Toggle garden landscape visibility"
               >
-                Sân Vườn
+                Garden
               </button>
             </div>
 
@@ -296,10 +296,10 @@ export default function FloorLayerToolbar({
                     ? "bg-emerald-500 text-white shadow-sm"
                     : "text-neutral-700 dark:text-neutral-300 hover:text-black dark:hover:text-white"
                 }`}
-                title="Click 2 điểm trong không gian 3D để đo khoảng cách"
+                title="Click two points in the 3D space to measure distance"
               >
                 <span>└</span>
-                <span>{isRulerActive ? "Đang Đo (Click 2 điểm)" : "Thước Đo Khoảng Cách & Cao Độ 3D"}</span>
+                <span>{isRulerActive ? "Measuring (click two points)" : "3D Distance & Height Ruler"}</span>
               </button>
 
               {measuredDistance !== null && (
@@ -310,7 +310,7 @@ export default function FloorLayerToolbar({
                   <button
                     onClick={onClearMeasurement}
                     className="text-neutral-400 hover:text-red-500 text-xs px-1"
-                    title="Xóa kết quả đo"
+                    title="Clear measurement"
                   >
                     ✕
                   </button>
@@ -320,19 +320,19 @@ export default function FloorLayerToolbar({
 
           </div>
 
-          {/* 4. KHỞI TẠO AI RENDER 4K (Full width luxury dark card) */}
+          {/* 4. 4K AI RENDER (full-width feature card) */}
           {onTriggerAIRender && (
             <div className="pt-0.5">
               <button
                 onClick={onTriggerAIRender}
                 disabled={isAIRendering}
                 className="w-full flex items-center justify-between py-2.5 px-3.5 rounded-xl bg-gradient-to-r from-neutral-950 via-neutral-900 to-amber-950 text-white shadow-md hover:shadow-lg transition font-bold border border-neutral-700/60 active:scale-[0.99] text-xs disabled:opacity-50"
-                title="Chụp góc nhìn 3D hiện tại và xuất ảnh AI Render 4K siêu thực (ControlNet Depth)"
+                title="Capture the current 3D view and export a photorealistic 4K AI render (ControlNet Depth)"
               >
                 <div className="flex items-center gap-2">
                   <span className="text-amber-400">●</span>
                   <span className="font-bold tracking-tight">
-                    {isAIRendering ? "ĐANG XỬ LÝ AI RENDER..." : "KHỞI TẠO AI RENDER 4K"}
+                    {isAIRendering ? "RENDERING WITH AI..." : "START 4K AI RENDER"}
                   </span>
                 </div>
                 <span className="text-[9px] px-2 py-0.5 rounded bg-amber-900/60 text-amber-300 font-mono font-bold tracking-wider border border-amber-600/30">
@@ -348,8 +348,8 @@ export default function FloorLayerToolbar({
       {/* WALKTHROUGH FLOATING TOAST (First-Person Walkthrough instruction) */}
       {cameraMode === "walkthrough" && (
         <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-30 pointer-events-auto px-4 py-2 rounded-full bg-neutral-900/90 backdrop-blur-md border border-neutral-700 text-white text-xs font-mono flex items-center gap-3 shadow-xl animate-in fade-in slide-in-from-bottom-2">
-          <span className="text-amber-400 font-bold">🎮 Chế độ Đi Dạo (First-Person):</span>
-          <span>Dùng <strong>W-A-S-D</strong> hoặc phím mũi tên để di chuyển • Giữ chuột để xoay nhìn 360°</span>
+          <span className="text-amber-400 font-bold">🎮 Walkthrough mode (first person):</span>
+          <span>Use <strong>W-A-S-D</strong> or the arrow keys to move • Hold the mouse to look around 360°</span>
         </div>
       )}
     </div>

@@ -82,7 +82,7 @@ export async function fetchCreatorWalletSummaryApi(): Promise<{
     }
     return json;
   } catch (err: any) {
-    return { success: false, message: err?.message || "Lỗi mạng khi tải thông tin ví" };
+    return { success: false, message: err?.message || "Network error while loading wallet information." };
   }
 }
 
@@ -106,11 +106,11 @@ export async function requestPayoutApi(payload: {
     });
     const json = await res.json();
     if (!res.ok) {
-      return { success: false, message: json.message || "Yêu cầu rút tiền không thành công" };
+      return { success: false, message: json.message || "Could not submit the payout request." };
     }
     return json;
   } catch (err: any) {
-    return { success: false, message: err?.message || "Lỗi kết nối khi gửi yêu cầu rút tiền" };
+    return { success: false, message: err?.message || "Could not connect while submitting the payout request." };
   }
 }
 
@@ -130,11 +130,11 @@ export async function updateSavedBankInfoApi(payload: BankInfo): Promise<{
     });
     const json = await res.json();
     if (!res.ok) {
-      return { success: false, message: json.message || "Cập nhật ngân hàng thất bại" };
+      return { success: false, message: json.message || "Could not update bank details." };
     }
     return json;
   } catch (err: any) {
-    return { success: false, message: err?.message || "Lỗi kết nối khi lưu thông tin ngân hàng" };
+    return { success: false, message: err?.message || "Could not connect while saving bank details." };
   }
 }
 

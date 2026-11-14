@@ -38,12 +38,16 @@ exports.createReport = async (req, res, next) => {
       });
     }
 
-    let finalTargetType = targetType ? String(targetType).toLowerCase() : (normalizedTicketType === 'APPEAL' ? 'system' : '');
-    let finalTargetId = targetId || '';
+    const mongoose = require('mongoose');
+    const rawTargetType = targetType ? String(targetType).trim() : (normalizedTicketType === 'APPEAL' ? 'system' : '');
+    const lowerTargetType = rawTargetType.toLowerCase();
+    let finalTargetType = lowerTargetType === 'creator' ? 'CREATOR' : lowerTargetType;
+    let finalTargetId = targetId ? String(targetId).trim() : '';
     let targetTitle = incomingTargetTitle || '';
+    let creatorDisplayName = '';
 
     if (normalizedTicketType === 'REPORT') {
-      if (!finalTargetType || !finalTargetId) {
+      if (!lowerTargetType || !finalTargetId) {
         return res.status(400).json({
           success: false,
           message: 'Báo cáo vi phạm yêu cầu phải có targetType và targetId',
@@ -51,27 +55,39 @@ exports.createReport = async (req, res, next) => {
       }
 
       const validTargetTypes = ['template', 'review', 'creator', 'user', 'comment', 'system', 'presentation'];
-      if (!validTargetTypes.includes(finalTargetType)) {
+      if (!validTargetTypes.includes(lowerTargetType)) {
         return res.status(400).json({
           success: false,
           message: `targetType không hợp lệ. Cho phép: ${validTargetTypes.join(', ')}`,
         });
       }
 
+      if (lowerTargetType === 'creator' || lowerTargetType === 'user') {
+        if (mongoose.Types.ObjectId.isValid(finalTargetId)) {
+          const u = await User.findById(finalTargetId).select('name username email');
+          if (u) {
+            creatorDisplayName = u.name;
+            if (!targetTitle) {
+              targetTitle = u.username ? `${u.name} (@${u.username})` : `${u.name} (${u.email})`;
+            }
+          }
+        }
+        if (!creatorDisplayName && targetTitle) {
+          creatorDisplayName = targetTitle.replace(/\s*\(@.*\)$/, '').trim();
+        }
+      }
+
       // Resolve target title / context if not already provided
       if (!targetTitle) {
-        if (finalTargetType === 'template') {
+        if (lowerTargetType === 'template' && mongoose.Types.ObjectId.isValid(finalTargetId)) {
           const tmpl = await Template.findById(finalTargetId).select('title');
           if (tmpl) targetTitle = tmpl.title;
-        } else if (finalTargetType === 'creator' || finalTargetType === 'user') {
-          const u = await User.findById(finalTargetId).select('name email');
-          if (u) targetTitle = `${u.name} (${u.email})`;
-        } else if (finalTargetType === 'comment') {
+        } else if (lowerTargetType === 'comment' && mongoose.Types.ObjectId.isValid(finalTargetId)) {
           const c = await Comment.findById(finalTargetId).select('content');
           if (c) targetTitle = c.content.slice(0, 50);
-        } else if (finalTargetType === 'review') {
-          targetTitle = 'Đánh giá mẫu thiết kế';
-        } else {
+        } else if (lowerTargetType === 'review') {
+          targetTitle = 'Đánh giá người dùng';
+        } else if (!targetTitle) {
           targetTitle = 'Hệ thống / Nền tảng';
         }
       }
@@ -84,11 +100,13 @@ exports.createReport = async (req, res, next) => {
 
     let finalTargetUrl = targetUrl || '';
     if (!finalTargetUrl) {
-      if (finalTargetType === 'template') {
+      if (lowerTargetType === 'template') {
         finalTargetUrl = `/templates/${finalTargetId}`;
-      } else if (finalTargetType === 'creator' || finalTargetType === 'user') {
-        finalTargetUrl = `/creator/${finalTargetId}`;
-      } else if (finalTargetType === 'review' && finalTargetId && finalTargetId.includes('-review-')) {
+      } else if (lowerTargetType === 'creator' || lowerTargetType === 'user') {
+        finalTargetUrl = `/creator/?id=${finalTargetId}`;
+      } else if (lowerTargetType === 'review' && finalTargetId && finalTargetId.includes('-creator-review-')) {
+        finalTargetUrl = `/creator/?id=${finalTargetId.split('-creator-review-')[0]}`;
+      } else if (lowerTargetType === 'review' && finalTargetId && finalTargetId.includes('-review-')) {
         finalTargetUrl = `/templates/${finalTargetId.split('-review-')[0]}`;
       }
     }
@@ -111,17 +129,18 @@ exports.createReport = async (req, res, next) => {
     });
 
     // Notify all Administrators
+    const reporterDisplayName = req.user.name || 'Người dùng';
     const notifMessage =
       normalizedTicketType === 'APPEAL'
-        ? `Người dùng ${req.user.name || 'Người dùng'} đã gửi khiếu nại mới: ${targetTitle || reason}`
-        : `Người dùng ${req.user.name || 'Người dùng'} đã báo cáo ${
-            finalTargetType === 'template'
+        ? `Người dùng ${reporterDisplayName} đã gửi khiếu nại mới: ${targetTitle || reason}`
+        : lowerTargetType === 'creator' || lowerTargetType === 'user'
+        ? `User ${reporterDisplayName} reported Creator ${creatorDisplayName || targetTitle || finalTargetId} (${reason})`
+        : `Người dùng ${reporterDisplayName} đã báo cáo ${
+            lowerTargetType === 'template'
               ? `mẫu "${targetTitle}"`
-              : finalTargetType === 'creator'
-              ? `creator "${targetTitle}"`
-              : finalTargetType === 'review'
+              : lowerTargetType === 'review'
               ? 'một đánh giá vi phạm'
-              : finalTargetType
+              : lowerTargetType
           }: ${reason}`;
 
     await notifyAdmins({

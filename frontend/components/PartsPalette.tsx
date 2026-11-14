@@ -195,7 +195,7 @@ export function PartsPalette({
         border: `1px solid ${p.outlineVariant}`,
         cursor: "grab",
       }}
-      title="Nhấp để thêm hoặc kéo thả vào màn hình canvas"
+      title="Click to add or drag onto the canvas"
     >
       <AnimationAvatar template={tmpl} primaryColor={p.primary} />
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -241,7 +241,7 @@ export function PartsPalette({
           cursor: "pointer",
           flexShrink: 0,
         }}
-        title="Thêm nhanh vào màn hình"
+        title="Quick add to screen"
       >
         <span className="msr" style={{ fontSize: 18 }}>add</span>
       </button>
@@ -293,10 +293,10 @@ export function PartsPalette({
                   <span className="msr" style={{ fontSize: 22 }}>storefront</span>
                 </div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: p.onSurface }}>
-                  Chưa có Animation đã mua
+                  No purchased animations yet
                 </div>
                 <p style={{ fontSize: 11, color: p.onSurfaceVariant, margin: 0, lineHeight: 1.45 }}>
-                  Khám phá các animation tương tác từ UI Marketplace để đưa vào giao diện.
+                  Explore interactive animations in the UI Marketplace and add them to your design.
                 </p>
                 <Link
                   href="/ui-marketplace/"
@@ -315,7 +315,7 @@ export function PartsPalette({
                     textDecoration: "none",
                   }}
                 >
-                  <span>Khám phá Marketplace</span>
+                  <span>Explore Marketplace</span>
                   <span className="msr" style={{ fontSize: 13 }}>open_in_new</span>
                 </Link>
               </div>

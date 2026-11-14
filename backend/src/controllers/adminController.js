@@ -913,7 +913,8 @@ exports.getAdminReports = async (req, res, next) => {
     }
 
     if (targetType && targetType !== 'all') {
-      query.targetType = targetType;
+      const escapedType = String(targetType).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      query.targetType = { $regex: new RegExp(`^${escapedType}$`, 'i') };
     }
 
     if (search) {
@@ -935,17 +936,71 @@ exports.getAdminReports = async (req, res, next) => {
 
     const enrichedReports = await Promise.all(
       reports.map(async (r) => {
-        if (r.targetType === 'review') {
+        const lowerTargetType = String(r.targetType || '').toLowerCase();
+        if (lowerTargetType === 'review') {
           let tmpl = null;
           let matchedReview = null;
 
-          if (r.targetId && r.targetId.includes('-review-')) {
+          if (r.targetId && r.targetId.includes('-creator-review-')) {
+            const creatorId = r.targetId.split('-creator-review-')[0];
+            if (mongoose.isValidObjectId(creatorId)) {
+              const creatorUser = await User.findById(creatorId).select('_id name username picture reviews');
+              if (creatorUser) {
+                r.targetUrl = creatorUser.username
+                  ? `/creator/?username=${encodeURIComponent(creatorUser.username)}`
+                  : `/creator/?id=${creatorUser._id}`;
+                if (creatorUser.reviews && creatorUser.reviews.length > 0) {
+                  matchedReview = creatorUser.reviews.find(
+                    (rev, idx) =>
+                      (rev._id && rev._id.toString() === r.targetId) ||
+                      `${creatorUser._id}-creator-review-${idx}` === r.targetId
+                  );
+                  if (matchedReview) {
+                    r.reviewDetails = {
+                      _id: (matchedReview._id || r.targetId).toString(),
+                      templateId: '',
+                      creatorId: creatorUser._id.toString(),
+                      templateTitle: `Creator: ${creatorUser.name}`,
+                      templateThumbnail: creatorUser.picture || '',
+                      userName: matchedReview.userName,
+                      userAvatar: matchedReview.userAvatar,
+                      rating: matchedReview.rating,
+                      comment: matchedReview.comment,
+                      createdAt: matchedReview.createdAt,
+                    };
+                  }
+                }
+              }
+            }
+          } else if (r.targetId && r.targetId.includes('-review-')) {
             const tId = r.targetId.split('-review-')[0];
             tmpl = await Template.findById(tId).select('_id title thumbnailUrl reviews');
           } else if (mongoose.isValidObjectId(r.targetId)) {
             tmpl = await Template.findOne({ 'reviews._id': r.targetId }).select('_id title thumbnailUrl reviews');
             if (!tmpl) {
-              tmpl = await Template.findOne({ 'reviews.user': r.targetId }).select('_id title thumbnailUrl reviews');
+              const creatorWithReview = await User.findOne({ 'reviews._id': r.targetId }).select('_id name username picture reviews');
+              if (creatorWithReview) {
+                r.targetUrl = creatorWithReview.username
+                  ? `/creator/?username=${encodeURIComponent(creatorWithReview.username)}`
+                  : `/creator/?id=${creatorWithReview._id}`;
+                const cRev = creatorWithReview.reviews.find((rev) => rev._id && rev._id.toString() === r.targetId);
+                if (cRev) {
+                  r.reviewDetails = {
+                    _id: cRev._id.toString(),
+                    templateId: '',
+                    creatorId: creatorWithReview._id.toString(),
+                    templateTitle: `Creator: ${creatorWithReview.name}`,
+                    templateThumbnail: creatorWithReview.picture || '',
+                    userName: cRev.userName,
+                    userAvatar: cRev.userAvatar,
+                    rating: cRev.rating,
+                    comment: cRev.comment,
+                    createdAt: cRev.createdAt,
+                  };
+                }
+              } else {
+                tmpl = await Template.findOne({ 'reviews.user': r.targetId }).select('_id title thumbnailUrl reviews');
+              }
             }
           }
 
@@ -993,11 +1048,11 @@ exports.getAdminReports = async (req, res, next) => {
             }
           }
         } else if (!r.targetUrl) {
-          if (r.targetType === 'template') {
+          if (lowerTargetType === 'template') {
             r.targetUrl = `/templates/${r.targetId}`;
-          } else if (r.targetType === 'creator' || r.targetType === 'user') {
-            r.targetUrl = `/creator/${r.targetId}`;
-          } else if (r.targetType === 'comment') {
+          } else if (lowerTargetType === 'creator' || lowerTargetType === 'user') {
+            r.targetUrl = `/creator/?id=${r.targetId}`;
+          } else if (lowerTargetType === 'comment') {
             if (r.targetId && r.targetId.includes('-comment-')) {
               r.targetUrl = `/templates/${r.targetId.split('-comment-')[0]}`;
             }
@@ -1028,7 +1083,7 @@ exports.getAdminReports = async (req, res, next) => {
 exports.updateReportStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { status, resolutionNotes = '', priority } = req.body;
+    const { status, resolutionNotes = '', priority, sendCreatorWarning } = req.body;
 
     const report = await Report.findById(id);
     if (!report) {
@@ -1090,6 +1145,54 @@ exports.updateReportStatus = async (req, res, next) => {
           resolutionNotes: report.resolutionNotes,
         },
       });
+    }
+
+    // Send warning notification to the reported Creator/User when Admin resolves/takes action on a violation report
+    const shouldWarnCreator =
+      report.ticketType === 'REPORT' &&
+      (sendCreatorWarning === true || (sendCreatorWarning !== false && report.status === 'resolved'));
+
+    if (shouldWarnCreator) {
+      const lowerType = String(report.targetType || '').toLowerCase();
+      let reportedCreatorId = null;
+      let contextLabel = report.targetTitle || report.reason;
+
+      if ((lowerType === 'creator' || lowerType === 'user') && mongoose.isValidObjectId(report.targetId)) {
+        reportedCreatorId = report.targetId;
+        contextLabel = 'hồ sơ Creator của bạn';
+      } else if (lowerType === 'template' && mongoose.isValidObjectId(report.targetId)) {
+        const tmpl = await Template.findById(report.targetId).select('author title');
+        if (tmpl && tmpl.author) {
+          reportedCreatorId = tmpl.author;
+          contextLabel = `mẫu thiết kế "${tmpl.title}"`;
+        }
+      }
+
+      if (
+        reportedCreatorId &&
+        (!report.reporter || String(reportedCreatorId) !== String(report.reporter))
+      ) {
+        const warningMsg = `Cảnh báo từ Ban Quản Trị: Báo cáo vi phạm đối với ${contextLabel} (Lý do: ${report.reason}) đã được kiểm duyệt và xử lý.${
+          report.resolutionNotes
+            ? ' Ghi chú của Admin: ' + report.resolutionNotes
+            : ' Vui lòng tuân thủ tiêu chuẩn cộng đồng hoặc gửi kháng nghị nếu có nhầm lẫn.'
+        }`;
+
+        await notifyUser({
+          recipientId: reportedCreatorId,
+          actorId: req.user ? req.user._id : null,
+          type: 'creator_warning',
+          message: warningMsg,
+          link: '/appeals',
+          metadata: {
+            reportId: report._id,
+            targetType: report.targetType,
+            targetId: report.targetId,
+            reason: report.reason,
+            resolutionNotes: report.resolutionNotes,
+          },
+        });
+      }
     }
 
     res.status(200).json({
@@ -1928,6 +2031,63 @@ exports.deleteAdminReview = async (req, res, next) => {
     }
 
     if (!template) {
+      // Fallback: check if this review belongs to a Creator profile
+      let creator = null;
+      if (reviewId.includes('-creator-review-')) {
+        const cId = reviewId.split('-creator-review-')[0];
+        if (mongoose.isValidObjectId(cId)) creator = await User.findById(cId);
+      } else if (mongoose.isValidObjectId(reviewId)) {
+        creator = await User.findOne({ 'reviews._id': reviewId });
+      }
+
+      if (creator && creator.reviews && creator.reviews.length > 0) {
+        const cRevIdx = creator.reviews.findIndex((r, idx) => {
+          if (r._id && r._id.toString() === reviewId) return true;
+          if (`${creator._id}-creator-review-${idx}` === reviewId) return true;
+          return false;
+        });
+
+        if (cRevIdx !== -1) {
+          const deletedCreatorRev = creator.reviews.splice(cRevIdx, 1)[0];
+          creator.ratingsCount = creator.reviews.length;
+          if (creator.ratingsCount > 0) {
+            const totalScore = creator.reviews.reduce((sum, r) => sum + r.rating, 0);
+            creator.avgRating = Number((totalScore / creator.ratingsCount).toFixed(1));
+          } else {
+            creator.avgRating = 0;
+          }
+          await creator.save();
+
+          await logAdminAction({
+            actor: req.user._id,
+            actorName: req.user.name || 'Admin',
+            actorEmail: req.user.email || '',
+            action: 'DELETE_REVIEW_MODERATION',
+            targetType: 'creator',
+            targetId: creator._id.toString(),
+            targetLabel: `Đánh giá của ${deletedCreatorRev.userName} trên Creator "${creator.name}"`,
+            details: {
+              reviewId,
+              reviewerName: deletedCreatorRev.userName,
+              rating: deletedCreatorRev.rating,
+              comment: deletedCreatorRev.comment,
+            },
+            req,
+          });
+
+          return res.status(200).json({
+            success: true,
+            message: 'Đã xóa đánh giá vi phạm trên hồ sơ Creator thành công',
+            data: {
+              creatorId: creator._id,
+              avgRating: creator.avgRating,
+              ratingsCount: creator.ratingsCount,
+              reviews: creator.reviews,
+            },
+          });
+        }
+      }
+
       return res.status(404).json({ success: false, message: 'Không tìm thấy mẫu thiết kế chứa đánh giá này' });
     }
 

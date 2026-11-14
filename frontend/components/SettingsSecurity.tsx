@@ -9,13 +9,13 @@ export default function SettingsSecurity({ email }: { email: string }) {
   const [error, setError] = useState(false);
 
   function clearKeys() {
-    if (!window.confirm("Xóa tất cả key AI đã lưu trên trình duyệt này?")) return;
+    if (!window.confirm("Delete all AI keys saved in this browser?")) return;
     try {
       clearAiKeys();
-      setMessage("Đã xóa các key AI đã lưu.");
+      setMessage("Saved AI keys were deleted.");
       setError(false);
     } catch {
-      setMessage("Không thể xóa dữ liệu trên trình duyệt này.");
+      setMessage("Could not delete data from this browser.");
       setError(true);
     }
   }
@@ -35,11 +35,11 @@ export default function SettingsSecurity({ email }: { email: string }) {
             <span className="material-symbols-rounded">shield_lock</span>
           </span>
           <div className={s.headingCopy}>
-            <h1 id="security-title">Bảo mật</h1>
-            <p>Quản lý tài khoản và dữ liệu truy cập.</p>
+            <h1 id="security-title">Security</h1>
+            <p>Manage your account and access data.</p>
           </div>
         </div>
-        <span className={s.badge}>Tài khoản</span>
+        <span className={s.badge}>Account</span>
       </header>
 
       <div className={s.securityRows}>
@@ -48,11 +48,11 @@ export default function SettingsSecurity({ email }: { email: string }) {
             <span className="material-symbols-rounded">account_circle</span>
           </span>
           <div className={s.securityCopy}>
-            <h3>Tài khoản đăng nhập</h3>
-            <p>{email || "Tài khoản Google"}</p>
+            <h3>Sign-in account</h3>
+            <p>{email || "Google account"}</p>
           </div>
           <a className={`${s.buttonLink} ${s.securityAction}`} href="https://myaccount.google.com/security" target="_blank" rel="noopener noreferrer">
-            Quản lý <span className="material-symbols-rounded" aria-hidden="true">open_in_new</span>
+            Manage <span className="material-symbols-rounded" aria-hidden="true">open_in_new</span>
           </a>
         </div>
 
@@ -62,9 +62,9 @@ export default function SettingsSecurity({ email }: { email: string }) {
           </span>
           <div className={s.securityCopy}>
             <h3>API key AI</h3>
-            <p>Key chỉ được lưu trong trình duyệt này.</p>
+            <p>Keys are stored only in this browser.</p>
           </div>
-          <button type="button" className={s.dangerButton} onClick={clearKeys}>Xóa key</button>
+          <button type="button" className={s.dangerButton} onClick={clearKeys}>Delete keys</button>
         </div>
 
         <div className={s.securityRow}>
@@ -72,10 +72,10 @@ export default function SettingsSecurity({ email }: { email: string }) {
             <span className="material-symbols-rounded">devices</span>
           </span>
           <div className={s.securityCopy}>
-            <h3>Phiên đăng nhập</h3>
-            <p>Đăng xuất khỏi tài khoản trên thiết bị này.</p>
+            <h3>Current session</h3>
+            <p>Sign out of your account on this device.</p>
           </div>
-          <button type="button" onClick={signOut}>Đăng xuất</button>
+          <button type="button" onClick={signOut}>Sign out</button>
         </div>
       </div>
 

@@ -55,10 +55,10 @@ export default function AdminPayoutsPage() {
           }
         }
       } else {
-        setError(res.message || "Không thể tải danh sách yêu cầu rút tiền");
+        setError(res.message || "Could not load payout requests.");
       }
     } catch (err: any) {
-      setError(err.message || "Lỗi kết nối máy chủ");
+      setError(err.message || "Could not connect to the server.");
     } finally {
       setLoading(false);
     }
@@ -76,8 +76,8 @@ export default function AdminPayoutsPage() {
     setUploadingProof(false);
     setAdminNote(
       type === "PAID"
-        ? "Đã chuyển khoản thành công qua cổng thanh toán liên ngân hàng Napas 24/7."
-        : "Thông tin thụ hưởng hoặc số tài khoản không hợp lệ, vui lòng kiểm tra lại."
+        ? "The transfer was completed successfully through the Napas 24/7 payment network."
+        : "The recipient or account details are invalid. Please check them and try again."
     );
   };
 
@@ -95,7 +95,7 @@ export default function AdminPayoutsPage() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      setProofError("Vui lòng chọn tệp hình ảnh hợp lệ (PNG, JPG, WEBP)");
+      setProofError("Choose a valid image file (PNG, JPG, or WEBP).");
       return;
     }
 
@@ -105,7 +105,7 @@ export default function AdminPayoutsPage() {
       const url = await uploadFileToCloudinary(file, "pickme3d/payout-proofs");
       setPaymentProof(url);
     } catch (err: any) {
-      setProofError(err?.message || "Không thể tải lên ảnh thanh toán");
+      setProofError(err?.message || "Could not upload the payment image.");
     } finally {
       setUploadingProof(false);
     }
@@ -126,17 +126,17 @@ export default function AdminPayoutsPage() {
       if (res.success) {
         setToastMessage(
           actionType === "PAID"
-            ? `Đã duyệt chi trả thành công cho ${activePayout.creatorName}!`
-            : `Đã từ chối yêu cầu rút tiền của ${activePayout.creatorName}!`
+            ? `Payout approved for ${activePayout.creatorName}.`
+            : `Payout request rejected for ${activePayout.creatorName}.`
         );
         setTimeout(() => setToastMessage(null), 4000);
         closeModal();
         loadPayouts();
       } else {
-        alert("Lỗi: " + (res.message || "Không thể cập nhật trạng thái"));
+        alert("Error: " + (res.message || "Could not update the status."));
       }
     } catch (err: any) {
-      alert("Lỗi: " + (err.message || "Không thể xử lý yêu cầu"));
+      alert("Error: " + (err.message || "Could not process the request."));
     } finally {
       setSubmitting(false);
     }
@@ -183,10 +183,10 @@ export default function AdminPayoutsPage() {
             </span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-semibold text-white tracking-tight">
-            Yêu Cầu Rút Tiền (Payouts)
+            Payout Requests
           </h1>
           <p className="text-zinc-400 text-xs sm:text-sm mt-1 max-w-2xl leading-relaxed">
-            Xem xét và phê duyệt các lệnh rút hoa hồng bán template của Creator. Kiểm tra số dư và thông tin tài khoản ngân hàng trước khi xác nhận.
+            Review and approve creator template commission payouts. Check the balance and bank details before confirming.
           </p>
         </div>
 
@@ -195,7 +195,7 @@ export default function AdminPayoutsPage() {
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 hover:text-white border border-white/10 text-xs font-semibold transition-all cursor-pointer shrink-0"
         >
           <span className="material-symbols-rounded text-base">refresh</span>
-          <span>Làm Mới</span>
+          <span>Refresh</span>
         </button>
       </div>
 
@@ -205,17 +205,17 @@ export default function AdminPayoutsPage() {
         <div className="p-5 rounded-2xl bg-zinc-900/50 border border-white/10 hover:border-amber-500/30 transition-all">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[11px] font-mono uppercase tracking-wider text-amber-400">
-              Đang Chờ Duyệt (Pending)
+              Pending
             </span>
             <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
               <span className="material-symbols-rounded text-base">hourglass_top</span>
             </div>
           </div>
           <div className="text-3xl font-bold text-white tracking-tight">
-            {summary.pendingCount} <span className="text-xs font-normal text-zinc-500">lệnh</span>
+            {summary.pendingCount} <span className="text-xs font-normal text-zinc-500">requests</span>
           </div>
           <div className="mt-2 text-xs text-amber-400/90 font-mono">
-            Tổng tiền: {formatCurrency(summary.totalPendingAmount)}
+            Total: {formatCurrency(summary.totalPendingAmount)}
           </div>
         </div>
 
@@ -223,17 +223,17 @@ export default function AdminPayoutsPage() {
         <div className="p-5 rounded-2xl bg-zinc-900/50 border border-white/10 hover:border-emerald-500/30 transition-all">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-400">
-              Đã Chi Trả (Paid)
+              Paid
             </span>
             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
               <span className="material-symbols-rounded text-base">check_circle</span>
             </div>
           </div>
           <div className="text-3xl font-bold text-white tracking-tight">
-            {summary.paidCount} <span className="text-xs font-normal text-zinc-500">lệnh</span>
+            {summary.paidCount} <span className="text-xs font-normal text-zinc-500">requests</span>
           </div>
           <div className="mt-2 text-xs text-zinc-400">
-            Đã hoàn tất thanh toán cho Creator
+            Payments completed for creators
           </div>
         </div>
 
@@ -241,17 +241,17 @@ export default function AdminPayoutsPage() {
         <div className="p-5 rounded-2xl bg-zinc-900/50 border border-white/10 hover:border-rose-500/30 transition-all">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[11px] font-mono uppercase tracking-wider text-rose-400">
-              Đã Từ Chối (Rejected)
+              Rejected
             </span>
             <div className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center">
               <span className="material-symbols-rounded text-base">cancel</span>
             </div>
           </div>
           <div className="text-3xl font-bold text-white tracking-tight">
-            {summary.rejectedCount} <span className="text-xs font-normal text-zinc-500">lệnh</span>
+            {summary.rejectedCount} <span className="text-xs font-normal text-zinc-500">requests</span>
           </div>
           <div className="mt-2 text-xs text-zinc-400">
-            Thông tin sai lệch hoặc không đủ điều kiện
+            Invalid details or ineligible requests
           </div>
         </div>
 
@@ -259,7 +259,7 @@ export default function AdminPayoutsPage() {
         <div className="p-5 rounded-2xl bg-zinc-900/50 border border-white/10 hover:border-blue-500/30 transition-all">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[11px] font-mono uppercase tracking-wider text-blue-400">
-              Tỷ Lệ Chia Sẻ Chuẩn
+              Standard Revenue Split
             </span>
             <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
               <span className="material-symbols-rounded text-base">pie_chart</span>
@@ -269,7 +269,7 @@ export default function AdminPayoutsPage() {
             70% <span className="text-xs font-normal text-zinc-500">Creator</span>
           </div>
           <div className="mt-2 text-xs text-zinc-400">
-            Admin giữ 30% phí nền tảng & hạ tầng
+            The platform retains 30% for platform and infrastructure costs
           </div>
         </div>
       </div>
@@ -279,10 +279,10 @@ export default function AdminPayoutsPage() {
         {/* Status Tabs */}
         <div className="flex items-center gap-1.5 p-1 rounded-xl bg-zinc-950/70 border border-white/5 overflow-x-auto">
           {[
-            { id: "all", label: "Tất cả" },
-            { id: "PENDING", label: "Chờ duyệt", count: summary.pendingCount },
-            { id: "PAID", label: "Đã chi trả", count: summary.paidCount },
-            { id: "REJECTED", label: "Bị từ chối", count: summary.rejectedCount },
+            { id: "all", label: "All" },
+            { id: "PENDING", label: "Pending", count: summary.pendingCount },
+            { id: "PAID", label: "Paid", count: summary.paidCount },
+            { id: "REJECTED", label: "Rejected", count: summary.rejectedCount },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -326,7 +326,7 @@ export default function AdminPayoutsPage() {
           </span>
           <input
             type="text"
-            placeholder="Tìm theo Creator, Email, Số tài khoản..."
+            placeholder="Search by creator, email, or account number..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2 rounded-xl bg-zinc-950/80 border border-white/10 text-white placeholder-zinc-500 text-xs focus:outline-none focus:border-white/30"
@@ -339,26 +339,26 @@ export default function AdminPayoutsPage() {
         {loading ? (
           <div className="p-12 text-center text-zinc-500 text-xs">
             <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-2" />
-            Đang tải dữ liệu yêu cầu rút tiền...
+            Loading payout requests...
           </div>
         ) : error ? (
           <div className="p-8 text-center text-rose-400 text-xs">{error}</div>
         ) : payouts.length === 0 ? (
           <div className="p-12 text-center text-zinc-500 text-xs">
-            Không có yêu cầu rút tiền nào phù hợp với bộ lọc hiện tại.
+            No payout requests match the current filters.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-zinc-950/60 border-b border-white/10 text-zinc-400 uppercase text-[10px] font-mono tracking-wider">
                 <tr>
-                  <th className="py-3.5 px-4">Creator / Tác Giả</th>
-                  <th className="py-3.5 px-4">Số Dư Hiện Có</th>
-                  <th className="py-3.5 px-4">Số Tiền Rút</th>
-                  <th className="py-3.5 px-4">Tài Khoản Thụ Hưởng</th>
-                  <th className="py-3.5 px-4">Ngày Yêu Cầu</th>
-                  <th className="py-3.5 px-4">Trạng Thái</th>
-                  <th className="py-3.5 px-4 text-right">Thao Tác</th>
+                  <th className="py-3.5 px-4">Creator</th>
+                  <th className="py-3.5 px-4">Current Balance</th>
+                  <th className="py-3.5 px-4">Payout Amount</th>
+                  <th className="py-3.5 px-4">Recipient Account</th>
+                  <th className="py-3.5 px-4">Request Date</th>
+                  <th className="py-3.5 px-4">Status</th>
+                  <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -406,19 +406,19 @@ export default function AdminPayoutsPage() {
                         {isPending && (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                            Chờ duyệt
+                            Pending
                           </span>
                         )}
                         {isPaid && (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                            Đã chi trả
+                            Paid
                           </span>
                         )}
                         {isRejected && (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20">
                             <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
-                            Từ chối
+                            Rejected
                           </span>
                         )}
                       </td>
@@ -432,20 +432,20 @@ export default function AdminPayoutsPage() {
                               className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs transition-colors cursor-pointer flex items-center gap-1"
                             >
                               <span className="material-symbols-rounded text-sm">check</span>
-                              <span>Duyệt chi trả</span>
+                              <span>Approve payout</span>
                             </button>
                             <button
                               onClick={() => openActionModal(payout, "REJECTED")}
                               className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-rose-900/40 text-rose-300 hover:text-rose-200 border border-white/10 font-medium text-xs transition-colors cursor-pointer flex items-center gap-1"
                             >
                               <span className="material-symbols-rounded text-sm">close</span>
-                              <span>Từ chối</span>
+                              <span>Reject</span>
                             </button>
                           </div>
                         ) : (
                           <div className="flex flex-col items-end gap-1">
                             <div className="text-[11px] text-zinc-500 italic max-w-xs truncate" title={payout.adminNote}>
-                              {payout.adminNote || "Đã xử lý"}
+                              {payout.adminNote || "Processed"}
                             </div>
                             {payout.paymentProof && (
                               <a
@@ -472,7 +472,7 @@ export default function AdminPayoutsPage() {
 
       {/* Confirmation & Processing Modal */}
       {activePayout && actionType && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/65 flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl animate-fade-in space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <h3 className="text-base font-semibold text-white flex items-center gap-2">
@@ -484,7 +484,7 @@ export default function AdminPayoutsPage() {
                   {actionType === "PAID" ? "check_circle" : "cancel"}
                 </span>
                 <span>
-                  {actionType === "PAID" ? "Xác Nhận Chi Trả Creator" : "Từ Chối Yêu Cầu Rút Tiền"}
+                  {actionType === "PAID" ? "Confirm Creator Payout" : "Reject Payout Request"}
                 </span>
               </h3>
               <button
@@ -501,25 +501,25 @@ export default function AdminPayoutsPage() {
                 <span className="text-white font-semibold">{activePayout.creatorName}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-400">Số tiền rút:</span>
+                <span className="text-zinc-400">Payout amount:</span>
                 <span className="text-emerald-400 font-bold font-mono text-sm">
                   {formatCurrency(activePayout.amount)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-400">Số dư hiện có:</span>
+                <span className="text-zinc-400">Current balance:</span>
                 <span className="text-zinc-300 font-mono">
                   {formatCurrency(activePayout.creatorBalance)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-400">Ngân hàng:</span>
+                <span className="text-zinc-400">Bank:</span>
                 <span className="text-white">
                   {activePayout.bankInfo?.bankName} ({activePayout.bankInfo?.accountNumber})
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-400">Chủ tài khoản:</span>
+                <span className="text-zinc-400">Account holder:</span>
                 <span className="text-white uppercase font-mono">
                   {activePayout.bankInfo?.accountHolder}
                 </span>
@@ -529,14 +529,14 @@ export default function AdminPayoutsPage() {
             <form onSubmit={handleConfirmAction} className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                  Ghi chú quản trị viên (Admin Note)
+                  Administrator note
                 </label>
                 <textarea
                   value={adminNote}
                   onChange={(e) => setAdminNote(e.target.value)}
                   rows={3}
                   className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-white/10 text-white text-xs placeholder-zinc-500 focus:outline-none focus:border-white/30"
-                  placeholder="Nhập ghi chú hoặc mã giao dịch ngân hàng..."
+                  placeholder="Enter a note or bank transaction ID..."
                 />
               </div>
 
@@ -544,11 +544,11 @@ export default function AdminPayoutsPage() {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-xs font-medium text-zinc-300">
-                      Ảnh chụp màn hình thanh toán / Bill chuyển khoản
+                      Payment screenshot / transfer receipt
                     </label>
                     {uploadingProof && (
                       <span className="text-emerald-400 text-[11px] animate-pulse">
-                        Đang tải ảnh...
+                        Uploading image...
                       </span>
                     )}
                   </div>
@@ -563,7 +563,7 @@ export default function AdminPayoutsPage() {
                     <div className="relative group w-full h-36 rounded-xl overflow-hidden border border-emerald-500/40 bg-zinc-950 flex items-center justify-center">
                       <img
                         src={paymentProof}
-                        alt="Bill chuyển khoản"
+                        alt="Transfer receipt"
                         className="w-full h-full object-contain"
                       />
                       <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -573,14 +573,14 @@ export default function AdminPayoutsPage() {
                           rel="noreferrer"
                           className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-semibold"
                         >
-                          Xem phóng to
+                          View larger
                         </a>
                         <button
                           type="button"
                           onClick={() => setPaymentProof("")}
                           className="px-3 py-1.5 rounded-lg bg-rose-600/90 hover:bg-rose-500 text-white text-xs font-semibold cursor-pointer"
                         >
-                          Xóa ảnh
+                          Remove image
                         </button>
                       </div>
                     </div>
@@ -589,7 +589,7 @@ export default function AdminPayoutsPage() {
                       <span className="material-symbols-rounded text-base text-emerald-400">
                         add_photo_alternate
                       </span>
-                      <span>Tải ảnh bill chuyển khoản thành công (PNG, JPG)</span>
+                      <span>Upload a transfer receipt (PNG, JPG)</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -608,7 +608,7 @@ export default function AdminPayoutsPage() {
                   onClick={closeModal}
                   className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold transition-colors cursor-pointer"
                 >
-                  Hủy bỏ
+                  Cancel
                 </button>
                 <button
                   type="submit"
@@ -620,10 +620,10 @@ export default function AdminPayoutsPage() {
                   } disabled:opacity-50`}
                 >
                   {submitting
-                    ? "Đang lưu..."
+                    ? "Saving..."
                     : actionType === "PAID"
-                    ? "Xác Nhận Đã Thanh Toán"
-                    : "Xác Nhận Từ Chối"}
+                    ? "Confirm Payment"
+                    : "Confirm Rejection"}
                 </button>
               </div>
             </form>

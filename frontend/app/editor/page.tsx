@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/Skeleton";
-import { isLang, setGlobalLang, type Lang } from "@/lib/i18n";
+import { setGlobalLang, type Lang } from "@/lib/i18n";
 
 const loadEditor = () => import("../Editor");
 if (typeof window !== "undefined") void loadEditor();
@@ -20,12 +20,7 @@ function Boot({ done }: { done: boolean }) {
 }
 
 function initialLanguage(): Lang {
-  try {
-    const ui = JSON.parse(localStorage.getItem("m3e:ui") ?? "null");
-    if (isLang(ui?.lang)) return ui.lang;
-  } catch {}
-  const language = (navigator.language ?? "").toLowerCase();
-  return language.startsWith("zh") ? "zh" : language.startsWith("ko") ? "ko" : language.startsWith("ja") ? "ja" : "en";
+  return "en";
 }
 
 const BOOT_FADE_MS = 420;

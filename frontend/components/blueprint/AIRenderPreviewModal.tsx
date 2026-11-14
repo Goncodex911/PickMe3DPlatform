@@ -55,13 +55,13 @@ export default function AIRenderPreviewModal({
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                Ảnh AI Render 4K Siêu Thực (ControlNet ArchViz)
+                Photorealistic 4K AI Render (ControlNet ArchViz)
                 <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-mono">
                   {resolution}
                 </span>
               </h2>
               <p className="text-xs text-neutral-400">
-                Xuất ảnh phối cảnh nội thất chân thực từng vân gỗ, đá cẩm thạch và dải đèn LED kiến trúc
+                Render a realistic interior with detailed wood grain, marble, and architectural LED lighting.
               </p>
             </div>
           </div>
@@ -69,7 +69,7 @@ export default function AIRenderPreviewModal({
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 flex items-center justify-center transition"
-            title="Đóng"
+            title="Close"
           >
             ✕
           </button>
@@ -88,20 +88,20 @@ export default function AIRenderPreviewModal({
               </div>
               <div className="space-y-1">
                 <h3 className="text-base font-semibold text-white">
-                  Đang khởi tạo phối cảnh 4K siêu thực...
+                  Preparing photorealistic 4K render...
                 </h3>
                 <p className="text-xs text-neutral-400 max-w-md">
-                  Áp dụng bản đồ độ sâu (ControlNet Depth), ánh sáng hắt cyan tủ bếp, bóng đổ mềm và vật liệu PBR cao cấp
+                  Applying a depth map (ControlNet Depth), cyan cabinet lighting, soft shadows, and premium PBR materials.
                 </p>
               </div>
               <div className="text-[11px] font-mono text-amber-400 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/30 animate-pulse">
-                ⚡ Tốc độ xử lý dự kiến: &lt; 5 giây
+                ⚡ Estimated processing time: &lt; 5 seconds
               </div>
             </div>
           ) : error ? (
             <div className="p-6 text-center space-y-3">
               <div className="text-3xl text-rose-500">⚠️</div>
-              <h3 className="text-sm font-semibold text-rose-400">Không thể xuất ảnh Render 4K</h3>
+              <h3 className="text-sm font-semibold text-rose-400">Could not export the 4K render</h3>
               <p className="text-xs text-neutral-400 max-w-md">{error}</p>
             </div>
           ) : (
@@ -116,7 +116,7 @@ export default function AIRenderPreviewModal({
                       : "text-neutral-400 hover:text-white"
                   }`}
                 >
-                  <span>✨ Ảnh AI Render 4K</span>
+                  <span>✨ 4K AI Render</span>
                 </button>
                 <button
                   onClick={() => setViewMode("original")}
@@ -126,7 +126,7 @@ export default function AIRenderPreviewModal({
                       : "text-neutral-400 hover:text-white"
                   }`}
                 >
-                  <span>📐 Khung Nhìn 3D Gốc</span>
+                  <span>📐 Original 3D View</span>
                 </button>
               </div>
 
@@ -163,11 +163,11 @@ export default function AIRenderPreviewModal({
         {/* FOOTER */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-[#232734] bg-[#161922]">
           <div className="text-xs text-neutral-400 flex items-center gap-3">
-            <span>Phong cách: <strong className="text-white font-mono">{styleName}</strong></span>
+            <span>Style: <strong className="text-white font-mono">{styleName}</strong></span>
             {executionTimeMs !== undefined && (
               <>
                 <span>•</span>
-                <span>Thời gian: <strong className="text-emerald-400 font-mono">{executionTimeMs} ms</strong></span>
+                <span>Time: <strong className="text-emerald-400 font-mono">{executionTimeMs} ms</strong></span>
               </>
             )}
           </div>
@@ -177,7 +177,7 @@ export default function AIRenderPreviewModal({
               onClick={onClose}
               className="px-4 py-2 text-xs font-semibold text-neutral-400 hover:text-white rounded-lg transition"
             >
-              Đóng
+              Close
             </button>
             <button
               onClick={handleDownload}
@@ -185,7 +185,7 @@ export default function AIRenderPreviewModal({
               className="px-5 py-2.5 rounded-xl font-semibold text-xs bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black shadow-lg shadow-amber-500/20 transition flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <span>📥</span>
-              <span>Tải Ảnh 4K (.PNG)</span>
+              <span>Download 4K Image (.PNG)</span>
             </button>
           </div>
         </div>

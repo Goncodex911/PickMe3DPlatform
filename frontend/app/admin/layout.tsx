@@ -18,15 +18,15 @@ interface AdminUserSession {
 }
 
 const NAV_ITEMS = [
-  { href: "/admin", label: "Tổng quan", icon: "dashboard", exact: true },
-  { href: "/admin/users", label: "Quản lý người dùng", icon: "group" },
-  { href: "/admin/templates", label: "Mẫu 3D & Slides", icon: "view_in_ar" },
-  { href: "/admin/billing", label: "Doanh thu & Gói cước", icon: "payments" },
-  { href: "/admin/payouts", label: "Yêu cầu rút tiền", icon: "currency_exchange" },
-  { href: "/admin/reports", label: "Sự cố & Vi phạm", icon: "report_problem" },
-  { href: "/admin/system-health", label: "Trạng thái hệ thống", icon: "health_and_safety" },
-  { href: "/admin/audit-logs", label: "Nhật ký kiểm toán", icon: "history_edu" },
-  { href: "/admin/analytics", label: "Báo cáo & Phân tích", icon: "analytics" },
+  { href: "/admin", label: "Overview", icon: "dashboard", exact: true },
+  { href: "/admin/users", label: "Manage users", icon: "group" },
+  { href: "/admin/templates", label: "3D Templates & Slides", icon: "view_in_ar" },
+  { href: "/admin/billing", label: "Revenue & Plans", icon: "payments" },
+  { href: "/admin/payouts", label: "Payout requests", icon: "currency_exchange" },
+  { href: "/admin/reports", label: "Reports & Appeals", icon: "report_problem" },
+  { href: "/admin/system-health", label: "System health", icon: "health_and_safety" },
+  { href: "/admin/audit-logs", label: "Audit log", icon: "history_edu" },
+  { href: "/admin/analytics", label: "Reports & Analytics", icon: "analytics" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -46,7 +46,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const handleAdminEmailLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!adminEmail.trim()) {
-      setLoginError("Vui lòng nhập email quản trị viên");
+      setLoginError("Enter the administrator email.");
       return;
     }
     setLoginLoading(true);
@@ -61,7 +61,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.message || "Email không hợp lệ hoặc không có quyền quản trị viên");
+        throw new Error(data.message || "This email is invalid or does not have administrator access.");
       }
       localStorage.setItem("pickme3d_token", data.token);
       localStorage.setItem("pickme3d_user", JSON.stringify(data.user));
@@ -69,7 +69,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       setCurrentUser(data.user);
       setIsAuthorized(true);
     } catch (err: any) {
-      setLoginError(err.message || "Đăng nhập thất bại");
+      setLoginError(err.message || "Sign-in failed.");
     } finally {
       setLoginLoading(false);
     }
@@ -86,11 +86,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       });
       const data = await res.json();
       if (!res.ok || !data.success || !data.user) {
-        throw new Error(data.message || "Xác thực Google thất bại");
+        throw new Error(data.message || "Google authentication failed.");
       }
       if (data.user.role !== "admin") {
         throw new Error(
-          `Tài khoản ${data.user.email} không có quyền Quản trị viên. Email quản trị viên hợp lệ là: phantrongquy23032005@gmail.com`
+          `The account ${data.user.email} does not have administrator access. Authorized administrator email: phantrongquy23032005@gmail.com`
         );
       }
       localStorage.setItem("pickme3d_token", data.token);
@@ -98,7 +98,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       setCurrentUser(data.user);
       setIsAuthorized(true);
     } catch (err: any) {
-      setLoginError(err.message || "Đăng nhập Google thất bại");
+      setLoginError(err.message || "Google sign-in failed.");
     } finally {
       setLoginLoading(false);
     }
@@ -143,7 +143,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return (
       <div className="min-h-[calc(100vh-68px)] bg-zinc-950 text-white flex flex-col items-center justify-center p-6">
         <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white animate-spin mb-4" />
-        <p className="text-zinc-500 text-xs font-mono tracking-widest uppercase">Đang xác thực quyền Quản trị viên...</p>
+        <p className="text-zinc-500 text-xs font-mono tracking-widest uppercase">Verifying administrator access...</p>
       </div>
     );
   }
@@ -168,20 +168,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
 
           <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight mb-2">
-            Cổng Quản Trị Viên
+            Administrator Portal
           </h2>
           <p className="text-zinc-400 text-xs leading-relaxed mb-6">
-            Đăng nhập để điều hành hệ thống: <b className="text-zinc-200 font-medium">phantrongquy23032005@gmail.com</b>
+            Sign in to manage the platform: <b className="text-zinc-200 font-medium">phantrongquy23032005@gmail.com</b>
           </p>
 
           {currentUser && currentUser.role !== "admin" && (
             <div className="mb-5 p-3 rounded-xl bg-zinc-900 border border-white/10 text-zinc-300 text-xs flex items-center justify-between gap-2">
-              <span>Đang đăng nhập: <b>{currentUser.email}</b> (Không có quyền admin)</span>
+              <span>Signed in as <b>{currentUser.email}</b> (no admin access)</span>
               <button
                 onClick={handleLogout}
                 className="underline text-white hover:text-zinc-300 font-medium cursor-pointer"
               >
-                Đổi tài khoản
+                Switch account
               </button>
             </div>
           )}
@@ -197,12 +197,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Google OAuth Login */}
             <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-zinc-950 border border-white/10">
               <span className="text-[11px] text-zinc-400 mb-3 font-medium">
-                Đăng nhập tài khoản Google Quản trị
+                Sign in with an administrator Google account
               </span>
               <div className="p-1 rounded-full border border-white/15 hover:border-white/30 transition-all">
                 <GoogleSignInButton
                   onSuccess={handleGoogleSuccess}
-                  onError={() => setLoginError("Đăng nhập Google không thành công. Vui lòng thử lại.")}
+                  onError={() => setLoginError("Google sign-in failed. Please try again.")}
                 />
               </div>
             </div>
@@ -210,7 +210,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="relative flex items-center justify-center my-3">
               <div className="border-t border-white/10 w-full" />
               <span className="bg-zinc-900/90 px-3 text-[10px] text-zinc-500 font-mono uppercase tracking-wider">
-                hoặc xác thực nhanh
+                or use quick authentication
               </span>
               <div className="border-t border-white/10 w-full" />
             </div>
@@ -219,7 +219,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <form onSubmit={handleAdminEmailLogin} className="space-y-3">
               <div className="text-left">
                 <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                  Email Quản Trị Viên
+                  Administrator Email
                 </label>
                 <div className="relative">
                   <span className="material-symbols-rounded absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">
@@ -242,7 +242,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-zinc-200 font-medium text-xs text-black tracking-wide transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 shadow-sm"
               >
                 <span className="material-symbols-rounded text-base text-black">login</span>
-                <span>{loginLoading ? "Đang xác thực..." : "Xác Nhận Đăng Nhập Admin"}</span>
+                <span>{loginLoading ? "Verifying..." : "Sign in to Admin"}</span>
               </button>
             </form>
           </div>
@@ -253,7 +253,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               className="text-xs text-zinc-400 hover:text-white transition-colors inline-flex items-center gap-1.5"
             >
               <span className="material-symbols-rounded text-sm">arrow_back</span>
-              <span>Về trang chủ PickMe3D</span>
+              <span>Back to PickMe3D home</span>
             </Link>
           </div>
         </div>
@@ -274,7 +274,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-white/10 transition-colors"
-            title="Thu gọn / Mở rộng Menu"
+            title="Collapse / expand menu"
             aria-label="Toggle Sidebar"
           >
             <span className="material-symbols-rounded text-lg">
@@ -289,7 +289,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </span>
             <span className="hidden sm:inline-block text-zinc-700">•</span>
             <span className="hidden sm:inline-block text-xs text-zinc-400 font-medium">
-              {activeItem?.label || "Bảng điều khiển"}
+              {activeItem?.label || "Dashboard"}
             </span>
             <span className="px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider bg-zinc-900 text-zinc-400 border border-white/10 rounded-full font-medium ml-1">
               Super Admin
@@ -307,7 +307,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link
             href="/editor"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900/60 hover:bg-zinc-800 text-xs font-medium text-zinc-300 hover:text-white transition-all border border-white/10"
-            title="Mở trình chỉnh sửa Canvas 3D"
+            title="Open the 3D Canvas Editor"
           >
             <span className="material-symbols-rounded text-sm text-zinc-400">palette</span>
             <span className="hidden sm:inline">3D Canvas</span>
@@ -316,10 +316,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link
             href="/templates"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900/60 hover:bg-zinc-800 text-xs font-medium text-zinc-300 hover:text-white transition-all border border-white/10"
-            title="Xem thư viện mẫu giao diện"
+            title="View the template gallery"
           >
             <span className="material-symbols-rounded text-sm text-zinc-400">category</span>
-            <span className="hidden sm:inline">Thư viện</span>
+            <span className="hidden sm:inline">Gallery</span>
           </Link>
         </div>
       </header>
@@ -333,7 +333,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         >
           <div className="p-3 space-y-1">
             <div className={`px-3 py-2 text-[10px] font-mono font-medium text-zinc-500 uppercase tracking-widest ${!sidebarOpen && "text-center"}`}>
-              {sidebarOpen ? "Mục Quản Trị" : "•••"}
+              {sidebarOpen ? "Admin sections" : "•••"}
             </div>
 
             {NAV_ITEMS.map((item) => {
@@ -370,7 +370,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 PickMe3D Core Platform
               </div>
               <p className="text-[10px] text-zinc-500 leading-relaxed font-mono">
-                Cơ sở dữ liệu Atlas MongoDB & PayOS Gateway hoạt động ổn định.
+                MongoDB Atlas and PayOS Gateway are operating normally.
               </p>
             </div>
           )}

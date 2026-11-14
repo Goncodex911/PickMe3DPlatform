@@ -226,7 +226,7 @@ export function ProfileMenu({ p, size = 40, side = "down" }: { p: Palette; size?
               }}
             >
               <div style={{ padding: "8px 12px", borderBottom: `1px solid ${p.outlineVariant}`, marginBottom: 6 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: p.onSurface }}>{user?.name || "Người dùng"}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: p.onSurface }}>{user?.name || "User"}</div>
                 <div style={{ fontSize: 12, color: p.onSurfaceVariant }}>{user?.email}</div>
               </div>
               {user?.role === "admin" && (
@@ -253,7 +253,7 @@ export function ProfileMenu({ p, size = 40, side = "down" }: { p: Palette; size?
                   }}
                 >
                   <Icon name="admin_panel_settings" size={18} />
-                  Bảng Quản Trị
+                  Admin dashboard
                 </button>
               )}
               <button
@@ -279,7 +279,7 @@ export function ProfileMenu({ p, size = 40, side = "down" }: { p: Palette; size?
                 }}
               >
                 <Icon name="person" size={18} />
-                Hồ sơ cá nhân
+                Profile
               </button>
               <button
                 onClick={() => {
@@ -329,7 +329,7 @@ export function ProfileMenu({ p, size = 40, side = "down" }: { p: Palette; size?
                 }}
               >
                 <Icon name="category" size={18} />
-                Bộ sưu tập mẫu
+                Template gallery
               </button>
               <button
                 onClick={handleLogout}
@@ -351,7 +351,7 @@ export function ProfileMenu({ p, size = 40, side = "down" }: { p: Palette; size?
                 }}
               >
                 <Icon name="logout" size={18} />
-                Đăng xuất
+                Sign out
               </button>
             </motion.div>
           )}

@@ -41,13 +41,13 @@ export default function BlueprintInputModal({
 
   const handleExportGLB = async () => {
     setIsExportingGLB(true);
-    setScanMessage("Đang đóng gói toàn bộ cảnh 3D sang tệp .GLB chuẩn nén...");
+    setScanMessage("Packaging the full 3D scene as a compressed .GLB file...");
     try {
       const layoutData = convertBlueprintProjectToLayoutData(project);
       const res = await exportLayoutDataToGLB(layoutData, { autoDownload: true });
-      setScanMessage(`✓ Đã tải xuống tệp 3D ${res.filename} (${res.sizeKb} KB)!`);
+      setScanMessage(`✓ Downloaded 3D file ${res.filename} (${res.sizeKb} KB)!`);
     } catch (err: any) {
-      setScanMessage(`Lỗi xuất file 3D: ${err?.message || "Không thể xuất .GLB"}`);
+      setScanMessage(`3D export failed: ${err?.message || "Could not export .GLB"}`);
     } finally {
       setIsExportingGLB(false);
     }
@@ -57,21 +57,21 @@ export default function BlueprintInputModal({
   const handleSelectPreset = (preset: BlueprintProject) => {
     setProject(JSON.parse(JSON.stringify(preset)));
     setUploadedImage(null);
-    setScanMessage(`Đã nạp bản vẽ mẫu: ${preset.name} (${preset.specs.totalArea} m²)`);
+    setScanMessage(`Loaded sample floor plan: ${preset.name} (${preset.specs.totalArea} m²)`);
   };
 
   // Switch architectural style & adapt materials
   const handleSelectStyle = (style: ArchitecturalStyle) => {
     const updated = applyStyleToBlueprintProject(project, style);
     setProject(updated);
-    setScanMessage(`✓ Đã áp dụng phong cách ${SYSTEM_STYLE_PRESETS[style]?.vietnameseName || style}!`);
+    setScanMessage(`✓ Applied the ${SYSTEM_STYLE_PRESETS[style]?.vietnameseName || style} style!`);
   };
 
   // Smart auto-stage furniture and layout
   const handleAutoStage = (style: ArchitecturalStyle) => {
     const updated = applyStyleToBlueprintProject(project, style);
     setProject(updated);
-    setScanMessage(`✓ Đã tự động kê đồ nội thất và gán vật liệu chuẩn phong cách ${SYSTEM_STYLE_PRESETS[style]?.vietnameseName || style}!`);
+    setScanMessage(`✓ Staged the furniture and applied materials for the ${SYSTEM_STYLE_PRESETS[style]?.vietnameseName || style} style!`);
   };
 
   // Upload image
@@ -83,7 +83,7 @@ export default function BlueprintInputModal({
     reader.onload = (event) => {
       const b64 = event.target?.result as string;
       setUploadedImage(b64);
-      setScanMessage("Đã tải ảnh bản vẽ. Bạn có thể bấm 'Quét AI' hoặc tinh chỉnh thông số bên dưới.");
+      setScanMessage("Floor plan image loaded. Select 'Scan with AI' or adjust the settings below.");
     };
     reader.readAsDataURL(file);
   };
@@ -91,25 +91,25 @@ export default function BlueprintInputModal({
   // Trigger AI Scan
   const handleTriggerAIScan = async () => {
     if (!uploadedImage) {
-      alert("Vui lòng tải lên ảnh bản vẽ mặt bằng 2D trước khi quét AI.");
+      alert("Upload a 2D floor plan image before scanning with AI.");
       return;
     }
     setIsScanning(true);
-    setScanMessage("Đang dùng Vision AI phân tích kiến trúc, nhận diện tường, phòng và kích thước...");
+    setScanMessage("Vision AI is analyzing the architecture and identifying walls, rooms, and dimensions...");
 
     try {
-      const res = await scanBlueprintWithAI(uploadedImage, `Yêu cầu phong cách: ${project.specs.style}`);
+      const res = await scanBlueprintWithAI(uploadedImage, `Requested style: ${project.specs.style}`);
       if (res.project) {
         setProject(res.project);
         setScanMessage(
           res.source === "ai" 
-            ? `✓ AI đã bóc tách thành công ${res.project.rooms.length} phòng từ bản vẽ!`
-            : `✓ Đã trích xuất cấu trúc kiến trúc tiêu chuẩn với ${res.project.rooms.length} phòng!`
+            ? `✓ AI extracted ${res.project.rooms.length} rooms from the floor plan!`
+            : `✓ Extracted the architectural layout with ${res.project.rooms.length} rooms!`
         );
         setActiveTab("rooms"); // Move user to review rooms
       }
     } catch (err: any) {
-      setScanMessage(`Lỗi quét: ${err?.message || "Không thể phân tích ảnh"}`);
+      setScanMessage(`Scan failed: ${err?.message || "Could not analyze the image"}`);
     } finally {
       setIsScanning(false);
     }
@@ -165,21 +165,21 @@ export default function BlueprintInputModal({
     const newRoom: RoomSpec = {
       id: `room-${Date.now()}`,
       name: `New Room ${project.rooms.length + 1}`,
-      vietnameseName: `Phòng Mới ${project.rooms.length + 1}`,
+      vietnameseName: `New Room ${project.rooms.length + 1}`,
       category: "living",
       bounds: [0, 0, 4, 4],
       area: 16,
       ceilingHeight: project.specs.ceilingHeight,
       floorMaterial: project.specs.baseFloorMaterial,
-      description: "Không gian mở được bổ sung vào mặt bằng",
-      specs: { orientation: "Tự nhiên", ventilation: "Đối lưu", lightSource: "Cửa sổ" }
+      description: "An open space added to the floor plan",
+      specs: { orientation: "Natural", ventilation: "Cross-ventilated", lightSource: "Window" }
     };
     setProject((prev) => ({ ...prev, rooms: [...prev.rooms, newRoom] }));
   };
 
   const handleRemoveRoom = (index: number) => {
     if (project.rooms.length <= 1) {
-      alert("Bản vẽ cần có ít nhất 1 phòng.");
+      alert("The floor plan must contain at least one room.");
       return;
     }
     setProject((prev) => ({
@@ -200,13 +200,13 @@ export default function BlueprintInputModal({
             </div>
             <div>
               <h2 className="text-lg font-semibold tracking-wide text-white flex items-center gap-2">
-                Nhập Bản Vẽ 2D & Cấu Hình Thông Số Thực Tế
+                Import a 2D Floor Plan & Configure Real-World Dimensions
                 <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
                   Casa Serra Engine
                 </span>
               </h2>
               <p className="text-xs text-neutral-400">
-                Khai báo thông số kỹ thuật chuẩn kiến trúc để hệ thống dựng lại mô hình 3D chân thực nhất
+                Enter architectural specifications so the system can build an accurate 3D model.
               </p>
             </div>
           </div>
@@ -214,7 +214,7 @@ export default function BlueprintInputModal({
             <button 
               onClick={onClose}
               className="text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-neutral-800 transition"
-              title="Đóng"
+              title="Close"
             >
               ✕
             </button>
@@ -231,7 +231,7 @@ export default function BlueprintInputModal({
                 : "border-transparent text-neutral-400 hover:text-neutral-200"
             }`}
           >
-            <span>1. Nguồn Bản Vẽ & AI Scan</span>
+            <span>1. Floor Plan Source & AI Scan</span>
           </button>
           <button
             onClick={() => setActiveTab("style")}
@@ -241,7 +241,7 @@ export default function BlueprintInputModal({
                 : "border-transparent text-neutral-400 hover:text-neutral-200"
             }`}
           >
-            <span>2. Phong Cách & Kê Đồ</span>
+            <span>2. Style & Furniture Staging</span>
           </button>
           <button
             onClick={() => setActiveTab("specs")}
@@ -251,7 +251,7 @@ export default function BlueprintInputModal({
                 : "border-transparent text-neutral-400 hover:text-neutral-200"
             }`}
           >
-            <span>3. Thông Số Kiến Trúc Kỹ Thuật</span>
+            <span>3. Architectural Specifications</span>
           </button>
           <button
             onClick={() => setActiveTab("rooms")}
@@ -261,7 +261,7 @@ export default function BlueprintInputModal({
                 : "border-transparent text-neutral-400 hover:text-neutral-200"
             }`}
           >
-            <span>4. Bóc Tách Từng Phòng ({project.rooms.length})</span>
+            <span>4. Room Details ({project.rooms.length})</span>
           </button>
         </div>
 
@@ -274,7 +274,7 @@ export default function BlueprintInputModal({
               {/* Presets Selection */}
               <div>
                 <label className="block text-xs uppercase tracking-wider text-amber-400/90 font-semibold mb-3">
-                  Cách 1: Chọn Bản Vẽ Mẫu Kiến Trúc Chuẩn Thực Tế
+                  Option 1: Choose a Real-World Architectural Sample
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {ALL_PRESETS.map((p) => {
@@ -300,7 +300,7 @@ export default function BlueprintInputModal({
                         <h4 className="font-semibold text-sm text-white mb-1">{p.name}</h4>
                         <p className="text-xs text-neutral-400 mb-2 line-clamp-2">{p.subtitle}</p>
                         <div className="flex items-center gap-2 text-[11px] text-neutral-400">
-                          <span>🚪 {p.rooms.length} phòng</span>
+                          <span>🚪 {p.rooms.length} rooms</span>
                           <span>•</span>
                           <span>📏 {p.specs.scale}</span>
                         </div>
@@ -313,7 +313,7 @@ export default function BlueprintInputModal({
               {/* Upload Blueprint Image */}
               <div className="border-t border-[#232730] pt-6">
                 <label className="block text-xs uppercase tracking-wider text-amber-400/90 font-semibold mb-3">
-                  Cách 2: Tải Lên Bản Vẽ Mặt Bằng 2D Của Bạn (Ảnh / CAD / Phác Thảo)
+                  Option 2: Upload Your 2D Floor Plan (Image / CAD / Sketch)
                 </label>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -333,10 +333,10 @@ export default function BlueprintInputModal({
                       ⬆
                     </div>
                     <span className="text-sm font-medium text-neutral-200 group-hover:text-amber-300">
-                      Nhấp để chọn ảnh hoặc kéo thả bản vẽ vào đây
+                      Click to choose an image or drag a floor plan here
                     </span>
                     <span className="text-xs text-neutral-500 mt-1">
-                      Hỗ trợ JPG, PNG, WEBP, bản vẽ CAD mặt bằng, sơ đồ phân lô
+                      Supports JPG, PNG, WEBP, CAD floor plans, and site plans
                     </span>
                   </div>
 
@@ -344,10 +344,10 @@ export default function BlueprintInputModal({
                   <div className="bg-[#181b22] border border-[#2a2f3b] rounded-xl p-4 flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs text-neutral-400 font-medium">Bản vẽ đang nạp:</span>
+                        <span className="text-xs text-neutral-400 font-medium">Current floor plan:</span>
                         {uploadedImage && (
                           <span className="text-xs text-emerald-400 font-medium flex items-center gap-1">
-                            ● Đã tải ảnh lên
+                            ● Image uploaded
                           </span>
                         )}
                       </div>
@@ -362,7 +362,7 @@ export default function BlueprintInputModal({
                         </div>
                       ) : (
                         <div className="w-full h-28 rounded-lg border border-dashed border-[#2a2f3b] bg-black/20 flex items-center justify-center text-xs text-neutral-500 mb-3">
-                          Chưa có ảnh upload (Đang dùng dữ liệu {project.name})
+                          No image uploaded (using {project.name})
                         </div>
                       )}
                     </div>
@@ -375,12 +375,12 @@ export default function BlueprintInputModal({
                       {isScanning ? (
                         <>
                           <span className="animate-spin text-base">⚙</span>
-                          <span>Đang Quét AI Bản Vẽ...</span>
+                          <span>Scanning floor plan with AI...</span>
                         </>
                       ) : (
                         <>
                           <span>⚡</span>
-                          <span>Quét AI & Nhận Diện Phòng Tự Động</span>
+                          <span>Scan with AI & Detect Rooms</span>
                         </>
                       )}
                     </button>
@@ -389,9 +389,9 @@ export default function BlueprintInputModal({
                       <button
                         onClick={() => setIsEditingVector(true)}
                         className="w-full mt-2 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition bg-cyan-950/60 border border-cyan-500/40 hover:bg-cyan-900/60 text-cyan-300"
-                        title="Mở bộ công cụ vẽ và nắn chỉnh nét tường đè trên ảnh bản vẽ gốc"
+                        title="Open the drawing tools to trace and correct walls on the source plan"
                       >
-                        <span>✏️ Chỉnh Nét Vector Đè Lên Bản Vẽ</span>
+                        <span>✏️ Edit Vector Lines on the Floor Plan</span>
                       </button>
                     )}
                   </div>
@@ -428,17 +428,17 @@ export default function BlueprintInputModal({
               {/* Project Identification */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs text-neutral-400 mb-1">Tên Dự Án / Tên Nhà</label>
+                  <label className="block text-xs text-neutral-400 mb-1">Project / Property Name</label>
                   <input
                     type="text"
                     value={project.name}
                     onChange={(e) => setProject({ ...project, name: e.target.value })}
                     className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none "
-                    placeholder="VD: Casa Serra, Nhà phố Q.7..."
+                    placeholder="e.g. Casa Serra, Riverside Townhouse..."
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-neutral-400 mb-1">Mã Bản Vẽ Kỹ Thuật</label>
+                  <label className="block text-xs text-neutral-400 mb-1">Technical Drawing Number</label>
                   <input
                     type="text"
                     value={project.code}
@@ -448,15 +448,15 @@ export default function BlueprintInputModal({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-neutral-400 mb-1">Tỉ Lệ Bản Vẽ</label>
+                  <label className="block text-xs text-neutral-400 mb-1">Drawing Scale</label>
                   <select
                     value={project.specs.scale}
                     onChange={(e) => handleUpdateSpec("scale", e.target.value)}
                     className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none "
                   >
-                    <option value="1:50">1:50 (Chi tiết nội thất)</option>
-                    <option value="1:100">1:100 (Tiêu chuẩn xây dựng)</option>
-                    <option value="1:200">1:200 (Quy hoạch tổng thể như Casa Serra)</option>
+                    <option value="1:50">1:50 (Interior detail)</option>
+                    <option value="1:100">1:100 (Construction standard)</option>
+                    <option value="1:200">1:200 (Master plan, such as Casa Serra)</option>
                   </select>
                 </div>
               </div>
@@ -464,11 +464,11 @@ export default function BlueprintInputModal({
               {/* Exact Dimensions & Structural Parameters */}
               <div className="border-t border-[#232730] pt-4">
                 <h4 className="text-xs uppercase tracking-wider text-amber-400 font-semibold mb-3">
-                  Kích Thước Hình Học & Kết Cấu Công Trình
+                  Building Geometry & Structure
                 </h4>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   <div>
-                    <label className="block text-xs text-neutral-400 mb-1">Chiều Rộng Mặt Bằng (m)</label>
+                    <label className="block text-xs text-neutral-400 mb-1">Floor Plan Width (m)</label>
                     <input
                       type="number"
                       step="0.5"
@@ -478,7 +478,7 @@ export default function BlueprintInputModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-neutral-400 mb-1">Chiều Dài Mặt Bằng (m)</label>
+                    <label className="block text-xs text-neutral-400 mb-1">Floor Plan Length (m)</label>
                     <input
                       type="number"
                       step="0.5"
@@ -488,7 +488,7 @@ export default function BlueprintInputModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-neutral-400 mb-1">Tổng Diện Tích Sàn (m²)</label>
+                    <label className="block text-xs text-neutral-400 mb-1">Total Floor Area (m²)</label>
                     <input
                       type="number"
                       value={project.specs.totalArea}
@@ -497,7 +497,7 @@ export default function BlueprintInputModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-neutral-400 mb-1">Chiều Cao Trần Nhà (m)</label>
+                    <label className="block text-xs text-neutral-400 mb-1">Ceiling Height (m)</label>
                     <input
                       type="number"
                       step="0.1"
@@ -511,7 +511,7 @@ export default function BlueprintInputModal({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                   <div>
                     <label className="block text-xs text-neutral-400 mb-1">
-                      Độ Dày Tường Bao Ngoài (m)
+                      Exterior Wall Thickness (m)
                     </label>
                     <input
                       type="number"
@@ -521,12 +521,12 @@ export default function BlueprintInputModal({
                       className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none  font-mono"
                     />
                     <span className="text-[11px] text-neutral-500 mt-0.5 block">
-                      Tiêu chuẩn tường đôi chống nóng: 0.20m - 0.25m (200 - 250mm)
+                      Thermal double-wall standard: 0.20 m–0.25 m (200–250 mm)
                     </span>
                   </div>
                   <div>
                     <label className="block text-xs text-neutral-400 mb-1">
-                      Độ Dày Tường Ngăn Phòng (m)
+                      Interior Wall Thickness (m)
                     </label>
                     <input
                       type="number"
@@ -536,7 +536,7 @@ export default function BlueprintInputModal({
                       className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none  font-mono"
                     />
                     <span className="text-[11px] text-neutral-500 mt-0.5 block">
-                      Tiêu chuẩn tường đơn ngăn phòng: 0.10m (100mm)
+                      Standard interior partition: 0.10 m (100 mm)
                     </span>
                   </div>
                 </div>
@@ -545,65 +545,65 @@ export default function BlueprintInputModal({
               {/* Environment, Sun & Material Style */}
               <div className="border-t border-[#232730] pt-4">
                 <h4 className="text-xs uppercase tracking-wider text-amber-400 font-semibold mb-3">
-                  Ánh Sáng Thực Tế & Phong Cách Vật Liệu
+                  Natural Lighting & Material Style
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                   <div>
-                    <label className="block text-xs text-neutral-400 mb-1">Hướng Nhà Chính</label>
+                    <label className="block text-xs text-neutral-400 mb-1">Main Building Orientation</label>
                     <select
                       value={project.specs.orientation}
                       onChange={(e) => handleUpdateSpec("orientation", e.target.value as Orientation)}
                       className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none "
                     >
-                      <option value="S">Hướng Nam (Đón gió mát, nắng dịu)</option>
-                      <option value="SE">Hướng Đông Nam (Lý tưởng khí hậu VN)</option>
-                      <option value="E">Hướng Đông (Nắng sớm bình minh)</option>
-                      <option value="NE">Hướng Đông Bắc</option>
-                      <option value="N">Hướng Bắc (Ánh sáng khuếch tán đều)</option>
-                      <option value="SW">Hướng Tây Nam</option>
-                      <option value="W">Hướng Tây (Nắng chiều hoàng hôn)</option>
-                      <option value="NW">Hướng Tây Bắc</option>
+                      <option value="S">South (cool breezes, soft sunlight)</option>
+                      <option value="SE">Southeast (ideal for Vietnam's climate)</option>
+                      <option value="E">East (morning sunlight)</option>
+                      <option value="NE">Northeast</option>
+                      <option value="N">North (even, diffused light)</option>
+                      <option value="SW">Southwest</option>
+                      <option value="W">West (afternoon sunlight)</option>
+                      <option value="NW">Northwest</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs text-neutral-400 mb-1">Thời Điểm Trong Ngày</label>
+                    <label className="block text-xs text-neutral-400 mb-1">Time of Day</label>
                     <select
                       value={project.specs.timeOfDay}
                       onChange={(e) => handleUpdateSpec("timeOfDay", e.target.value as TimeOfDay)}
                       className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none "
                     >
-                      <option value="golden_hour">Hoàng Hôn / Golden Hour (Casa Serra)</option>
-                      <option value="morning">Sáng Sớm (Ánh sáng tươi mát)</option>
-                      <option value="noon">Trưa Nắng (Bóng đổ thẳng đứng)</option>
-                      <option value="night">Ban Đêm (Đèn nội thất ấm)</option>
+                      <option value="golden_hour">Sunset / Golden hour (Casa Serra)</option>
+                      <option value="morning">Early morning (fresh light)</option>
+                      <option value="noon">Midday (vertical shadows)</option>
+                      <option value="night">Night (warm interior lighting)</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs text-neutral-400 mb-1">Phong Cách Kiến Trúc</label>
+                    <label className="block text-xs text-neutral-400 mb-1">Architectural Style</label>
                     <select
                       value={project.specs.style}
                       onChange={(e) => handleUpdateSpec("style", e.target.value as ArchitecturalStyle)}
                       className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none "
                     >
-                      <option value="casa_serra">Casa Serra Brutalist (Bê tông & Gỗ mộc)</option>
-                      <option value="modern_minimal">Tối Giản Hiện Đại (Modern Minimalist)</option>
-                      <option value="scandinavian">Bắc Âu Scandinavian (Ấm cúng & Sáng sủa)</option>
-                      <option value="luxury_marble">Luxury Sang Trọng (Đá cẩm thạch)</option>
-                      <option value="tropical">Nhiệt Đới Nghỉ Dưỡng (Tropical Resort)</option>
+                      <option value="casa_serra">Casa Serra Brutalist (Concrete & natural wood)</option>
+                      <option value="modern_minimal">Modern Minimalist</option>
+                      <option value="scandinavian">Scandinavian (Warm & bright)</option>
+                      <option value="luxury_marble">Luxury Marble</option>
+                      <option value="tropical">Tropical Resort</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs text-neutral-400 mb-1">Vật Liệu Sàn Cơ Bản</label>
+                    <label className="block text-xs text-neutral-400 mb-1">Primary Floor Material</label>
                     <select
                       value={project.specs.baseFloorMaterial}
                       onChange={(e) => handleUpdateSpec("baseFloorMaterial", e.target.value as FloorMaterialType)}
                       className="w-full bg-[#1b1f28] border border-[#2d3340] rounded-lg px-3 py-2 text-sm text-white focus:outline-none "
                     >
-                      <option value="concrete">Bê tông mài bóng (Polished Concrete)</option>
-                      <option value="oak">Gỗ sồi tự nhiên (Natural Oak)</option>
-                      <option value="marble">Đá cẩm thạch Ý (Italian Marble)</option>
-                      <option value="tile">Gạch mờ kiến trúc (Matte Architectural Tile)</option>
-                      <option value="dark_wood">Gỗ óc chó trầm (Dark Walnut)</option>
+                      <option value="concrete">Polished concrete</option>
+                      <option value="oak">Natural oak</option>
+                      <option value="marble">Italian marble</option>
+                      <option value="tile">Matte architectural tile</option>
+                      <option value="dark_wood">Dark walnut</option>
                     </select>
                   </div>
                 </div>
@@ -617,17 +617,17 @@ export default function BlueprintInputModal({
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-sm font-semibold text-white">
-                    Bảng Bóc Tách Chi Tiết Từng Phòng ({project.rooms.length} phòng)
+                    Room Details ({project.rooms.length} rooms)
                   </h4>
                   <p className="text-xs text-neutral-400">
-                    Bạn có thể chỉnh sửa tên, kích thước mét [X0, Z0, X1, Z1], diện tích và vật liệu hoàn thiện từng phòng
+                    Edit each room's name, dimensions [X0, Z0, X1, Z1], area, and finish materials.
                   </p>
                 </div>
                 <button
                   onClick={handleAddRoom}
                   className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-amber-300 border border-neutral-700 text-xs font-semibold flex items-center gap-1.5 transition"
                 >
-                  <span>+ Thêm Phòng</span>
+                  <span>+ Add Room</span>
                 </button>
               </div>
 
@@ -645,10 +645,10 @@ export default function BlueprintInputModal({
                         </span>
                         <input
                           type="text"
-                          value={room.vietnameseName || room.name}
-                          onChange={(e) => handleUpdateRoom(idx, "vietnameseName", e.target.value)}
+                          value={room.name}
+                          onChange={(e) => handleUpdateRoom(idx, "name", e.target.value)}
                           className="font-semibold text-sm bg-transparent border-b border-transparent hover:border-neutral-500  focus:outline-none text-white px-1"
-                          placeholder="Tên phòng (tiếng Việt)"
+                          placeholder="Room name"
                         />
                         <span className="text-xs text-neutral-500 font-mono">({room.name})</span>
                       </div>
@@ -659,14 +659,14 @@ export default function BlueprintInputModal({
                           onChange={(e) => handleUpdateRoom(idx, "category", e.target.value)}
                           className="bg-[#20242e] border border-[#303644] rounded px-2 py-1 text-xs text-neutral-300"
                         >
-                          <option value="living">Phòng Khách</option>
-                          <option value="kitchen">Bếp & Ăn</option>
-                          <option value="bedroom">Phòng Ngủ</option>
-                          <option value="bath">Vệ Sinh / Spa</option>
-                          <option value="outdoor">Sân Vườn / Hiên</option>
-                          <option value="hallway">Sảnh / Hành Lang</option>
-                          <option value="utility">Phòng Thay Đồ / Kho</option>
-                          <option value="office">Phòng Làm Việc</option>
+                          <option value="living">Living Room</option>
+                          <option value="kitchen">Kitchen & Dining</option>
+                          <option value="bedroom">Bedroom</option>
+                          <option value="bath">Bathroom / Spa</option>
+                          <option value="outdoor">Garden / Patio</option>
+                          <option value="hallway">Lobby / Hallway</option>
+                          <option value="utility">Dressing Room / Storage</option>
+                          <option value="office">Office</option>
                         </select>
 
                         <select
@@ -674,18 +674,18 @@ export default function BlueprintInputModal({
                           onChange={(e) => handleUpdateRoom(idx, "floorMaterial", e.target.value)}
                           className="bg-[#20242e] border border-[#303644] rounded px-2 py-1 text-xs text-amber-300"
                         >
-                          <option value="concrete">Sàn Bê Tông</option>
-                          <option value="oak">Sàn Gỗ Sồi</option>
-                          <option value="marble">Sàn Đá Cẩm Thạch</option>
-                          <option value="tile">Sàn Gạch Men</option>
-                          <option value="gravel">Sỏi Trắng (Zen)</option>
-                          <option value="grass">Cỏ Tự Nhiên</option>
+                          <option value="concrete">Concrete Floor</option>
+                          <option value="oak">Oak Floor</option>
+                          <option value="marble">Marble Floor</option>
+                          <option value="tile">Tile Floor</option>
+                          <option value="gravel">White Gravel (Zen)</option>
+                          <option value="grass">Natural Grass</option>
                         </select>
 
                         <button
                           onClick={() => handleRemoveRoom(idx)}
                           className="text-neutral-500 hover:text-red-400 p-1 text-xs transition"
-                          title="Xóa phòng này"
+                          title="Delete this room"
                         >
                           🗑
                         </button>
@@ -695,7 +695,7 @@ export default function BlueprintInputModal({
                     {/* Coordinates & Area */}
                     <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 text-xs">
                       <div>
-                        <span className="text-neutral-500 block text-[10px]">Tọa độ X0 (m)</span>
+                        <span className="text-neutral-500 block text-[10px]">X0 Coordinate (m)</span>
                         <input
                           type="number"
                           step="0.5"
@@ -705,7 +705,7 @@ export default function BlueprintInputModal({
                         />
                       </div>
                       <div>
-                        <span className="text-neutral-500 block text-[10px]">Tọa độ Z0 (m)</span>
+                        <span className="text-neutral-500 block text-[10px]">Z0 Coordinate (m)</span>
                         <input
                           type="number"
                           step="0.5"
@@ -715,7 +715,7 @@ export default function BlueprintInputModal({
                         />
                       </div>
                       <div>
-                        <span className="text-neutral-500 block text-[10px]">Tọa độ X1 (m)</span>
+                        <span className="text-neutral-500 block text-[10px]">X1 Coordinate (m)</span>
                         <input
                           type="number"
                           step="0.5"
@@ -725,7 +725,7 @@ export default function BlueprintInputModal({
                         />
                       </div>
                       <div>
-                        <span className="text-neutral-500 block text-[10px]">Tọa độ Z1 (m)</span>
+                        <span className="text-neutral-500 block text-[10px]">Z1 Coordinate (m)</span>
                         <input
                           type="number"
                           step="0.5"
@@ -735,7 +735,7 @@ export default function BlueprintInputModal({
                         />
                       </div>
                       <div>
-                        <span className="text-neutral-500 block text-[10px]">Diện Tích (m²)</span>
+                        <span className="text-neutral-500 block text-[10px]">Area (m²)</span>
                         <input
                           type="number"
                           value={room.area}
@@ -744,7 +744,7 @@ export default function BlueprintInputModal({
                         />
                       </div>
                       <div>
-                        <span className="text-neutral-500 block text-[10px]">Trần Phòng (m)</span>
+                        <span className="text-neutral-500 block text-[10px]">Room Ceiling (m)</span>
                         <input
                           type="number"
                           step="0.1"
@@ -760,7 +760,7 @@ export default function BlueprintInputModal({
                       type="text"
                       value={room.description}
                       onChange={(e) => handleUpdateRoom(idx, "description", e.target.value)}
-                      placeholder="Mô tả công năng và cảm quan kiến trúc..."
+                      placeholder="Describe the room's function and architectural feel..."
                       className="w-full bg-[#111317] border border-[#272c36] rounded px-2.5 py-1.5 text-xs text-neutral-400 focus:outline-none "
                     />
                   </div>
@@ -774,38 +774,38 @@ export default function BlueprintInputModal({
         {/* MODAL FOOTER */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-[#232730] bg-[#161920]">
           <div className="text-xs text-neutral-400">
-            Tổng cộng: <span className="text-white font-semibold">{project.rooms.length} phòng</span> • Quy mô: <span className="text-amber-400 font-semibold">{project.specs.totalArea} m²</span> • Trần cao: <span className="text-white font-semibold">{project.specs.ceilingHeight}m</span>
+            Total: <span className="text-white font-semibold">{project.rooms.length} rooms</span> • Area: <span className="text-amber-400 font-semibold">{project.specs.totalArea} m²</span> • Ceiling height: <span className="text-white font-semibold">{project.specs.ceilingHeight} m</span>
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsEditingVector(true)}
               className="px-4 py-2 text-xs font-semibold rounded-lg border border-cyan-500/40 bg-cyan-950/50 text-cyan-300 hover:text-white hover:bg-cyan-900 transition flex items-center gap-1.5"
-              title="Mở bộ công cụ nắn chỉnh nét tường vector 2D trên nền ảnh bản vẽ"
+              title="Open the 2D vector wall correction tools"
             >
-              <span>✏️ Nắn Chỉnh Vector 2D</span>
+              <span>✏️ Correct 2D Vectors</span>
             </button>
             <button
               onClick={handleExportGLB}
               disabled={isExportingGLB}
               className="px-4 py-2 text-xs font-semibold rounded-lg border border-neutral-700 bg-neutral-800 text-neutral-200 hover:text-white hover:bg-neutral-700 transition flex items-center gap-1.5 disabled:opacity-50"
-              title="Xuất toàn bộ cấu trúc 3D sang định dạng .GLB tiêu chuẩn"
+              title="Export the full 3D structure as a standard .GLB file"
             >
-              <span>{isExportingGLB ? "⏳ Đang xuất..." : "📥 Tải File 3D (.GLB)"}</span>
+              <span>{isExportingGLB ? "⏳ Exporting..." : "📥 Download 3D File (.GLB)"}</span>
             </button>
             {onClose && (
               <button
                 onClick={onClose}
                 className="px-4 py-2 text-sm text-neutral-400 hover:text-white rounded-lg transition"
               >
-                Hủy bỏ
+                Cancel
               </button>
             )}
             <button
               onClick={() => onApply(project)}
               className="px-6 py-2.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black shadow-lg shadow-amber-500/20 transition flex items-center gap-2"
             >
-              <span>Dựng 3D Thực Tế (Casa Serra Style)</span>
+              <span>Build Realistic 3D (Casa Serra Style)</span>
               <span>➔</span>
             </button>
           </div>
@@ -822,7 +822,7 @@ export default function BlueprintInputModal({
               const updatedProject = updateProjectFromLayoutData(project, updatedLayout);
               setProject(updatedProject);
               setIsEditingVector(false);
-              setScanMessage("✓ Đã cập nhật tọa độ tường và phòng từ bản vẽ vector 2D!");
+              setScanMessage("✓ Updated wall and room coordinates from the 2D vector plan!");
             }}
             onClose={() => setIsEditingVector(false)}
           />

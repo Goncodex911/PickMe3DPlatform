@@ -59,7 +59,7 @@ export default function ImportTemplateModal({
       if (!name.endsWith(".json") && !name.endsWith(".pickme3d")) {
         setParseState({
           status: "error",
-          errors: ["File không hợp lệ. Chỉ chấp nhận .json hoặc .pickme3d"],
+          errors: ["Invalid file. Only .json or .pickme3d files are supported."],
         });
         return;
       }
@@ -93,12 +93,12 @@ export default function ImportTemplateModal({
         } catch {
           setParseState({
             status: "error",
-            errors: ["File không phải JSON hợp lệ. Vui lòng kiểm tra lại."],
+            errors: ["The file is not valid JSON. Please check it and try again."],
           });
         }
       };
       reader.onerror = () => {
-        setParseState({ status: "error", errors: ["Không thể đọc file."] });
+        setParseState({ status: "error", errors: ["Could not read the file."] });
       };
       reader.readAsText(file);
     },
@@ -153,7 +153,7 @@ export default function ImportTemplateModal({
           <motion.div
             role="dialog"
             aria-modal
-            aria-label="Nhập Template"
+            aria-label="Import template"
             initial={{ scale: 0.92, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.96, opacity: 0 }}
@@ -178,11 +178,11 @@ export default function ImportTemplateModal({
               >
                 file_open
               </span>
-              <span style={{ fontSize: 20, fontWeight: 700 }}>Nhập Template</span>
+              <span style={{ fontSize: 20, fontWeight: 700 }}>Import Template</span>
               <span style={{ flex: 1 }} />
               <button
                 onClick={handleClose}
-                aria-label="Đóng"
+                aria-label="Close"
                 style={{
                   width: 36,
                   height: 36,
@@ -200,8 +200,8 @@ export default function ImportTemplateModal({
             </div>
 
             <p style={{ margin: 0, fontSize: 13, color: onSurfaceVariantColor, lineHeight: 1.6 }}>
-              Kéo thả hoặc chọn file <strong>.json</strong> / <strong>.pickme3d</strong> để nhập
-              template vào Editor. Nếu file có docData, Editor sẽ tải toàn bộ thiết kế.
+              Drag or choose a <strong>.json</strong> / <strong>.pickme3d</strong> file to import
+              a template into the editor. If the file contains docData, the editor will load the full design.
             </p>
 
             {/* ── Drop zone ── */}
@@ -235,7 +235,7 @@ export default function ImportTemplateModal({
                   >
                     progress_activity
                   </span>
-                  <span style={{ fontSize: 14, color: onSurfaceVariantColor }}>Đang phân tích file…</span>
+                  <span style={{ fontSize: 14, color: onSurfaceVariantColor }}>Analyzing file…</span>
                 </>
               ) : parseState.status === "success" ? (
                 <>
@@ -253,7 +253,7 @@ export default function ImportTemplateModal({
                       ` · ${parseState.file.devicePreset.width}×${parseState.file.devicePreset.height}`}
                   </span>
                   <span style={{ fontSize: 12, color: onSurfaceVariantColor, opacity: 0.6 }}>
-                    Nhấn để chọn file khác
+                    Click to choose another file
                   </span>
                 </>
               ) : (
@@ -268,10 +268,10 @@ export default function ImportTemplateModal({
                     upload_file
                   </span>
                   <span style={{ fontSize: 14, fontWeight: 600 }}>
-                    {dragOver ? "Thả file vào đây" : "Kéo thả file vào đây"}
+                    {dragOver ? "Drop the file here" : "Drag a file here"}
                   </span>
                   <span style={{ fontSize: 12, color: onSurfaceVariantColor }}>
-                    hoặc nhấn để chọn file • .json · .pickme3d
+                    or click to choose a file • .json · .pickme3d
                   </span>
                 </>
               )}
@@ -314,7 +314,7 @@ export default function ImportTemplateModal({
                     <span style={{ fontFamily: "Material Symbols Rounded", fontSize: 18 }}>
                       error
                     </span>
-                    File không hợp lệ
+                    Invalid file
                   </div>
                   <ul style={{ margin: 0, padding: "0 0 0 18px", fontSize: 12, color: errorColor }}>
                     {parseState.errors.map((err, i) => (
@@ -341,7 +341,7 @@ export default function ImportTemplateModal({
                   cursor: "pointer",
                 }}
               >
-                Huỷ
+                Cancel
               </button>
               <button
                 onClick={handleConfirm}
@@ -367,7 +367,7 @@ export default function ImportTemplateModal({
                 <span style={{ fontFamily: "Material Symbols Rounded", fontSize: 18 }}>
                   file_open
                 </span>
-                Nhập vào Editor
+                Import to editor
               </button>
             </div>
           </motion.div>

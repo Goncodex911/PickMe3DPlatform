@@ -95,7 +95,7 @@ export async function createCollectionApi(payload: {
   coverImage?: string;
 }): Promise<{ success: boolean; data?: CollectionItem; message?: string }> {
   const token = typeof window !== "undefined" ? localStorage.getItem("pickme3d_token") : null;
-  if (!token) return { success: false, message: "Vui lòng đăng nhập" };
+  if (!token) return { success: false, message: "Please sign in." };
 
   try {
     const res = await fetch(`${API_BASE}/collections`, {
@@ -109,7 +109,7 @@ export async function createCollectionApi(payload: {
     }
     return { success: false, message: json.message || "Failed to create collection" };
   } catch {
-    return { success: false, message: "Lỗi kết nối máy chủ" };
+    return { success: false, message: "Could not connect to the server." };
   }
 }
 
@@ -130,7 +130,7 @@ export async function updateCollectionApi(
     if (res.ok && json.success) return { success: true, data: json.data };
     return { success: false, message: json.message };
   } catch {
-    return { success: false, message: "Lỗi kết nối máy chủ" };
+    return { success: false, message: "Could not connect to the server." };
   }
 }
 
@@ -166,7 +166,7 @@ export async function addTemplateToCollectionApi(
     const json = await res.json();
     return { success: res.ok && json.success, message: json.message };
   } catch {
-    return { success: false, message: "Lỗi kết nối máy chủ" };
+    return { success: false, message: "Could not connect to the server." };
   }
 }
 

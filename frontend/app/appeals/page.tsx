@@ -7,11 +7,11 @@ import { createReportApi, fetchMyReportsApi, ReportItem, isCurrentUserAdmin } fr
 import { uploadFileToCloudinary } from "@/lib/mediaUpload";
 
 const APPEAL_CATEGORIES = [
-  { value: "account_restriction", label: "Khiếu nại hạn chế / Khóa tài khoản" },
-  { value: "payout_issue", label: "Tranh chấp / Sự cố rút tiền & Doanh thu ví" },
-  { value: "template_removal", label: "Khiếu nại gỡ bỏ / Từ chối duyệt mẫu thiết kế" },
-  { value: "transaction_dispute", label: "Tranh chấp giao dịch mua bán hoặc đăng ký gói" },
-  { value: "general_inquiry", label: "Yêu cầu hỗ trợ trực tiếp & Vấn đề khác" },
+  { value: "account_restriction", label: "Account restriction or suspension" },
+  { value: "payout_issue", label: "Withdrawal or wallet earnings issue" },
+  { value: "template_removal", label: "Design removal or moderation appeal" },
+  { value: "transaction_dispute", label: "Purchase or subscription dispute" },
+  { value: "general_inquiry", label: "General inquiry or other issue" },
 ];
 
 export default function AppealsPage() {
@@ -58,7 +58,7 @@ export default function AppealsPage() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      setFormMsg({ text: "Vui lòng chỉ tải lên tệp hình ảnh (PNG, JPG, WEBP)", error: true });
+      setFormMsg({ text: "Upload an image file only (PNG, JPG, or WEBP).", error: true });
       return;
     }
 
@@ -68,7 +68,7 @@ export default function AppealsPage() {
       const url = await uploadFileToCloudinary(file, "pickme3d/appeals");
       setAttachments((prev) => [...prev, url]);
     } catch (err: any) {
-      setFormMsg({ text: err?.message || "Không thể tải lên ảnh bằng chứng", error: true });
+      setFormMsg({ text: "Couldn’t upload the evidence image.", error: true });
     } finally {
       setUploadingImage(false);
     }
@@ -81,7 +81,7 @@ export default function AppealsPage() {
   const handleSubmitAppeal = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !description.trim()) {
-      setFormMsg({ text: "Vui lòng nhập đầy đủ tiêu đề và nội dung khiếu nại", error: true });
+      setFormMsg({ text: "Enter both a title and details for your appeal.", error: true });
       return;
     }
 
@@ -99,12 +99,12 @@ export default function AppealsPage() {
       });
 
       if (!res.success) {
-        setFormMsg({ text: res.message || "Gửi khiếu nại thất bại", error: true });
+        setFormMsg({ text: "Couldn’t submit your appeal.", error: true });
         setSubmitting(false);
         return;
       }
 
-      setFormMsg({ text: "Khiếu nại của bạn đã được gửi trực tiếp tới Ban Quản Trị thành công!" });
+      setFormMsg({ text: "Your appeal has been sent to the moderation team." });
       setTimeout(() => {
         setTitle("");
         setDescription("");
@@ -112,7 +112,7 @@ export default function AppealsPage() {
         setActiveTab("history");
       }, 1500);
     } catch (err: any) {
-      setFormMsg({ text: err?.message || "Lỗi kết nối", error: true });
+      setFormMsg({ text: "A connection error occurred.", error: true });
     } finally {
       setSubmitting(false);
     }
@@ -130,15 +130,15 @@ export default function AppealsPage() {
           <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto">
             <span className="material-symbols-rounded text-2xl">admin_panel_settings</span>
           </div>
-          <h2 className="text-lg font-bold text-white">Chức năng dành cho Người dùng / Creator</h2>
+          <h2 className="text-lg font-bold text-white">For users and creators</h2>
           <p className="text-xs text-slate-400 leading-relaxed">
-            Tài khoản Quản trị viên (Admin) không thực hiện gửi khiếu nại cá nhân. Vui lòng sử dụng trang Quản Trị để tiếp nhận và kiểm duyệt sự cố hoặc phản ánh.
+            Admin accounts can’t submit personal appeals. Use the admin dashboard to review issues and reports.
           </p>
           <Link
             href="/admin/reports"
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-colors"
           >
-            <span>Vào Quản Lý Sự Cố & Báo Cáo</span>
+            <span>Open reports dashboard</span>
             <span className="material-symbols-rounded text-sm">arrow_forward</span>
           </Link>
         </div>
@@ -156,10 +156,10 @@ export default function AppealsPage() {
             className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors"
           >
             <span className="material-symbols-rounded text-sm">arrow_back</span>
-            <span>Trang chủ</span>
+            <span>Home</span>
           </Link>
           <span className="text-white/20">/</span>
-          <span className="text-xs text-slate-200 font-bold">Khiếu nại & Hỗ trợ kiểm duyệt</span>
+          <span className="text-xs text-slate-200 font-bold">Appeals & moderation support</span>
         </div>
       </div>
 
@@ -169,13 +169,13 @@ export default function AppealsPage() {
           <div className="max-w-2xl">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-semibold mb-3">
               <span className="material-symbols-rounded text-sm">gavel</span>
-              Hỗ trợ & Minh bạch cộng đồng
+              Support & community transparency
             </span>
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              Trung tâm Khiếu nại & Kháng nghị trực tiếp
+              Appeals and support center
             </h1>
             <p className="text-xs sm:text-sm text-slate-400 mt-2 leading-relaxed">
-              Bạn có thể gửi phản hồi, yêu cầu xem xét lại các quyết định kiểm duyệt, báo cáo tranh chấp tài chính hoặc theo dõi tiến độ xử lý báo cáo vi phạm của mình.
+              Submit feedback, appeal moderation decisions, report financial disputes, or track the status of your reports.
             </p>
           </div>
         </div>
@@ -191,7 +191,7 @@ export default function AppealsPage() {
             }`}
           >
             <span className="material-symbols-rounded text-sm">edit_document</span>
-            <span>Gửi khiếu nại mới</span>
+            <span>Submit an appeal</span>
           </button>
 
           <button
@@ -203,16 +203,16 @@ export default function AppealsPage() {
             }`}
           >
             <span className="material-symbols-rounded text-sm">history</span>
-            <span>Lịch sử xử lý ({myTickets.length})</span>
+            <span>History ({myTickets.length})</span>
           </button>
         </div>
 
         {/* Tab 1: Submit Appeal Form */}
         {activeTab === "submit" && (
           <div className="rounded-2xl bg-[#0e1422] border border-white/10 p-6 sm:p-8 max-w-3xl">
-            <h2 className="text-base font-bold text-white mb-1">Mẫu đơn khiếu nại gửi Ban Quản Trị</h2>
+            <h2 className="text-base font-bold text-white mb-1">Submit an appeal</h2>
             <p className="text-xs text-slate-400 mb-6">
-              Ban Quản Trị PickMe3D sẽ tiếp nhận và phản hồi trực tiếp thông qua thông báo tài khoản của bạn.
+              The PickMe3D moderation team will review your appeal and reply through your account notifications.
             </p>
 
             {formMsg && (
@@ -233,7 +233,7 @@ export default function AppealsPage() {
             <form onSubmit={handleSubmitAppeal} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Danh mục khiếu nại <span className="text-red-400">*</span>
+                  Appeal category <span className="text-red-400">*</span>
                 </label>
                 <select
                   value={category}
@@ -250,28 +250,28 @@ export default function AppealsPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Tiêu đề tóm tắt vụ việc <span className="text-red-400">*</span>
+                  Summary title <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ví dụ: Khiếu nại mẫu Áo Blazer 3D bị gỡ bỏ nhầm bản quyền"
+                  placeholder="For example: Appeal the incorrect copyright removal of my 3D blazer design"
                   className="w-full bg-slate-900 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400 transition-colors"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Nội dung trình bày & Bằng chứng cụ thể <span className="text-red-400">*</span>
+                  Details and supporting evidence <span className="text-red-400">*</span>
                 </label>
                 <textarea
                   rows={5}
                   required
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Trình bày chi tiết lý do bạn cho rằng quyết định của Admin hoặc hệ thống chưa chính xác, kèm các liên kết hoặc tài liệu đối chứng..."
+                  placeholder="Explain why you believe the admin or system decision was incorrect. Include links or supporting documents..."
                   className="w-full bg-slate-900 border border-white/10 rounded-xl p-3.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400 transition-colors resize-none leading-relaxed"
                 />
               </div>
@@ -280,10 +280,10 @@ export default function AppealsPage() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="text-xs font-semibold text-slate-300">
-                    Ảnh chụp màn hình đối chứng (Tùy chọn)
+                    Evidence screenshots (optional)
                   </label>
                   {uploadingImage && (
-                    <span className="text-blue-400 text-[11px] animate-pulse">Đang tải ảnh...</span>
+                    <span className="text-blue-400 text-[11px] animate-pulse">Uploading image...</span>
                   )}
                 </div>
 
@@ -291,7 +291,7 @@ export default function AppealsPage() {
                   <div className="flex flex-wrap gap-2 mb-2">
                     {attachments.map((url, idx) => (
                       <div key={idx} className="relative group w-20 h-20 rounded-xl overflow-hidden border border-white/20">
-                        <img src={url} alt="Bằng chứng" className="w-full h-full object-cover" />
+                        <img src={url} alt="Evidence" className="w-full h-full object-cover" />
                         <button
                           type="button"
                           onClick={() => handleRemoveAttachment(idx)}
@@ -306,7 +306,7 @@ export default function AppealsPage() {
 
                 <label className="flex items-center justify-center gap-2 w-full py-3 px-3 border border-dashed border-white/20 hover:border-white/40 rounded-xl cursor-pointer bg-white/5 hover:bg-white/10 transition-colors text-xs text-slate-300">
                   <span className="material-symbols-rounded text-lg text-slate-400">upload_file</span>
-                  <span>Tải ảnh hóa đơn, ảnh đối chứng bản quyền hoặc giấy tờ liên quan</span>
+                  <span>Upload a receipt, copyright evidence, or other supporting document</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -326,12 +326,12 @@ export default function AppealsPage() {
                   {submitting ? (
                     <>
                       <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Đang gửi khiếu nại...</span>
+                      <span>Submitting appeal...</span>
                     </>
                   ) : (
                     <>
                       <span className="material-symbols-rounded text-base">send</span>
-                      <span>Gửi đơn khiếu nại</span>
+                      <span>Submit appeal</span>
                     </>
                   )}
                 </button>
@@ -346,9 +346,9 @@ export default function AppealsPage() {
             {/* Filter Pills */}
             <div className="flex items-center gap-2">
               {[
-                { label: "Tất cả", value: "ALL" },
-                { label: "Khiếu nại trực tiếp (Appeals)", value: "APPEAL" },
-                { label: "Báo cáo vi phạm (Reports)", value: "REPORT" },
+                { label: "All", value: "ALL" },
+                { label: "Appeals", value: "APPEAL" },
+                { label: "Reports", value: "REPORT" },
               ].map((pill) => (
                 <button
                   key={pill.value}
@@ -367,12 +367,12 @@ export default function AppealsPage() {
             {loadingHistory ? (
               <div className="py-16 text-center">
                 <div className="w-7 h-7 border-2 border-white/20 border-t-indigo-400 rounded-full animate-spin mx-auto mb-2" />
-                <p className="text-xs text-slate-400">Đang tải lịch sử đơn của bạn...</p>
+                <p className="text-xs text-slate-400">Loading your history...</p>
               </div>
             ) : filteredTickets.length === 0 ? (
               <div className="rounded-2xl bg-[#0e1422] border border-white/10 p-12 text-center">
                 <span className="material-symbols-rounded text-4xl text-slate-600 block mb-2">inbox</span>
-                <p className="text-xs text-slate-400">Bạn chưa có đơn khiếu nại hoặc báo cáo nào.</p>
+                <p className="text-xs text-slate-400">You don’t have any appeals or reports yet.</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -386,12 +386,12 @@ export default function AppealsPage() {
                         {ticket.ticketType === "APPEAL" ? (
                           <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center gap-1">
                             <span className="material-symbols-rounded text-xs">gavel</span>
-                            Khiếu nại trực tiếp
+                            Appeal
                           </span>
                         ) : (
                           <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center gap-1">
                             <span className="material-symbols-rounded text-xs">flag</span>
-                            Báo cáo vi phạm
+                            Report
                           </span>
                         )}
                         <span className="text-xs font-semibold text-white">
@@ -404,25 +404,25 @@ export default function AppealsPage() {
                         {ticket.status === "pending" && (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                            Đang chờ xử lý
+                            Pending
                           </span>
                         )}
                         {ticket.status === "investigating" && (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
                             <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-                            Đang điều tra
+                            Under review
                           </span>
                         )}
                         {ticket.status === "resolved" && (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                             <span className="material-symbols-rounded text-xs">check</span>
-                            Đã giải quyết
+                            Resolved
                           </span>
                         )}
                         {ticket.status === "dismissed" && (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-500/20 text-slate-400 border border-slate-500/30">
                             <span className="material-symbols-rounded text-xs">close</span>
-                            Đã bác bỏ
+                            Rejected
                           </span>
                         )}
                       </div>
@@ -443,7 +443,7 @@ export default function AppealsPage() {
                             rel="noreferrer"
                             className="w-14 h-14 rounded-lg overflow-hidden border border-white/10 hover:border-white/30 transition-colors inline-block"
                           >
-                            <img src={url} alt="Bằng chứng" className="w-full h-full object-cover" />
+                            <img src={url} alt="Evidence" className="w-full h-full object-cover" />
                           </a>
                         ))}
                       </div>
@@ -454,17 +454,17 @@ export default function AppealsPage() {
                       <div className="mt-2 p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-200">
                         <div className="font-bold flex items-center gap-1.5 text-blue-300 mb-1">
                           <span className="material-symbols-rounded text-sm">verified_user</span>
-                          <span>Phản hồi từ Ban Quản Trị ({ticket.resolvedByName || "Admin"}):</span>
+                          <span>Response from {ticket.resolvedByName || "Admin"}:</span>
                         </div>
                         <p className="leading-relaxed">{ticket.resolutionNotes}</p>
                       </div>
                     )}
 
                     <div className="text-[11px] text-slate-500 pt-1">
-                      Ngày gửi: {new Date(ticket.createdAt).toLocaleString("vi-VN")}
+                      Submitted: {new Date(ticket.createdAt).toLocaleString("en-US")}
                       {ticket.resolvedAt && (
                         <span className="ml-3">
-                          • Xử lý lúc: {new Date(ticket.resolvedAt).toLocaleString("vi-VN")}
+                          • Resolved: {new Date(ticket.resolvedAt).toLocaleString("en-US")}
                         </span>
                       )}
                     </div>

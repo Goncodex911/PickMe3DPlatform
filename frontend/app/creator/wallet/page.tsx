@@ -51,7 +51,7 @@ export default function CreatorWalletPage() {
         setEditBankInfo(res.data.savedBankInfo);
       }
     } else {
-      setErrorMsg(res.message || "Không thể tải dữ liệu ví Creator. Vui lòng đăng nhập.");
+      setErrorMsg("Couldn’t load creator wallet data. Please sign in.");
     }
     setLoading(false);
   };
@@ -91,17 +91,17 @@ export default function CreatorWalletPage() {
     const amountNum = Number(payoutAmount);
 
     if (!amountNum || amountNum < 10000) {
-      setPayoutModalError("Số tiền rút tối thiểu là 10.000 VNĐ");
+      setPayoutModalError("The minimum withdrawal amount is 10,000 VND.");
       return;
     }
 
     if (amountNum > (walletData?.metrics.availableBalance || 0)) {
-      setPayoutModalError("Số tiền rút không thể vượt quá Số dư khả dụng hiện có");
+      setPayoutModalError("The withdrawal amount can’t exceed your available balance.");
       return;
     }
 
     if (!bankInfo.bankName.trim() || !bankInfo.accountNumber.trim() || !bankInfo.accountHolder.trim()) {
-      setPayoutModalError("Vui lòng điền đầy đủ thông tin tài khoản ngân hàng nhận tiền");
+      setPayoutModalError("Complete the receiving bank account details.");
       return;
     }
 
@@ -120,19 +120,19 @@ export default function CreatorWalletPage() {
       });
 
       if (!res.success) {
-        setPayoutModalError(res.message || "Gửi yêu cầu rút tiền thất bại");
+        setPayoutModalError("Couldn’t submit the withdrawal request.");
         setSubmittingPayout(false);
         return;
       }
 
-      setPayoutModalSuccess("Yêu cầu rút tiền đã được tạo thành công và đang chờ Admin duyệt!");
+      setPayoutModalSuccess("Your withdrawal request was created and is awaiting admin approval.");
       setTimeout(() => {
         setIsPayoutModalOpen(false);
         setPayoutModalSuccess("");
         loadWallet();
       }, 1800);
     } catch (err: any) {
-      setPayoutModalError(err?.message || "Lỗi kết nối khi gửi yêu cầu rút tiền");
+      setPayoutModalError("A connection error occurred while submitting your withdrawal request.");
     } finally {
       setSubmittingPayout(false);
     }
@@ -141,7 +141,7 @@ export default function CreatorWalletPage() {
   const handleSaveBankDetails = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editBankInfo.bankName.trim() || !editBankInfo.accountNumber.trim() || !editBankInfo.accountHolder.trim()) {
-      setBankUpdateMsg({ text: "Vui lòng nhập đầy đủ tên ngân hàng, số tài khoản và tên chủ sở hữu", error: true });
+      setBankUpdateMsg({ text: "Enter the bank name, account number, and account holder name.", error: true });
       return;
     }
 
@@ -150,16 +150,16 @@ export default function CreatorWalletPage() {
       setBankUpdateMsg(null);
       const res = await updateSavedBankInfoApi(editBankInfo);
       if (res.success && res.data) {
-        setBankUpdateMsg({ text: "Đã cập nhật thông tin tài khoản ngân hàng thành công!" });
+        setBankUpdateMsg({ text: "Bank account details updated." });
         setBankInfo(res.data);
         if (walletData) {
           setWalletData({ ...walletData, savedBankInfo: res.data });
         }
       } else {
-        setBankUpdateMsg({ text: res.message || "Lưu thông tin thất bại", error: true });
+        setBankUpdateMsg({ text: "Couldn’t save the bank account details.", error: true });
       }
     } catch (err: any) {
-      setBankUpdateMsg({ text: err?.message || "Lỗi kết nối", error: true });
+      setBankUpdateMsg({ text: "A connection error occurred.", error: true });
     } finally {
       setSavingBankInfo(false);
     }
@@ -169,7 +169,7 @@ export default function CreatorWalletPage() {
     return (
       <div className="min-h-screen bg-[#070b14] text-white flex flex-col items-center justify-center p-4">
         <div className="w-8 h-8 border-2 border-white/20 border-t-amber-400 rounded-full animate-spin mb-3" />
-        <p className="text-xs text-slate-400 font-mono">Đang tải dữ liệu Ví Creator & Thu nhập...</p>
+        <p className="text-xs text-slate-400 font-mono">Loading creator wallet and earnings...</p>
       </div>
     );
   }
@@ -194,10 +194,10 @@ export default function CreatorWalletPage() {
             className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors"
           >
             <span className="material-symbols-rounded text-sm">arrow_back</span>
-            <span>Khám phá</span>
+            <span>Explore</span>
           </Link>
           <span className="text-white/20">/</span>
-          <span className="text-xs text-slate-200 font-bold">Ví Creator & Doanh thu</span>
+          <span className="text-xs text-slate-200 font-bold">Creator wallet & earnings</span>
         </div>
 
         <button
@@ -206,7 +206,7 @@ export default function CreatorWalletPage() {
           className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold text-white shadow-lg shadow-emerald-500/20 flex items-center gap-2 transition-all cursor-pointer"
         >
           <span className="material-symbols-rounded text-base">payments</span>
-          <span>Yêu cầu rút tiền</span>
+          <span>Request withdrawal</span>
         </button>
       </div>
 
@@ -224,60 +224,60 @@ export default function CreatorWalletPage() {
           <div className="p-5 rounded-2xl bg-[#0e1422] border border-white/10 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-28 h-28 bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/10 transition-colors" />
             <div className="flex items-center justify-between text-slate-400 mb-2">
-              <span className="text-xs font-medium">Tổng thu nhập</span>
+              <span className="text-xs font-medium">Total earnings</span>
               <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
                 <span className="material-symbols-rounded text-lg">monetization_on</span>
               </div>
             </div>
             <div className="text-2xl font-black text-white tracking-tight">
-              {metrics.totalEarnings.toLocaleString("vi-VN")}₫
+              {metrics.totalEarnings.toLocaleString("en-US")}₫
             </div>
-            <p className="text-[11px] text-slate-500 mt-1">70% doanh thu bán mẫu thiết kế</p>
+            <p className="text-[11px] text-slate-500 mt-1">70% of design sales</p>
           </div>
 
           {/* Available Balance */}
           <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-950/40 via-[#0e1422] to-[#0e1422] border border-emerald-500/30 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-28 h-28 bg-emerald-500/10 rounded-full blur-2xl" />
             <div className="flex items-center justify-between text-emerald-400 mb-2">
-              <span className="text-xs font-semibold">Số dư khả dụng</span>
+              <span className="text-xs font-semibold">Available balance</span>
               <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-300">
                 <span className="material-symbols-rounded text-lg">account_balance_wallet</span>
               </div>
             </div>
             <div className="text-2xl font-black text-emerald-300 tracking-tight">
-              {metrics.availableBalance.toLocaleString("vi-VN")}₫
+              {metrics.availableBalance.toLocaleString("en-US")}₫
             </div>
-            <p className="text-[11px] text-emerald-400/70 mt-1">Sẵn sàng để rút về tài khoản ngân hàng</p>
+            <p className="text-[11px] text-emerald-400/70 mt-1">Available to withdraw to your bank account</p>
           </div>
 
           {/* Pending Payout */}
           <div className="p-5 rounded-2xl bg-[#0e1422] border border-white/10 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-28 h-28 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-colors" />
             <div className="flex items-center justify-between text-slate-400 mb-2">
-              <span className="text-xs font-medium">Đang chờ giải ngân</span>
+              <span className="text-xs font-medium">Pending payout</span>
               <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
                 <span className="material-symbols-rounded text-lg">hourglass_top</span>
               </div>
             </div>
             <div className="text-2xl font-black text-amber-300 tracking-tight">
-              {metrics.pendingPayout.toLocaleString("vi-VN")}₫
+              {metrics.pendingPayout.toLocaleString("en-US")}₫
             </div>
-            <p className="text-[11px] text-slate-500 mt-1">Lệnh rút tiền đang được Admin xét duyệt</p>
+            <p className="text-[11px] text-slate-500 mt-1">Withdrawal requests awaiting admin approval</p>
           </div>
 
           {/* Paid Out */}
           <div className="p-5 rounded-2xl bg-[#0e1422] border border-white/10 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-28 h-28 bg-teal-500/5 rounded-full blur-2xl group-hover:bg-teal-500/10 transition-colors" />
             <div className="flex items-center justify-between text-slate-400 mb-2">
-              <span className="text-xs font-medium">Đã thanh toán</span>
+              <span className="text-xs font-medium">Paid</span>
               <div className="w-8 h-8 rounded-lg bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400">
                 <span className="material-symbols-rounded text-lg">check_circle</span>
               </div>
             </div>
             <div className="text-2xl font-black text-white tracking-tight">
-              {metrics.paidPayout.toLocaleString("vi-VN")}₫
+              {metrics.paidPayout.toLocaleString("en-US")}₫
             </div>
-            <p className="text-[11px] text-slate-500 mt-1">Đã chuyển thành công về ngân hàng</p>
+            <p className="text-[11px] text-slate-500 mt-1">Successfully transferred to your bank</p>
           </div>
         </div>
 
@@ -292,7 +292,7 @@ export default function CreatorWalletPage() {
             }`}
           >
             <span className="material-symbols-rounded text-sm">history</span>
-            <span>Lịch sử rút tiền ({walletData?.payoutHistory?.length || 0})</span>
+            <span>Withdrawal history ({walletData?.payoutHistory?.length || 0})</span>
           </button>
 
           <button
@@ -304,7 +304,7 @@ export default function CreatorWalletPage() {
             }`}
           >
             <span className="material-symbols-rounded text-sm">trending_up</span>
-            <span>Doanh số bán mẫu ({walletData?.earningsHistory?.length || 0})</span>
+            <span>Design sales ({walletData?.earningsHistory?.length || 0})</span>
           </button>
 
           <button
@@ -316,7 +316,7 @@ export default function CreatorWalletPage() {
             }`}
           >
             <span className="material-symbols-rounded text-sm">account_balance</span>
-            <span>Tài khoản ngân hàng</span>
+            <span>Bank account</span>
           </button>
         </div>
 
@@ -328,11 +328,11 @@ export default function CreatorWalletPage() {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-slate-900/60 border-b border-white/10 text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
                     <tr>
-                      <th className="px-5 py-3.5">Mã / Ngày tạo</th>
-                      <th className="px-5 py-3.5">Số tiền yêu cầu</th>
-                      <th className="px-5 py-3.5">Ngân hàng thụ hưởng</th>
-                      <th className="px-5 py-3.5">Trạng thái</th>
-                      <th className="px-5 py-3.5">Ghi chú từ Admin</th>
+                      <th className="px-5 py-3.5">ID / Created</th>
+                      <th className="px-5 py-3.5">Amount requested</th>
+                      <th className="px-5 py-3.5">Receiving bank</th>
+                      <th className="px-5 py-3.5">Status</th>
+                      <th className="px-5 py-3.5">Admin note</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
@@ -341,11 +341,11 @@ export default function CreatorWalletPage() {
                         <td className="px-5 py-4">
                           <div className="font-mono text-slate-300 font-medium">{item._id.slice(-8).toUpperCase()}</div>
                           <div className="text-[11px] text-slate-500 mt-0.5">
-                            {new Date(item.createdAt).toLocaleString("vi-VN")}
+                            {new Date(item.createdAt).toLocaleString("en-US")}
                           </div>
                         </td>
                         <td className="px-5 py-4 font-bold text-white text-sm">
-                          {item.amount.toLocaleString("vi-VN")}₫
+                          {item.amount.toLocaleString("en-US")}₫
                         </td>
                         <td className="px-5 py-4">
                           <div className="font-semibold text-slate-200">{item.bankInfo?.bankName}</div>
@@ -357,19 +357,19 @@ export default function CreatorWalletPage() {
                           {item.status === "PENDING" && (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
                               <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                              Chờ duyệt
+                              Pending
                             </span>
                           )}
                           {item.status === "PAID" && (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                              Đã giải ngân
+                              Paid
                             </span>
                           )}
                           {item.status === "REJECTED" && (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-red-500/10 text-red-400 border border-red-500/20">
                               <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                              Từ chối
+                              Rejected
                             </span>
                           )}
                         </td>
@@ -379,7 +379,7 @@ export default function CreatorWalletPage() {
                               {item.adminNote}
                             </div>
                           ) : (
-                            <span className="text-slate-500 italic">Không có ghi chú</span>
+                            <span className="text-slate-500 italic">No note</span>
                           )}
                           {item.paymentProof && (
                             <div className="mt-2">
@@ -390,7 +390,7 @@ export default function CreatorWalletPage() {
                                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[11px] font-semibold transition-colors"
                               >
                                 <span className="material-symbols-rounded text-sm">receipt_long</span>
-                                <span>Xem bill chuyển khoản</span>
+                                <span>View transfer receipt</span>
                               </a>
                             </div>
                           )}
@@ -403,13 +403,13 @@ export default function CreatorWalletPage() {
             ) : (
               <div className="py-16 text-center">
                 <span className="material-symbols-rounded text-4xl text-slate-600 block mb-2">payments</span>
-                <p className="text-xs text-slate-400">Bạn chưa có yêu cầu rút tiền nào.</p>
+                <p className="text-xs text-slate-400">You haven’t made any withdrawal requests.</p>
                 <button
                   onClick={handleOpenPayoutModal}
                   disabled={metrics.availableBalance < 10000}
                   className="mt-4 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-xs font-bold text-white transition-all"
                 >
-                  Tạo yêu cầu rút tiền đầu tiên
+                  Create your first withdrawal request
                 </button>
               </div>
             )}
@@ -424,12 +424,12 @@ export default function CreatorWalletPage() {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-slate-900/60 border-b border-white/10 text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
                     <tr>
-                      <th className="px-5 py-3.5">Mẫu thiết kế</th>
-                      <th className="px-5 py-3.5">Mã đơn hàng</th>
-                      <th className="px-5 py-3.5">Người mua</th>
-                      <th className="px-5 py-3.5">Giá bán</th>
-                      <th className="px-5 py-3.5">Hoa hồng Creator (70%)</th>
-                      <th className="px-5 py-3.5">Thời gian</th>
+                      <th className="px-5 py-3.5">Design</th>
+                      <th className="px-5 py-3.5">Order ID</th>
+                      <th className="px-5 py-3.5">Buyer</th>
+                      <th className="px-5 py-3.5">Sale price</th>
+                      <th className="px-5 py-3.5">Creator commission (70%)</th>
+                      <th className="px-5 py-3.5">Date</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
@@ -454,13 +454,13 @@ export default function CreatorWalletPage() {
                         <td className="px-5 py-3.5 font-mono text-slate-400">#{item.orderCode}</td>
                         <td className="px-5 py-3.5 text-slate-300">{item.buyerName}</td>
                         <td className="px-5 py-3.5 font-medium text-slate-300">
-                          {item.amount.toLocaleString("vi-VN")}₫
+                          {item.amount.toLocaleString("en-US")}₫
                         </td>
                         <td className="px-5 py-3.5 font-bold text-emerald-400 text-sm">
-                          +{item.creatorEarnings.toLocaleString("vi-VN")}₫
+                          +{item.creatorEarnings.toLocaleString("en-US")}₫
                         </td>
                         <td className="px-5 py-3.5 text-slate-400 text-[11px]">
-                          {new Date(item.paidAt).toLocaleDateString("vi-VN")}
+                          {new Date(item.paidAt).toLocaleDateString("en-US")}
                         </td>
                       </tr>
                     ))}
@@ -470,13 +470,13 @@ export default function CreatorWalletPage() {
             ) : (
               <div className="py-16 text-center">
                 <span className="material-symbols-rounded text-4xl text-slate-600 block mb-2">trending_up</span>
-                <p className="text-xs text-slate-400">Bạn chưa có lượt mua mẫu thiết kế nào từ cộng đồng.</p>
+                <p className="text-xs text-slate-400">You haven’t sold any community designs yet.</p>
                 <Link
                   href="/editor"
                   className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-xs font-bold text-white transition-all"
                 >
                   <span className="material-symbols-rounded text-sm">add</span>
-                  <span>Tạo và bán mẫu thiết kế mới</span>
+                  <span>Create and sell a new design</span>
                 </Link>
               </div>
             )}
@@ -491,9 +491,9 @@ export default function CreatorWalletPage() {
                 <span className="material-symbols-rounded text-2xl">account_balance</span>
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">Tài khoản ngân hàng nhận tiền</h3>
+                <h3 className="text-base font-bold text-white">Receiving bank account</h3>
                 <p className="text-xs text-slate-400">
-                  Thông tin này sẽ tự động điền mỗi khi bạn thực hiện yêu cầu rút tiền
+                  These details will be filled in automatically for future withdrawal requests.
                 </p>
               </div>
             </div>
@@ -516,42 +516,42 @@ export default function CreatorWalletPage() {
             <form onSubmit={handleSaveBankDetails} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Tên ngân hàng (Bank Name) <span className="text-red-400">*</span>
+                  Bank name <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={editBankInfo.bankName}
                   onChange={(e) => setEditBankInfo({ ...editBankInfo, bankName: e.target.value })}
-                  placeholder="Ví dụ: MB Bank, Vietcombank, Techcombank, TPBank"
+                  placeholder="For example: MB Bank, Vietcombank, Techcombank, TPBank"
                   className="w-full bg-slate-900 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-blue-400 transition-colors"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Số tài khoản (Account Number) <span className="text-red-400">*</span>
+                  Account number <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={editBankInfo.accountNumber}
                   onChange={(e) => setEditBankInfo({ ...editBankInfo, accountNumber: e.target.value })}
-                  placeholder="Ví dụ: 098877665544"
+                  placeholder="For example: 098877665544"
                   className="w-full bg-slate-900 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-blue-400 transition-colors"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Tên chủ tài khoản (Account Holder) <span className="text-red-400">*</span>
+                  Account holder <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={editBankInfo.accountHolder}
                   onChange={(e) => setEditBankInfo({ ...editBankInfo, accountHolder: e.target.value.toUpperCase() })}
-                  placeholder="Ví dụ: NGUYEN VAN A (Viết hoa không dấu)"
+                  placeholder="For example: NGUYEN VAN A (uppercase, no accents)"
                   className="w-full bg-slate-900 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white uppercase focus:outline-none focus:border-blue-400 transition-colors"
                 />
               </div>
@@ -565,12 +565,12 @@ export default function CreatorWalletPage() {
                   {savingBankInfo ? (
                     <>
                       <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Đang lưu...</span>
+                      <span>Saving...</span>
                     </>
                   ) : (
                     <>
                       <span className="material-symbols-rounded text-sm">save</span>
-                      <span>Lưu thông tin ngân hàng</span>
+                      <span>Save bank details</span>
                     </>
                   )}
                 </button>
@@ -596,11 +596,11 @@ export default function CreatorWalletPage() {
                 <span className="material-symbols-rounded text-2xl">account_balance_wallet</span>
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">Yêu cầu rút tiền về ngân hàng</h3>
+                <h3 className="text-lg font-bold text-white">Withdraw to your bank</h3>
                 <p className="text-xs text-slate-400">
-                  Số dư khả dụng:{" "}
+                    Available balance:{" "}
                   <span className="text-emerald-400 font-bold">
-                    {metrics.availableBalance.toLocaleString("vi-VN")}₫
+                    {metrics.availableBalance.toLocaleString("en-US")}₫
                   </span>
                 </p>
               </div>
@@ -624,9 +624,9 @@ export default function CreatorWalletPage() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="text-xs font-semibold text-slate-300">
-                    Số tiền muốn rút (VNĐ) <span className="text-red-400">*</span>
+                    Withdrawal amount (VND) <span className="text-red-400">*</span>
                   </label>
-                  <span className="text-[11px] text-slate-500">Tối thiểu: 10.000₫</span>
+                  <span className="text-[11px] text-slate-500">Minimum: 10,000 VND</span>
                 </div>
                 <input
                   type="number"
@@ -636,7 +636,7 @@ export default function CreatorWalletPage() {
                   required
                   value={payoutAmount}
                   onChange={(e) => setPayoutAmount(e.target.value === "" ? "" : Number(e.target.value))}
-                  placeholder="Nhập số tiền (VD: 500000)"
+                  placeholder="Enter amount (for example: 500000)"
                   className="w-full bg-slate-900 border border-white/10 rounded-xl px-3.5 py-2.5 text-base font-bold text-emerald-400 font-mono focus:outline-none focus:border-emerald-400 transition-colors"
                 />
 
@@ -646,7 +646,7 @@ export default function CreatorWalletPage() {
                     { label: "25%", ratio: 0.25 },
                     { label: "50%", ratio: 0.5 },
                     { label: "75%", ratio: 0.75 },
-                    { label: "Tất cả (100%)", ratio: 1 },
+                    { label: "All (100%)", ratio: 1 },
                   ].map((btn) => (
                     <button
                       key={btn.label}
@@ -664,7 +664,7 @@ export default function CreatorWalletPage() {
               <div className="p-3.5 rounded-xl bg-slate-900/80 border border-white/5 space-y-3">
                 <div className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
                   <span className="material-symbols-rounded text-sm text-slate-400">account_balance</span>
-                  <span>Tài khoản nhận tiền</span>
+                  <span>Receiving account</span>
                 </div>
 
                 <div>
@@ -673,7 +673,7 @@ export default function CreatorWalletPage() {
                     required
                     value={bankInfo.bankName}
                     onChange={(e) => setBankInfo({ ...bankInfo, bankName: e.target.value })}
-                    placeholder="Tên ngân hàng (VD: MB Bank, Techcombank, VCB)"
+                    placeholder="Bank name (for example: MB Bank, Techcombank, VCB)"
                     className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400"
                   />
                 </div>
@@ -684,7 +684,7 @@ export default function CreatorWalletPage() {
                     required
                     value={bankInfo.accountNumber}
                     onChange={(e) => setBankInfo({ ...bankInfo, accountNumber: e.target.value })}
-                    placeholder="Số tài khoản ngân hàng"
+                    placeholder="Bank account number"
                     className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-emerald-400"
                   />
                 </div>
@@ -695,7 +695,7 @@ export default function CreatorWalletPage() {
                     required
                     value={bankInfo.accountHolder}
                     onChange={(e) => setBankInfo({ ...bankInfo, accountHolder: e.target.value.toUpperCase() })}
-                    placeholder="Tên chủ tài khoản (Viết hoa không dấu)"
+                    placeholder="Account holder (uppercase, no accents)"
                     className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-xs text-white uppercase focus:outline-none focus:border-emerald-400"
                   />
                 </div>
@@ -707,7 +707,7 @@ export default function CreatorWalletPage() {
                     onChange={(e) => setSaveBankInfo(e.target.checked)}
                     className="rounded border-white/20 text-emerald-500 focus:ring-0"
                   />
-                  <span>Lưu thông tin ngân hàng này cho các lần rút tiếp theo</span>
+                  <span>Save these bank details for future withdrawals</span>
                 </label>
               </div>
 
@@ -718,7 +718,7 @@ export default function CreatorWalletPage() {
                   disabled={submittingPayout}
                   className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
                 >
-                  Hủy
+                  Cancel
                 </button>
                 <button
                   type="submit"
@@ -728,12 +728,12 @@ export default function CreatorWalletPage() {
                   {submittingPayout ? (
                     <>
                       <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Đang gửi yêu cầu...</span>
+                      <span>Submitting request...</span>
                     </>
                   ) : (
                     <>
                       <span className="material-symbols-rounded text-sm">send</span>
-                      <span>Xác nhận rút tiền</span>
+                      <span>Confirm withdrawal</span>
                     </>
                   )}
                 </button>

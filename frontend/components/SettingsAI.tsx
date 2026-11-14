@@ -52,7 +52,7 @@ export default function SettingsAI() {
 
   async function testConnection() {
     if (!activeConfig.key.trim() || !activeConfig.model.trim()) {
-      showFeedback("Nhập API key và model trước khi kiểm tra.", "error");
+      showFeedback("Enter an API key and model before testing.", "error");
       return;
     }
 
@@ -71,11 +71,11 @@ export default function SettingsAI() {
       );
       const result = await response.json();
       showFeedback(
-        result.message || result.error || "Không thể kiểm tra kết nối.",
+        result.message || result.error || "Could not test the connection.",
         response.ok && result.success !== false ? "success" : "error",
       );
     } catch {
-      showFeedback("Không thể kết nối máy chủ AI. Vui lòng thử lại.", "error");
+      showFeedback("Could not connect to the AI server. Please try again.", "error");
     } finally {
       setTesting(false);
     }
@@ -84,7 +84,7 @@ export default function SettingsAI() {
   function saveSettings() {
     const saved = saveAiSettings({ ...activeConfig, key: activeConfig.key.trim(), model: activeConfig.model.trim() });
     showFeedback(
-      saved ? "Cấu hình đã lưu trên trình duyệt này." : "Không thể lưu cấu hình trên trình duyệt này.",
+      saved ? "Settings saved in this browser." : "Could not save settings in this browser.",
       saved ? "success" : "error",
     );
   }
@@ -94,7 +94,7 @@ export default function SettingsAI() {
     setConfig(next);
     const saved = saveAiSettings(next);
     showFeedback(
-      saved ? `Đã xóa key ${selectedProvider.label}.` : "Không thể xóa key.",
+      saved ? `Deleted the ${selectedProvider.label} key.` : "Could not delete the key.",
       saved ? "success" : "error",
     );
   }
@@ -107,17 +107,17 @@ export default function SettingsAI() {
             <span className="material-symbols-rounded">auto_awesome</span>
           </span>
           <div className={s.headingCopy}>
-            <h1 id="ai-settings-title">Cài đặt AI</h1>
-            <p>Chọn nhà cung cấp và cấu hình key.</p>
+            <h1 id="ai-settings-title">AI settings</h1>
+            <p>Choose a provider and configure its key.</p>
           </div>
         </div>
         <span className={s.badge} data-ready={hasSavedKey}>
-          {hasSavedKey ? "Đã nhập key" : "Chưa có key"}
+          {hasSavedKey ? "Key added" : "No key added"}
         </span>
       </header>
 
       <fieldset className="border-0 p-0 m-0">
-        <legend className={s.sectionLabel}>Nhà cung cấp</legend>
+        <legend className={s.sectionLabel}>Provider</legend>
         <div className={s.providerGrid}>
           {PROVIDERS.map((provider) => (
             <button
@@ -139,7 +139,7 @@ export default function SettingsAI() {
         <span>{selectedProvider.hint || selectedProvider.label}</span>
         {selectedProvider.keysUrl && (
           <a href={selectedProvider.keysUrl} target="_blank" rel="noopener noreferrer">
-            Lấy API key <span className="material-symbols-rounded" aria-hidden="true">open_in_new</span>
+            Get API key <span className="material-symbols-rounded" aria-hidden="true">open_in_new</span>
           </a>
         )}
       </p>
@@ -153,7 +153,7 @@ export default function SettingsAI() {
             spellCheck={false}
             value={activeConfig.key}
             disabled={testing}
-            placeholder="Nhập API key"
+            placeholder="Enter API key"
             onChange={(event) => {
               setConfig({ ...activeConfig, key: event.target.value });
               setMessage("");
@@ -162,7 +162,7 @@ export default function SettingsAI() {
           />
           <button
             type="button"
-            aria-label={show ? "Ẩn API key" : "Hiện API key"}
+            aria-label={show ? "Hide API key" : "Show API key"}
             aria-pressed={show}
             disabled={testing}
             onClick={() => setShow((value) => !value)}
@@ -178,7 +178,7 @@ export default function SettingsAI() {
           list={`models-${activeConfig.provider}`}
           value={activeConfig.model}
           disabled={testing}
-          placeholder="Nhập model ID"
+          placeholder="Enter model ID"
           onChange={(event) => setConfig({ ...activeConfig, model: event.target.value })}
         />
         <datalist id={`models-${activeConfig.provider}`}>
@@ -188,19 +188,19 @@ export default function SettingsAI() {
 
       <div className={s.keyNote}>
         <span className="material-symbols-rounded" aria-hidden="true">lock</span>
-        <span>Key được lưu riêng trong trình duyệt này.</span>
+        <span>Keys are stored only in this browser.</span>
       </div>
 
       <div className={s.actions}>
         <button type="button" className={s.primary} disabled={testing || !activeConfig.model.trim()} onClick={saveSettings}>
-          <span className="material-symbols-rounded" aria-hidden="true">save</span>Lưu
+          <span className="material-symbols-rounded" aria-hidden="true">save</span>Save
         </button>
         <button type="button" disabled={testing} onClick={testConnection}>
           <span className="material-symbols-rounded" aria-hidden="true">bolt</span>
-          {testing ? "Đang kiểm tra…" : "Kiểm tra kết nối"}
+          {testing ? "Testing…" : "Test connection"}
         </button>
         <button type="button" className="dangerButton" disabled={testing || !hasSavedKey} onClick={clearCurrentKey}>
-          Xóa key
+          Delete key
         </button>
       </div>
 

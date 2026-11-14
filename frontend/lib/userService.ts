@@ -3,21 +3,39 @@
  * Follows the same pattern as templateService.ts
  */
 
+import { apiFetch } from "./paymentService";
+
+export interface CreatorReview {
+  _id?: string;
+  user: string;
+  userName: string;
+  userAvatar?: string;
+  rating: number;
+  comment?: string;
+  createdAt: string;
+}
+
 export interface PublicUserProfile {
   user: {
     _id: string;
     name: string;
     picture: string;
+    googlePicture?: string;
     bio: string;
     jobRole: string;
     username: string;
     createdAt: string;
+    avgRating?: number;
+    ratingsCount?: number;
+    reviews?: CreatorReview[];
   };
   stats: {
     totalDesigns: number;
     totalLikes: number;
     totalForks: number;
     totalViews: number;
+    avgRating?: number;
+    ratingsCount?: number;
   };
   templates?: Array<{
     _id: string;
@@ -26,23 +44,61 @@ export interface PublicUserProfile {
     category: string;
     tags: string[];
     thumbnailUrl: string;
+    galleryImages?: string[];
+    author?: any;
+    authorName?: string;
+    authorAvatar?: string;
     docData?: unknown;
     likesCount: number;
     viewsCount: number;
     forksCount: number;
     avgRating: number;
+    ratingsCount?: number;
+    reviews?: any[];
     createdAt: string;
   }>;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
+/**
+ * Builds the URL to a Creator's public profile page using username (preferred), user ID, or name fallback.
+ */
+export function getCreatorProfileHref(author?: any, fallbackNameOrId?: string): string | null {
+  const username =
+    typeof author === "object" && author && typeof author.username === "string"
+      ? author.username.trim()
+      : "";
+  if (username) {
+    return `/creator/?username=${encodeURIComponent(username)}`;
+  }
 
-function getAuthHeaders(): Record<string, string> {
-  const token = typeof window !== "undefined" ? localStorage.getItem("pickme3d_token") : null;
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  return headers;
+  const rawId =
+    typeof author === "string"
+      ? author.trim()
+      : typeof author === "object" && author
+      ? String(author._id || author.id || "").trim()
+      : "";
+
+  if (rawId && !rawId.startsWith("local_")) {
+    return `/creator/?id=${encodeURIComponent(rawId)}`;
+  }
+
+  const cleanFallback = (fallbackNameOrId || "").trim();
+  if (
+    cleanFallback &&
+    !cleanFallback.startsWith("local_") &&
+    cleanFallback.toLowerCase() !== "pickme3d community" &&
+    cleanFallback !== "Bạn"
+  ) {
+    if (/^[0-9a-fA-F]{24}$/.test(cleanFallback)) {
+      return `/creator/?id=${encodeURIComponent(cleanFallback)}`;
+    }
+    return `/creator/?username=${encodeURIComponent(cleanFallback)}`;
+  }
+
+  return null;
 }
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
 /** Fetches the signed-in user's latest saved profile, including their Google photo. */
 export async function fetchMyProfileApi(): Promise<Record<string, any> | null> {
@@ -50,10 +106,7 @@ export async function fetchMyProfileApi(): Promise<Record<string, any> | null> {
   if (!token) return null;
 
   try {
-    const res = await fetch(`${API_BASE}/users/profile`, {
-      headers: getAuthHeaders(),
-      cache: "no-store",
-    });
+    const res = await apiFetch(`${API_BASE}/users/profile`);
     const json = await res.json();
     return res.ok && json.success && json.data ? json.data : null;
   } catch {
@@ -104,7 +157,7 @@ export async function fetchPublicProfileByIdApi(
   userId: string
 ): Promise<PublicUserProfile | null> {
   try {
-    const res = await fetch(`${API_BASE}/users/${userId}/public`, {
+    const res = await fetch(`${API_BASE}/users/${encodeURIComponent(userId)}/public`, {
       cache: "no-store",
     });
 
@@ -119,18 +172,85 @@ export async function fetchPublicProfileByIdApi(
 }
 
 /**
+ * Submits or updates a rating (1-5 stars) and review comment for a Creator profile
+ */
+export async function addCreatorReviewApi(
+  creatorId: string,
+  rating: number,
+  comment?: string
+): Promise<{
+  success: boolean;
+  data?: { avgRating: number; ratingsCount: number; reviews: CreatorReview[] };
+  message?: string;
+}> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("pickme3d_token") : null;
+  if (!token) {
+    return { success: false, message: "Sign in to review this creator." };
+  }
+
+  try {
+    const res = await apiFetch(`${API_BASE}/users/${encodeURIComponent(creatorId)}/review`, {
+      method: "POST",
+      body: JSON.stringify({ rating, comment }),
+    });
+    const json = await res.json();
+    if (res.ok && json.success) {
+      return { success: true, data: json.data, message: json.message };
+    }
+    if (res.status === 401) {
+      return { success: false, message: "Your session has expired. Please sign in again." };
+    }
+    return { success: false, message: json.message || "Could not submit the review right now." };
+  } catch {
+    return { success: false, message: "Could not connect to the server." };
+  }
+}
+
+/**
+ * Deletes a review from a Creator profile (Admin or review author)
+ */
+export async function deleteCreatorReviewApi(
+  creatorId: string,
+  reviewId: string
+): Promise<{
+  success: boolean;
+  data?: { avgRating: number; ratingsCount: number; reviews: CreatorReview[] };
+  message?: string;
+}> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("pickme3d_token") : null;
+  if (!token) {
+    return { success: false, message: "Please sign in." };
+  }
+
+  try {
+    const res = await apiFetch(
+      `${API_BASE}/users/${encodeURIComponent(creatorId)}/review/${encodeURIComponent(reviewId)}`,
+      {
+        method: "DELETE",
+      }
+    );
+    const json = await res.json();
+    if (res.status === 401) {
+      return { success: false, message: "Your session has expired. Please sign in again." };
+    }
+    return json;
+  } catch (err: any) {
+      return { success: false, message: err?.message || "Could not connect to the server." };
+  }
+}
+
+/**
  * Updates the current user's profile
  */
 export async function updateMyProfileApi(
   updates: Partial<{ name: string; bio: string; username: string; jobRole: string; picture: string }>
 ): Promise<{ success: boolean; data?: any; message?: string }> {
   const token = typeof window !== "undefined" ? localStorage.getItem("pickme3d_token") : null;
-  if (!token) return { success: false, message: "Vui lòng đăng nhập" };
+  if (!token) return { success: false, message: "Please sign in." };
 
   try {
-    const res = await fetch(`${API_BASE}/users/profile`, {
+    const res = await apiFetch(`${API_BASE}/users/profile`, {
       method: "PUT",
-      headers: getAuthHeaders(),
       body: JSON.stringify(updates),
     });
     const json = await res.json();
@@ -139,6 +259,6 @@ export async function updateMyProfileApi(
     }
     return { success: false, message: json.message || "Failed to update profile" };
   } catch {
-    return { success: false, message: "Lỗi kết nối máy chủ" };
+    return { success: false, message: "Could not connect to the server." };
   }
 }

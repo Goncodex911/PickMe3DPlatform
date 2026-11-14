@@ -527,7 +527,7 @@ export async function draftDesign(s: AiSettings, guide: string, idea: string, la
   ].join("\n");
   const user = [
     `Sketch this app: ${idea.trim()}`,
-    `Write every label, title and note in Vietnamese.`,
+    `Write every label, title, and note in English.`,
     `Generate exactly ${screenCount} screen(s). Place screens side by side with gap 80. Keep it clean and modern Material 3.`,
   ].join("\n");
 

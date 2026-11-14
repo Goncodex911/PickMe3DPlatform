@@ -23,6 +23,7 @@ import { AddToCollectionModal } from "@/components/CollectionManager";
 import DesignThumbnail from "@/components/DesignThumbnail";
 import ReportModal from "@/components/ReportModal";
 import { isCurrentUserAdmin } from "@/lib/reportService";
+import { getCreatorProfileHref } from "@/lib/userService";
 
 interface TemplateDetailClientProps {
   id: string;
@@ -55,7 +56,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
   const [copiedEmbed, setCopiedEmbed] = useState(false);
 
   // Review & Rating state
-  const [userRating, setUserRating] = useState<number>(5);
+  const [userRating, setUserRating] = useState<number>(0);
   const [hoverRating, setHoverRating] = useState<number>(0);
   const [userComment, setUserComment] = useState<string>("");
   const [submittingReview, setSubmittingReview] = useState(false);
@@ -114,7 +115,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
         const authorKey = (data.author?._id || data.authorName || "").toString();
         setIsFollowing(isAuthorFollowed(authorKey));
       } else {
-        setError("Không tìm thấy mẫu thiết kế yêu cầu.");
+        setError("The requested design template could not be found.");
       }
       setLoading(false);
     }
@@ -205,15 +206,15 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
       setAvgRating(res.data.avgRating);
       setRatingsCount(res.data.ratingsCount);
       setReviewsList(res.data.reviews || []);
-      setReviewMessage({ text: "Đã gửi nhận xét và đánh giá thành công." });
+      setReviewMessage({ text: "Your review was submitted successfully." });
       setUserComment("");
     } else {
-      setReviewMessage({ text: res.message || "Không thể gửi đánh giá.", error: true });
+      setReviewMessage({ text: res.message || "Could not submit your review.", error: true });
     }
   };
 
   const handleDeleteReviewByAdmin = async (reviewId: string) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa đánh giá này khỏi mẫu thiết kế? Điểm đánh giá trung bình sẽ được tính toán lại.")) {
+    if (!confirm("Are you sure you want to delete this review? The average rating will be recalculated.")) {
       return;
     }
     setDeletingReviewId(reviewId);
@@ -234,7 +235,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
           : null
       );
     } else {
-      alert("Không thể xóa đánh giá: " + (res.message || "Lỗi không xác định"));
+      alert("Could not delete the review: " + (res.message || "Unknown error"));
     }
   };
 
@@ -243,14 +244,14 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
     if (loading) {
       return (
         <div className="w-full h-full min-h-[400px] flex items-center justify-center bg-[#0a0e17] text-slate-400 text-xs font-mono">
-          Đang tải thiết kế...
+          Loading design...
         </div>
       );
     }
     if (error || !template) {
       return (
         <div className="w-full h-full min-h-[400px] flex items-center justify-center bg-[#0a0e17] text-slate-400 text-xs">
-          Mẫu không tồn tại hoặc đã bị xóa.
+          This template does not exist or has been deleted.
         </div>
       );
     }
@@ -259,7 +260,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
         <div className="flex items-center justify-between gap-3 pb-3 border-b border-white/10">
           <div>
             <h2 className="text-sm font-semibold text-white">{template.title}</h2>
-            <p className="text-xs text-slate-400">Bởi {template.authorName}</p>
+            <p className="text-xs text-slate-400">By {template.authorName}</p>
           </div>
           <a
             href={`/templates/${templateId}`}
@@ -267,7 +268,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
             rel="noopener noreferrer"
             className="px-3 py-1.5 rounded-md bg-red-600 text-white text-xs font-medium hover:bg-red-500 transition-colors"
           >
-            Mở trên PickMe3D
+            Open in PickMe3D
           </a>
         </div>
 
@@ -276,8 +277,8 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
         </div>
 
         <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-white/10">
-          <span>🔁 {template.forksCount || 0} lượt dùng lại</span>
-          <span>★ {avgRating > 0 ? avgRating.toFixed(1) : "Chưa có đánh giá"}</span>
+          <span>🔁 {template.forksCount || 0} uses</span>
+          <span>★ {avgRating > 0 ? avgRating.toFixed(1) : "No ratings yet"}</span>
         </div>
       </div>
     );
@@ -290,12 +291,12 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
         <div className="border-b border-white/10 px-6 py-4 bg-[#0a0e17]">
           <Link href="/templates" className="text-xs text-slate-400 hover:text-white flex items-center gap-1">
             <span className="material-symbols-rounded text-sm">arrow_back</span>
-            <span>Bộ sưu tập mẫu</span>
+            <span>Template gallery</span>
           </Link>
         </div>
         <div className="flex-1 flex flex-col items-center justify-center gap-3">
           <div className="w-7 h-7 border-2 border-white/20 border-t-red-500 rounded-full animate-spin" />
-          <p className="text-xs text-slate-400 font-mono">Đang tải chi tiết thiết kế...</p>
+          <p className="text-xs text-slate-400 font-mono">Loading design details...</p>
         </div>
       </div>
     );
@@ -308,22 +309,22 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
         <div className="border-b border-white/10 px-6 py-4 bg-[#0a0e17]">
           <Link href="/templates" className="text-xs text-slate-400 hover:text-white flex items-center gap-1">
             <span className="material-symbols-rounded text-sm">arrow_back</span>
-            <span>Bộ sưu tập mẫu</span>
+            <span>Template gallery</span>
           </Link>
         </div>
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto">
           <div className="w-12 h-12 rounded-md bg-slate-800 text-slate-400 flex items-center justify-center mb-4">
             <span className="material-symbols-rounded text-2xl">error_outline</span>
           </div>
-          <h2 className="text-lg font-bold text-white mb-2">Không tìm thấy mẫu thiết kế</h2>
+          <h2 className="text-lg font-bold text-white mb-2">Template not found</h2>
           <p className="text-xs text-slate-400 mb-6 leading-relaxed">
-            Mẫu thiết kế bạn đang tìm có thể đã bị xóa hoặc đặt ở chế độ riêng tư bởi tác giả.
+            The design may have been deleted or made private by its creator.
           </p>
           <Link
             href="/templates"
             className="px-4 py-2 rounded-md bg-red-600 hover:bg-red-500 text-white text-xs font-semibold transition-colors"
           >
-            Quay lại bộ sưu tập
+            Back to gallery
           </Link>
         </div>
       </div>
@@ -354,7 +355,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
             className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors"
           >
             <span className="material-symbols-rounded text-sm">arrow_back</span>
-            <span>Bộ sưu tập</span>
+            <span>Gallery</span>
           </Link>
           <span className="text-white/20">/</span>
           <span className="text-xs text-slate-200 font-medium truncate max-w-[200px] sm:max-w-xs">
@@ -371,15 +372,15 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                   isOpen: true,
                   targetType: "template",
                   targetId: template._id || templateId,
-                  targetTitle: template.title || "Mẫu thiết kế",
+                  targetTitle: template.title || "Design template",
                   targetUrl: `/templates/${templateId}`,
                 })
               }
               className="px-2.5 py-1.5 rounded-md bg-slate-800/80 hover:bg-red-500/10 text-slate-400 hover:text-red-400 text-xs font-medium border border-white/10 flex items-center gap-1.5 transition-colors cursor-pointer"
-              title="Báo cáo vi phạm mẫu này"
+              title="Report this template"
             >
               <span className="material-symbols-rounded text-sm text-red-400">flag</span>
-              <span className="hidden md:inline">Báo cáo</span>
+              <span className="hidden md:inline">Report</span>
             </button>
           )}
 
@@ -389,7 +390,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
             className="px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-white/10 flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <span className="material-symbols-rounded text-sm">share</span>
-            <span className="hidden sm:inline">Chia sẻ & Nhúng</span>
+            <span className="hidden sm:inline">Share & Embed</span>
           </button>
 
           <button
@@ -398,7 +399,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
             className="px-4 py-1.5 rounded-md bg-red-600 hover:bg-red-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <span className="material-symbols-rounded text-sm">content_copy</span>
-            <span>Dùng mẫu này</span>
+            <span>Use this template</span>
           </button>
         </div>
       </div>
@@ -421,7 +422,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                       : "text-slate-400 hover:text-white"
                   }`}
                 >
-                  Mô phỏng Canvas
+                  Canvas preview
                 </button>
                 <button
                   type="button"
@@ -432,7 +433,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                       : "text-slate-400 hover:text-white"
                   }`}
                 >
-                  Góc nhìn 3D
+                  3D view
                 </button>
                 <button
                   type="button"
@@ -443,7 +444,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                       : "text-slate-400 hover:text-white"
                   }`}
                 >
-                  Ảnh chi tiết
+                  Detail images
                 </button>
               </div>
 
@@ -452,10 +453,10 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                 type="button"
                 onClick={() => setFullInteractiveOpen(true)}
                 className="px-3 py-1.5 rounded-md bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-medium border border-white/10 flex items-center gap-1 transition-colors"
-                title="Mở trình xem tương tác toàn màn hình"
+                title="Open the interactive viewer fullscreen"
               >
                 <span className="material-symbols-rounded text-sm">fullscreen</span>
-                <span>Toàn màn hình</span>
+                <span>Fullscreen</span>
               </button>
             </div>
 
@@ -480,7 +481,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-4">
                       <div>
                         <span className="text-[10px] font-mono text-red-400 block uppercase">
-                          Phối cảnh 3D
+                          3D render
                         </span>
                         <span className="text-xs font-bold text-white block">{template.title}</span>
                       </div>
@@ -519,30 +520,30 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
             {/* Technical Specifications Bar */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-white/10 text-xs">
               <div className="p-2.5 rounded-md bg-slate-900 border border-white/5">
-                <span className="text-[11px] text-slate-400 block">Khung thiết kế</span>
+                <span className="text-[11px] text-slate-400 block">Design frames</span>
                 <span className="font-semibold text-white capitalize">{doc.frame || "Phone"}</span>
               </div>
               <div className="p-2.5 rounded-md bg-slate-900 border border-white/5">
-                <span className="text-[11px] text-slate-400 block">Bảng màu</span>
+                <span className="text-[11px] text-slate-400 block">Color palette</span>
                 <span className="font-semibold text-white capitalize">{doc.paletteKey || "Purple"}</span>
               </div>
               <div className="p-2.5 rounded-md bg-slate-900 border border-white/5">
-                <span className="text-[11px] text-slate-400 block">Số nhóm phần tử</span>
-                <span className="font-semibold text-white">{doc.groups?.length || 0} nhóm</span>
+                <span className="text-[11px] text-slate-400 block">Element groups</span>
+                <span className="font-semibold text-white">{doc.groups?.length || 0} groups</span>
               </div>
               <div className="p-2.5 rounded-md bg-slate-900 border border-white/5">
-                <span className="text-[11px] text-slate-400 block">Danh mục</span>
+                <span className="text-[11px] text-slate-400 block">Category</span>
                 <span className="font-semibold text-white">{template.category}</span>
               </div>
             </div>
           </div>
 
-          {/* Section: Reviews & Đánh giá */}
+          {/* Section: Reviews & ratings */}
           <div className="rounded-md bg-[#0e1422] border border-white/10 p-5 space-y-5">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <div className="flex items-center gap-2">
                 <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-                  Đánh giá & Nhận xét
+                  Reviews & Ratings
                 </h2>
                 <span className="text-xs text-slate-400">({ratingsCount})</span>
               </div>
@@ -558,7 +559,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
             {/* Add Review Form */}
             <form onSubmit={handleSubmitReview} className="p-4 rounded-md bg-slate-900 border border-white/5 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-300">Đánh giá của bạn:</span>
+                <span className="text-xs font-medium text-slate-300">Your rating:</span>
                 <div className="flex items-center gap-1">
                   {[1, 2, 3, 4, 5].map((star) => {
                     const active = (hoverRating || userRating) >= star;
@@ -573,7 +574,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                       >
                         <span
                           className={`material-symbols-rounded text-lg ${
-                            active ? "text-amber-400 fill-amber-400" : "text-slate-600"
+                            active ? "rating-star-filled" : "rating-star-outline"
                           }`}
                         >
                           star
@@ -587,17 +588,17 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
               <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="text"
-                  placeholder="Để lại nhận xét về mẫu thiết kế..."
+                  placeholder="Leave a review for this design..."
                   value={userComment}
                   onChange={(e) => setUserComment(e.target.value)}
                   className="flex-1 px-3 py-2 rounded-md bg-slate-950 border border-white/10 text-xs text-white placeholder:text-slate-500  outline-none"
                 />
                 <button
                   type="submit"
-                  disabled={submittingReview}
+                  disabled={submittingReview || userRating === 0}
                   className="px-4 py-2 rounded-md bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs font-semibold shrink-0 transition-colors cursor-pointer"
                 >
-                  {submittingReview ? "Đang gửi..." : "Gửi đánh giá"}
+                  {submittingReview ? "Submitting..." : "Submit review"}
                 </button>
               </div>
 
@@ -617,33 +618,51 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
             {/* Reviews List */}
             {reviewsList.length === 0 ? (
               <div className="py-8 text-center text-xs text-slate-400">
-                Chưa có nhận xét nào. Hãy là người đầu tiên đánh giá mẫu thiết kế này.
+                No reviews yet. Be the first to rate this design.
               </div>
             ) : (
               <div className="space-y-3">
                 {reviewsList.map((rev, idx) => {
                   const reviewId = (rev as any)._id || (rev as any).id || rev.user || `${templateId}-review-${idx}`;
+                  const reviewerHref = getCreatorProfileHref(rev.user, rev.userName);
                   return (
                     <div key={idx} className="p-3.5 rounded-md bg-slate-900 border border-white/5 space-y-1.5 text-xs">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {rev.userAvatar ? (
-                            <img
-                              src={rev.userAvatar}
-                              alt=""
-                              className="w-6 h-6 rounded-full object-cover border border-white/10"
-                            />
-                          ) : (
-                            <div className="w-6 h-6 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center font-bold text-[10px]">
-                              {rev.userName ? rev.userName[0] : "U"}
-                            </div>
-                          )}
-                          <span className="font-semibold text-white">{rev.userName}</span>
-                        </div>
+                        {reviewerHref ? (
+                          <Link href={reviewerHref} className="flex items-center gap-2 hover:opacity-85 transition-opacity">
+                            {rev.userAvatar ? (
+                              <img
+                                src={rev.userAvatar}
+                                alt=""
+                                className="w-6 h-6 rounded-full object-cover border border-white/10"
+                              />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center font-bold text-[10px]">
+                                {rev.userName ? rev.userName[0] : "U"}
+                              </div>
+                            )}
+                            <span className="font-semibold text-white hover:underline">{rev.userName}</span>
+                          </Link>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            {rev.userAvatar ? (
+                              <img
+                                src={rev.userAvatar}
+                                alt=""
+                                className="w-6 h-6 rounded-full object-cover border border-white/10"
+                              />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center font-bold text-[10px]">
+                                {rev.userName ? rev.userName[0] : "U"}
+                              </div>
+                            )}
+                            <span className="font-semibold text-white">{rev.userName}</span>
+                          </div>
+                        )}
                         <div className="flex items-center gap-2">
                           <div className="flex items-center text-amber-400 text-xs">
                             {Array.from({ length: rev.rating }).map((_, i) => (
-                              <span key={i} className="material-symbols-rounded text-sm">
+                              <span key={i} className="material-symbols-rounded rating-star-filled text-sm">
                                 star
                               </span>
                             ))}
@@ -656,7 +675,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                               disabled={deletingReviewId === reviewId}
                               onClick={() => handleDeleteReviewByAdmin(reviewId)}
                               className="p-1 rounded text-rose-400 hover:text-rose-300 hover:bg-rose-500/20 transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center"
-                              title="Xóa đánh giá này (Admin)"
+                              title="Delete this review (admin)"
                             >
                               <span className="material-symbols-rounded text-sm">delete</span>
                             </button>
@@ -672,7 +691,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                                   setOpenReviewMenu(openReviewMenu === reviewId ? null : reviewId);
                                 }}
                                 className="text-slate-400 hover:text-white p-1 rounded hover:bg-white/5 transition-colors cursor-pointer"
-                                title="Tùy chọn khác"
+                                title="More options"
                               >
                                 <span className="material-symbols-rounded text-base">more_vert</span>
                               </button>
@@ -687,14 +706,14 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                                         isOpen: true,
                                         targetType: "review",
                                         targetId: reviewId,
-                                        targetTitle: `Đánh giá của ${rev.userName || "Người dùng"} cho "${template.title || 'Mẫu thiết kế'}"`,
+                                        targetTitle: `Review by ${rev.userName || "User"} for "${template.title || 'Design template'}"`,
                                         targetUrl: `/templates/${templateId}`,
                                       });
                                     }}
                                     className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-rose-400 hover:bg-white/5 hover:text-rose-300 transition-colors cursor-pointer text-left"
                                   >
                                     <span className="material-symbols-rounded text-sm">flag</span>
-                                    <span>Báo cáo đánh giá</span>
+                                    <span>Report review</span>
                                   </button>
                                 </div>
                               )}
@@ -726,7 +745,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                   {template.category}
                 </span>
                 <span className="text-[11px] text-slate-400 font-mono">
-                  {template.createdAt ? new Date(template.createdAt).toLocaleDateString("vi-VN") : "Công khai"}
+                  {template.createdAt ? new Date(template.createdAt).toLocaleDateString("en-US") : "Public"}
                 </span>
               </div>
 
@@ -738,7 +757,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
               <div className="flex flex-wrap items-center gap-3 pt-3 text-xs text-slate-300">
                 <span className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium">
                   <span>🔁</span>
-                  <span>{template.forksCount || 0} lần được dùng lại</span>
+                  <span>{template.forksCount || 0} uses</span>
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="material-symbols-rounded text-sm text-slate-400">visibility</span>
@@ -746,7 +765,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="material-symbols-rounded text-sm text-rose-400">favorite</span>
-                  <span>{likes} thích</span>
+                  <span>{likes} likes</span>
                 </span>
               </div>
             </div>
@@ -754,7 +773,9 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
             {/* Author Information + Follow Button */}
             <div className="p-3.5 rounded-md bg-slate-900 border border-white/5 flex items-center justify-between gap-3">
               {(() => {
-                const authorUsername = template.author?.username;
+                const authorUsername =
+                  typeof template.author === "object" ? template.author?.username : undefined;
+                const creatorHref = getCreatorProfileHref(template.author, template.authorName);
                 const avatarEl = template.authorAvatar ? (
                   <img
                     src={template.authorAvatar}
@@ -768,19 +789,22 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                 );
                 const nameEl = (
                   <div className="min-w-0">
-                    <span className="text-[11px] text-slate-400 block">Tác giả thiết kế</span>
-                    <span className="text-sm font-semibold text-white truncate block">
+                    <span className="text-[11px] text-slate-400 block">Creator</span>
+                    <span className="text-sm font-semibold text-white group-hover/author:underline truncate block">
                       {template.authorName}
                     </span>
-                    {authorUsername && (
+                    {authorUsername ? (
                       <span className="text-[10px] text-red-400 font-medium">@{authorUsername}</span>
-                    )}
+                    ) : creatorHref ? (
+                      <span className="text-[10px] text-slate-400">View profile & ratings →</span>
+                    ) : null}
                   </div>
                 );
-                return authorUsername ? (
+                return creatorHref ? (
                   <Link
-                    href={`/creator/?username=${encodeURIComponent(authorUsername)}`}
-                    className="flex items-center gap-3 min-w-0 hover:opacity-80 transition-opacity"
+                    href={creatorHref}
+                    className="group/author flex items-center gap-3 min-w-0 hover:opacity-85 transition-opacity"
+                    title={`View ${template.authorName}'s creator profile`}
                   >
                     {avatarEl}
                     {nameEl}
@@ -802,17 +826,17 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                     : "bg-white text-slate-900 border-white hover:bg-slate-100"
                 }`}
               >
-                {isFollowing ? "Đang theo dõi" : "Theo dõi"}
+                {isFollowing ? "Following" : "Follow"}
               </button>
             </div>
 
             {/* Description */}
             <div className="space-y-1.5">
               <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Mô tả thiết kế
+                About this design
               </h3>
               <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-line p-3 rounded-md bg-slate-900 border border-white/5">
-                {template.description || "Chưa có mô tả chi tiết cho thiết kế này."}
+                {template.description || "No detailed description is available for this design."}
               </p>
             </div>
 
@@ -820,7 +844,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
             {template.tags && template.tags.length > 0 && (
               <div className="space-y-1.5">
                 <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Thẻ phong cách
+                  Style tags
                 </h3>
                 <div className="flex flex-wrap gap-1.5">
                   {template.tags.map((tag, idx) => (
@@ -837,14 +861,14 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
 
             {/* Primary Action Buttons */}
             <div className="pt-4 border-t border-white/10 space-y-2.5">
-              {/* Button: Dùng mẫu này / Fork & Chỉnh sửa */}
+              {/* Button: Use this template / Fork & edit */}
               <button
                 type="button"
                 onClick={handleUseTemplate}
                 className="w-full py-3 px-4 rounded-md bg-red-600 hover:bg-red-500 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
                 <span className="material-symbols-rounded text-base">content_copy</span>
-                <span>Dùng mẫu này (Fork & Chỉnh sửa)</span>
+                <span>Use this template (Fork & Edit)</span>
               </button>
 
               <div className="grid grid-cols-3 gap-2">
@@ -860,7 +884,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                   <span className="material-symbols-rounded text-sm">
                     {isLiked ? "favorite" : "favorite_border"}
                   </span>
-                  <span>{isLiked ? "Đã thích" : "Thích"}</span>
+                  <span>{isLiked ? "Liked" : "Like"}</span>
                 </button>
 
                 <button
@@ -869,17 +893,17 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                   className="py-2 px-3 rounded-md bg-slate-900 border border-white/10 text-slate-300 hover:text-white hover:border-white/20 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <span className="material-symbols-rounded text-sm">share</span>
-                  <span>Chia sẻ</span>
+                  <span>Share</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={handleDownloadJson}
                   className="py-2 px-3 rounded-md bg-slate-900 border border-white/10 text-slate-300 hover:text-white hover:border-white/20 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                  title="Tải cấu hình JSON"
+                  title="Download JSON configuration"
                 >
                   <span className="material-symbols-rounded text-sm">download</span>
-                  <span>Tải JSON</span>
+                  <span>Download JSON</span>
                 </button>
               </div>
 
@@ -890,7 +914,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                 className="w-full py-2.5 px-4 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 font-semibold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
                 <span className="material-symbols-rounded text-sm">bookmark</span>
-                <span>Lưu vào Bộ Sưu Tập</span>
+                <span>Save to collection</span>
               </button>
 
               {/* Report Template Trigger */}
@@ -902,14 +926,14 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                       isOpen: true,
                       targetType: "template",
                       targetId: template._id || templateId,
-                      targetTitle: template.title || "Mẫu thiết kế",
+                      targetTitle: template.title || "Design template",
                       targetUrl: `/templates/${templateId}`,
                     })
                   }
                   className="w-full py-2 px-3 text-slate-500 hover:text-red-400 text-[11px] font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <span className="material-symbols-rounded text-sm">flag</span>
-                  <span>Báo cáo vi phạm mẫu này</span>
+                  <span>Report this template</span>
                 </button>
               )}
             </div>
@@ -922,7 +946,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="w-full max-w-md rounded-md bg-[#0e1422] border border-white/10 p-6 space-y-4 shadow-xl">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <h3 className="text-sm font-bold text-white">Chia sẻ & Nhúng thiết kế</h3>
+              <h3 className="text-sm font-bold text-white">Share & Embed Design</h3>
               <button
                 type="button"
                 onClick={() => setShareModalOpen(false)}
@@ -934,7 +958,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
 
             {/* Direct Link Section */}
             <div className="space-y-1.5">
-              <label className="text-xs text-slate-300 font-medium">Đường dẫn trực tiếp:</label>
+              <label className="text-xs text-slate-300 font-medium">Direct link:</label>
               <div className="flex items-center gap-2">
                 <input
                   type="text"
@@ -947,14 +971,14 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                   onClick={handleCopyShareLink}
                   className="px-3 py-2 rounded-md bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold border border-white/10 transition-colors shrink-0"
                 >
-                  {copiedLink ? "Đã sao chép" : "Sao chép"}
+                  {copiedLink ? "Copied" : "Copy"}
                 </button>
               </div>
             </div>
 
             {/* Embed Code Section */}
             <div className="space-y-1.5">
-              <label className="text-xs text-slate-300 font-medium">Mã nhúng (iFrame nhúng web/blog):</label>
+              <label className="text-xs text-slate-300 font-medium">Embed code (iframe for a website or blog):</label>
               <div className="space-y-2">
                 <textarea
                   readOnly
@@ -969,13 +993,13 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                   onClick={handleCopyEmbedCode}
                   className="w-full py-2 rounded-md bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold border border-white/10 transition-colors"
                 >
-                  {copiedEmbed ? "Đã sao chép mã nhúng" : "Sao chép mã nhúng iFrame"}
+                  {copiedEmbed ? "Embed code copied" : "Copy iframe code"}
                 </button>
               </div>
             </div>
 
             <div className="pt-2 text-[11px] text-slate-400 leading-relaxed">
-              Bạn có thể dán mã nhúng trên vào bất kỳ website, bài viết blog hoặc Notion để hiển thị bản thiết kế 3D.
+              Paste this embed code into any website, blog post, or Notion page to display the 3D design.
             </div>
           </div>
         </div>

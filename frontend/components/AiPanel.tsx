@@ -194,7 +194,7 @@ export function AiPanel({
       const data = await res.json();
       setTestResult(data);
     } catch (e: any) {
-      setTestResult({ success: false, message: e?.message || "Lỗi kiểm tra kết nối" });
+      setTestResult({ success: false, message: e?.message || "Connection test failed" });
     } finally {
       setTestBusy(false);
     }
@@ -225,10 +225,10 @@ export function AiPanel({
             <div style={{ width: 28, height: 28, borderRadius: 14, background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)", display: "grid", placeItems: "center", color: "#fff" }}>
               <Icon name="auto_awesome" size={16} fill />
             </div>
-            Tạo màn hình bằng AI
+            Generate a screen with AI
           </div>
           <div style={{ fontSize: 12, lineHeight: 1.45, color: p.onSurfaceVariant, marginBottom: 12 }}>
-            Nhập mô tả ý tưởng bất kỳ để AI dựng và bố cục giao diện hoàn chỉnh trực tiếp lên Canvas.
+            Describe an idea and let AI build a complete layout directly on the canvas.
           </div>
           <button
             type="button"
@@ -252,7 +252,7 @@ export function AiPanel({
             }}
           >
             <Icon name="palette" size={18} />
-            Nhập mô tả & Sinh màn hình
+            Describe your idea & Generate screen
           </button>
         </div>
       )}
@@ -317,7 +317,7 @@ export function AiPanel({
             </Label>
             <Input label={t("aiKey", lang)} value={settings.key} onChange={(key) => { setTestResult(null); onSettings({ ...settings, key }); }} placeholder="sk-…" p={p} type="password" />
             <div style={{ fontSize: 12, lineHeight: 1.5, color: p.onSurfaceVariant, marginTop: 8, padding: "0 4px" }}>
-              {settings.provider === "gemini" ? "Lấy khóa miễn phí nhanh tại Google AI Studio và dán vào đây để bắt đầu." : t("aiKeyHint", lang)}
+              {settings.provider === "gemini" ? "Get a free key from Google AI Studio and paste it here to get started." : t("aiKeyHint", lang)}
             </div>
 
             {/* Test connection button */}
@@ -344,7 +344,7 @@ export function AiPanel({
                 }}
               >
                 <Icon name={testBusy ? "progress_activity" : "bolt"} size={16} />
-                {testBusy ? "Đang kiểm tra kết nối..." : "Kiểm tra kết nối (Test Model)"}
+                {testBusy ? "Testing connection..." : "Test connection (model)"}
               </button>
               {testResult && (
                 <div
@@ -378,10 +378,10 @@ export function AiPanel({
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: p.onSurface, marginBottom: 4 }}>
                   <Icon name="auto_awesome" size={18} color="#a855f7" />
-                  Tạo màn hình bằng AI
+                  Generate a screen with AI
                 </div>
                 <div style={{ fontSize: 12, lineHeight: 1.45, color: p.onSurfaceVariant, marginBottom: 12 }}>
-                  Nhập mô tả ý tưởng bất kỳ để AI dựng và bố cục giao diện trực tiếp lên Canvas.
+                  Describe an idea and let AI build a layout directly on the canvas.
                 </div>
                 <button
                   type="button"
@@ -405,7 +405,7 @@ export function AiPanel({
                   }}
                 >
                   <Icon name="palette" size={18} />
-                  Nhập mô tả & Sinh màn hình
+                  Describe your idea & Generate screen
                 </button>
               </div>
             )}

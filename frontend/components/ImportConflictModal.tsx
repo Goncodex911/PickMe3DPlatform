@@ -52,8 +52,6 @@ export default function ImportConflictModal({
             inset: 0,
             zIndex: 850,
             background: "rgba(0, 0, 0, 0.55)",
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
             display: "grid",
             placeItems: "center",
             padding: 20,
@@ -62,7 +60,7 @@ export default function ImportConflictModal({
           <motion.div
             role="dialog"
             aria-modal="true"
-            aria-label="Xác nhận nhập thiết kế"
+            aria-label="Confirm design import"
             initial={{ scale: 0.94, opacity: 0, y: 12 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 8 }}
@@ -123,7 +121,7 @@ export default function ImportConflictModal({
                     color: p.onSurface,
                   }}
                 >
-                  Không gian làm việc đang có thiết kế
+                  A design is already open
                 </h3>
                 <p
                   style={{
@@ -134,14 +132,14 @@ export default function ImportConflictModal({
                   }}
                 >
                   {activeDesignTitle
-                    ? `Bạn đang mở "${activeDesignTitle}". Bạn muốn xử lý tệp nhập mới như thế nào?`
-                    : "Bạn đang có các thành phần đang chỉnh sửa trên màn hình. Hãy chọn cách nạp tệp thiết kế mới:"}
+                    ? `“${activeDesignTitle}” is open. How would you like to handle the imported file?`
+                    : "You have unsaved elements on the canvas. Choose how to import the new design:"}
                 </p>
               </div>
 
               <button
                 onClick={onCancel}
-                title="Đóng (Esc)"
+                title="Close (Esc)"
                 style={{
                   background: "transparent",
                   border: "none",
@@ -190,7 +188,7 @@ export default function ImportConflictModal({
                     textOverflow: "ellipsis",
                   }}
                 >
-                  {importedTitle || "Tệp thiết kế mới"}
+                  {importedTitle || "New design file"}
                 </div>
                 {importedSubtitle && (
                   <div style={{ fontSize: 12, color: p.onSurfaceVariant }}>
@@ -210,7 +208,7 @@ export default function ImportConflictModal({
                   letterSpacing: "0.04em",
                 }}
               >
-                Sẵn sàng nạp
+                Ready to import
               </span>
             </div>
 
@@ -223,7 +221,7 @@ export default function ImportConflictModal({
                 gap: 12,
               }}
             >
-              {/* Option 2 (Recommended): Giữ nguyên và Thêm mới */}
+              {/* Option 2 (Recommended): Keep and import */}
               <button
                 type="button"
                 onClick={onKeepAndImport}
@@ -275,7 +273,7 @@ export default function ImportConflictModal({
                         color: p.onSurface,
                       }}
                     >
-                      Giữ nguyên và Thêm mới (Keep & Import)
+                      Keep current and add new design
                     </span>
                     <span
                       style={{
@@ -287,7 +285,7 @@ export default function ImportConflictModal({
                         color: p.onPrimary,
                       }}
                     >
-                      Khuyên dùng
+                      Recommended
                     </span>
                   </div>
                   <p
@@ -298,13 +296,13 @@ export default function ImportConflictModal({
                       color: p.onSurfaceVariant,
                     }}
                   >
-                    Giữ lại 100% thiết kế hiện tại, tạo một <strong>Artboard riêng biệt</strong> đặt
-                    cạnh bên để bạn so sánh, lấy linh kiện hoặc chỉnh sửa song song.
+                    Keep your current design intact and create a <strong>separate artboard</strong>
+                    beside it so you can compare, reuse elements, or edit both designs side by side.
                   </p>
                 </div>
               </button>
 
-              {/* Option 1: Thay thế (Replace) */}
+              {/* Option 1: Replace */}
               <button
                 type="button"
                 onClick={onReplace}
@@ -348,7 +346,7 @@ export default function ImportConflictModal({
                       marginBottom: 4,
                     }}
                   >
-                    Thay thế thiết kế hiện tại (Replace)
+                    Replace current design
                   </div>
                   <p
                     style={{
@@ -358,8 +356,8 @@ export default function ImportConflictModal({
                       color: p.onSurfaceVariant,
                     }}
                   >
-                    Đóng thiết kế cũ và thay thế hoàn toàn bằng tệp mới vừa import.
-                    <em> (Bạn vẫn có thể nhấn Undo Ctrl+Z để khôi phục).</em>
+                    Close the current design and replace it with the imported file.
+                    <em> You can still undo with Ctrl+Z.</em>
                   </p>
                 </div>
               </button>
@@ -392,7 +390,7 @@ export default function ImportConflictModal({
                   cursor: "pointer",
                 }}
               >
-                Hủy bỏ
+                Cancel
               </button>
             </div>
           </motion.div>

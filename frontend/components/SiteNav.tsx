@@ -87,7 +87,7 @@ export default function SiteNav() {
       <nav id="site-nav" className={`${styles.nav} ${menuOpen ? styles.navOpen : ""}`} aria-label="Main navigation">
         <Link href="/" aria-current={pathname === "/" || pathname === "/landing/" ? "page" : undefined} onClick={() => setMenuOpen(false)}>Home</Link>
         <Link href="/templates/" aria-current={current("/templates") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Templates</Link>
-        <Link href="/blueprint-3d/" aria-current={current("/blueprint-3d") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Bản Vẽ 3D</Link>
+        <Link href="/blueprint-3d/" aria-current={current("/blueprint-3d") ? "page" : undefined} onClick={() => setMenuOpen(false)}>3D Blueprint</Link>
         <Link href="/ui-marketplace/" aria-current={current("/ui-marketplace") ? "page" : undefined} onClick={() => setMenuOpen(false)}>UI Marketplace</Link>
         <Link href={authenticated ? "/slides/" : "/login/"} aria-current={current("/slides") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Slides</Link>
         <Link href="/pricing/" aria-current={current("/pricing") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Pricing</Link>
@@ -109,8 +109,8 @@ export default function SiteNav() {
           </Link>
         )}
         {authenticated && <Link href="/activity/" aria-current={current("/activity") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Activity</Link>}
-        {authenticated && role !== "admin" && <Link href="/creator/wallet/" aria-current={current("/creator/wallet") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Ví Creator</Link>}
-        {authenticated && role !== "admin" && <Link href="/appeals/" aria-current={current("/appeals") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Khiếu nại</Link>}
+        {authenticated && role !== "admin" && <Link href="/creator/wallet/" aria-current={current("/creator/wallet") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Creator wallet</Link>}
+        {authenticated && role !== "admin" && <Link href="/appeals/" aria-current={current("/appeals") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Appeals</Link>}
         {authenticated && <NotificationBell />}
         {authenticated
           ? <><Link href="/profile/" aria-current={current("/profile") ? "page" : undefined} className={styles.account} title={name}>{name || "Account"}</Link><button onClick={() => { logout(); setMenuOpen(false); router.push("/"); router.refresh(); }} className={styles.logout}>Sign out</button></>

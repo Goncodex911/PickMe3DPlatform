@@ -245,7 +245,7 @@ exports.adminLogin = async (req, res, next) => {
     }
 
     // Generate JWT
-    const jwtSecret = process.env.JWT_SECRET || 'pickme3d_super_secret_jwt_key_2026';
+    const jwtSecret = process.env.JWT_SECRET || 'super_secret_pickme3d_jwt_key_2024';
     const jwtToken = jwt.sign(
       {
         id: userObj.id,

@@ -37,8 +37,8 @@ export default function EmbedClient({ id }: Props) {
   useEffect(() => {
     // 1. If id === "preview", load live preview from localStorage or fallback to SmartWatch Pro
     if (id === "preview") {
-      let docTitle = "Mẫu Trưng Bày 3D SmartWatch Pro";
-      let docDesc = "Bản xem trước nhúng iframe cho thiết kế PickMe3D (iPhone 16 Pro Max)";
+      let docTitle = "SmartWatch Pro 3D Showcase";
+      let docDesc = "PickMe3D embedded design preview (iPhone 16 Pro Max)";
       try {
         const saved = typeof window !== "undefined" ? localStorage.getItem("pickme3d_doc") : null;
         if (saved) {
@@ -73,8 +73,8 @@ export default function EmbedClient({ id }: Props) {
           // Graceful fallback template so embed never renders broken
           setTemplate({
             id,
-            title: "Mẫu Thiết Kế 3D PickMe3D",
-            description: "Thiết kế tương tác được nhúng trực tiếp qua PickMe3D iFrame Widget.",
+            title: "PickMe3D 3D Design Template",
+            description: "Interactive design embedded with the PickMe3D iframe widget.",
             authorName: "PickMe3D Creator",
           });
         }
@@ -83,8 +83,8 @@ export default function EmbedClient({ id }: Props) {
         if (err.name !== "AbortError") {
           setTemplate({
             id,
-            title: "Mẫu Thiết Kế 3D PickMe3D",
-            description: "Thiết kế tương tác được nhúng trực tiếp qua PickMe3D iFrame Widget.",
+            title: "PickMe3D 3D Design Template",
+            description: "Interactive design embedded with the PickMe3D iframe widget.",
             authorName: "PickMe3D Creator",
           });
         }
@@ -136,7 +136,7 @@ export default function EmbedClient({ id }: Props) {
             animation: "spin 0.9s linear infinite",
           }}
         />
-        <p style={{ marginTop: 18, fontSize: 14, color: subtextColor }}>Đang tải thiết kế…</p>
+        <p style={{ marginTop: 18, fontSize: 14, color: subtextColor }}>Loading design…</p>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
     );
@@ -157,7 +157,7 @@ export default function EmbedClient({ id }: Props) {
           error_outline
         </span>
         <p style={{ marginTop: 16, fontSize: 16, fontWeight: 700 }}>
-          {error ?? "Không tìm thấy template"}
+          {error ?? "Template not found"}
         </p>
         <p style={{ fontSize: 13, color: subtextColor, marginTop: 6 }}>
           ID: <code>{id}</code>
@@ -301,7 +301,7 @@ export default function EmbedClient({ id }: Props) {
           }}
         >
           <span style={{ fontFamily: "Material Symbols Rounded", fontSize: 20 }}>edit</span>
-          Mở trong Editor
+          Open in Editor
         </a>
       </div>
 

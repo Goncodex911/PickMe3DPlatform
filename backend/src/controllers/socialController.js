@@ -62,7 +62,7 @@ exports.activityFeed = async (req, res, next) => {
       { $match: { 'creator.status': { $ne: 'banned' } } },
       { $skip: (page - 1) * limit }, { $limit: limit + 1 },
       { $project: { title: 1, thumbnailUrl: 1, createdAt: 1,
-        'creator.name': 1, 'creator.username': 1, 'creator.picture': 1 } },
+        'creator._id': 1, 'creator.name': 1, 'creator.username': 1, 'creator.picture': 1 } },
     ]);
     res.json({ success: true, data: data.slice(0, limit), page, hasMore: data.length > limit });
   } catch (err) { next(err); }

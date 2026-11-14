@@ -452,26 +452,26 @@ export default function ScrollCanvas({
     if (p < 0.25) {
       return {
         step: "01",
-        title: "Bàn Làm Việc Studio",
-        subtitle: "Khởi đầu sáng tạo từ bản thảo & chiếc điện thoại trên bàn vẽ.",
+        title: "Studio Workspace",
+        subtitle: "Start creating with a sketch and a phone on your design desk.",
       };
     } else if (p < 0.55) {
       return {
         step: "02",
-        title: "Chuyển Động Đa Chiều",
-        subtitle: "Góc quay 3D kinetic lướt qua các mảng phối màu và linh kiện.",
+        title: "Multidimensional Motion",
+        subtitle: "A kinetic 3D camera glides past color palettes and components.",
       };
     } else if (p < 0.82) {
       return {
         step: "03",
-        title: "Định Hình Không Gian",
-        subtitle: "Từng đường nét thiết kế hòa quyện vào phong cách Haute Couture.",
+        title: "Shape the Space",
+        subtitle: "Every design detail comes together in a Haute Couture style.",
       };
     } else {
       return {
         step: "04",
         title: "SaaSWave Brand Reveal",
-        subtitle: "Bộ nhận diện hoàn thiện, sẵn sàng mở khóa tiềm năng thương hiệu.",
+        subtitle: "A complete identity, ready to unlock your brand’s potential.",
       };
     }
   };
@@ -603,7 +603,7 @@ export default function ScrollCanvas({
                 <span>0% START</span>
                 <span className="flex items-center gap-1 text-slate-400 animate-pulse">
                   <span className="material-symbols-rounded text-xs">keyboard_double_arrow_down</span>
-                  <span>CUỘN ĐỂ TIẾP TỤC TRẢI NGHIỆM</span>
+                  <span>SCROLL TO CONTINUE</span>
                 </span>
                 <span>100% BRAND REVEAL</span>
               </div>

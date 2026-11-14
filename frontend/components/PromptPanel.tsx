@@ -479,7 +479,7 @@ export function PromptPanel({
             }}
           >
             <Icon name="auto_awesome" size={18} fill />
-            <span>Sinh giao diện bằng AI (Modal)</span>
+            <span>Generate UI with AI (modal)</span>
           </button>
         )}
 

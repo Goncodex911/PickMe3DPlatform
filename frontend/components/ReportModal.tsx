@@ -16,30 +16,30 @@ interface ReportModalProps {
 
 const REASON_OPTIONS: Record<"template" | "review" | "creator", { value: string; label: string }[]> = {
   template: [
-    { value: "copyright_infringement", label: "Vi phạm bản quyền / Đạo nhái thiết kế" },
-    { value: "inappropriate_content", label: "Nội dung phản cảm, đồi trụy hoặc bạo lực" },
-    { value: "spam", label: "Spam / Mẫu quảng cáo giả mạo" },
-    { value: "bug_report", label: "Mẫu hỏng nặng / Lỗi không load được 3D" },
-    { value: "other", label: "Lý do khác" },
+    { value: "copyright_infringement", label: "Copyright infringement or design plagiarism" },
+    { value: "inappropriate_content", label: "Inappropriate, explicit, or violent content" },
+    { value: "spam", label: "Spam or fraudulent template" },
+    { value: "bug_report", label: "Broken template or 3D loading issue" },
+    { value: "other", label: "Other" },
   ],
   review: [
-    { value: "harassment", label: "Quấy rối / Công kích xúc phạm cá nhân" },
-    { value: "inappropriate_content", label: "Ngôn từ thù ghét, tục tĩu hoặc phản cảm" },
-    { value: "spam", label: "Spam / Đánh giá giả mạo hoặc phá hoại" },
-    { value: "other", label: "Lý do khác" },
+    { value: "harassment", label: "Harassment or personal attacks" },
+    { value: "inappropriate_content", label: "Hateful, obscene, or offensive language" },
+    { value: "spam", label: "Spam or fake review" },
+    { value: "other", label: "Other" },
   ],
   creator: [
-    { value: "copyright_infringement", label: "Mạo danh tác giả / Đạo nhái có hệ thống" },
-    { value: "harassment", label: "Hành vi lừa đảo / Quấy rối người dùng khác" },
-    { value: "spam", label: "Tài khoản giả mạo / Spam hàng loạt" },
-    { value: "other", label: "Lý do khác" },
+    { value: "copyright_infringement", label: "Impersonation or repeated plagiarism" },
+    { value: "harassment", label: "Scams or harassment of other users" },
+    { value: "spam", label: "Fake account or mass spam" },
+    { value: "other", label: "Other" },
   ],
 };
 
 const TARGET_LABELS: Record<"template" | "review" | "creator", string> = {
-  template: "Mẫu thiết kế 3D",
-  review: "Đánh giá của người dùng",
-  creator: "Tài khoản Creator",
+  template: "3D design",
+  review: "User review",
+  creator: "Creator account",
 };
 
 export default function ReportModal({
@@ -68,7 +68,7 @@ export default function ReportModal({
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      setErrorMsg("Vui lòng chọn tệp hình ảnh (PNG, JPG, WEBP)");
+      setErrorMsg("Choose an image file (PNG, JPG, or WEBP).");
       return;
     }
 
@@ -78,7 +78,7 @@ export default function ReportModal({
       const url = await uploadFileToCloudinary(file, "pickme3d/reports");
       setAttachments((prev) => [...prev, url]);
     } catch (err: any) {
-      setErrorMsg(err?.message || "Không thể tải lên ảnh bằng chứng");
+      setErrorMsg("Couldn’t upload the evidence image.");
     } finally {
       setUploadingImage(false);
     }
@@ -91,7 +91,7 @@ export default function ReportModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!description.trim()) {
-      setErrorMsg("Vui lòng nhập mô tả chi tiết sự cố hoặc hành vi vi phạm");
+      setErrorMsg("Add details about the issue or violation.");
       return;
     }
 
@@ -100,7 +100,7 @@ export default function ReportModal({
       setErrorMsg("");
       const res = await createReportApi({
         ticketType: "REPORT",
-        targetType: normalizedTargetType,
+        targetType: normalizedTargetType === "creator" ? "CREATOR" : normalizedTargetType,
         targetId,
         targetTitle,
         targetUrl,
@@ -110,12 +110,12 @@ export default function ReportModal({
       });
 
       if (!res.success) {
-        setErrorMsg(res.message || "Gửi báo cáo không thành công");
+        setErrorMsg("Couldn’t submit the report. Please try again.");
         setSubmitting(false);
         return;
       }
 
-      setSuccessMsg("Báo cáo vi phạm của bạn đã được gửi đến Ban Quản Trị để kiểm duyệt.");
+      setSuccessMsg("Your report has been sent to the moderation team.");
       setTimeout(() => {
         onClose();
         setSuccessMsg("");
@@ -124,14 +124,14 @@ export default function ReportModal({
         if (onSuccess) onSuccess();
       }, 1800);
     } catch (err: any) {
-      setErrorMsg(err?.message || "Lỗi không xác định khi gửi báo cáo");
+      setErrorMsg("An unexpected error occurred while submitting the report.");
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 animate-fadeIn">
       <div className="relative w-full max-w-lg bg-[#0e1422] border border-white/10 rounded-2xl shadow-2xl p-6 text-slate-200">
         {/* Close Button */}
         <button
@@ -149,9 +149,9 @@ export default function ReportModal({
             <span className="material-symbols-rounded text-2xl">flag</span>
           </div>
           <div>
-            <h3 className="text-lg font-bold text-white">Báo cáo vi phạm</h3>
+            <h3 className="text-lg font-bold text-white">Report content</h3>
             <p className="text-xs text-slate-400">
-              Đối tượng: <span className="text-amber-400 font-semibold">{TARGET_LABELS[normalizedTargetType] || "Nội dung"}</span>
+              Target: <span className="text-amber-400 font-semibold">{TARGET_LABELS[normalizedTargetType] || "Content"}</span>
               {targetTitle && (
                 <span className="text-slate-300 ml-1 truncate max-w-[260px] inline-block align-bottom font-medium">
                   ({targetTitle})
@@ -179,7 +179,7 @@ export default function ReportModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Lý do báo cáo vi phạm <span className="text-red-400">*</span>
+              Reason for report <span className="text-red-400">*</span>
             </label>
             <select
               value={reason}
@@ -197,13 +197,13 @@ export default function ReportModal({
 
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Mô tả chi tiết bằng chứng vi phạm <span className="text-red-400">*</span>
+              Describe the issue <span className="text-red-400">*</span>
             </label>
             <textarea
               rows={4}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Cung cấp các chi tiết cụ thể để Admin dễ dàng xác minh (đường link gốc vi phạm, thời điểm, nội dung công kích...)"
+              placeholder="Include details that can help moderators review your report (original links, dates, or relevant context)."
               disabled={submitting || !!successMsg}
               className="w-full bg-slate-900/90 border border-white/10 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-400 transition-colors resize-none"
             />
@@ -212,8 +212,8 @@ export default function ReportModal({
           {/* Screenshot / Evidence Upload */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
-              <span>Đính kèm ảnh bằng chứng (Tùy chọn)</span>
-              {uploadingImage && <span className="text-blue-400 text-[11px] animate-pulse">Đang tải ảnh lên...</span>}
+              <span>Attach evidence image (optional)</span>
+              {uploadingImage && <span className="text-blue-400 text-[11px] animate-pulse">Uploading image...</span>}
             </label>
 
             {/* Thumbnail previews */}
@@ -221,7 +221,7 @@ export default function ReportModal({
               <div className="flex flex-wrap gap-2 mb-2">
                 {attachments.map((url, idx) => (
                   <div key={idx} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-white/20">
-                    <img src={url} alt="Bằng chứng" className="w-full h-full object-cover" />
+                    <img src={url} alt="Evidence" className="w-full h-full object-cover" />
                     <button
                       type="button"
                       onClick={() => handleRemoveAttachment(idx)}
@@ -236,7 +236,7 @@ export default function ReportModal({
 
             <label className="flex items-center justify-center gap-2 w-full py-2.5 px-3 border border-dashed border-white/20 hover:border-white/40 rounded-xl cursor-pointer bg-white/5 hover:bg-white/10 transition-colors text-xs text-slate-300">
               <span className="material-symbols-rounded text-base text-slate-400">add_photo_alternate</span>
-              <span>Tải ảnh chụp màn hình bằng chứng (PNG, JPG)</span>
+              <span>Upload a screenshot (PNG, JPG)</span>
               <input
                 type="file"
                 accept="image/*"
@@ -255,7 +255,7 @@ export default function ReportModal({
               disabled={submitting}
               className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
             >
-              Hủy bỏ
+              Cancel
             </button>
             <button
               type="submit"
@@ -265,12 +265,12 @@ export default function ReportModal({
               {submitting ? (
                 <>
                   <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Đang gửi...</span>
+                  <span>Submitting...</span>
                 </>
               ) : (
                 <>
                   <span className="material-symbols-rounded text-sm">send</span>
-                  <span>Gửi báo cáo</span>
+                  <span>Submit report</span>
                 </>
               )}
             </button>

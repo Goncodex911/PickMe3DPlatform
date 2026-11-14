@@ -8,9 +8,9 @@ import styles from "./FollowCreator.module.css";
 function followErrorMessage(reason: unknown) {
   const message = reason instanceof Error ? reason.message : "";
   if (/unauthorized|not authorized|\b401\b|session has expired/i.test(message)) {
-    return "Phiên đăng nhập đã hết hạn. Đăng nhập lại để theo dõi.";
+    return "Your session has expired. Sign in again to follow this creator.";
   }
-  return "Không thể tải trạng thái theo dõi. Vui lòng thử lại.";
+  return "Couldn’t load follow status. Please try again.";
 }
 
 export default function FollowCreator({ creatorId }: { creatorId: string }) {
@@ -22,10 +22,12 @@ export default function FollowCreator({ creatorId }: { creatorId: string }) {
 
   useEffect(() => {
     let active = true;
+    const syncAuth = () => setSignedIn(Boolean(localStorage.getItem("pickme3d_token")));
+    window.addEventListener("storage", syncAuth);
     setState(null);
     setError("");
     const token = localStorage.getItem("pickme3d_token");
-    setSignedIn(Boolean(token));
+    syncAuth();
     try {
       const user = JSON.parse(localStorage.getItem("pickme3d_user") || "null");
       setSelf((user?._id || user?.id) === creatorId);
@@ -38,7 +40,10 @@ export default function FollowCreator({ creatorId }: { creatorId: string }) {
         .then((result) => { if (active) setState(result); })
         .catch((reason) => { if (active) setError(followErrorMessage(reason)); });
     }
-    return () => { active = false; };
+    return () => {
+      active = false;
+      window.removeEventListener("storage", syncAuth);
+    };
   }, [creatorId]);
 
   async function toggle() {
@@ -48,7 +53,7 @@ export default function FollowCreator({ creatorId }: { creatorId: string }) {
     try {
       setState(await setFollow(creatorId, !state.following));
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Không thể cập nhật theo dõi.");
+      setError(reason instanceof Error ? reason.message : "Couldn’t update the follow status.");
     } finally {
       setBusy(false);
     }
@@ -70,25 +75,25 @@ export default function FollowCreator({ creatorId }: { creatorId: string }) {
           <span className="material-symbols-rounded" aria-hidden="true">
             {busy ? "progress_activity" : state?.following ? "check" : "person_add"}
           </span>
-          {busy ? "Đang lưu…" : state?.following ? "Đang theo dõi" : "Theo dõi Creator"}
+          {busy ? "Saving…" : state?.following ? "Following" : "Follow creator"}
         </button>
       ) : (
         <Link href="/login/" className={styles.followButton}>
           <span className="material-symbols-rounded" aria-hidden="true">person_add</span>
-          Đăng nhập để theo dõi
+          Sign in to follow
         </Link>
       )}
 
-      {state && <span className={styles.followers}>{new Intl.NumberFormat("vi-VN").format(state.followersCount)} người theo dõi</span>}
-      <Link className={styles.feedLink} href="/activity/">Bảng tin hoạt động</Link>
+      {state && <span className={styles.followers}>{new Intl.NumberFormat("en-US").format(state.followersCount)} followers</span>}
+      <Link className={styles.feedLink} href="/activity/">Activity feed</Link>
       {error && (
         <p className={styles.error} role="alert">
           <span>{error}</span>{" "}
-          {error.includes("Đăng nhập lại") ? (
-            <Link href="/login/">Đăng nhập</Link>
+          {error.includes("Sign in again") ? (
+            <Link href="/login/">Sign in</Link>
           ) : (
             <button type="button" onClick={() => getFollow(creatorId).then(setState).catch((reason) => setError(followErrorMessage(reason)))}>
-              Thử lại
+              Try again
             </button>
           )}
         </p>

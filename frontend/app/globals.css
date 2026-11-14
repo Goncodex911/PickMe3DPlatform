@@ -29,6 +29,19 @@ body {
   overscroll-behavior: none;
 }
 
+/* Modal backdrops should dim the page without blurring it. */
+body [class*="fixed"][class*="inset-0"][class*="backdrop-blur-"],
+body [class*="modalOverlay"],
+body [class*="ExportDialog_overlay"] {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+body [class*="fixed"][class*="inset-0"][class*="bg-black/"],
+body [class*="modalOverlay"] {
+  background-color: rgb(0 0 0 / 58%) !important;
+}
+
 /* Keep form fields visually steady while editing; buttons and links retain keyboard focus styles. */
 input:focus,
 textarea:focus,
@@ -61,6 +74,16 @@ select:focus {
 }
 .msr[data-fill="1"] {
   font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+.rating-star-filled {
+  color: #facc15 !important;
+  font-variation-settings: "FILL" 1, "wght" 600, "GRAD" 0, "opsz" 24 !important;
+}
+
+.rating-star-outline {
+  color: #facc15 !important;
+  font-variation-settings: "FILL" 0, "wght" 600, "GRAD" 0, "opsz" 24 !important;
 }
 
 .m3-hidden-scrollbar {

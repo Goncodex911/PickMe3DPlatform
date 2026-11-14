@@ -11,7 +11,9 @@
 .description { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; font-size:13px; line-height:1.7; color:#aaa; margin:12px 0 18px; }
 .statistics { display:flex; gap:18px; font-size:10px; color:#aaa; margin:auto 0 20px; }
 .bottom { display:flex; align-items:center; justify-content:space-between; gap:14px; padding-top:18px; border-top:1px solid #363636; }
-.author { display:flex; align-items:center; gap:10px; min-width:0; font-size:11px; color:#ccc; }
+.author { display:flex; align-items:center; gap:10px; min-width:0; font-size:11px; color:#ccc; text-decoration:none; }
+.authorLink:hover { color:#fff; }
+.authorLink:hover>span:last-child { text-decoration:underline; text-underline-offset:4px; }
 .author>span:last-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .author img,.avatar { width:28px; height:28px; flex-shrink:0; border-radius:50%; object-fit:cover; }
 .avatar { display:flex; align-items:center; justify-content:center; background:#393939; color:#ddd; }

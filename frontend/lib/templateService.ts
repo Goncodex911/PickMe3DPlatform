@@ -284,7 +284,8 @@ export async function saveDesignApi(payload: {
     category: payload.category || "Outfit",
     tags: payload.tags || [],
     thumbnailUrl: payload.thumbnailUrl || "",
-    authorName: currentUser?.name || "Bạn",
+    author: currentUser?._id || currentUser?.id || undefined,
+    authorName: currentUser?.name || "You",
     authorAvatar: currentUser?.picture || "",
     likesCount: 0,
     viewsCount: 1,
@@ -500,7 +501,7 @@ export async function addTemplateReviewApi(
   const currentUser = userStr ? JSON.parse(userStr) : null;
 
   if (!token) {
-    return { success: false, message: "Vui lòng đăng nhập để đánh giá mẫu thiết kế" };
+    return { success: false, message: "Sign in to review this template." };
   }
 
   if (id && !id.startsWith("local_")) {
@@ -517,10 +518,10 @@ export async function addTemplateReviewApi(
       if (res.ok && json.success) {
         return { success: true, data: json.data, message: json.message };
       }
-      return { success: false, message: json.message || "Không thể lưu đánh giá" };
+      return { success: false, message: json.message || "Could not save the review." };
     } catch (err: any) {
       console.warn("Failed to add review on API:", err);
-      return { success: false, message: "Lỗi kết nối máy chủ" };
+      return { success: false, message: "Could not connect to the server." };
     }
   }
 
@@ -533,7 +534,7 @@ export async function addTemplateReviewApi(
       reviews: [
         {
           user: currentUser?.id || "local",
-          userName: currentUser?.name || "Bạn",
+          userName: currentUser?.name || "You",
           userAvatar: currentUser?.picture || "",
           rating,
           comment: comment || "",
@@ -541,7 +542,7 @@ export async function addTemplateReviewApi(
         },
       ],
     },
-    message: "Đã lưu đánh giá mẫu thiết kế",
+    message: "Template review saved.",
   };
 }
 
@@ -558,7 +559,7 @@ export async function deleteTemplateReviewApi(
 }> {
   const token = typeof window !== "undefined" ? localStorage.getItem("pickme3d_token") : null;
   if (!token) {
-    return { success: false, message: "Vui lòng đăng nhập" };
+    return { success: false, message: "Please sign in." };
   }
 
   try {
@@ -572,6 +573,6 @@ export async function deleteTemplateReviewApi(
     return json;
   } catch (err: any) {
     console.warn("Failed to delete review on API:", err);
-    return { success: false, message: err?.message || "Lỗi kết nối máy chủ" };
+    return { success: false, message: err?.message || "Could not connect to the server." };
   }
 }

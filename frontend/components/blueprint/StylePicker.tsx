@@ -15,11 +15,11 @@ interface StylePickerProps {
 }
 
 const STYLE_BADGES: Record<ArchitecturalStyle, { icon: string; tag: string }> = {
-  scandinavian: { icon: "🌲", tag: "Gỗ Sồi & Nỉ Xám" },
-  luxury_marble: { icon: "🏛️", tag: "Đá Calacatta & Kính" },
-  modern_minimal: { icon: "📐", tag: "Lam Gỗ & Tối Giản" },
-  casa_serra: { icon: "🏺", tag: "Bê Tông & Teak Mộc" },
-  tropical: { icon: "🌴", tag: "Cây Xanh & Nắng Gió" }
+  scandinavian: { icon: "🌲", tag: "Oak & Gray Felt" },
+  luxury_marble: { icon: "🏛️", tag: "Calacatta Marble & Glass" },
+  modern_minimal: { icon: "📐", tag: "Wood Slats & Minimalism" },
+  casa_serra: { icon: "🏺", tag: "Concrete & Natural Teak" },
+  tropical: { icon: "🌴", tag: "Greenery & Sunlight" }
 };
 
 export default function StylePicker({
@@ -36,10 +36,10 @@ export default function StylePicker({
         <div>
           <h3 className="text-sm font-semibold text-white flex items-center gap-2">
             <span>🎨</span>
-            <span>Bộ Sưu Tập Phong Cách Nội Thất Kiến Trúc</span>
+            <span>Architectural Interior Styles</span>
           </h3>
           <p className="text-xs text-neutral-400">
-            Tự động đổi đồng bộ chất liệu sàn, vách tường, tông ánh sáng và kiểu dáng đồ nội thất
+            Automatically coordinate flooring, wall finishes, lighting tones, and furniture styles.
           </p>
         </div>
 
@@ -47,10 +47,10 @@ export default function StylePicker({
           <button
             onClick={() => onAutoStage(currentStyle)}
             className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-gradient-to-r from-amber-500/20 to-amber-600/20 hover:from-amber-500/30 hover:to-amber-600/30 border border-amber-500/40 text-amber-300 transition flex items-center gap-1.5 self-start sm:self-auto shadow-sm"
-            title="Tự động kê giường, sofa, tủ, vách tắm theo phong cách hiện tại"
+            title="Automatically stage beds, sofas, cabinets, and shower partitions in this style"
           >
             <span>🛋️</span>
-            <span>Kê Đồ Tự Động (Auto-Stage)</span>
+            <span>Auto-Stage Furniture</span>
           </button>
         )}
       </div>
@@ -88,7 +88,7 @@ export default function StylePicker({
                 </div>
 
                 <h4 className="text-sm font-bold text-white group-hover:text-amber-300 transition leading-snug">
-                  {preset.vietnameseName}
+                  {preset.name}
                 </h4>
 
                 <p className="text-[11px] text-neutral-400 mt-1 line-clamp-2 leading-relaxed">
@@ -101,7 +101,7 @@ export default function StylePicker({
                 {/* Color swatches */}
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] uppercase font-mono tracking-wider text-neutral-500 font-semibold">
-                    Bảng màu
+                    Palette
                   </span>
                   <div className="flex items-center gap-1.5">
                     {preset.palette.map((color, cIdx) => (
@@ -117,7 +117,7 @@ export default function StylePicker({
 
                 {/* Materials list */}
                 <div className="flex items-center justify-between text-[10px] text-neutral-400 font-mono">
-                  <span>Sàn chính:</span>
+                  <span>Primary floor:</span>
                   <span className="text-neutral-200 uppercase font-semibold">
                     {preset.floorLiving}
                   </span>

@@ -1340,14 +1340,14 @@ export function ImageRow({ value, onChange, p }: { value?: string; onChange: (sr
         size={44}
         on
         onClick={() => !uploading && fileRef.current?.click()}
-        title={uploading ? "Đang tải lên Cloudinary..." : t("pickImage", lang)}
+        title={uploading ? "Uploading to Cloudinary..." : t("pickImage", lang)}
       />
       {value && <IconBtn icon="close" p={p} size={44} onClick={() => onChange(undefined)} title={t("removeImage", lang)} />}
     </div>
     {uploading && (
       <div style={{ fontSize: 11, color: p.primary, padding: "0 6px", display: "flex", alignItems: "center", gap: 4 }}>
         <span className="material-symbols-rounded animate-spin" style={{ fontSize: 13 }}>progress_activity</span>
-        Đang lưu trữ ảnh lên Cloudinary...
+        Uploading image to Cloudinary...
       </div>
     )}
     {failed && (

@@ -70,7 +70,7 @@ export default function AdminBillingPage() {
         setStats(statsRes.data);
       }
     } catch (err) {
-      console.error("Lỗi khi tải dữ liệu đơn hàng:", err);
+      console.error("Error loading order data:", err);
     } finally {
       setLoading(false);
     }
@@ -85,7 +85,7 @@ export default function AdminBillingPage() {
       setExporting(true);
       await downloadOrdersCsv();
     } catch (err: any) {
-      alert(err.message || "Không thể xuất file CSV");
+      alert(err.message || "Could not export the CSV file.");
     } finally {
       setExporting(false);
     }
@@ -123,10 +123,10 @@ export default function AdminBillingPage() {
           </p>
           <h1 className="text-3xl sm:text-4xl font-semibold text-white tracking-tight flex items-center gap-3">
             <span className="material-symbols-rounded text-zinc-400 text-3xl">payments</span>
-            Quản Trị Doanh Thu & Đơn Hàng
+            Revenue & Orders
           </h1>
           <p className="text-zinc-400 text-xs sm:text-sm mt-1">
-            Phân loại doanh thu chuẩn hóa theo nguồn: Template Admin (100%), Template Creator (70/30), Admin Marketplace và Gói Hội viên.
+            Standardized revenue breakdown by source: Admin Templates (100%), Creator Templates (70/30), Admin Marketplace, and Membership Plans.
           </p>
         </div>
 
@@ -137,12 +137,12 @@ export default function AdminBillingPage() {
             className="px-4 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-semibold tracking-wide transition-all flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
           >
             <span className="material-symbols-rounded text-base text-black">download</span>
-            <span>{exporting ? "Đang xuất..." : "Xuất CSV Doanh Thu"}</span>
+            <span>{exporting ? "Exporting..." : "Export Revenue CSV"}</span>
           </button>
           <button
             onClick={() => loadData()}
             className="p-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer"
-            title="Làm mới dữ liệu"
+            title="Refresh data"
           >
             <span className="material-symbols-rounded text-base">refresh</span>
           </button>
@@ -157,12 +157,12 @@ export default function AdminBillingPage() {
             <span className="material-symbols-rounded text-2xl">account_balance_wallet</span>
           </div>
           <div>
-            <p className="text-xs text-zinc-400 font-medium">Doanh Thu Thực Nhận (Admin)</p>
+            <p className="text-xs text-zinc-400 font-medium">Net Revenue (Admin)</p>
             <p className="text-2xl font-semibold text-white tracking-tight mt-0.5">
               {formatCurrency(orderSummary.totalAdminRevenue || stats?.billing?.totalAdminRevenue || 0)}
             </p>
             <p className="text-[11px] text-emerald-400 font-medium mt-0.5">
-              Sau khi khấu trừ hoa hồng
+              After commission
             </p>
           </div>
         </div>
@@ -173,12 +173,12 @@ export default function AdminBillingPage() {
             <span className="material-symbols-rounded text-2xl">bar_chart</span>
           </div>
           <div>
-            <p className="text-xs text-zinc-400 font-medium">Doanh Số Gộp Toàn Sàn</p>
+            <p className="text-xs text-zinc-400 font-medium">Gross Marketplace Sales</p>
             <p className="text-2xl font-semibold text-white tracking-tight mt-0.5">
               {formatCurrency(orderSummary.totalGrossVolume || stats?.billing?.totalGrossVolume || 0)}
             </p>
             <p className="text-[11px] text-zinc-400 font-medium mt-0.5">
-              {stats?.billing?.paidOrders || orderSummary.paidOrdersCount || 0} đơn thành công
+              {stats?.billing?.paidOrders || orderSummary.paidOrdersCount || 0} successful orders
             </p>
           </div>
         </div>
@@ -189,12 +189,12 @@ export default function AdminBillingPage() {
             <span className="material-symbols-rounded text-2xl">group</span>
           </div>
           <div>
-            <p className="text-xs text-zinc-400 font-medium">Tiền Trả Creator (70%)</p>
+            <p className="text-xs text-zinc-400 font-medium">Creator Payouts (70%)</p>
             <p className="text-2xl font-semibold text-white tracking-tight mt-0.5">
               {formatCurrency(orderSummary.totalCreatorEarnings || stats?.billing?.totalCreatorEarnings || 0)}
             </p>
             <p className="text-[11px] text-indigo-400 font-medium mt-0.5">
-              Không gộp chung vào Admin
+              Excluded from administrator revenue
             </p>
           </div>
         </div>
@@ -205,11 +205,11 @@ export default function AdminBillingPage() {
             <span className="material-symbols-rounded text-2xl">receipt_long</span>
           </div>
           <div>
-            <p className="text-xs text-zinc-400 font-medium">Đơn Hàng Chờ Xử Lý</p>
+            <p className="text-xs text-zinc-400 font-medium">Pending Orders</p>
             <p className="text-2xl font-semibold text-white tracking-tight mt-0.5">
               {orderSummary.pendingOrdersCount || stats?.billing?.pendingOrders || 0}
             </p>
-            <p className="text-[11px] text-zinc-500 font-medium mt-0.5">Đơn hàng PENDING</p>
+            <p className="text-[11px] text-zinc-500 font-medium mt-0.5">Orders awaiting payment</p>
           </div>
         </div>
       </div>
@@ -220,10 +220,10 @@ export default function AdminBillingPage() {
           <div>
             <h2 className="text-sm font-semibold text-white flex items-center gap-2">
               <span className="material-symbols-rounded text-amber-400 text-lg">pie_chart</span>
-              Phân Loại Doanh Thu Theo 4 Nguồn (Revenue Classification Rules 2.1 & 3.2)
+              Revenue Breakdown Across Four Sources (Rules 2.1 & 3.2)
             </h2>
             <p className="text-[11px] text-zinc-400 mt-0.5">
-              Hệ thống tự động tách biệt thu nhập của Creator và doanh thu thực của Admin theo đúng nguồn giao dịch và chủ sở hữu.
+              The system separates creator earnings from administrator revenue by transaction source and owner.
             </p>
           </div>
         </div>
@@ -232,7 +232,7 @@ export default function AdminBillingPage() {
           {/* Source 1: Admin-owned Templates in Template Section */}
           <div className="p-4 rounded-xl bg-zinc-950 border border-white/5 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-mono uppercase text-zinc-400">Nguồn 1: Template Admin</span>
+              <span className="text-[11px] font-mono uppercase text-zinc-400">Source 1: Admin Templates</span>
               <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">
                 100% Admin
               </span>
@@ -241,14 +241,14 @@ export default function AdminBillingPage() {
               {formatCurrency(activeBreakdown?.adminTemplateSection?.adminRevenue)}
             </p>
             <p className="text-[11px] text-zinc-400">
-              Template do Admin bán tại Khu vực Template. Template miễn phí không tính doanh thu.
+              Templates sold by the administrator in the Template Gallery. Free templates do not generate revenue.
             </p>
           </div>
 
           {/* Source 2: Creator-owned Templates in Template Section */}
           <div className="p-4 rounded-xl bg-zinc-950 border border-white/5 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-mono uppercase text-zinc-400">Nguồn 2: Template Creator</span>
+              <span className="text-[11px] font-mono uppercase text-zinc-400">Source 2: Creator Templates</span>
               <span className="px-2 py-0.5 rounded text-[10px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-semibold">
                 70% / 30%
               </span>
@@ -258,13 +258,13 @@ export default function AdminBillingPage() {
             </p>
             <div className="text-[11px] space-y-0.5 text-zinc-400">
               <div className="flex justify-between">
-                <span>Creator nhận (70%):</span>
+                <span>Creator share (70%):</span>
                 <span className="text-indigo-400 font-mono font-medium">
                   {formatCurrency(activeBreakdown?.creatorTemplateSection?.creatorEarnings)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Admin nhận (30%):</span>
+                <span>Administrator share (30%):</span>
                 <span className="text-emerald-400 font-mono font-medium">
                   {formatCurrency(activeBreakdown?.creatorTemplateSection?.adminRevenue)}
                 </span>
@@ -275,7 +275,7 @@ export default function AdminBillingPage() {
           {/* Source 3: Admin Marketplace */}
           <div className="p-4 rounded-xl bg-zinc-950 border border-white/5 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-mono uppercase text-zinc-400">Nguồn 3: Sàn Admin</span>
+              <span className="text-[11px] font-mono uppercase text-zinc-400">Source 3: Admin Marketplace</span>
               <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">
                 100% Admin
               </span>
@@ -284,14 +284,14 @@ export default function AdminBillingPage() {
               {formatCurrency(activeBreakdown?.adminMarketplace?.adminRevenue)}
             </p>
             <p className="text-[11px] text-zinc-400">
-              Doanh thu sản phẩm/template thuộc Admin Marketplace. Không áp dụng hoa hồng Creator.
+              Revenue from products and templates in the Admin Marketplace. Creator commissions do not apply.
             </p>
           </div>
 
           {/* Source 4: Subscription Revenue */}
           <div className="p-4 rounded-xl bg-zinc-950 border border-white/5 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-mono uppercase text-zinc-400">Nguồn 4: Gói Hội Viên</span>
+              <span className="text-[11px] font-mono uppercase text-zinc-400">Source 4: Membership Plans</span>
               <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">
                 100% Admin
               </span>
@@ -301,13 +301,13 @@ export default function AdminBillingPage() {
             </p>
             <div className="text-[11px] space-y-0.5 text-zinc-400">
               <div className="flex justify-between">
-                <span>Gói Pro (99k):</span>
+                <span>Pro plan (99k):</span>
                 <span className="text-white font-mono font-medium">
                   {formatCurrency(activeBreakdown?.subscriptions?.plans?.pro)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Gói Studio (199k):</span>
+                <span>Studio plan (199k):</span>
                 <span className="text-white font-mono font-medium">
                   {formatCurrency(activeBreakdown?.subscriptions?.plans?.studio)}
                 </span>
@@ -322,7 +322,7 @@ export default function AdminBillingPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {/* Status Filter */}
           <div className="space-y-1">
-            <label className="text-[11px] text-zinc-400 uppercase font-mono">Trạng Thái</label>
+            <label className="text-[11px] text-zinc-400 uppercase font-mono">Status</label>
             <select
               value={statusFilter}
               onChange={(e) => {
@@ -331,16 +331,16 @@ export default function AdminBillingPage() {
               }}
               className="w-full bg-zinc-950 border border-white/10 text-xs text-zinc-200 rounded-xl px-3 py-2 outline-none"
             >
-              <option value="all">Tất cả trạng thái</option>
-              <option value="PAID">Đã thanh toán (PAID)</option>
-              <option value="PENDING">Chờ xử lý (PENDING)</option>
-              <option value="CANCELLED">Đã hủy (CANCELLED)</option>
+              <option value="all">All statuses</option>
+              <option value="PAID">Paid</option>
+              <option value="PENDING">Pending</option>
+              <option value="CANCELLED">Canceled</option>
             </select>
           </div>
 
           {/* Order Type Filter */}
           <div className="space-y-1">
-            <label className="text-[11px] text-zinc-400 uppercase font-mono">Loại Giao Dịch</label>
+            <label className="text-[11px] text-zinc-400 uppercase font-mono">Transaction Type</label>
             <select
               value={orderTypeFilter}
               onChange={(e) => {
@@ -349,15 +349,15 @@ export default function AdminBillingPage() {
               }}
               className="w-full bg-zinc-950 border border-white/10 text-xs text-zinc-200 rounded-xl px-3 py-2 outline-none"
             >
-              <option value="all">Tất cả loại</option>
-              <option value="SUBSCRIPTION">Gói Hội Viên (Subscription)</option>
+              <option value="all">All types</option>
+              <option value="SUBSCRIPTION">Membership plan</option>
               <option value="TEMPLATE_PURCHASE">Mua Template</option>
             </select>
           </div>
 
           {/* Seller Type Filter */}
           <div className="space-y-1">
-            <label className="text-[11px] text-zinc-400 uppercase font-mono">Người Bán</label>
+            <label className="text-[11px] text-zinc-400 uppercase font-mono">Seller</label>
             <select
               value={sellerTypeFilter}
               onChange={(e) => {
@@ -366,15 +366,15 @@ export default function AdminBillingPage() {
               }}
               className="w-full bg-zinc-950 border border-white/10 text-xs text-zinc-200 rounded-xl px-3 py-2 outline-none"
             >
-              <option value="all">Tất cả người bán</option>
-              <option value="ADMIN">Admin sở hữu (100%)</option>
-              <option value="CREATOR">Creator sở hữu (70/30)</option>
+              <option value="all">All sellers</option>
+              <option value="ADMIN">Administrator (100%)</option>
+              <option value="CREATOR">Creator (70/30)</option>
             </select>
           </div>
 
           {/* Transaction Source Filter */}
           <div className="space-y-1">
-            <label className="text-[11px] text-zinc-400 uppercase font-mono">Nguồn Giao Dịch</label>
+            <label className="text-[11px] text-zinc-400 uppercase font-mono">Transaction Source</label>
             <select
               value={sourceFilter}
               onChange={(e) => {
@@ -383,23 +383,23 @@ export default function AdminBillingPage() {
               }}
               className="w-full bg-zinc-950 border border-white/10 text-xs text-zinc-200 rounded-xl px-3 py-2 outline-none"
             >
-              <option value="all">Tất cả nguồn sàn</option>
-              <option value="TEMPLATE_SECTION">Khu vực Template</option>
+              <option value="all">All marketplace sources</option>
+              <option value="TEMPLATE_SECTION">Template Gallery</option>
               <option value="ADMIN_MARKETPLACE">Admin Marketplace</option>
-              <option value="SUBSCRIPTION">Cổng Subscription</option>
+              <option value="SUBSCRIPTION">Subscription Portal</option>
             </select>
           </div>
 
           {/* Search by Order Code or User ID */}
           <div className="space-y-1">
-            <label className="text-[11px] text-zinc-400 uppercase font-mono">Tìm Kiếm</label>
+            <label className="text-[11px] text-zinc-400 uppercase font-mono">Search</label>
             <div className="relative">
               <span className="material-symbols-rounded absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">
                 search
               </span>
               <input
                 type="text"
-                placeholder="Mã đơn / ID..."
+                placeholder="Order code / ID..."
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -418,16 +418,16 @@ export default function AdminBillingPage() {
           <table className="w-full text-left text-xs">
             <thead className="bg-zinc-950 text-zinc-400 font-medium border-b border-white/10 uppercase tracking-wider text-[11px]">
               <tr>
-                <th className="py-3.5 px-4">Mã Đơn</th>
-                <th className="py-3.5 px-4">Khách Hàng</th>
-                <th className="py-3.5 px-4">Giao Dịch</th>
-                <th className="py-3.5 px-4">Nguồn Sàn</th>
-                <th className="py-3.5 px-4">Người Bán</th>
-                <th className="py-3.5 px-4">Mục Mua</th>
-                <th className="py-3.5 px-4">Số Tiền (Gross)</th>
-                <th className="py-3.5 px-4">Phân Bổ Doanh Thu</th>
-                <th className="py-3.5 px-4">Trạng Thái</th>
-                <th className="py-3.5 px-4">Ngày Tạo</th>
+                <th className="py-3.5 px-4">Order</th>
+                <th className="py-3.5 px-4">Customer</th>
+                <th className="py-3.5 px-4">Transaction</th>
+                <th className="py-3.5 px-4">Marketplace Source</th>
+                <th className="py-3.5 px-4">Seller</th>
+                <th className="py-3.5 px-4">Item</th>
+                <th className="py-3.5 px-4">Amount (Gross)</th>
+                <th className="py-3.5 px-4">Revenue Split</th>
+                <th className="py-3.5 px-4">Status</th>
+                <th className="py-3.5 px-4">Created</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5 text-zinc-300">
@@ -436,7 +436,7 @@ export default function AdminBillingPage() {
                   <td colSpan={10} className="py-12 text-center text-zinc-400">
                     <div className="flex items-center justify-center gap-2">
                       <span className="w-4 h-4 rounded-full border-2 border-white/20 border-t-white animate-spin" />
-                      <span>Đang tải danh sách đơn hàng...</span>
+                      <span>Loading orders...</span>
                     </div>
                   </td>
                 </tr>
@@ -446,9 +446,9 @@ export default function AdminBillingPage() {
                     <span className="material-symbols-rounded text-4xl text-zinc-600 block mb-2">
                       receipt_long
                     </span>
-                    <p className="font-medium text-zinc-300">Không tìm thấy đơn hàng nào</p>
+                    <p className="font-medium text-zinc-300">No orders found</p>
                     <p className="text-xs text-zinc-500 mt-1">
-                      Các giao dịch qua PayOS hoặc mua template sẽ tự động hiển thị tại đây.
+                      PayOS transactions and template purchases will appear here.
                     </p>
                   </td>
                 </tr>
@@ -495,7 +495,7 @@ export default function AdminBillingPage() {
                           </span>
                         ) : (
                           <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
-                            Gói Hội Viên
+                            Membership Plan
                           </span>
                         )}
                       </td>
@@ -567,19 +567,19 @@ export default function AdminBillingPage() {
                         {order.status === "PAID" && (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 flex items-center gap-1.5 w-fit">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                            Đã thanh toán
+                            Paid
                           </span>
                         )}
                         {order.status === "PENDING" && (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-300 border border-amber-500/20 flex items-center gap-1.5 w-fit">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                            Chờ thanh toán
+                            Pending
                           </span>
                         )}
                         {order.status === "CANCELLED" && (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-zinc-900 text-zinc-500 border border-white/10 flex items-center gap-1.5 w-fit">
                             <span className="w-1.5 h-1.5 rounded-full bg-zinc-600" />
-                            Đã hủy
+                            Canceled
                           </span>
                         )}
                       </td>
@@ -600,7 +600,7 @@ export default function AdminBillingPage() {
         {pagination && pagination.pages > 1 && (
           <div className="p-4 border-t border-white/10 bg-zinc-950 flex items-center justify-between text-xs text-zinc-400">
             <div>
-              Trang {pagination.page} / {pagination.pages} (Tổng {pagination.total} giao dịch)
+              Page {pagination.page} / {pagination.pages} ({pagination.total} transactions)
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -608,7 +608,7 @@ export default function AdminBillingPage() {
                 disabled={page <= 1}
                 className="px-3 py-1.5 rounded-lg bg-zinc-900 border border-white/10 text-white disabled:opacity-30 cursor-pointer"
               >
-                Trước
+                Previous
               </button>
               <button
                 onClick={() => setPage((p) => Math.min(pagination.pages, p + 1))}

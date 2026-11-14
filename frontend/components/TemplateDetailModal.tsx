@@ -14,6 +14,7 @@ import Link from "next/link";
 import DesignThumbnail from "./DesignThumbnail";
 import ReportModal from "./ReportModal";
 import { isCurrentUserAdmin } from "@/lib/reportService";
+import { getCreatorProfileHref } from "@/lib/userService";
 
 interface TemplateDetailModalProps {
   template: TemplateItem | null;
@@ -34,7 +35,7 @@ export default function TemplateDetailModal({
   const [isLiked, setIsLiked] = useState(false);
 
   // Review & Rating state
-  const [userRating, setUserRating] = useState<number>(5);
+  const [userRating, setUserRating] = useState<number>(0);
   const [hoverRating, setHoverRating] = useState<number>(0);
   const [userComment, setUserComment] = useState<string>("");
   const [submittingReview, setSubmittingReview] = useState(false);
@@ -165,7 +166,7 @@ export default function TemplateDetailModal({
   };
 
   const handleDeleteReviewByAdmin = async (reviewId: string) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa đánh giá này khỏi mẫu thiết kế? Điểm đánh giá trung bình sẽ được tính toán lại.")) {
+    if (!confirm("Are you sure you want to delete this review? The average rating will be recalculated.")) {
       return;
     }
     setDeletingReviewId(reviewId);
@@ -184,7 +185,7 @@ export default function TemplateDetailModal({
         });
       }
     } else {
-      alert("Không thể xóa đánh giá: " + (res.message || "Lỗi không xác định"));
+      alert("Couldn’t delete the review. Please try again.");
     }
   };
 
@@ -194,7 +195,7 @@ export default function TemplateDetailModal({
       : template.thumbnailUrl ? [template.thumbnailUrl] : [];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-8 bg-black/80 backdrop-blur-md animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-8 bg-black/65 animate-fadeIn">
       {/* Backdrop Click */}
       <div className="absolute inset-0" onClick={onClose} />
 
@@ -210,15 +211,15 @@ export default function TemplateDetailModal({
                   isOpen: true,
                   targetType: "template",
                   targetId: templateId,
-                  targetTitle: template.title || "Mẫu thiết kế",
+                  targetTitle: template.title || "Design",
                   targetUrl: `/templates/${templateId}`,
                 })
               }
               className="h-9 px-3 rounded-full bg-black/60 hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 backdrop-blur-md flex items-center gap-1.5 text-xs font-medium transition-all border border-white/10 hover:border-rose-500/30 cursor-pointer"
-              title="Báo cáo vi phạm mẫu này"
+              title="Report this design"
             >
               <span className="material-symbols-rounded text-sm text-rose-400">flag</span>
-              <span>Báo cáo</span>
+              <span>Report</span>
             </button>
           )}
 
@@ -303,23 +304,66 @@ export default function TemplateDetailModal({
               <h2 className="text-2xl font-bold text-white leading-tight">{template.title}</h2>
 
               {/* Author Info */}
-              <div className="flex items-center gap-2.5 mt-3 pt-3 border-t border-white/10">
-                {template.authorAvatar ? (
-                  <img
-                    src={template.authorAvatar}
-                    alt=""
-                    className="w-8 h-8 rounded-full object-cover border border-white/20"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-red-600/30 text-red-300 border border-red-500/40 flex items-center justify-center text-xs font-bold">
-                    {template.authorName ? template.authorName[0] : "U"}
+              {(() => {
+                const creatorHref = getCreatorProfileHref(template.author, template.authorName);
+                const authorUsername =
+                  typeof template.author === "object" && template.author?.username
+                    ? template.author.username
+                    : "";
+                const authorContent = (
+                  <>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      {template.authorAvatar ? (
+                        <img
+                          src={template.authorAvatar}
+                          alt=""
+                          className="w-9 h-9 rounded-full object-cover border border-white/20 shrink-0"
+                        />
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-red-600/30 text-red-300 border border-red-500/40 flex items-center justify-center text-xs font-bold shrink-0">
+                          {template.authorName ? template.authorName[0] : "U"}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <span className="text-xs text-slate-400 block">Creator</span>
+                        <span className="text-sm font-semibold text-slate-200 group-hover/creator:text-white group-hover/creator:underline truncate block">
+                          {template.authorName}
+                        </span>
+                        {authorUsername && (
+                          <span className="text-[11px] text-slate-400 truncate block">
+                            @{authorUsername}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {creatorHref && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/5 group-hover/creator:bg-white/15 border border-white/10 text-[11px] font-medium text-slate-300 group-hover/creator:text-white transition-colors shrink-0">
+                        <span>View profile</span>
+                        <span className="material-symbols-rounded text-sm">chevron_right</span>
+                      </span>
+                    )}
+                  </>
+                );
+
+                return (
+                  <div className="mt-3 pt-3 border-t border-white/10">
+                    {creatorHref ? (
+                      <Link
+                        href={creatorHref}
+                        onClick={onClose}
+                        className="group/creator flex items-center justify-between gap-3 p-2 -mx-2 rounded-xl hover:bg-white/[0.06] transition-colors cursor-pointer"
+                        title={`View, review, or report ${template.authorName}’s creator profile`}
+                      >
+                        {authorContent}
+                      </Link>
+                    ) : (
+                      <div className="flex items-center justify-between gap-3">
+                        {authorContent}
+                      </div>
+                    )}
                   </div>
-                )}
-                <div>
-                  <span className="text-xs text-slate-400 block">Creator</span>
-                  <span className="text-sm font-semibold text-slate-200">{template.authorName}</span>
-                </div>
-              </div>
+                );
+              })()}
             </div>
 
             {/* Description */}
@@ -367,7 +411,7 @@ export default function TemplateDetailModal({
             <div className="pt-3 border-t border-white/10">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-xs font-mono uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                  <span className="material-symbols-rounded text-sm text-amber-400">star</span>
+                  <span className="material-symbols-rounded rating-star-filled text-sm">star</span>
                   <span>Reviews ({ratingsCount})</span>
                 </h4>
                 {avgRating > 0 && (
@@ -396,7 +440,7 @@ export default function TemplateDetailModal({
                         >
                           <span
                             className={`material-symbols-rounded text-lg ${
-                              active ? "text-amber-400 fill-amber-400" : "text-slate-600"
+                              active ? "rating-star-filled" : "rating-star-outline"
                             }`}
                           >
                             star
@@ -417,7 +461,7 @@ export default function TemplateDetailModal({
                   />
                   <button
                     type="submit"
-                    disabled={submittingReview}
+                    disabled={submittingReview || userRating === 0}
                     className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:opacity-95 text-xs font-bold text-white shrink-0 disabled:opacity-50 transition-all cursor-pointer"
                   >
                     {submittingReview ? "Sending…" : "Submit"}
@@ -442,14 +486,25 @@ export default function TemplateDetailModal({
                 <div className="mt-3 space-y-2 max-h-40 overflow-y-auto pr-1">
                   {reviewsList.slice(0, 10).map((rev, idx) => {
                     const reviewId = (rev as any)._id || (rev as any).id || rev.user || `${templateId}-review-${idx}`;
+                    const reviewerHref = getCreatorProfileHref(rev.user, rev.userName);
                     return (
                       <div key={idx} className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 text-xs space-y-1">
                         <div className="flex items-center justify-between">
-                          <span className="font-semibold text-slate-200">{rev.userName}</span>
+                          {reviewerHref ? (
+                            <Link
+                              href={reviewerHref}
+                              onClick={onClose}
+                              className="font-semibold text-slate-200 hover:text-white hover:underline transition-colors"
+                            >
+                              {rev.userName}
+                            </Link>
+                          ) : (
+                            <span className="font-semibold text-slate-200">{rev.userName}</span>
+                          )}
                           <div className="flex items-center gap-1.5">
                             <div className="flex items-center text-amber-400 text-xs">
                               {Array.from({ length: rev.rating }).map((_, i) => (
-                                <span key={i} className="material-symbols-rounded text-xs">star</span>
+                                <span key={i} className="material-symbols-rounded rating-star-filled text-xs">star</span>
                               ))}
                             </div>
 
@@ -460,7 +515,7 @@ export default function TemplateDetailModal({
                                 disabled={deletingReviewId === reviewId}
                                 onClick={() => handleDeleteReviewByAdmin(reviewId)}
                                 className="p-1 rounded text-rose-400 hover:text-rose-300 hover:bg-rose-500/20 transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center"
-                                title="Xóa đánh giá này (Admin)"
+                                title="Delete this review (admin)"
                               >
                                 <span className="material-symbols-rounded text-sm">delete</span>
                               </button>
@@ -476,7 +531,7 @@ export default function TemplateDetailModal({
                                     setOpenReviewMenu(openReviewMenu === reviewId ? null : reviewId);
                                   }}
                                   className="text-slate-500 hover:text-white p-0.5 rounded hover:bg-white/10 transition-colors cursor-pointer"
-                                  title="Tùy chọn đánh giá"
+                                  title="Review options"
                                 >
                                   <span className="material-symbols-rounded text-sm">more_vert</span>
                                 </button>
@@ -491,14 +546,14 @@ export default function TemplateDetailModal({
                                           isOpen: true,
                                           targetType: "review",
                                           targetId: reviewId,
-                                          targetTitle: `Đánh giá của ${rev.userName || "Người dùng"} cho "${template.title}"`,
+                                          targetTitle: `Review by ${rev.userName || "user"} for “${template.title}”`,
                                           targetUrl: `/templates/${templateId}`,
                                         });
                                       }}
                                       className="w-full flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-rose-400 hover:bg-white/10 hover:text-rose-300 transition-colors cursor-pointer text-left"
                                     >
                                       <span className="material-symbols-rounded text-xs">flag</span>
-                                      <span>Báo cáo đánh giá</span>
+                                      <span>Report review</span>
                                     </button>
                                   </div>
                                 )}
@@ -573,7 +628,7 @@ export default function TemplateDetailModal({
                 className="text-slate-400 hover:text-white flex items-center gap-1 text-[11px] transition-colors"
               >
                 <span className="material-symbols-rounded text-xs">open_in_new</span>
-                <span>Xem trang chi tiết đầy đủ</span>
+                <span>View full details</span>
               </Link>
 
               {!isAdmin && (
@@ -584,14 +639,14 @@ export default function TemplateDetailModal({
                       isOpen: true,
                       targetType: "template",
                       targetId: templateId,
-                      targetTitle: template.title || "Mẫu thiết kế",
+                      targetTitle: template.title || "Design",
                       targetUrl: `/templates/${templateId}`,
                     })
                   }
                   className="text-slate-500 hover:text-rose-400 flex items-center gap-1 transition-colors cursor-pointer text-[11px]"
                 >
                   <span className="material-symbols-rounded text-xs">flag</span>
-                  <span>Báo cáo vi phạm mẫu này</span>
+                  <span>Report this design</span>
                 </button>
               )}
             </div>

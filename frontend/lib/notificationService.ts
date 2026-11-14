@@ -3,6 +3,8 @@
  * Follows the same pattern as templateService.ts
  */
 
+import { apiFetch } from "./paymentService";
+
 export interface NotificationItem {
   _id: string;
   recipient: string;
@@ -40,13 +42,6 @@ export interface NotificationItem {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
-function getAuthHeaders(): Record<string, string> {
-  const token = typeof window !== "undefined" ? localStorage.getItem("pickme3d_token") : null;
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  return headers;
-}
-
 /**
  * Fetches paginated notifications for the current user
  */
@@ -65,10 +60,7 @@ export async function fetchNotificationsApi(params?: {
     if (params?.page) url.searchParams.set("page", String(params.page));
     if (params?.limit) url.searchParams.set("limit", String(params.limit));
 
-    const res = await fetch(url.toString(), {
-      headers: getAuthHeaders(),
-      cache: "no-store",
-    });
+    const res = await apiFetch(url.toString());
 
     if (res.ok) {
       const json = await res.json();
@@ -94,10 +86,7 @@ export async function fetchNotificationsApi(params?: {
  */
 export async function fetchUnreadCountApi(): Promise<number> {
   try {
-    const res = await fetch(`${API_BASE}/notifications/unread-count`, {
-      headers: getAuthHeaders(),
-      cache: "no-store",
-    });
+    const res = await apiFetch(`${API_BASE}/notifications/unread-count`);
 
     if (res.ok) {
       const json = await res.json();
@@ -114,10 +103,7 @@ export async function fetchUnreadCountApi(): Promise<number> {
  */
 export async function markNotificationReadApi(id: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/notifications/${id}/read`, {
-      method: "PATCH",
-      headers: getAuthHeaders(),
-    });
+    const res = await apiFetch(`${API_BASE}/notifications/${id}/read`, { method: "PATCH" });
     const json = await res.json();
     return res.ok && json.success;
   } catch {
@@ -130,10 +116,7 @@ export async function markNotificationReadApi(id: string): Promise<boolean> {
  */
 export async function markAllNotificationsReadApi(): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/notifications/read-all`, {
-      method: "PATCH",
-      headers: getAuthHeaders(),
-    });
+    const res = await apiFetch(`${API_BASE}/notifications/read-all`, { method: "PATCH" });
     const json = await res.json();
     return res.ok && json.success;
   } catch {

@@ -532,7 +532,7 @@ export default function VectorCorrectionCanvas({
         <div className="flex items-center gap-3">
           <span className="w-3 h-3 rounded-full bg-amber-400 animate-pulse" />
           <h2 className="text-sm font-semibold tracking-wide text-neutral-100 uppercase font-mono">
-            Bộ Nắn Chỉnh Vector Mặt Bằng 2D (Correction Canvas)
+            2D Floor Plan Vector Editor
           </h2>
           <span className="text-xs px-2 py-0.5 rounded bg-neutral-800 text-neutral-400 font-mono">
             {layout.metadata.project_name}
@@ -543,7 +543,7 @@ export default function VectorCorrectionCanvas({
         <div className="flex items-center gap-2">
           {/* Blueprint Opacity */}
           <div className="flex items-center gap-1.5 mr-3 text-xs text-neutral-400 font-mono">
-            <span>Ảnh nền:</span>
+            <span>Background image:</span>
             <input
               type="range"
               min="0"
@@ -552,7 +552,7 @@ export default function VectorCorrectionCanvas({
               value={bgOpacity}
               onChange={(e) => setBgOpacity(parseFloat(e.target.value))}
               className="w-20 accent-amber-400 h-1 bg-neutral-700 rounded"
-              title="Độ mờ ảnh bản vẽ gốc"
+              title="Source drawing opacity"
             />
             <span className="w-8 text-right">{Math.round(bgOpacity * 100)}%</span>
           </div>
@@ -561,9 +561,9 @@ export default function VectorCorrectionCanvas({
           <button
             onClick={handleAutoClean}
             className="px-3 py-1.5 rounded-lg border border-neutral-700 bg-neutral-800 hover:bg-neutral-700 text-xs font-mono text-neutral-200 transition flex items-center gap-1.5"
-            title="Tự động nắn góc vuông 90° và hít nối các đầu tường hở < 15cm"
+            title="Automatically square 90° corners and snap open wall ends less than 15 cm apart"
           >
-            <span>⚡ Tự Động Nắn Vuông</span>
+            <span>⚡ Auto-Square</span>
           </button>
 
           {/* Ortho Snap Toggle */}
@@ -575,7 +575,7 @@ export default function VectorCorrectionCanvas({
                 : "border-neutral-700 bg-neutral-800 text-neutral-400"
             }`}
           >
-            <span>{autoOrtho ? "✓ Hút Góc Vuông (ON)" : "Hút Góc Vuông (OFF)"}</span>
+            <span>{autoOrtho ? "✓ Corner Snap (ON)" : "Corner Snap (OFF)"}</span>
           </button>
         </div>
       </div>
@@ -591,7 +591,7 @@ export default function VectorCorrectionCanvas({
             }`}
           >
             <span>✋</span>
-            <span>Chọn / Nắn Đỉnh</span>
+            <span>Select / Adjust Vertex</span>
           </button>
 
           <button
@@ -604,7 +604,7 @@ export default function VectorCorrectionCanvas({
             }`}
           >
             <span className="w-2.5 h-2.5 rounded-full bg-sky-400" />
-            <span>+ Tường Bao (220mm)</span>
+            <span>+ Exterior Wall (220 mm)</span>
           </button>
 
           <button
@@ -617,7 +617,7 @@ export default function VectorCorrectionCanvas({
             }`}
           >
             <span className="w-2.5 h-2.5 rounded-full bg-orange-400" />
-            <span>+ Tường Ngăn (110mm)</span>
+            <span>+ Partition Wall (110 mm)</span>
           </button>
 
           <button
@@ -627,7 +627,7 @@ export default function VectorCorrectionCanvas({
             }`}
           >
             <span>🚪</span>
-            <span>+ Gắn Cửa Đi</span>
+            <span>+ Add Door</span>
           </button>
 
           <button
@@ -637,7 +637,7 @@ export default function VectorCorrectionCanvas({
             }`}
           >
             <span>🪟</span>
-            <span>+ Gắn Cửa Sổ</span>
+            <span>+ Add Window</span>
           </button>
 
           <button
@@ -647,7 +647,7 @@ export default function VectorCorrectionCanvas({
             }`}
           >
             <span>🗑️</span>
-            <span>Xóa Đối Tượng</span>
+            <span>Delete Object</span>
           </button>
         </div>
 
@@ -672,11 +672,11 @@ export default function VectorCorrectionCanvas({
       {/* 3. FOOTER BAR */}
       <div className="flex items-center justify-between px-6 py-3 border-t border-neutral-800 bg-[#12161f]">
         <div className="text-xs text-neutral-400 font-mono flex items-center gap-4">
-          <span>Số tường: <strong className="text-white">{layout.walls.length}</strong></span>
-          <span>Số cửa: <strong className="text-white">{layout.openings.length}</strong></span>
-          <span>Số phòng: <strong className="text-white">{layout.rooms.length}</strong></span>
+          <span>Walls: <strong className="text-white">{layout.walls.length}</strong></span>
+          <span>Doors: <strong className="text-white">{layout.openings.length}</strong></span>
+          <span>Rooms: <strong className="text-white">{layout.rooms.length}</strong></span>
           <span className="text-[11px] text-neutral-500">
-            • Giữ chuột giữa / Shift để cuộn bản vẽ • Cuộn chuột để phóng to/thu nhỏ
+            • Middle-click or hold Shift to pan • Scroll to zoom
           </span>
         </div>
 
@@ -685,13 +685,13 @@ export default function VectorCorrectionCanvas({
             onClick={onClose}
             className="px-4 py-2 text-xs font-mono text-neutral-400 hover:text-white transition"
           >
-            Quay lại
+            Back
           </button>
           <button
             onClick={() => onConfirm(layout)}
             className="px-6 py-2 rounded-xl font-mono font-bold text-xs bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black shadow-lg shadow-amber-500/20 transition flex items-center gap-2"
           >
-            <span>✓ Xác Nhận & Dựng 3D</span>
+            <span>✓ Confirm & Build 3D</span>
             <span>➔</span>
           </button>
         </div>

@@ -147,17 +147,17 @@ export function Toolbar({
           <IconBtn icon="undo" p={p} onClick={onUndo} disabled={!canUndo} title={t("undo", lang)} size={S} />
           <IconBtn icon="redo" p={p} onClick={onRedo} disabled={!canRedo} title={t("redo", lang)} size={S} />
           {onSaveDesign && (
-            <IconBtn icon="cloud_upload" p={p} onClick={onSaveDesign} title="Lưu thiết kế" size={S} />
+            <IconBtn icon="cloud_upload" p={p} onClick={onSaveDesign} title="Save design" size={S} />
           )}
           {onExport && (
-            <IconBtn icon="download" p={p} onClick={onExport} title="Tải xuống tất cả màn hình" size={S} />
+            <IconBtn icon="download" p={p} onClick={onExport} title="Export all screens" size={S} />
           )}
           <IconBtn icon="translate" p={p} onClick={onLangSheet} title={t("language", lang)} size={S} />
           <IconBtn icon="palette" p={p} onClick={onSettings} title={t("settings", lang)} size={S} />
           {onOpenAiDraft && (
             <button
               onClick={onOpenAiDraft}
-              title="Sinh giao diện AI"
+              title="Generate UI with AI"
               className="m3-press"
               style={{
                 height: S,
@@ -365,7 +365,7 @@ export function Toolbar({
           <Pill p={p}>
             <button
               onClick={onOpenAiDraft}
-              title="Nhập mô tả ý tưởng để AI sinh màn hình"
+              title="Describe your idea and let AI generate a screen"
               className="m3-press"
               style={{
                 height: 38,
@@ -417,7 +417,7 @@ export function Toolbar({
           {onSaveDesign && (
             <button
               onClick={onSaveDesign}
-              title={editingDesignTitle ? `Đang chỉnh sửa: "${editingDesignTitle}". Nhấn để lưu.` : "Lưu thiết kế vào tài khoản (Profile & Khám phá)"}
+              title={editingDesignTitle ? `Editing: "${editingDesignTitle}". Click to save.` : "Save this design to your account (Profile & Discover)"}
               className="m3-press"
               style={{
                 height: 38,
@@ -437,13 +437,13 @@ export function Toolbar({
               }}
             >
               <Icon name={editingDesignTitle ? "edit_note" : "cloud_upload"} size={18} />
-              <span>{editingDesignTitle ? "Cập nhật" : "Lưu"}</span>
+              <span>{editingDesignTitle ? "Update" : "Save"}</span>
             </button>
           )}
           {onExport && (
             <button
               onClick={onExport}
-              title="Tải xuống tất cả màn hình (HTML Prototype, React, ZIP, PDF)"
+              title="Export all screens (HTML prototype, React, ZIP, PDF)"
               className="m3-press"
               style={{
                 height: 38,
@@ -463,7 +463,7 @@ export function Toolbar({
               }}
             >
               <Icon name="download" size={18} />
-              <span>Tải xuống</span>
+              <span>Export</span>
             </button>
           )}
           {onSaveProject && onOpenProject && (

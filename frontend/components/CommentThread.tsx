@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
   CommentItem,
   fetchCommentsApi,
@@ -9,19 +10,20 @@ import {
   toggleLikeCommentApi,
   deleteCommentApi,
 } from "@/lib/commentService";
+import { getCreatorProfileHref } from "@/lib/userService";
 
 function timeAgo(dateStr: string): string {
   const now = Date.now();
   const diff = now - new Date(dateStr).getTime();
   const seconds = Math.floor(diff / 1000);
-  if (seconds < 60) return "Vừa xong";
+  if (seconds < 60) return "Just now";
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes} phút trước`;
+  if (minutes < 60) return `${minutes} min ago`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} giờ trước`;
+  if (hours < 24) return `${hours} hr ago`;
   const days = Math.floor(hours / 24);
-  if (days < 7) return `${days} ngày trước`;
-  return new Date(dateStr).toLocaleDateString("vi-VN");
+  if (days < 7) return `${days} days ago`;
+  return new Date(dateStr).toLocaleDateString("en-US");
 }
 
 /* ── Single Comment Item ── */
@@ -95,28 +97,43 @@ function CommentItemView({
 
   const isOwn = currentUserId === comment.user;
   const replyCount = comment.replyCount || 0;
+  const commenterHref = getCreatorProfileHref(comment.user, comment.userName);
+
+  const avatarEl = comment.userAvatar ? (
+    <img
+      src={comment.userAvatar}
+      alt={comment.userName}
+      className="w-8 h-8 rounded-full object-cover shrink-0 border border-white/10"
+    />
+  ) : (
+    <div className="w-8 h-8 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center text-[10px] text-slate-300 font-bold shrink-0">
+      {comment.userName?.[0] || "?"}
+    </div>
+  );
 
   return (
     <div className={`${depth > 0 ? "ml-10 mt-2" : "mt-4"}`}>
       <div className="flex items-start gap-3">
         {/* Avatar */}
-        {comment.userAvatar ? (
-          <img
-            src={comment.userAvatar}
-            alt={comment.userName}
-            className="w-8 h-8 rounded-full object-cover shrink-0 border border-white/10"
-          />
+        {commenterHref ? (
+          <Link href={commenterHref} className="shrink-0 hover:opacity-85 transition-opacity" title={`View ${comment.userName}'s profile`}>
+            {avatarEl}
+          </Link>
         ) : (
-          <div className="w-8 h-8 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center text-[10px] text-slate-300 font-bold shrink-0">
-            {comment.userName?.[0] || "?"}
-          </div>
+          avatarEl
         )}
 
         {/* Comment body */}
         <div className="flex-1 min-w-0">
           <div className="bg-white/5 rounded-lg px-3 py-2">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold text-white">{comment.userName}</span>
+              {commenterHref ? (
+                <Link href={commenterHref} className="text-xs font-semibold text-white hover:underline">
+                  {comment.userName}
+                </Link>
+              ) : (
+                <span className="text-xs font-semibold text-white">{comment.userName}</span>
+              )}
               <span className="text-[10px] text-slate-500">{timeAgo(comment.createdAt)}</span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">
@@ -138,7 +155,7 @@ function CommentItemView({
               >
                 favorite
               </span>
-              <span>{likesCount > 0 ? likesCount : "Thích"}</span>
+              <span>{likesCount > 0 ? likesCount : "Like"}</span>
             </button>
 
             <button
@@ -146,7 +163,7 @@ function CommentItemView({
               className="flex items-center gap-1 text-[11px] text-slate-500 hover:text-slate-300 transition-colors"
             >
               <span className="material-symbols-rounded text-xs">reply</span>
-              <span>Trả lời</span>
+                <span>Reply</span>
             </button>
 
             {isOwn && (
@@ -155,7 +172,7 @@ function CommentItemView({
                 className="flex items-center gap-1 text-[11px] text-slate-500 hover:text-red-400 transition-colors"
               >
                 <span className="material-symbols-rounded text-xs">delete</span>
-                <span>Xóa</span>
+                <span>Delete</span>
               </button>
             )}
           </div>
@@ -168,7 +185,7 @@ function CommentItemView({
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleReply()}
-                placeholder="Viết câu trả lời..."
+                placeholder="Write a reply..."
                 className="flex-1 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-white placeholder:text-slate-500 outline-none  transition-colors"
                 disabled={replying}
               />
@@ -177,7 +194,7 @@ function CommentItemView({
                 disabled={replying || !replyText.trim()}
                 className="px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-400 text-white text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
               >
-                {replying ? "..." : "Gửi"}
+                {replying ? "..." : "Send"}
               </button>
             </div>
           )}
@@ -192,14 +209,14 @@ function CommentItemView({
                 {showReplies ? "expand_less" : "expand_more"}
               </span>
               {showReplies
-                ? "Ẩn câu trả lời"
-                : `Xem ${replyCount} câu trả lời`}
+                ? "Hide replies"
+                : `View ${replyCount} replies`}
             </button>
           )}
 
           {/* Replies */}
           {loadingReplies && (
-            <div className="ml-10 mt-2 text-[11px] text-slate-500">Đang tải...</div>
+            <div className="ml-10 mt-2 text-[11px] text-slate-500">Loading...</div>
           )}
           {showReplies &&
             replies.map((reply) => (
@@ -285,7 +302,7 @@ export default function CommentThread({ templateId }: CommentThreadProps) {
       <div className="flex items-center gap-2 mb-4">
         <span className="material-symbols-rounded text-base text-blue-400">chat_bubble</span>
         <h3 className="text-sm font-semibold text-white">
-          Bình luận{total > 0 ? ` (${total})` : ""}
+          Comments{total > 0 ? ` (${total})` : ""}
         </h3>
       </div>
 
@@ -309,7 +326,7 @@ export default function CommentThread({ templateId }: CommentThreadProps) {
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handlePost()}
-              placeholder="Viết bình luận..."
+              placeholder="Write a comment..."
               className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-white placeholder:text-slate-500 outline-none  transition-colors"
               disabled={posting}
             />
@@ -318,13 +335,13 @@ export default function CommentThread({ templateId }: CommentThreadProps) {
               disabled={posting || !newComment.trim()}
               className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-400 text-white text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
             >
-              {posting ? "Đang gửi..." : "Gửi"}
+              {posting ? "Posting..." : "Post"}
             </button>
           </div>
         </div>
       ) : (
         <p className="text-xs text-slate-500 mb-4 px-2 py-3 bg-white/5 rounded-lg text-center">
-          Vui lòng đăng nhập để bình luận.
+          Sign in to leave a comment.
         </p>
       )}
 
@@ -338,7 +355,7 @@ export default function CommentThread({ templateId }: CommentThreadProps) {
           <span className="material-symbols-rounded text-2xl text-slate-600 block mb-1">
             forum
           </span>
-          <p className="text-xs text-slate-500">Chưa có bình luận nào. Hãy là người đầu tiên!</p>
+          <p className="text-xs text-slate-500">No comments yet. Be the first!</p>
         </div>
       ) : (
         <>
@@ -360,7 +377,7 @@ export default function CommentThread({ templateId }: CommentThreadProps) {
                 disabled={loading}
                 className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-slate-300 hover:bg-white/10 transition-colors disabled:opacity-50"
               >
-                {loading ? "Đang tải..." : "Xem thêm bình luận"}
+                {loading ? "Loading..." : "Load more comments"}
               </button>
             </div>
           )}

@@ -154,7 +154,7 @@ export default function EmbedModal({
           <motion.div
             role="dialog"
             aria-modal
-            aria-label="Nhúng thiết kế"
+            aria-label="Embed design"
             initial={{ scale: 0.92, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.96, opacity: 0 }}
@@ -183,11 +183,11 @@ export default function EmbedModal({
               >
                 code
               </span>
-              <span style={{ fontSize: 20, fontWeight: 700 }}>Nhúng thiết kế (Embed)</span>
+              <span style={{ fontSize: 20, fontWeight: 700 }}>Embed Design</span>
               <span style={{ flex: 1 }} />
               <button
                 onClick={onClose}
-                aria-label="Đóng"
+                aria-label="Close"
                 style={{
                   width: 36,
                   height: 36,
@@ -205,7 +205,7 @@ export default function EmbedModal({
             </div>
 
             <p style={{ margin: 0, fontSize: 13, color: onSurfaceVariantColor, lineHeight: 1.6 }}>
-              Sao chép đoạn mã dưới đây và dán vào website của bạn để nhúng thiết kế 3D này.
+              Copy the code below and paste it into your website to embed this 3D design.
             </p>
 
             {/* ── Embed URL ── */}
@@ -256,12 +256,12 @@ export default function EmbedModal({
                   letterSpacing: 0.6,
                 }}
               >
-                Kích thước
+                Size
               </div>
               <div style={{ display: "flex", gap: 6 }}>
                 {optionBtn("responsive", "📐 Responsive")}
                 {optionBtn("fixed", "📱 Fixed (Device)", !activeDevice)}
-                {optionBtn("custom", "✏️ Tuỳ chỉnh")}
+                {optionBtn("custom", "✏️ Custom")}
               </div>
               {sizeMode === "fixed" && activeDevice && (
                 <div
@@ -350,7 +350,7 @@ export default function EmbedModal({
                   letterSpacing: 0.6,
                 }}
               >
-                Mã nhúng HTML
+                HTML embed code
               </div>
               <textarea
                 id="embed-code-textarea"
@@ -391,7 +391,7 @@ export default function EmbedModal({
                   cursor: "pointer",
                 }}
               >
-                Đóng
+                Close
               </button>
               <motion.button
                 onClick={copySnippet}
@@ -415,7 +415,7 @@ export default function EmbedModal({
                 <span style={{ fontFamily: "Material Symbols Rounded", fontSize: 18 }}>
                   {copied ? "check" : "content_copy"}
                 </span>
-                {copied ? "Đã sao chép!" : "Sao chép mã"}
+                {copied ? "Copied!" : "Copy code"}
               </motion.button>
             </div>
           </motion.div>

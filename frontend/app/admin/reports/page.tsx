@@ -28,24 +28,25 @@ export default function AdminReportsPage() {
   const [editStatus, setEditStatus] = useState<"pending" | "investigating" | "resolved" | "dismissed">("pending");
   const [editPriority, setEditPriority] = useState<"low" | "medium" | "high" | "critical">("medium");
   const [resolutionNotes, setResolutionNotes] = useState("");
+  const [sendCreatorWarning, setSendCreatorWarning] = useState(true);
   const [actionBusy, setActionBusy] = useState(false);
   const [downloadingCsv, setDownloadingCsv] = useState(false);
   const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
 
   const handleDeleteReview = async (reviewId: string, templateId?: string, reportId?: string) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa đánh giá này khỏi mẫu thiết kế? Hành động này sẽ cập nhật lại điểm đánh giá trung bình.")) {
+    if (!confirm("Are you sure you want to delete this review? The average rating will be recalculated.")) {
       return;
     }
     setDeletingReviewId(reviewId);
     const res = await deleteAdminReviewApi(reviewId, templateId);
     if (res.success) {
-      alert("Đã xóa đánh giá vi phạm thành công!");
+      alert("The reported review was deleted.");
       if (detailReport && detailReport._id === reportId) {
         setDetailReport((prev) => (prev ? { ...prev, reviewDetails: undefined } : null));
       }
       loadReports(pagination.page);
     } else {
-      alert("Lỗi: " + (res.message || "Không thể xóa đánh giá"));
+      alert("Error: " + (res.message || "Could not delete the review."));
     }
     setDeletingReviewId(null);
   };
@@ -67,7 +68,7 @@ export default function AdminReportsPage() {
       setReports(res.data);
       if (res.pagination) setPagination(res.pagination);
     } else {
-      setError(res.message || "Không thể tải danh sách sự cố & báo cáo");
+      setError(res.message || "Could not load reports and appeals.");
     }
     setLoading(false);
   };
@@ -86,6 +87,7 @@ export default function AdminReportsPage() {
     setEditStatus(report.status);
     setEditPriority(report.priority);
     setResolutionNotes(report.resolutionNotes || "");
+    setSendCreatorWarning(true);
   };
 
   const handleStatusSubmit = async (e: React.FormEvent) => {
@@ -97,13 +99,14 @@ export default function AdminReportsPage() {
       status: editStatus,
       priority: editPriority,
       resolutionNotes,
+      sendCreatorWarning: editStatus === "resolved" ? sendCreatorWarning : false,
     });
 
     if (res.success) {
       setDetailReport(null);
       loadReports(pagination.page);
     } else {
-      alert("Lỗi: " + res.message);
+      alert("Error: " + res.message);
     }
     setActionBusy(false);
   };
@@ -113,7 +116,7 @@ export default function AdminReportsPage() {
       setDownloadingCsv(true);
       await downloadReportsCsv();
     } catch (err: any) {
-      alert("Lỗi khi tải file: " + err.message);
+      alert("Could not download the file: " + err.message);
     } finally {
       setDownloadingCsv(false);
     }
@@ -137,33 +140,46 @@ export default function AdminReportsPage() {
   };
 
   const getTargetActionLink = (r: IncidentReport): { url: string; label: string; icon: string } | null => {
+    const lowerType = String(r.targetType || "").toLowerCase();
+
     if (r.targetUrl) {
-      if (r.targetType === "template") return { url: r.targetUrl, label: "Xem Mẫu thiết kế", icon: "palette" };
-      if (r.targetType === "review") return { url: r.targetUrl, label: "Xem Mẫu có Đánh giá", icon: "rate_review" };
-      if (r.targetType === "creator" || r.targetType === "user") return { url: r.targetUrl, label: "Xem Hồ sơ Creator", icon: "person" };
-      return { url: r.targetUrl, label: "Xem Đối tượng", icon: "open_in_new" };
+      if (lowerType === "template") return { url: r.targetUrl, label: "View template", icon: "palette" };
+      if (lowerType === "review") return { url: r.targetUrl, label: "View review", icon: "rate_review" };
+      if (lowerType === "creator" || lowerType === "user") {
+        const legacyIdMatch = r.targetUrl.match(/^\/creator\/([0-9a-fA-F]{24})\/?$/);
+        const normalizedCreatorUrl = legacyIdMatch
+          ? `/creator/?id=${encodeURIComponent(legacyIdMatch[1])}`
+          : r.targetUrl.startsWith("/creator/") && !r.targetUrl.includes("?") && !r.targetUrl.startsWith("/creator/wallet")
+          ? `/creator/?username=${encodeURIComponent(r.targetUrl.replace(/^\/creator\//, "").replace(/\/$/, ""))}`
+          : r.targetUrl;
+        return { url: normalizedCreatorUrl, label: "View creator profile", icon: "person" };
+      }
+      return { url: r.targetUrl, label: "View target", icon: "open_in_new" };
     }
 
     // Fallbacks if targetUrl is empty
-    if (r.targetType === "template" && r.targetId) {
-      return { url: `/templates/${r.targetId}`, label: "Xem Mẫu thiết kế", icon: "palette" };
+    if (lowerType === "template" && r.targetId) {
+      return { url: `/templates/${r.targetId}`, label: "View template", icon: "palette" };
     }
-    if (r.targetType === "review") {
+    if (lowerType === "review") {
+      if (r.targetId && r.targetId.includes("-creator-review-")) {
+        return { url: `/creator/?id=${encodeURIComponent(r.targetId.split("-creator-review-")[0])}`, label: "View creator profile", icon: "rate_review" };
+      }
       if (r.targetId && r.targetId.includes("-review-")) {
-        return { url: `/templates/${r.targetId.split("-review-")[0]}`, label: "Xem Mẫu có Đánh giá", icon: "rate_review" };
+        return { url: `/templates/${r.targetId.split("-review-")[0]}`, label: "View reviewed template", icon: "rate_review" };
       }
       if (r.targetTitle) {
         const match = r.targetTitle.match(/cho "([^"]+)"/);
         if (match && match[1]) {
-          return { url: `/templates?search=${encodeURIComponent(match[1])}`, label: "Xem Mẫu có Đánh giá", icon: "rate_review" };
+          return { url: `/templates?search=${encodeURIComponent(match[1])}`, label: "View reviewed template", icon: "rate_review" };
         }
       }
     }
-    if ((r.targetType === "creator" || r.targetType === "user") && r.targetId) {
-      return { url: `/creator/${r.targetId}`, label: "Xem Hồ sơ Creator", icon: "person" };
+    if ((lowerType === "creator" || lowerType === "user") && r.targetId) {
+      return { url: `/creator/?id=${encodeURIComponent(r.targetId)}`, label: "View creator profile", icon: "person" };
     }
     if (r.ticketType === "APPEAL" && (r.reporter?.email || r.reporterName)) {
-      return { url: `/admin/users?search=${encodeURIComponent(r.reporter?.email || r.reporterName)}`, label: "Xem User gửi đơn", icon: "account_circle" };
+      return { url: `/admin/users?search=${encodeURIComponent(r.reporter?.email || r.reporterName)}`, label: "View reporting user", icon: "account_circle" };
     }
 
     return null;
@@ -178,10 +194,10 @@ export default function AdminReportsPage() {
             Moderation & Incident Management
           </p>
           <h1 className="text-3xl sm:text-4xl font-semibold text-white tracking-tight">
-            Quản Lý Sự Cố & Báo Cáo Vi Phạm
+            Reports & Appeals
           </h1>
           <p className="text-zinc-400 text-xs sm:text-sm mt-1">
-            Xử lý phản ánh từ người dùng, kiểm duyệt vi phạm bản quyền, nội dung không phù hợp hoặc sự cố hệ thống.
+            Review user reports, copyright claims, inappropriate content, and system issues.
           </p>
         </div>
 
@@ -191,16 +207,16 @@ export default function AdminReportsPage() {
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-semibold tracking-wide transition-all shadow-sm disabled:opacity-50 cursor-pointer"
         >
           <span className="material-symbols-rounded text-base text-black">download</span>
-          <span>{downloadingCsv ? "Đang xuất..." : "Xuất Báo Cáo CSV"}</span>
+          <span>{downloadingCsv ? "Exporting..." : "Export CSV report"}</span>
         </button>
       </div>
 
       {/* Ticket Type Tabs */}
       <div className="flex items-center gap-2">
         {[
-          { label: "Tất cả đơn phản ánh", value: "all" },
-          { label: "Báo cáo vi phạm (Reports)", value: "REPORT" },
-          { label: "Khiếu nại & Kháng nghị (Appeals)", value: "APPEAL" },
+          { label: "All submissions", value: "all" },
+          { label: "Reports", value: "REPORT" },
+          { label: "Appeals", value: "APPEAL" },
         ].map((tab) => (
           <button
             key={tab.value}
@@ -226,7 +242,7 @@ export default function AdminReportsPage() {
             </span>
             <input
               type="text"
-              placeholder="Tìm theo nội dung, đối tượng hoặc người báo cáo..."
+              placeholder="Search by content, target, or reporter..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-zinc-950 border border-white/10 rounded-xl text-xs text-white placeholder-zinc-500 focus:outline-none  transition-colors"
@@ -236,56 +252,58 @@ export default function AdminReportsPage() {
             type="submit"
             className="px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-xs font-medium text-white transition-colors border border-white/10"
           >
-            Tìm
+            Search
           </button>
         </form>
 
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Status */}
           <div className="flex items-center gap-1.5 text-xs text-zinc-400">
-            <span>Trạng thái:</span>
+            <span>Status:</span>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
               className="bg-zinc-950 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none "
             >
-              <option value="all">Tất cả</option>
-              <option value="pending">Chờ xử lý (Pending)</option>
-              <option value="investigating">Đang điều tra</option>
-              <option value="resolved">Đã giải quyết</option>
-              <option value="dismissed">Đã bác bỏ</option>
+              <option value="all">All</option>
+              <option value="pending">Pending</option>
+              <option value="investigating">Investigating</option>
+              <option value="resolved">Resolved</option>
+              <option value="dismissed">Dismissed</option>
             </select>
           </div>
 
           {/* Priority */}
           <div className="flex items-center gap-1.5 text-xs text-zinc-400">
-            <span>Ưu tiên:</span>
+            <span>Priority:</span>
             <select
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
               className="bg-zinc-950 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none "
             >
-              <option value="all">Tất cả</option>
-              <option value="critical">Khẩn cấp (Critical)</option>
-              <option value="high">Cao (High)</option>
-              <option value="medium">Trung bình (Medium)</option>
-              <option value="low">Thấp (Low)</option>
+              <option value="all">All</option>
+              <option value="critical">Critical</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
             </select>
           </div>
 
           {/* Target Type */}
           <div className="flex items-center gap-1.5 text-xs text-zinc-400">
-            <span>Loại:</span>
+            <span>Type:</span>
             <select
               value={targetType}
               onChange={(e) => setTargetType(e.target.value)}
               className="bg-zinc-950 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none "
             >
-              <option value="all">Tất cả</option>
-              <option value="template">Mẫu thiết kế</option>
-              <option value="user">Người dùng</option>
-              <option value="comment">Bình luận</option>
-              <option value="system">Hệ thống</option>
+              <option value="all">All</option>
+              <option value="creator">Creator</option>
+              <option value="template">Template</option>
+              <option value="review">Review</option>
+              <option value="user">User</option>
+              <option value="comment">Comment</option>
+              <option value="system">System</option>
             </select>
           </div>
         </div>
@@ -296,26 +314,26 @@ export default function AdminReportsPage() {
         {loading ? (
           <div className="p-12 text-center text-zinc-400 text-sm">
             <div className="w-6 h-6 rounded-full border-2 border-white/20 border-t-white animate-spin mx-auto mb-3" />
-            Đang tải dữ liệu sự cố và báo cáo...
+            Loading reports...
           </div>
         ) : error ? (
           <div className="p-8 text-center text-zinc-400 text-sm">{error}</div>
         ) : reports.length === 0 ? (
           <div className="p-12 text-center text-zinc-400 text-sm">
-            Không có báo cáo sự cố nào phù hợp.
+            No matching reports found.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-zinc-950 text-zinc-400 uppercase font-medium tracking-wider border-b border-white/10 text-[11px]">
                 <tr>
-                  <th className="py-3.5 px-4">Đối tượng phản ánh</th>
-                  <th className="py-3.5 px-4">Lý do</th>
-                  <th className="py-3.5 px-4">Người báo cáo</th>
-                  <th className="py-3.5 px-4">Ưu tiên</th>
-                  <th className="py-3.5 px-4">Trạng thái</th>
-                  <th className="py-3.5 px-4">Thời gian</th>
-                  <th className="py-3.5 px-4 text-right">Thao tác</th>
+                  <th className="py-3.5 px-4">Reported item</th>
+                  <th className="py-3.5 px-4">Reason</th>
+                  <th className="py-3.5 px-4">Reporter</th>
+                  <th className="py-3.5 px-4">Priority</th>
+                  <th className="py-3.5 px-4">Status</th>
+                  <th className="py-3.5 px-4">Date</th>
+                  <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 text-zinc-300">
@@ -329,11 +347,11 @@ export default function AdminReportsPage() {
                       <div className="flex flex-wrap items-center gap-1.5 mt-1">
                         {r.ticketType === "APPEAL" ? (
                           <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                            KHIẾU NẠI
+                            APPEAL
                           </span>
                         ) : (
                           <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                            BÁO CÁO
+                            REPORT
                           </span>
                         )}
                         <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">
@@ -350,7 +368,7 @@ export default function AdminReportsPage() {
                               target="_blank"
                               rel="noreferrer"
                               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/15 hover:bg-blue-500/30 text-blue-300 hover:text-white border border-blue-500/30 text-[10px] font-semibold transition-all shadow-sm group"
-                              title={`One-click: Xem ${action.label} (Mở tab mới)`}
+                              title={`Open ${action.label} in a new tab`}
                             >
                               <span className="material-symbols-rounded text-xs">{action.icon}</span>
                               <span>{action.label}</span>
@@ -378,26 +396,26 @@ export default function AdminReportsPage() {
                             </div>
                             <div className="flex items-center text-amber-400 text-xs">
                               {Array.from({ length: r.reviewDetails.rating }).map((_, i) => (
-                                <span key={i} className="material-symbols-rounded text-xs">star</span>
+                                <span key={i} className="material-symbols-rounded rating-star-filled text-xs">star</span>
                               ))}
                             </div>
                           </div>
                           <p className="text-zinc-200 text-[11px] leading-relaxed bg-white/[0.03] p-2 rounded-lg border border-white/5 whitespace-pre-wrap">
-                            {r.reviewDetails.comment || <span className="text-zinc-500 italic">(Người dùng không nhập văn bản nhận xét)</span>}
+                            {r.reviewDetails.comment || <span className="text-zinc-500 italic">(No review text provided)</span>}
                           </p>
                           <div className="flex items-center justify-between pt-1 border-t border-white/5 text-[10px]">
                             <span className="text-zinc-400 truncate max-w-[170px]" title={r.reviewDetails.templateTitle}>
-                              Mẫu: <strong className="text-zinc-200 font-medium">{r.reviewDetails.templateTitle}</strong>
+                              Template: <strong className="text-zinc-200 font-medium">{r.reviewDetails.templateTitle}</strong>
                             </span>
                             <button
                               type="button"
                               disabled={deletingReviewId === r.reviewDetails._id}
                               onClick={() => handleDeleteReview(r.reviewDetails!._id, r.reviewDetails!.templateId, r._id)}
                               className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold transition-all shadow-sm flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                              title="Xóa vĩnh viễn đánh giá này khỏi mẫu thiết kế"
+                              title="Permanently delete this review from the template"
                             >
                               <span className="material-symbols-rounded text-xs">delete</span>
-                              <span>{deletingReviewId === r.reviewDetails._id ? "Đang xóa..." : "Xóa đánh giá"}</span>
+                              <span>{deletingReviewId === r.reviewDetails._id ? "Deleting..." : "Delete review"}</span>
                             </button>
                           </div>
                         </div>
@@ -447,7 +465,7 @@ export default function AdminReportsPage() {
 
                     {/* Time */}
                     <td className="py-3 px-4 text-zinc-400 text-[11px]">
-                      {new Date(r.createdAt).toLocaleDateString("vi-VN", {
+                      {new Date(r.createdAt).toLocaleDateString("en-US", {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
@@ -465,7 +483,7 @@ export default function AdminReportsPage() {
                               target="_blank"
                               rel="noreferrer"
                               className="p-1.5 rounded-xl bg-zinc-900 hover:bg-blue-600/20 text-zinc-400 hover:text-blue-300 border border-white/10 hover:border-blue-500/40 transition-all inline-flex items-center justify-center"
-                              title={`Xem ${action.label} (Mở tab mới)`}
+                              title={`View ${action.label} in a new tab`}
                             >
                               <span className="material-symbols-rounded text-sm">open_in_new</span>
                             </a>
@@ -475,7 +493,7 @@ export default function AdminReportsPage() {
                           onClick={() => openResolutionModal(r)}
                           className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 hover:text-white font-medium text-xs border border-white/10 transition-colors cursor-pointer"
                         >
-                          Xử lý
+                          Review
                         </button>
                       </div>
                     </td>
@@ -490,8 +508,8 @@ export default function AdminReportsPage() {
         {pagination.pages > 1 && (
           <div className="py-3 px-4 border-t border-white/10 flex items-center justify-between text-xs text-zinc-400 bg-zinc-950">
             <div>
-              Trang <span className="font-semibold text-white">{pagination.page}</span> /{" "}
-              {pagination.pages} (Tổng {pagination.total} báo cáo)
+              Page <span className="font-semibold text-white">{pagination.page}</span> /{" "}
+              {pagination.pages} ({pagination.total} reports total)
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -499,14 +517,14 @@ export default function AdminReportsPage() {
                 onClick={() => loadReports(pagination.page - 1)}
                 className="px-3.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 disabled:opacity-40 disabled:pointer-events-none text-white font-medium transition-colors"
               >
-                Trước
+                Previous
               </button>
               <button
                 disabled={pagination.page >= pagination.pages}
                 onClick={() => loadReports(pagination.page + 1)}
                 className="px-3.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 disabled:opacity-40 disabled:pointer-events-none text-white font-medium transition-colors"
               >
-                Sau
+                Next
               </button>
             </div>
           </div>
@@ -515,12 +533,12 @@ export default function AdminReportsPage() {
 
       {/* ── MODAL: RESOLVE / UPDATE REPORT ── */}
       {detailReport && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
           <div className="w-full max-w-lg bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold text-white flex items-center gap-2">
                 <span className="material-symbols-rounded text-zinc-400 text-lg">gavel</span>
-                Xử Lý Báo Cáo Vi Phạm
+                Review Report
               </h3>
               <button
                 onClick={() => setDetailReport(null)}
@@ -544,7 +562,7 @@ export default function AdminReportsPage() {
                   {detailReport.targetTitle || detailReport.targetId}
                 </div>
                 <div className="text-zinc-400">
-                  Lý do: <span className="font-medium text-white capitalize">{detailReport.reason.replace(/_/g, " ")}</span>
+                  Reason: <span className="font-medium text-white capitalize">{detailReport.reason.replace(/_/g, " ")}</span>
                 </div>
 
                 {/* Direct One-Click Button Inside Resolution Modal */}
@@ -560,12 +578,12 @@ export default function AdminReportsPage() {
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer group"
                       >
                         <span className="material-symbols-rounded text-sm">{action.icon}</span>
-                        <span>Mở trực tiếp {action.label}</span>
+                        <span>Open {action.label}</span>
                         <span className="material-symbols-rounded text-xs group-hover:translate-x-0.5 transition-transform">
                           open_in_new
                         </span>
                       </a>
-                      {(detailReport.targetType === "creator" || detailReport.targetType === "user") && (
+                      {["creator", "user"].includes(String(detailReport.targetType || "").toLowerCase()) && (
                         <a
                           href={`/admin/users?search=${encodeURIComponent(detailReport.targetId)}`}
                           target="_blank"
@@ -573,7 +591,7 @@ export default function AdminReportsPage() {
                           className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-white/10 text-xs font-medium transition-colors"
                         >
                           <span className="material-symbols-rounded text-xs">manage_accounts</span>
-                          <span>Quản lý User</span>
+                          <span>Manage user</span>
                         </a>
                       )}
                     </div>
@@ -584,7 +602,7 @@ export default function AdminReportsPage() {
                 {detailReport.reviewDetails && (
                   <div className="pt-2.5 border-t border-white/10 space-y-2">
                     <span className="text-[11px] font-bold text-amber-400 block uppercase tracking-wider">
-                      Chi tiết Đánh giá bị báo cáo:
+                      Reported review details:
                     </span>
                     <div className="p-3 rounded-xl bg-zinc-900 border border-amber-500/30 space-y-2">
                       <div className="flex items-center justify-between">
@@ -598,18 +616,18 @@ export default function AdminReportsPage() {
                           )}
                           <div>
                             <span className="font-semibold text-white block">{detailReport.reviewDetails.userName}</span>
-                            <span className="text-[10px] text-zinc-400">Trên mẫu: {detailReport.reviewDetails.templateTitle}</span>
+                            <span className="text-[10px] text-zinc-400">On template: {detailReport.reviewDetails.templateTitle}</span>
                           </div>
                         </div>
                         <div className="flex items-center text-amber-400">
                           {Array.from({ length: detailReport.reviewDetails.rating }).map((_, i) => (
-                            <span key={i} className="material-symbols-rounded text-sm">star</span>
+                            <span key={i} className="material-symbols-rounded rating-star-filled text-sm">star</span>
                           ))}
                         </div>
                       </div>
 
                       <div className="p-2.5 rounded-lg bg-black/50 border border-white/5 text-zinc-200 text-xs">
-                        {detailReport.reviewDetails.comment || <span className="text-zinc-500 italic">(Không có văn bản bình luận)</span>}
+                        {detailReport.reviewDetails.comment || <span className="text-zinc-500 italic">(No comment text)</span>}
                       </div>
 
                       <div className="pt-1 flex items-center justify-end">
@@ -620,7 +638,7 @@ export default function AdminReportsPage() {
                           className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                         >
                           <span className="material-symbols-rounded text-sm">delete</span>
-                          <span>{deletingReviewId === detailReport.reviewDetails._id ? "Đang xóa..." : "Xóa Đánh Giá Vi Phạm Này"}</span>
+                          <span>{deletingReviewId === detailReport.reviewDetails._id ? "Deleting..." : "Delete reported review"}</span>
                         </button>
                       </div>
                     </div>
@@ -629,20 +647,20 @@ export default function AdminReportsPage() {
               </div>
 
               <div className="p-3.5 rounded-xl bg-zinc-950 border border-white/10 space-y-1">
-                <span className="font-medium text-zinc-400 block">Nội dung phản ánh từ người dùng:</span>
+                <span className="font-medium text-zinc-400 block">User-submitted report:</span>
                 <p className="text-zinc-200 leading-relaxed whitespace-pre-wrap">
                   {detailReport.description}
                 </p>
                 <div className="text-[11px] text-zinc-500 pt-1">
-                  Bởi: {detailReport.reporterName} ({detailReport.reporter?.email || "N/A"}) •{" "}
-                  {new Date(detailReport.createdAt).toLocaleString("vi-VN")}
+                  By: {detailReport.reporterName} ({detailReport.reporter?.email || "N/A"}) •{" "}
+                  {new Date(detailReport.createdAt).toLocaleString("en-US")}
                 </div>
               </div>
 
               {/* Attachments if any */}
               {detailReport.attachments && detailReport.attachments.length > 0 && (
                 <div className="p-3.5 rounded-xl bg-zinc-950 border border-white/10 space-y-1.5">
-                  <span className="font-medium text-zinc-400 block">Ảnh bằng chứng đính kèm:</span>
+                  <span className="font-medium text-zinc-400 block">Attached evidence:</span>
                   <div className="flex flex-wrap gap-2">
                     {detailReport.attachments.map((url, i) => (
                       <a
@@ -652,7 +670,7 @@ export default function AdminReportsPage() {
                         rel="noreferrer"
                         className="w-16 h-16 rounded-lg overflow-hidden border border-white/20 hover:border-white/50 transition-colors inline-block"
                       >
-                        <img src={url} alt="Bằng chứng" className="w-full h-full object-cover" />
+                        <img src={url} alt="Evidence" className="w-full h-full object-cover" />
                       </a>
                     ))}
                   </div>
@@ -661,8 +679,8 @@ export default function AdminReportsPage() {
 
               {detailReport.resolvedByName && (
                 <div className="p-3 rounded-xl bg-zinc-800/80 border border-white/10 text-zinc-300 text-[11px]">
-                  ✓ Đã giải quyết bởi <span className="font-semibold text-white">{detailReport.resolvedByName}</span> vào lúc{" "}
-                  {new Date(detailReport.resolvedAt || "").toLocaleString("vi-VN")}
+                  ✓ Resolved by <span className="font-semibold text-white">{detailReport.resolvedByName}</span> at{" "}
+                  {new Date(detailReport.resolvedAt || "").toLocaleString("en-US")}
                 </div>
               )}
             </div>
@@ -670,46 +688,66 @@ export default function AdminReportsPage() {
             <form onSubmit={handleStatusSubmit} className="space-y-4 text-xs border-t border-white/10 pt-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-medium text-zinc-300 mb-1.5">Cập nhật trạng thái</label>
+                  <label className="block font-medium text-zinc-300 mb-1.5">Update status</label>
                   <select
                     value={editStatus}
                     onChange={(e) => setEditStatus(e.target.value as any)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-white/10 text-white focus:outline-none "
                   >
-                    <option value="pending">Chờ xử lý (Pending)</option>
-                    <option value="investigating">Đang điều tra (Investigating)</option>
-                    <option value="resolved">Đã giải quyết (Resolved)</option>
-                    <option value="dismissed">Bác bỏ báo cáo (Dismissed)</option>
+                    <option value="pending">Pending</option>
+                    <option value="investigating">Investigating</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="dismissed">Dismissed</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block font-medium text-zinc-300 mb-1.5">Mức độ ưu tiên</label>
+                  <label className="block font-medium text-zinc-300 mb-1.5">Priority</label>
                   <select
                     value={editPriority}
                     onChange={(e) => setEditPriority(e.target.value as any)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-white/10 text-white focus:outline-none "
                   >
-                    <option value="low">Thấp (Low)</option>
-                    <option value="medium">Trung bình (Medium)</option>
-                    <option value="high">Cao (High)</option>
-                    <option value="critical">Khẩn cấp (Critical)</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
                   </select>
                 </div>
               </div>
 
               <div>
                 <label className="block font-medium text-zinc-300 mb-1.5">
-                  Ghi chú giải quyết của Quản trị viên
+                  Administrator resolution notes
                 </label>
                 <textarea
                   rows={3}
                   value={resolutionNotes}
                   onChange={(e) => setResolutionNotes(e.target.value)}
-                  placeholder="Ví dụ: Đã xóa mẫu vi phạm bản quyền và cảnh cáo người dùng..."
+                  placeholder="e.g. Removed the copyright-infringing template and warned the user..."
                   className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-white/10 text-white focus:outline-none  placeholder:text-zinc-600"
                 />
               </div>
+
+              {editStatus === "resolved" &&
+                ["creator", "user", "template"].includes(String(detailReport.targetType || "").toLowerCase()) && (
+                  <label className="flex items-start gap-2.5 p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 text-xs text-zinc-200 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={sendCreatorWarning}
+                      onChange={(e) => setSendCreatorWarning(e.target.checked)}
+                      className="mt-0.5 accent-rose-500 cursor-pointer"
+                    />
+                    <span>
+                      <strong className="text-rose-300 font-semibold block">
+                        Send a warning to the reported creator
+                      </strong>
+                      <span className="text-[11px] text-zinc-400">
+                        The creator will receive a policy warning with a link to submit an appeal.
+                      </span>
+                    </span>
+                  </label>
+                )}
 
               <div className="flex justify-end gap-2.5 pt-2">
                 <button
@@ -717,14 +755,14 @@ export default function AdminReportsPage() {
                   onClick={() => setDetailReport(null)}
                   className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-white/10 text-zinc-300 font-medium transition-colors cursor-pointer"
                 >
-                  Hủy
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={actionBusy}
                   className="px-5 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold shadow-sm transition-all disabled:opacity-50 cursor-pointer"
                 >
-                  {actionBusy ? "Đang lưu..." : "Lưu Kết Quả Xử Lý"}
+                  {actionBusy ? "Saving..." : "Save resolution"}
                 </button>
               </div>
             </form>

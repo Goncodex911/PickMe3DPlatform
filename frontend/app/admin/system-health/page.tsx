@@ -19,10 +19,10 @@ export default function AdminSystemHealthPage() {
         setHealth(res.data);
         setLastUpdated(new Date());
       } else {
-        setError(res.message || "Không thể kiểm tra trạng thái dịch vụ");
+        setError(res.message || "Could not check service status.");
       }
     } catch (err: any) {
-      setError(err.message || "Lỗi kết nối máy chủ");
+      setError(err.message || "Could not connect to the server.");
     } finally {
       setLoading(false);
     }
@@ -46,10 +46,10 @@ export default function AdminSystemHealthPage() {
     const h = Math.floor((seconds % (3600 * 24)) / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
-    if (d > 0) return `${d} ngày ${h} giờ ${m} phút`;
-    if (h > 0) return `${h} giờ ${m} phút ${s} giây`;
-    if (m > 0) return `${m} phút ${s} giây`;
-    return `${s} giây`;
+    if (d > 0) return `${d} days ${h} hr ${m} min`;
+    if (h > 0) return `${h} hr ${m} min ${s} sec`;
+    if (m > 0) return `${m} min ${s} sec`;
+    return `${s} sec`;
   };
 
   return (
@@ -63,14 +63,14 @@ export default function AdminSystemHealthPage() {
             </span>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Tất Cả Dịch Vụ Đang Hoạt Động
+              All services operational
             </span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-semibold text-white tracking-tight">
-            Trạng Thái Hệ Thống (System Health)
+            System Health
           </h1>
           <p className="text-zinc-400 text-xs sm:text-sm mt-1 max-w-2xl leading-relaxed">
-            Giám sát độ trễ, tài nguyên bộ nhớ và trạng thái vận hành thời gian thực của MongoDB Atlas, Cloudinary CDN, AI Service và Express Server.
+            Monitor latency, memory usage, and real-time status for MongoDB Atlas, Cloudinary CDN, the AI service, and the Express server.
           </p>
         </div>
 
@@ -82,7 +82,7 @@ export default function AdminSystemHealthPage() {
               onChange={(e) => setAutoRefresh(e.target.checked)}
               className="rounded bg-zinc-950 border-white/20 text-white focus:ring-0"
             />
-            <span>Tự động cập nhật (15s)</span>
+            <span>Auto-refresh (15s)</span>
           </label>
 
           <button
@@ -97,7 +97,7 @@ export default function AdminSystemHealthPage() {
             >
               refresh
             </span>
-            <span>{loading ? "Đang kiểm tra..." : "Kiểm Tra Lại"}</span>
+            <span>{loading ? "Checking..." : "Check again"}</span>
           </button>
         </div>
       </div>
@@ -110,13 +110,13 @@ export default function AdminSystemHealthPage() {
             onClick={() => checkHealth()}
             className="mt-4 px-4 py-2 rounded-xl bg-white text-black text-xs font-semibold"
           >
-            Thử lại
+            Try again
           </button>
         </div>
       ) : !health ? (
         <div className="p-12 text-center text-zinc-500 text-xs">
           <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-2" />
-          Đang kết nối và đo lường trạng thái các dịch vụ...
+          Connecting to services and checking their status...
         </div>
       ) : (
         <div className="space-y-6">
@@ -128,10 +128,10 @@ export default function AdminSystemHealthPage() {
               </div>
               <div>
                 <div className="text-base font-semibold text-white">
-                  Toàn Bộ Hạ Tầng Sẵn Sàng (100% Operational)
+                  All infrastructure is ready (100% operational)
                 </div>
                 <div className="text-xs text-zinc-400 mt-0.5">
-                  Lần kiểm tra gần nhất:{" "}
+                  Last checked:{" "}
                   <span className="text-zinc-300 font-mono">
                     {lastUpdated.toLocaleTimeString("vi-VN")}
                   </span>
@@ -140,7 +140,7 @@ export default function AdminSystemHealthPage() {
             </div>
 
             <div className="text-xs text-zinc-400 font-mono">
-              Uptime máy chủ:{" "}
+              Server uptime:{" "}
               <span className="text-emerald-400 font-bold">
                 {formatUptime(health.services.backend.uptimeSeconds)}
               </span>
@@ -168,19 +168,19 @@ export default function AdminSystemHealthPage() {
 
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Đang hoạt động
+                  Operational
                 </span>
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="p-3 rounded-xl bg-zinc-950/60 border border-white/5">
-                  <span className="text-[10px] text-zinc-500 uppercase font-mono">Độ trễ Ping DB</span>
+                  <span className="text-[10px] text-zinc-500 uppercase font-mono">Database ping latency</span>
                   <div className="text-lg font-bold text-emerald-400 font-mono mt-0.5">
                     {health.services.database.latencyMs} ms
                   </div>
                 </div>
                 <div className="p-3 rounded-xl bg-zinc-950/60 border border-white/5">
-                  <span className="text-[10px] text-zinc-500 uppercase font-mono">Trạng thái kết nối</span>
+                  <span className="text-[10px] text-zinc-500 uppercase font-mono">Connection status</span>
                   <div className="text-lg font-bold text-white font-mono mt-0.5">
                     ReadyState {health.services.database.readyState}
                   </div>
@@ -188,7 +188,7 @@ export default function AdminSystemHealthPage() {
               </div>
 
               <p className="text-[11px] text-zinc-400 leading-relaxed">
-                Kết nối ổn định đến cơ sở dữ liệu MongoDB Atlas. Hỗ trợ đầy đủ các transaction phân bổ doanh thu Creator và nhật ký kiểm toán.
+                Stable connection to MongoDB Atlas. Supports creator revenue transactions and audit logs.
               </p>
             </div>
 
@@ -211,19 +211,19 @@ export default function AdminSystemHealthPage() {
 
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
                   <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-                  Đang hoạt động
+                  Operational
                 </span>
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="p-3 rounded-xl bg-zinc-950/60 border border-white/5">
-                  <span className="text-[10px] text-zinc-500 uppercase font-mono">Độ trễ CDN</span>
+                  <span className="text-[10px] text-zinc-500 uppercase font-mono">CDN latency</span>
                   <div className="text-lg font-bold text-blue-400 font-mono mt-0.5">
                     {health.services.storage.latency} ms
                   </div>
                 </div>
                 <div className="p-3 rounded-xl bg-zinc-950/60 border border-white/5">
-                  <span className="text-[10px] text-zinc-500 uppercase font-mono">Giao thức truyền tải</span>
+                  <span className="text-[10px] text-zinc-500 uppercase font-mono">Delivery protocol</span>
                   <div className="text-lg font-bold text-white font-mono mt-0.5">
                     HTTPS / WebP CDN
                   </div>
@@ -231,7 +231,7 @@ export default function AdminSystemHealthPage() {
               </div>
 
               <p className="text-[11px] text-zinc-400 leading-relaxed">
-                Lưu trữ và phân phối hình ảnh thumbnail 3D, file texture và mô hình GLB/USDZ với bộ nhớ đệm toàn cầu tốc độ cao.
+                Stores and delivers 3D thumbnails, texture files, and GLB/USDZ models through a fast global cache.
               </p>
             </div>
 
@@ -254,19 +254,19 @@ export default function AdminSystemHealthPage() {
 
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20">
                   <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
-                  Đang hoạt động
+                  Operational
                 </span>
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="p-3 rounded-xl bg-zinc-950/60 border border-white/5">
-                  <span className="text-[10px] text-zinc-500 uppercase font-mono">Độ trễ phản hồi</span>
+                  <span className="text-[10px] text-zinc-500 uppercase font-mono">Response latency</span>
                   <div className="text-lg font-bold text-purple-400 font-mono mt-0.5">
                     {health.services.aiEngine.latency} ms
                   </div>
                 </div>
                 <div className="p-3 rounded-xl bg-zinc-950/60 border border-white/5">
-                  <span className="text-[10px] text-zinc-500 uppercase font-mono">Tính năng hỗ trợ</span>
+                  <span className="text-[10px] text-zinc-500 uppercase font-mono">Supported features</span>
                   <div className="text-lg font-bold text-white font-mono mt-0.5">
                     Text-to-Slide & 3D
                   </div>
@@ -274,7 +274,7 @@ export default function AdminSystemHealthPage() {
               </div>
 
               <p className="text-[11px] text-zinc-400 leading-relaxed">
-                {health.services.aiEngine.details}. Sẵn sàng xử lý các prompt tạo slide tự động và gợi ý hoạt ảnh thời gian thực.
+                {health.services.aiEngine.details}. Ready to generate slides and provide real-time animation suggestions.
               </p>
             </div>
 
@@ -297,7 +297,7 @@ export default function AdminSystemHealthPage() {
 
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                  Đang hoạt động
+                  Operational
                 </span>
               </div>
 
@@ -323,7 +323,7 @@ export default function AdminSystemHealthPage() {
               </div>
 
               <p className="text-[11px] text-zinc-400 leading-relaxed">
-                Máy chủ Express đang xử lý các API endpoint quản trị, PayOS webhook và quản lý trạng thái phiên làm việc ổn định.
+                The Express server is handling admin API endpoints, PayOS webhooks, and session state reliably.
               </p>
             </div>
           </div>

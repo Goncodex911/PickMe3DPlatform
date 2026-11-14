@@ -8,6 +8,8 @@ const {
   deleteUserProfile,
   getPublicProfile,
   getPublicProfileByUsername,
+  addCreatorReview,
+  deleteCreatorReview,
 } = require('../controllers/userController');
 const { protect } = require('../middlewares/authMiddleware');
 
@@ -23,6 +25,10 @@ router.route('/profile')
 const social = require('../controllers/socialController');
 router.get('/activity', protect, social.activityFeed);
 router.route('/:id/follow').get(protect, social.followStatus).put(protect, social.setFollow).delete(protect, social.setFollow);
+
+// Creator reviews & ratings
+router.post('/:id/review', protect, addCreatorReview);
+router.delete('/:id/review/:reviewId', protect, deleteCreatorReview);
 
 // Public profile routes (no auth required)
 router.route('/username/:username').get(getPublicProfileByUsername);

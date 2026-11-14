@@ -3,24 +3,25 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ActivityItem, getActivity } from "@/lib/socialService";
+import { getCreatorProfileHref } from "@/lib/userService";
 import styles from "./activity.module.css";
 
-function creatorHref(username?: string) {
-  return username ? `/creator/?username=${encodeURIComponent(username)}` : "/templates/";
+function creatorHref(creator: ActivityItem["creator"]) {
+  return getCreatorProfileHref(creator, creator.name) || "/templates/";
 }
 
 function displayDate(value: string) {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Vừa cập nhật";
-  return new Intl.DateTimeFormat("vi-VN", { day: "numeric", month: "short", year: "numeric" }).format(date);
+  if (Number.isNaN(date.getTime())) return "Just updated";
+  return new Intl.DateTimeFormat("en-US", { day: "numeric", month: "short", year: "numeric" }).format(date);
 }
 
 function feedErrorMessage(reason: unknown) {
   const message = reason instanceof Error ? reason.message : "";
   if (/unauthorized|not authorized|\b401\b|session has expired/i.test(message)) {
-    return "Phiên đăng nhập đã hết hạn. Đăng nhập lại để xem bảng tin.";
+    return "Your session has expired. Sign in again to view your activity feed.";
   }
-  return "Không thể tải bảng tin lúc này. Vui lòng thử lại.";
+  return "Couldn’t load the activity feed. Please try again.";
 }
 
 function FeedCard({ item }: { item: ActivityItem }) {
@@ -30,15 +31,15 @@ function FeedCard({ item }: { item: ActivityItem }) {
   return (
     <article className={styles.activityCard}>
       <header className={styles.authorRow}>
-        <Link className={styles.avatarLink} href={creatorHref(item.creator.username)} aria-label={`Xem hồ sơ ${name}`}>
+        <Link className={styles.avatarLink} href={creatorHref(item.creator)} aria-label={`View ${name}’s profile`}>
           {item.creator.picture ? (
             <img src={item.creator.picture} alt="" loading="lazy" />
           ) : (
-            <span aria-hidden="true">{name.trim().charAt(0).toLocaleUpperCase("vi-VN") || "C"}</span>
+            <span aria-hidden="true">{name.trim().charAt(0).toLocaleUpperCase("en-US") || "C"}</span>
           )}
         </Link>
         <div className={styles.authorInfo}>
-          <Link href={creatorHref(item.creator.username)}>{name}</Link>
+          <Link href={creatorHref(item.creator)}>{name}</Link>
           <span>{item.creator.username ? `@${item.creator.username}` : "PickMe3D Creator"}</span>
         </div>
         <time className={styles.timestamp} dateTime={item.createdAt}>{displayDate(item.createdAt)}</time>
@@ -46,25 +47,25 @@ function FeedCard({ item }: { item: ActivityItem }) {
 
       <p className={styles.activityLine}>
         <span className="material-symbols-rounded" aria-hidden="true">palette</span>
-        vừa chia sẻ một thiết kế
+        shared a design
       </p>
 
       <Link className={styles.designCard} href={`/templates/${item._id}/`}>
         <div className={styles.designCover}>
           {image ? (
-            <img src={image} alt={`Ảnh bìa thiết kế ${item.title}`} loading="lazy" />
+            <img src={image} alt={`Cover image for ${item.title}`} loading="lazy" />
           ) : (
             <div className={styles.coverFallback} aria-hidden="true">
               <span className="material-symbols-rounded">auto_awesome</span>
               <span>PickMe3D</span>
             </div>
           )}
-          <span className={styles.newBadge}>Thiết kế mới</span>
+          <span className={styles.newBadge}>New design</span>
         </div>
         <div className={styles.designInfo}>
           <div>
-            <h2>{item.title || "Thiết kế chưa đặt tên"}</h2>
-            <p>Khám phá thiết kế và xem thông tin Creator.</p>
+            <h2>{item.title || "Untitled design"}</h2>
+            <p>Explore the design and view creator details.</p>
           </div>
           <span className={`material-symbols-rounded ${styles.openIcon}`} aria-hidden="true">arrow_outward</span>
         </div>
@@ -75,7 +76,7 @@ function FeedCard({ item }: { item: ActivityItem }) {
 
 function FeedSkeleton() {
   return (
-    <div className={styles.skeletonList} role="status" aria-label="Đang tải bảng tin">
+    <div className={styles.skeletonList} role="status" aria-label="Loading activity feed">
       {[0, 1, 2].map((item) => <div className={styles.skeletonCard} key={item} />)}
     </div>
   );
@@ -120,29 +121,29 @@ export default function ActivityPage() {
       <div className={styles.container}>
         <header className={styles.pageHeader}>
           <div>
-            <p className={styles.eyebrow}><span className="material-symbols-rounded" aria-hidden="true">forum</span>CỘNG ĐỒNG PICKME3D</p>
-            <h1>Bảng tin hoạt động</h1>
-            <p className={styles.lede}>Thiết kế mới từ Creator bạn theo dõi.</p>
+            <p className={styles.eyebrow}><span className="material-symbols-rounded" aria-hidden="true">forum</span>THE PICKME3D COMMUNITY</p>
+            <h1>Activity feed</h1>
+            <p className={styles.lede}>New designs from creators you follow.</p>
           </div>
           <Link className={styles.discoverButton} href="/templates/">
             <span className="material-symbols-rounded" aria-hidden="true">explore</span>
-            Khám phá Creator
+            Explore creators
           </Link>
         </header>
 
-        <section className={styles.feed} aria-label="Thiết kế từ Creator bạn theo dõi">
+        <section className={styles.feed} aria-label="Designs from creators you follow">
           <div className={styles.feedHeading}>
             <span className="material-symbols-rounded" aria-hidden="true">schedule</span>
-            <h2>Mới nhất</h2>
-            {items.length > 0 && <span className={styles.itemCount}>{items.length} bài đăng</span>}
+            <h2>Latest</h2>
+            {items.length > 0 && <span className={styles.itemCount}>{items.length} posts</span>}
           </div>
 
           {!signedIn && !loading && (
             <div className={styles.emptyState}>
               <span className={styles.emptyIcon} aria-hidden="true"><span className="material-symbols-rounded">person_add</span></span>
-              <h2>Đăng nhập để xem bảng tin</h2>
-              <p>Theo dõi Creator để cập nhật những thiết kế mới nhất.</p>
-              <Link href="/login/" className={styles.discoverButton}>Đăng nhập</Link>
+              <h2>Sign in to view your activity feed</h2>
+              <p>Follow creators to keep up with their latest designs.</p>
+              <Link href="/login/" className={styles.discoverButton}>Sign in</Link>
             </div>
           )}
 
@@ -150,9 +151,9 @@ export default function ActivityPage() {
             <div className={styles.errorState} role="alert">
               <span className="material-symbols-rounded" aria-hidden="true">cloud_off</span>
               <p>{error}</p>
-              {error.includes("Đăng nhập lại")
-                ? <Link href="/login/" className={styles.errorLink}>Đăng nhập</Link>
-                : <button type="button" onClick={() => setRetry((value) => value + 1)}>Thử lại</button>}
+              {error.includes("Sign in again")
+                ? <Link href="/login/" className={styles.errorLink}>Sign in</Link>
+                : <button type="button" onClick={() => setRetry((value) => value + 1)}>Try again</button>}
             </div>
           )}
 
@@ -161,11 +162,11 @@ export default function ActivityPage() {
           {signedIn && !loading && !error && items.length === 0 && (
             <div className={styles.emptyState}>
               <span className={styles.emptyIcon} aria-hidden="true"><span className="material-symbols-rounded">dynamic_feed</span></span>
-              <h2>Bảng tin đang yên ắng</h2>
-              <p>Theo dõi Creator để thấy thiết kế mới của họ ở đây.</p>
+              <h2>Your feed is quiet</h2>
+              <p>Follow creators to see their new designs here.</p>
               <Link href="/templates/" className={styles.discoverButton}>
                 <span className="material-symbols-rounded" aria-hidden="true">person_search</span>
-                Tìm Creator
+                Find creators
               </Link>
             </div>
           )}
@@ -178,7 +179,7 @@ export default function ActivityPage() {
 
           {more && !error && (
             <button className={styles.loadMore} type="button" disabled={loading} onClick={() => setPage((value) => value + 1)}>
-              {loading ? "Đang tải…" : "Tải thêm"}
+              {loading ? "Loading…" : "Load more"}
               <span className="material-symbols-rounded" aria-hidden="true">expand_more</span>
             </button>
           )}

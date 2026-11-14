@@ -558,6 +558,7 @@ export async function updateReportStatusApi(
     status?: "pending" | "investigating" | "resolved" | "dismissed";
     resolutionNotes?: string;
     priority?: "low" | "medium" | "high" | "critical";
+    sendCreatorWarning?: boolean;
   }
 ): Promise<{ success: boolean; data?: IncidentReport; message?: string }> {
   try {

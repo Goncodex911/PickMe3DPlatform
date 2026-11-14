@@ -1,0 +1,180 @@
+.page {
+  --creator-background: #131313;
+  --creator-surface: #1c1c1c;
+  --creator-border: #363636;
+  min-height: 100vh;
+  background: var(--creator-background);
+  color: #fff;
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+.page * {
+  box-sizing: border-box;
+}
+
+.page a:focus-visible,
+.page button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.page :global([class*="bg-[#070b14]"]),
+.page :global([class*="bg-[#0a0e17]"]),
+.page :global([class*="bg-[#05080e]"]) {
+  background-color: var(--creator-background);
+}
+
+.page :global([class*="bg-[#0e1422]"]),
+.page :global([class*="bg-slate-950"]),
+.page :global([class*="bg-slate-900"]),
+.page :global([class*="bg-slate-800"]) {
+  background-color: var(--creator-surface);
+}
+
+.page :global([class*="text-red-"]),
+.page :global([class*="text-rose-"]),
+.page :global([class*="text-amber-"]),
+.page :global([class*="text-emerald-"]),
+.page :global([class*="text-blue-"]),
+.page :global([class*="text-cyan-"]),
+.page :global([class*="text-indigo-"]),
+.page :global([class*="text-violet-"]),
+.page :global([class*="text-purple-"]),
+.page :global([class*="text-pink-"]),
+.page :global([class*="text-fuchsia-"]) {
+  color: #ccc;
+}
+
+.page :global([class*="text-slate-"]) {
+  color: #aaa;
+}
+
+.page :global([class*="border-red-"]),
+.page :global([class*="border-rose-"]),
+.page :global([class*="border-amber-"]),
+.page :global([class*="border-emerald-"]),
+.page :global([class*="border-blue-"]),
+.page :global([class*="border-cyan-"]),
+.page :global([class*="border-t-red-"]),
+.page :global([class*="border-t-rose-"]),
+.page :global([class*="border-t-amber-"]) {
+  border-color: #555;
+}
+
+.page :global([class*="bg-red-"]),
+.page :global([class*="bg-rose-"]),
+.page :global([class*="bg-amber-"]),
+.page :global([class*="bg-emerald-"]),
+.page :global([class*="bg-blue-"]),
+.page :global([class*="bg-cyan-"]),
+.page :global([class*="bg-indigo-"]),
+.page :global([class*="bg-violet-"]),
+.page :global([class*="bg-purple-"]),
+.page :global([class*="bg-pink-"]),
+.page :global([class*="bg-fuchsia-"]) {
+  background-color: var(--creator-surface);
+}
+
+.page :global(a[href="/activity/"]) {
+  color: #aaa;
+}
+
+.page :global(a[href="/activity/"]:hover) {
+  color: #fff;
+}
+
+.page :global([class*="bg-gradient-to-r"]) {
+  background-color: #fff !important;
+  background-image: none !important;
+  border-color: #fff;
+  color: #131313 !important;
+  box-shadow: none !important;
+}
+
+.page :global([class*="bg-gradient-to-r"]) :global(*) {
+  color: #131313 !important;
+}
+
+.page :global([class*="bg-red-600"]) {
+  background-color: #fff !important;
+  border-color: #fff;
+  color: #131313 !important;
+}
+
+.page :global([class*="bg-red-600"]) :global(*) {
+  color: #131313 !important;
+}
+
+.page :global(button[class*="bg-white/15"]) {
+  background-color: #fff;
+  color: #131313;
+  box-shadow: none;
+}
+
+.page :global(button[class*="bg-white/15"]) :global(*) {
+  color: #131313;
+}
+
+.page :global([class*="shadow-[0_0_"]) {
+  box-shadow: none !important;
+}
+
+.page :global(div[class*="blur-"][class*="bg-red-"]),
+.page :global(div[class*="blur-"][class*="bg-rose-"]) {
+  display: none;
+}
+
+.page :global(section.relative img[class*="rounded-full"]) {
+  border-color: var(--creator-border);
+  box-shadow: none;
+}
+
+.page :global([class*="text-amber-"] .material-symbols-rounded),
+.page :global(span.material-symbols-rounded[class*="text-amber-"]) {
+  color: #facc15 !important;
+  font-variation-settings: "FILL" 1, "wght" 600, "GRAD" 0, "opsz" 24 !important;
+}
+
+.star {
+  color: #facc15 !important;
+  font-variation-settings: "FILL" 1, "wght" 600, "GRAD" 0, "opsz" 24 !important;
+}
+
+.starOutline {
+  color: #facc15 !important;
+  font-variation-settings: "FILL" 0, "wght" 600, "GRAD" 0, "opsz" 24 !important;
+}
+
+.page :global([class*="rounded-sm"]),
+.page :global([class*="rounded-md"]),
+.page :global([class*="rounded-lg"]),
+.page :global([class*="rounded-xl"]),
+.page :global([class*="rounded-2xl"]),
+.page :global([class*="rounded-full"]) {
+  border-radius: 4px !important;
+}
+
+.page :global(img[class*="rounded-full"]),
+.page :global(span[class*="bg-emerald-"]) {
+  border-radius: 50% !important;
+}
+
+.page :global(span[class*="bg-emerald-"]) {
+  background-color: #fff !important;
+}
+
+.page :global(button),
+.page :global(a) {
+  min-width: 44px;
+  min-height: 44px;
+  touch-action: manipulation;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page :global(*) {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

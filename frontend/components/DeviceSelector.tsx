@@ -90,7 +90,7 @@ export default function DeviceSelector({
     ? landscape
       ? `${activeDevice.name} (Ngang)`
       : activeDevice.name
-    : "Chọn thiết bị Viewport";
+    : "Select viewport device";
 
   const btn = (
     label: string,
@@ -130,7 +130,7 @@ export default function DeviceSelector({
         aria-haspopup="true"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        title="Chọn preset thiết bị"
+        title="Choose a device preset"
         style={{
           width: "100%",
           height: 36,
@@ -168,7 +168,7 @@ export default function DeviceSelector({
         {open && (
           <motion.div
             role="dialog"
-            aria-label="Chọn preset thiết bị"
+            aria-label="Choose a device preset"
             initial={{ opacity: 0, y: 8, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.96 }}
@@ -203,7 +203,7 @@ export default function DeviceSelector({
               {/* Orientation toggle */}
               {tab !== "desktop" && (
                 <button
-                  title={landscape ? "Chuyển sang Portrait" : "Chuyển sang Landscape"}
+                  title={landscape ? "Switch to portrait" : "Switch to landscape"}
                   onClick={() => setLandscape((v) => !v)}
                   style={{
                     height: 26,
@@ -218,13 +218,13 @@ export default function DeviceSelector({
                     flexShrink: 0,
                   }}
                 >
-                  {landscape ? "Ngang" : "Dọc"}
+                  {landscape ? "Landscape" : "Portrait"}
                 </button>
               )}
               {/* Clear selection */}
               {activeDeviceId && (
                 <button
-                  title="Xoá preset thiết bị"
+                  title="Delete device preset"
                   onClick={handleClear}
                   style={{
                     height: 26,
@@ -239,7 +239,7 @@ export default function DeviceSelector({
                     flexShrink: 0,
                   }}
                 >
-                  Mặc định
+                  Default
                 </button>
               )}
             </div>
@@ -315,7 +315,7 @@ export default function DeviceSelector({
                           background: `${primaryColor}20`,
                         }}
                       >
-                        Đang chọn
+                        Selected
                       </span>
                     )}
                   </button>

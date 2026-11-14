@@ -26,6 +26,7 @@ const notificationSchema = new mongoose.Schema(
         'payout_rejected',
         'report_submitted',
         'report_resolved',
+        'creator_warning',
         'appeal_submitted',
         'appeal_resolved',
         'system',

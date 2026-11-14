@@ -905,7 +905,7 @@ function Body({ item, p, tabScroll, menuShown, interactive, dragging }: { item: 
       const glow = item.animationGlow !== false;
       const isInteractiveOnCanvas = Boolean(item.animationInteractive);
 
-      // Siêu mượt: Khi đang kéo thả (dragging), hiển thị bản xem trước GPU cực nhẹ không tải lại iframe để đảm bảo 120 FPS
+      // Keep dragging smooth: show a lightweight GPU preview without reloading the iframe.
       if (dragging) {
         return (
           <div
@@ -938,7 +938,7 @@ function Body({ item, p, tabScroll, menuShown, interactive, dragging }: { item: 
         );
       }
 
-      // Dịch tất cả các chuỗi tiếng Hàn còn sót lại sang tiếng Anh
+      // Translate any remaining Korean strings into English.
       const KR_REPLACEMENTS: [string | RegExp, string][] = [
         [/프로젝트 시작하기/g, "Start a project"],
         [/준비됐어요/g, "You’re all set"],
@@ -1130,7 +1130,7 @@ ${html}
 ${demoScript}
 <script>
 (function() {
-  // Cập nhật chữ tùy chỉnh vào nút nếu có
+  // Update the button label when custom text is provided.
   var customText = ${JSON.stringify(customLabel)};
   if (customText) {
     function applyCustomText() {
@@ -1155,7 +1155,7 @@ ${demoScript}
     setTimeout(applyCustomText, 50);
   }
 
-  // Tự động scale cho vừa vặn container, tuyệt đối không bao giờ xuất hiện thanh cuộn
+  // Scale to fit the container without introducing scrollbars.
   function fit() {
     var el = document.querySelector('.ux');
     if (!el) return;
@@ -1232,7 +1232,7 @@ ${demoScript}
                 }}
                 title={title}
               />
-              {/* Badge thông báo trạng thái đang tương tác trực tiếp */}
+              {/* Badge showing direct interaction status */}
               {interactive && isInteractiveOnCanvas && (
                 <div
                   aria-hidden
@@ -1260,7 +1260,7 @@ ${demoScript}
                   LIVE
                 </div>
               )}
-              {/* Overlay trong suốt khi ở chế độ canvas edit để nhấp chọn và kéo thả node; nhấp đúp để bật tương tác trực tiếp */}
+              {/* Transparent canvas edit overlay: click to select, drag to move, double-click to interact */}
               {interactive && !isInteractiveOnCanvas && (
                 <div
                   aria-hidden
@@ -1275,7 +1275,7 @@ ${demoScript}
                     zIndex: 2,
                     background: "transparent",
                   }}
-                  title="Nhấp để chọn • Kéo để di chuyển • Nhấp đúp để bật tương tác trực tiếp"
+                  title="Click to select • Drag to move • Double-click to interact"
                 />
               )}
             </>

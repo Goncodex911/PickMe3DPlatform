@@ -85,11 +85,11 @@ export default function VersionHistoryDrawer({
       setNewVersionName("");
       setNewVersionDesc("");
       setShowCreateModal(false);
-      showToast(`Đã tạo snapshot "${created.versionName}" thành công!`);
+      showToast(`Snapshot “${created.versionName}” created successfully.`);
       await loadVersions();
     } catch (err) {
       console.error(err);
-      showToast("Lỗi khi tạo snapshot");
+      showToast("Couldn’t create the snapshot.");
     }
   };
 
@@ -114,15 +114,15 @@ export default function VersionHistoryDrawer({
 
       if (res.success && (res.docData || targetDocData)) {
         onRollback(res.docData || targetDocData);
-        showToast(`Đã khôi phục về phiên bản V${confirmingRollback.versionNumber}!`);
+        showToast(`Restored version V${confirmingRollback.versionNumber}.`);
         setConfirmingRollback(null);
         onClose();
       } else {
-        showToast(res.message || "Khôi phục phiên bản thất bại");
+        showToast("Couldn’t restore this version.");
       }
     } catch (err) {
       console.error(err);
-      showToast("Có lỗi xảy ra khi khôi phục phiên bản");
+      showToast("An error occurred while restoring this version.");
     } finally {
       setRollingBack(false);
     }
@@ -136,7 +136,7 @@ export default function VersionHistoryDrawer({
 
   const formatTime = (ts: string | number) => {
     const d = new Date(ts);
-    return d.toLocaleString("vi-VN", {
+    return d.toLocaleString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
       day: "2-digit",
@@ -156,7 +156,6 @@ export default function VersionHistoryDrawer({
         display: "flex",
         justifyContent: "flex-end",
         backgroundColor: "rgba(0,0,0,0.45)",
-        backdropFilter: "blur(4px)",
       }}
     >
       {/* Toast Alert */}
@@ -208,9 +207,9 @@ export default function VersionHistoryDrawer({
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             
             <div>
-              <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Lịch sử phiên bản (Version History)</h2>
+              <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Version history</h2>
               <p style={{ margin: 0, fontSize: 12, color: onSurfaceVariantColor }}>
-                Theo dõi & Khôi phục (Rollback) các mốc thiết kế
+                Browse and restore saved design versions
               </p>
             </div>
           </div>
@@ -246,7 +245,7 @@ export default function VersionHistoryDrawer({
           <div style={{ display: "flex", gap: 6 }}>
             {(["all", "snapshots", "autosaves"] as const).map((key) => {
               const label =
-                key === "all" ? "Tất cả" : key === "snapshots" ? "Mốc Snapshot" : "Tự động";
+                key === "all" ? "All" : key === "snapshots" ? "Snapshots" : "Automatic";
               const active = filter === key;
               return (
                 <button
@@ -288,7 +287,7 @@ export default function VersionHistoryDrawer({
               boxShadow: "0 2px 8px rgba(99, 102, 241, 0.4)",
             }}
           >
-            + Lưu Snapshot
+            + Save snapshot
           </button>
         </div>
 
@@ -296,11 +295,11 @@ export default function VersionHistoryDrawer({
         <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
           {loading ? (
             <div style={{ textAlign: "center", padding: "40px 0", color: onSurfaceVariantColor, fontSize: 13 }}>
-              Đang tải danh sách phiên bản...
+              Loading version history...
             </div>
           ) : filteredVersions.length === 0 ? (
             <div style={{ textAlign: "center", padding: "40px 0", color: onSurfaceVariantColor, fontSize: 13 }}>
-              Chưa có phiên bản nào được lưu trong bộ lọc này.
+              No versions match this filter.
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -400,7 +399,7 @@ export default function VersionHistoryDrawer({
                     }}
                   >
                     <span>
-                      {v.stats?.frameCount ?? 0} màn hình • {v.stats?.nodeCount ?? 0} phần tử
+                      {v.stats?.frameCount ?? 0} screens • {v.stats?.nodeCount ?? 0} elements
                     </span>
                     <span>{formatTime(v.createdAt)}</span>
                   </div>
@@ -435,7 +434,7 @@ export default function VersionHistoryDrawer({
                       e.currentTarget.style.color = onSurfaceColor;
                     }}
                   >
-                    ↩️ Khôi phục bản này (Rollback)
+                    ↩️ Restore this version
                   </button>
                 </div>
               ))}
@@ -469,21 +468,21 @@ export default function VersionHistoryDrawer({
               }}
             >
               <h3 style={{ margin: "0 0 12px", fontSize: 16, fontWeight: 700 }}>
-                Tạo mốc lưu thiết kế (Snapshot)
+                Save a design snapshot
               </h3>
               <p style={{ margin: "0 0 16px", fontSize: 13, color: onSurfaceVariantColor }}>
-                Đặt tên cho mốc này để dễ dàng quay lại bất kỳ lúc nào (ví dụ: &ldquo;Trước khi đổi nút Mua&rdquo;, &ldquo;Layout V2 Hoàn chỉnh&rdquo;).
+                Name this snapshot so you can find it later (for example, &ldquo;Before changing the buy button&rdquo; or &ldquo;Layout V2 complete&rdquo;).
               </p>
 
               <form onSubmit={handleCreateSnapshot}>
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
-                    Tên phiên bản *
+                    Version name *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="VD: Bản thiết kế Header mới"
+                    placeholder="For example: New header design"
                     value={newVersionName}
                     onChange={(e) => setNewVersionName(e.target.value)}
                     style={{
@@ -501,11 +500,11 @@ export default function VersionHistoryDrawer({
 
                 <div style={{ marginBottom: 20 }}>
                   <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
-                    Ghi chú chi tiết (Tùy chọn)
+                    Notes (optional)
                   </label>
                   <textarea
                     rows={3}
-                    placeholder="Ghi chú về các thay đổi chính trong bản này..."
+                    placeholder="Describe the main changes in this version..."
                     value={newVersionDesc}
                     onChange={(e) => setNewVersionDesc(e.target.value)}
                     style={{
@@ -536,7 +535,7 @@ export default function VersionHistoryDrawer({
                       fontSize: 13,
                     }}
                   >
-                    Hủy
+                    Cancel
                   </button>
                   <button
                     type="submit"
@@ -551,7 +550,7 @@ export default function VersionHistoryDrawer({
                       fontWeight: 600,
                     }}
                   >
-                    Lưu Snapshot
+                    Save snapshot
                   </button>
                 </div>
               </form>
@@ -587,12 +586,12 @@ export default function VersionHistoryDrawer({
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                 <span style={{ fontSize: 24 }}>⚠️</span>
                 <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#f59e0b" }}>
-                  Xác nhận khôi phục phiên bản V{confirmingRollback.versionNumber}?
+                  Restore version V{confirmingRollback.versionNumber}?
                 </h3>
               </div>
 
               <p style={{ margin: "0 0 14px", fontSize: 13, lineHeight: 1.5, color: onSurfaceVariantColor }}>
-                Toàn bộ các màn hình trên canvas sẽ được đưa về phiên bản{" "}
+                All screens on the canvas will be restored to version{" "}
                 <strong style={{ color: onSurfaceColor }}>
                   &ldquo;{confirmingRollback.versionName}&rdquo;
                 </strong>.
@@ -610,8 +609,8 @@ export default function VersionHistoryDrawer({
                   lineHeight: 1.4,
                 }}
               >
-                <strong>Bảo vệ an toàn dữ liệu:</strong> Hệ thống sẽ tự động tạo ngay một mốc sao lưu
-                dự phòng trạng thái hiện tại trước khi khôi phục, bạn hoàn toàn có thể quay lại bất cứ lúc nào!
+                <strong>Data safety:</strong> A backup of the current design will be created before restoring,
+                so you can return to it at any time.
               </div>
 
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
@@ -629,7 +628,7 @@ export default function VersionHistoryDrawer({
                     fontSize: 13,
                   }}
                 >
-                  Hủy
+                  Cancel
                 </button>
                 <button
                   type="button"
@@ -646,7 +645,7 @@ export default function VersionHistoryDrawer({
                     fontWeight: 700,
                   }}
                 >
-                  {rollingBack ? "Đang khôi phục..." : "Đồng ý khôi phục"}
+                  {rollingBack ? "Restoring..." : "Restore version"}
                 </button>
               </div>
             </div>

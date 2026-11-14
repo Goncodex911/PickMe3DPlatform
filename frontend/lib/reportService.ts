@@ -17,7 +17,16 @@ export interface ReportItem {
   reporter: string;
   reporterName: string;
   senderEmail?: string;
-  targetType: "template" | "review" | "creator" | "user" | "comment" | "system" | "presentation";
+  targetType:
+    | "template"
+    | "review"
+    | "creator"
+    | "CREATOR"
+    | "user"
+    | "comment"
+    | "system"
+    | "presentation"
+    | string;
   targetId?: string;
   targetTitle?: string;
   targetUrl?: string;
@@ -36,7 +45,16 @@ export interface ReportItem {
 
 export interface CreateReportPayload {
   ticketType?: "REPORT" | "APPEAL";
-  targetType?: "template" | "review" | "creator" | "user" | "comment" | "system" | "presentation";
+  targetType?:
+    | "template"
+    | "review"
+    | "creator"
+    | "CREATOR"
+    | "user"
+    | "comment"
+    | "system"
+    | "presentation"
+    | string;
   targetId?: string;
   targetTitle?: string;
   targetUrl?: string;
@@ -63,11 +81,11 @@ export async function createReportApi(payload: CreateReportPayload): Promise<{
     });
     const json = await res.json();
     if (!res.ok) {
-      return { success: false, message: json.message || "Gửi báo cáo / khiếu nại thất bại" };
+      return { success: false, message: json.message || "Could not submit the report or appeal." };
     }
     return json;
   } catch (err: any) {
-    return { success: false, message: err?.message || "Lỗi kết nối khi gửi báo cáo" };
+    return { success: false, message: err?.message || "Could not connect while submitting the report." };
   }
 }
 
@@ -92,11 +110,11 @@ export async function fetchMyReportsApi(ticketType?: "REPORT" | "APPEAL"): Promi
     });
     const json = await res.json();
     if (!res.ok) {
-      return { success: false, message: json.message || "Không thể tải danh sách báo cáo" };
+      return { success: false, message: json.message || "Could not load reports." };
     }
     return json;
   } catch (err: any) {
-    return { success: false, message: err?.message || "Lỗi kết nối khi tải danh sách báo cáo" };
+    return { success: false, message: err?.message || "Could not connect while loading reports." };
   }
 }
 

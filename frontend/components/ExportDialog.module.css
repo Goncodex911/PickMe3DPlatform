@@ -1,4 +1,4 @@
-.overlay { position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center; padding:20px; background:#0006; backdrop-filter:blur(4px); font-family:var(--font-ui); }
+.overlay { position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center; padding:20px; background:#0006; font-family:var(--font-ui); }
 .dialog { width:100%; max-width:460px; max-height:90vh; max-height:90svh; display:flex; flex-direction:column; overflow:hidden; background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:16px; box-shadow:0 20px 70px #0003; font-size:13px; }
 .dialog * { box-sizing:border-box; }
 .dialog button,.dialog input,.dialog select,.dialog textarea { font:inherit; }

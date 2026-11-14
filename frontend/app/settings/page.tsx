@@ -9,8 +9,8 @@ import styles from "./settings.module.css";
 
 const SETTINGS_TABS = [
   ["ai", "AI"],
-  ["security", "Bảo mật"],
-  ["billing", "Biên lai"],
+  ["security", "Security"],
+  ["billing", "Billing"],
 ] as const;
 
 export default function SettingsPage() {
@@ -56,7 +56,7 @@ export default function SettingsPage() {
   return (
     <main className={styles.page}>
       <div className={styles.container}>
-        <nav className={styles.tabs} aria-label="Các mục cài đặt" role="tablist">
+        <nav className={styles.tabs} aria-label="Settings sections" role="tablist">
           {SETTINGS_TABS.map(([id, label], index) =>
             <button
               key={id}

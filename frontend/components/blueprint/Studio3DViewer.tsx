@@ -464,7 +464,7 @@ export default function Studio3DViewer({
               internalViewMode === "2d" ? "bg-amber-400 text-black shadow" : "text-neutral-400 hover:text-white"
             }`}
           >
-            2D Mặt Bằng
+            2D Floor Plan
           </button>
           <button
             onClick={() => handleSwitchMode("3d")}
@@ -472,7 +472,7 @@ export default function Studio3DViewer({
               internalViewMode === "3d" ? "bg-amber-400 text-black shadow" : "text-neutral-400 hover:text-white"
             }`}
           >
-            3D Phối Cảnh
+            3D Render
           </button>
           <button
             onClick={() => handleSwitchMode("orbit")}
@@ -480,7 +480,7 @@ export default function Studio3DViewer({
               internalViewMode === "orbit" ? "bg-amber-400 text-black shadow" : "text-neutral-400 hover:text-white"
             }`}
           >
-            Xoay Tự Do 360°
+            Free Rotate 360°
           </button>
         </div>
 
@@ -489,28 +489,28 @@ export default function Studio3DViewer({
           <div className="flex items-center gap-1 p-1 rounded-xl bg-[#1a1e27]/90 backdrop-blur-md border border-[#2e3646] shadow-xl text-xs">
             <button
               onClick={() => setCurrentTimeOfDay("morning")}
-              title="Bình minh"
+              title="Sunrise"
               className={`p-1.5 rounded-lg transition ${currentTimeOfDay === "morning" ? "bg-white/10 text-amber-300" : "text-neutral-400 hover:text-white"}`}
             >
               🌅
             </button>
             <button
               onClick={() => setCurrentTimeOfDay("noon")}
-              title="Trưa nắng"
+              title="Midday"
               className={`p-1.5 rounded-lg transition ${currentTimeOfDay === "noon" ? "bg-white/10 text-amber-300" : "text-neutral-400 hover:text-white"}`}
             >
               ☀️
             </button>
             <button
               onClick={() => setCurrentTimeOfDay("golden_hour")}
-              title="Hoàng hôn"
+              title="Sunset"
               className={`p-1.5 rounded-lg transition ${currentTimeOfDay === "golden_hour" ? "bg-white/10 text-amber-300" : "text-neutral-400 hover:text-white"}`}
             >
               🌇
             </button>
             <button
               onClick={() => setCurrentTimeOfDay("night")}
-              title="Ban đêm"
+              title="Night"
               className={`p-1.5 rounded-lg transition ${currentTimeOfDay === "night" ? "bg-white/10 text-amber-300" : "text-neutral-400 hover:text-white"}`}
             >
               🌙
@@ -522,7 +522,7 @@ export default function Studio3DViewer({
             className="px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-semibold text-xs shadow-lg shadow-amber-500/20 transition flex items-center gap-1.5"
           >
             <span>📸</span>
-            <span>Xuất Ảnh 3D</span>
+            <span>Export 3D Image</span>
           </button>
         </div>
       </div>
@@ -532,7 +532,7 @@ export default function Studio3DViewer({
         <div className="absolute bottom-4 left-4 right-4 pointer-events-none z-10 flex items-center justify-center">
           <div className="pointer-events-auto flex items-center gap-2 p-2 rounded-2xl bg-[#161a23]/95 backdrop-blur-xl border border-[#2b3342] shadow-2xl overflow-x-auto max-w-full">
             <span className="text-xs font-semibold text-neutral-400 px-2 uppercase font-mono">
-              Phòng:
+              Room:
             </span>
             {project.rooms.map((room) => {
               const isSelected = room.id === activeRoomId;
@@ -546,7 +546,7 @@ export default function Studio3DViewer({
                       : "bg-[#202531] text-neutral-300 hover:bg-[#2c3343] hover:text-white"
                   }`}
                 >
-                  <span>{room.vietnameseName || room.name}</span>
+                  <span>{room.name}</span>
                   <span className="text-[10px] opacity-75 font-mono">({room.area}m²)</span>
                 </button>
               );

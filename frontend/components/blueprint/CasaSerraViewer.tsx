@@ -150,10 +150,10 @@ function createArchitecturalBoardTexture(project: BlueprintProject): THREE.Textu
   // Dimension labels
   ctx.font = "bold 15px 'Courier New', monospace";
   ctx.fillStyle = "#4a4641";
-  ctx.fillText("Trục 1 - 4 : 24.000 m", 80, 42);
-  ctx.fillText("Trục A - D : 14.200 m", canvas.width - 290, 42);
-  ctx.fillText("Trục Cửa Trượt: Kính Low-E 3 Lớp", 80, canvas.height - 24);
-  ctx.fillText("Cao độ sàn hoàn thiện: ±0.000", canvas.width - 340, canvas.height - 24);
+  ctx.fillText("Axis 1 - 4: 24.000 m", 80, 42);
+  ctx.fillText("Axis A - D: 14.200 m", canvas.width - 290, 42);
+  ctx.fillText("Sliding Door: 3-Layer Low-E Glass", 80, canvas.height - 24);
+  ctx.fillText("Finished Floor Level: ±0.000", canvas.width - 340, canvas.height - 24);
 
   // Helper for drawing room cards exactly matching Image 3
   const drawRoom = (
@@ -231,28 +231,28 @@ function createArchitecturalBoardTexture(project: BlueprintProject): THREE.Textu
     });
   };
 
-  // ROOM 01: PHÒNG NGỦ MASTER (Top Left)
-  drawRoom(80, 80, 880, 640, "01", "PHÒNG NGỦ MASTER", "Nội thất gỗ sồi mộc tự nhiên • Cửa sổ kính lớn", "34.8 m²", [
-    { label: "Giường Kingsize", x: 340, y: 260, w: 280, h: 220 },
-    { label: "Gỗ Sồi Tự Nhiên", x: 380, y: 540, w: 200, h: 44 }
+  // ROOM 01: MASTER BEDROOM (Top Left)
+  drawRoom(80, 80, 880, 640, "01", "MASTER BEDROOM", "Natural oak interior • Large glass windows", "34.8 m²", [
+    { label: "King Bed", x: 340, y: 260, w: 280, h: 220 },
+    { label: "Natural Oak", x: 380, y: 540, w: 200, h: 44 }
   ]);
 
-  // ROOM 02: ĐẠI SẢNH & PHÒNG KHÁCH (Top Right)
-  drawRoom(1000, 80, 960, 640, "02", "ĐẠI SẢNH & PHÒNG KHÁCH", "Phòng Khách Panoramic - Cửa sổ Kính Lớn", "42.5 m²", [
-    { label: "Sofa Dài Mây", x: 1120, y: 320, w: 240, h: 100 },
-    { label: "Bàn Trà Travertine", x: 1420, y: 330, w: 160, h: 80, isOval: true },
+  // ROOM 02: GRAND LOBBY & LIVING ROOM (Top Right)
+  drawRoom(1000, 80, 960, 640, "02", "GRAND LOBBY & LIVING ROOM", "Panoramic living room • Large glass windows", "42.5 m²", [
+    { label: "Woven Sofa", x: 1120, y: 320, w: 240, h: 100 },
+    { label: "Travertine Coffee Table", x: 1420, y: 330, w: 160, h: 80, isOval: true },
     { label: "Wall Lounge", x: 1640, y: 310, w: 200, h: 120 }
   ]);
 
-  // ROOM 03: BẾP ĐẢO & DINING (Bottom Left)
-  drawRoom(80, 760, 880, 640, "03", "BẾP ĐẢO & DINING", "Bàn đảo đá Sa Thạch • Hệ tủ âm tường 600mm", "36.2 m²", [
-    { label: "Bàn Bếp Marble Đá Sa Thạch", x: 220, y: 920, w: 580, h: 120 },
-    { label: "Hệ Tủ Âm Tường 600mm", x: 280, y: 1140, w: 460, h: 70 }
+  // ROOM 03: KITCHEN ISLAND & DINING (Bottom Left)
+  drawRoom(80, 760, 880, 640, "03", "KITCHEN ISLAND & DINING", "Sandstone island • 600 mm built-in cabinetry", "36.2 m²", [
+    { label: "Sandstone Countertop", x: 220, y: 920, w: 580, h: 120 },
+    { label: "600 mm Built-in Cabinets", x: 280, y: 1140, w: 460, h: 70 }
   ]);
 
-  // ROOM 04: SÂN TRONG & VƯỜN ZEN (Bottom Right)
-  drawRoom(1000, 760, 960, 640, "04", "SÂN TRONG & VƯỜN ZEN", "Trục Cửa Trượt: Kính Low-E 2 Lớp • Cây Ô Lâu", "28.0 m²", [
-    { label: "Sàn Deck Gỗ Teak Tự Nhiên", x: 1140, y: 920, w: 680, h: 260, isHatch: true }
+  // ROOM 04: INNER PATIO & ZEN GARDEN (Bottom Right)
+  drawRoom(1000, 760, 960, 640, "04", "INNER PATIO & ZEN GARDEN", "Sliding doors: Double-layer Low-E glass • Olive tree", "28.0 m²", [
+    { label: "Natural Teak Deck", x: 1140, y: 920, w: 680, h: 260, isHatch: true }
   ]);
 
   // Technical Stamp Box in bottom-right
@@ -261,13 +261,13 @@ function createArchitecturalBoardTexture(project: BlueprintProject): THREE.Textu
   ctx.strokeRect(1540, 1370, 420, 80);
   ctx.fillStyle = "#1a1918";
   ctx.font = "bold 11px 'Courier New', monospace";
-  ctx.fillText("HỒ SƠ THI CÔNG | CĂN HỘ DUPLEX 9 PHÒNG", 1555, 1392);
+  ctx.fillText("CONSTRUCTION SET | 9-ROOM DUPLEX", 1555, 1392);
   ctx.font = "10px 'Courier New', monospace";
   ctx.fillStyle = "#4a4641";
-  ctx.fillText("TỶ LỆ: 1:50 | BẢN VẼ: A-101 REV D", 1555, 1414);
+  ctx.fillText("SCALE: 1:50 | DRAWING: A-101 REV D", 1555, 1414);
   ctx.font = "bold 10px 'Courier New', monospace";
   ctx.fillStyle = "#b85434";
-  ctx.fillText("KIẾN TRÚC SƯ: GON MARCUS [APPROVED]", 1555, 1436);
+  ctx.fillText("ARCHITECT: GON MARCUS [APPROVED]", 1555, 1436);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.needsUpdate = true;
@@ -402,7 +402,7 @@ export default function CasaSerraViewer({
         body: JSON.stringify({
           imageBase64: snapshotDataUrl,
           style: styleKey,
-          customPrompt: `Phối cảnh 3D căn hộ ${project.name}, góc nhìn chân thực`,
+          customPrompt: `Photorealistic 3D render of ${project.name}`,
           resolution: "3840x2160"
         })
       });
@@ -413,7 +413,7 @@ export default function CasaSerraViewer({
 
       const data = await res.json();
       if (!data.success) {
-        throw new Error(data.message || "Không thể tạo ảnh render");
+        throw new Error(data.message || "Could not create the render");
       }
 
       const fullUrl = data.renderUrl.startsWith("http")
@@ -431,7 +431,7 @@ export default function CasaSerraViewer({
         setRenderExecutionTimeMs(120);
         setRenderEnhancedPrompt("Photorealistic architectural interior photograph, 8K ultra-detailed ArchViz, multi-tier lighting, soft specular reflections");
       } else {
-        setRenderError(err?.message || "Lỗi tạo ảnh render 4K");
+        setRenderError(err?.message || "4K render failed");
       }
     } finally {
       setIsAIRendering(false);
@@ -445,7 +445,7 @@ export default function CasaSerraViewer({
       await exportLayoutDataToGLB(layoutData, { autoDownload: true });
     } catch (err) {
       console.error("Failed to export GLB:", err);
-      alert("Không thể xuất file 3D .GLB. Vui lòng thử lại!");
+      alert("Could not export the 3D .GLB file. Please try again.");
     } finally {
       setIsExportingGLB(false);
     }
@@ -2247,14 +2247,14 @@ export default function CasaSerraViewer({
         
         {/* Left Project Specs Pill */}
         <div className="pointer-events-auto flex items-center gap-2 bg-[#f4efe6] border border-[#dcd5c7] rounded-full px-3.5 py-1.5 text-[11px] font-mono text-neutral-800 shadow-sm">
-          <span className="font-bold text-neutral-900">DỰ ÁN:</span>
+          <span className="font-bold text-neutral-900">PROJECT:</span>
           <span className="font-medium text-neutral-800">
-            {project.name && project.name !== "Casa Serra" ? project.name : "Biệt Thự Vườn Thảo Điền — Căn Hộ Duplex 9 Không Gian"}
+            {project.name && project.name !== "Casa Serra" ? project.name : "Thao Dien Garden Villa — 9-Room Duplex"}
           </span>
           <span className="text-neutral-400 mx-1">•</span>
-          <span className="font-bold text-neutral-900">TỶ LỆ:</span>
+          <span className="font-bold text-neutral-900">SCALE:</span>
           <span className="font-medium text-neutral-800">
-            {project.specs.scale ? `${project.specs.scale} CHUẨN THIẾT KẾ` : "1:50 CHUẨN THIẾT KẾ"}
+            {project.specs.scale ? `${project.specs.scale} DESIGN STANDARD` : "1:50 DESIGN STANDARD"}
           </span>
         </div>
 
@@ -2268,7 +2268,7 @@ export default function CasaSerraViewer({
                 ? "bg-neutral-900 text-white shadow-sm"
                 : "bg-white/90 hover:bg-white text-neutral-800 border border-neutral-300"
             }`}
-            title="Bật/Tắt khung dây kiến trúc 3D Wireframe"
+            title="Toggle 3D architectural wireframe"
           >
             3D Wireframe
           </button>
@@ -2281,9 +2281,9 @@ export default function CasaSerraViewer({
                 ? "bg-neutral-900 text-white shadow-sm"
                 : "bg-white/90 hover:bg-white text-neutral-800 border border-neutral-300"
             }`}
-            title="Chế độ Sa bàn cắt tường 1.5m"
+            title="1.5 m cutaway model mode"
           >
-            Sa Bàn Cắt
+            Cutaway Model
           </button>
 
           {/* Vật Liệu Thực Pill */}
@@ -2294,9 +2294,9 @@ export default function CasaSerraViewer({
                 ? "bg-neutral-900 text-white shadow-sm"
                 : "bg-white/90 hover:bg-white text-neutral-800 border border-neutral-300"
             }`}
-            title="Chế độ Vật liệu thực & Xoay 360 độ"
+            title="Real materials & 360-degree rotation"
           >
-            Vật Liệu Thực
+            Real Materials
           </button>
 
           {/* Upload Button */}
@@ -2306,7 +2306,7 @@ export default function CasaSerraViewer({
               className="px-3.5 py-1.5 rounded-full border border-neutral-400 text-[11px] font-bold uppercase text-neutral-900 bg-white/90 hover:bg-neutral-900 hover:text-white transition shadow-sm flex items-center gap-1"
             >
               <span>+</span>
-              <span>Tải Bản Vẽ 2D</span>
+              <span>Download 2D Plan</span>
             </button>
           )}
 
@@ -2315,10 +2315,10 @@ export default function CasaSerraViewer({
             onClick={handleExportGLB}
             disabled={isExportingGLB}
             className="px-4 py-1.5 rounded-full bg-[#FF4D00] hover:bg-[#e04400] text-white font-mono text-[11px] font-bold tracking-wider uppercase shadow-md transition flex items-center gap-1.5 disabled:opacity-50"
-            title="Tải toàn bộ cảnh 3D về máy dưới dạng file .GLB"
+            title="Download the full 3D scene as a .GLB file"
           >
             <span>{isExportingGLB ? "⏳" : "📥"}</span>
-            <span>{isExportingGLB ? "Đang Xuất..." : "Xuất 3D (.GLB)"}</span>
+            <span>{isExportingGLB ? "Exporting..." : "Export 3D (.GLB)"}</span>
           </button>
         </div>
       </header>
@@ -2361,7 +2361,7 @@ export default function CasaSerraViewer({
             lookOffset.current = { yaw: 0, pitch: 0 };
           }}
           className="w-10 h-10 rounded-full bg-white/95 backdrop-blur-md border border-neutral-300/80 shadow-md flex flex-col items-center justify-center cursor-pointer hover:bg-white transition p-0.5"
-          title="La bàn kiến trúc • Bấm để đưa về hướng Bắc (North)"
+          title="Architectural compass • Click to face north"
         >
           <div className="relative w-5 h-5 flex items-center justify-center">
             <span className="absolute top-0 text-[6px] font-bold text-red-600 font-mono">N</span>
@@ -2381,7 +2381,7 @@ export default function CasaSerraViewer({
           <button
             onClick={() => setZoomScale((z) => Math.min(2.5, z + 0.2))}
             className="w-6 h-6 rounded-full hover:bg-neutral-200 flex items-center justify-center font-bold text-neutral-800 transition"
-            title="Phóng to"
+            title="Zoom in"
           >
             +
           </button>
@@ -2391,7 +2391,7 @@ export default function CasaSerraViewer({
           <button
             onClick={() => setZoomScale((z) => Math.max(0.6, z - 0.2))}
             className="w-6 h-6 rounded-full hover:bg-neutral-200 flex items-center justify-center font-bold text-neutral-800 transition"
-            title="Thu nhỏ"
+            title="Zoom out"
           >
             -
           </button>
@@ -2402,7 +2402,7 @@ export default function CasaSerraViewer({
               updateProgress(0);
             }}
             className="w-6 h-6 rounded-full hover:bg-neutral-200 flex items-center justify-center font-bold text-[8.5px] text-neutral-700 uppercase transition"
-            title="Khớp toàn màn hình (FIT)"
+            title="Fit to screen"
           >
             FIT
           </button>
@@ -2419,27 +2419,27 @@ export default function CasaSerraViewer({
           {/* Studio Badge */}
           <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold tracking-widest uppercase text-neutral-600">
             <span className="w-2 h-2 rounded-full bg-[#b85434] animate-pulse" />
-            <span>BẢN QUYỀN THIẾT KẾ STUDIO</span>
+            <span>STUDIO DESIGN COPYRIGHT</span>
           </div>
 
           {/* 3-Line Headline with cursive serif accent */}
           <h1 className="text-3xl sm:text-4xl lg:text-[44px] font-black uppercase tracking-tight leading-[1.02] text-neutral-900 font-sans">
-            <div>MÔ HÌNH HÓA</div>
+            <div>MODELING</div>
             <div className="font-serif italic font-normal text-[#b85434] tracking-normal text-4xl sm:text-[48px] my-1">
-              BẢN VẼ 3D
+              3D FLOOR PLAN
             </div>
-            <div>KIẾN TRÚC</div>
+            <div>ARCHITECTURE</div>
           </h1>
 
           <p className="text-xs text-neutral-600 font-sans leading-relaxed">
-            Bản vẽ mặt bằng kiến trúc tiêu chuẩn gồm {project.rooms.length || 9} phòng phân khu. Lăn chuột nhẹ để tự động mở cửa, bóc tách lớp cắt và trực quan hóa từng trục không gian.
+            Architectural floor plan with {project.rooms.length || 9} zoned rooms. Scroll to open doors, reveal cutaway layers, and explore each spatial axis.
           </p>
 
           {/* Metric Badges */}
           <div className="pt-1 flex items-center gap-8 font-mono">
             <div>
               <span className="block text-[9px] uppercase tracking-wider text-neutral-500 font-bold">
-                DIỆN TÍCH SÀN
+                FLOOR AREA
               </span>
               <span className="text-sm font-bold text-neutral-900">
                 {project.specs.totalArea || 342.8} m²
@@ -2447,7 +2447,7 @@ export default function CasaSerraViewer({
             </div>
             <div>
               <span className="block text-[9px] uppercase tracking-wider text-neutral-500 font-bold">
-                CAO ĐỘ TRẦN
+                CEILING HEIGHT
               </span>
               <span className="text-sm font-bold text-neutral-900">
                 +{((project.specs.ceilingHeight || 3.4) * 1000).toFixed(0)} mm
@@ -2456,25 +2456,25 @@ export default function CasaSerraViewer({
           </div>
         </div>
 
-        {/* Bottom Left: Title Block Table (Hồ Sơ Kỹ Thuật 3D) */}
+        {/* Bottom Left: Title Block Table (3D Technical Documentation) */}
         <div className="absolute bottom-6 left-8 md:left-12 pointer-events-auto">
           <div className="border-2 border-neutral-900 bg-[#efebe2]/95 backdrop-blur-md text-[10px] font-mono uppercase text-neutral-900 shadow-md">
             <div className="grid grid-cols-2 border-b-2 border-neutral-900">
               <div className="px-3 py-1.5 border-r-2 border-neutral-900 font-bold tracking-wider">
-                HỒ SƠ KỸ THUẬT 3D
+                3D TECHNICAL DOCUMENTATION
               </div>
               <div className="px-3 py-1.5 font-bold tracking-wider text-neutral-700">
-                GIAI ĐOẠN: THI CÔNG
+                PHASE: CONSTRUCTION
               </div>
             </div>
             <div className="grid grid-cols-2 border-b border-neutral-800">
               <div className="px-3 py-1 border-r border-neutral-800">
                 <span className="block text-[8px] text-neutral-500 font-bold">PROJECT NAME:</span>
-                <span className="font-bold">{project.name && project.name !== "Casa Serra" ? project.name : "Bản Vẽ Mặt Bằng 3D"}</span>
+                <span className="font-bold">{project.name && project.name !== "Casa Serra" ? project.name : "3D Floor Plan"}</span>
               </div>
               <div className="px-3 py-1">
                 <span className="block text-[8px] text-neutral-500 font-bold">DRAWING TITLE:</span>
-                <span className="font-bold">{project.subtitle === "Ground floor plan" ? "Mặt Bằng Tổng Thể" : (project.subtitle || "Mặt Bằng Tổng Thể")}</span>
+                <span className="font-bold">{project.subtitle === "Ground floor plan" ? "Master Floor Plan" : (project.subtitle || "Master Floor Plan")}</span>
               </div>
             </div>
             <div className="grid grid-cols-2 border-b border-neutral-800">
@@ -2489,7 +2489,7 @@ export default function CasaSerraViewer({
             </div>
             <div className="grid grid-cols-2 items-center">
               <div className="px-3 py-1.5 border-r border-neutral-800">
-                <span className="text-[9px] font-bold text-neutral-800">Kiến Trúc Sư: Gon Marcus</span>
+                <span className="text-[9px] font-bold text-neutral-800">Architect: Gon Marcus</span>
               </div>
               <div className="px-3 py-1.5 flex justify-end">
                 <span className="px-2 py-0.5 border border-dashed border-neutral-800 font-bold text-[9px] tracking-widest text-neutral-900">
@@ -2504,7 +2504,7 @@ export default function CasaSerraViewer({
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center pointer-events-none">
           <div className="inline-flex flex-col items-center gap-1">
             <span className="text-[10px] font-mono tracking-widest uppercase text-neutral-800 font-bold">
-              LĂN CHUỘT ĐỂ KHÁM PHÁ CHI TIẾT
+              SCROLL TO EXPLORE
             </span>
             <span className="text-neutral-500 text-xs animate-bounce">↓</span>
           </div>

@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TemplateItem, getCoverEditorLink, prepareEditorSession, trackCoverTemplateApi } from "@/lib/templateService";
+import { getCreatorProfileHref } from "@/lib/userService";
 import styles from "./TemplateCard.module.css";
 import DesignThumbnail from "./DesignThumbnail";
 
@@ -36,10 +37,26 @@ export default function TemplateCard({ template, onSelect }: TemplateCardProps) 
         <p className={styles.description}>{template.description || "A design from the PickMe3D community."}</p>
         <div className={styles.statistics}><span>{template.likesCount || 0} {(template.likesCount || 0) === 1 ? "like" : "likes"}</span><span>{template.viewsCount || 0} views</span></div>
         <div className={styles.bottom}>
-          <div className={styles.author}>
-            {template.authorAvatar ? <img src={template.authorAvatar} alt="" loading="lazy" /> : <span className={styles.avatar}>{template.authorName?.[0] || "P"}</span>}
-            <span>{template.authorName || "PickMe3D community"}</span>
-          </div>
+          {(() => {
+            const creatorHref = getCreatorProfileHref(template.author, template.authorName);
+            const authorInner = (
+              <>
+                {template.authorAvatar ? <img src={template.authorAvatar} alt="" loading="lazy" /> : <span className={styles.avatar}>{template.authorName?.[0] || "P"}</span>}
+                <span>{template.authorName || "PickMe3D community"}</span>
+              </>
+            );
+            return creatorHref ? (
+              <Link
+                href={creatorHref}
+                className={`${styles.author} ${styles.authorLink}`}
+                title={`View creator profile ${template.authorName || ""}`}
+              >
+                {authorInner}
+              </Link>
+            ) : (
+              <div className={styles.author}>{authorInner}</div>
+            );
+          })()}
           <Link href={getCoverEditorLink(template)} onClick={() => {
             prepareEditorSession(template, false);
             if (templateId) void trackCoverTemplateApi(templateId);

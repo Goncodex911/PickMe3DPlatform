@@ -18,7 +18,7 @@ export default function CanvasDemoPage() {
             className="flex items-center gap-1.5 text-xs font-mono text-slate-300 hover:text-white transition-colors"
           >
             <span className="material-symbols-rounded text-sm">arrow_back</span>
-            <span>Trang Chủ</span>
+            <span>Home</span>
           </Link>
           <span className="text-slate-600">/</span>
           <span className="text-xs font-mono text-red-400 font-semibold uppercase tracking-wider">
@@ -75,17 +75,17 @@ export default function CanvasDemoPage() {
             className="text-4xl sm:text-5xl font-normal text-white mb-4"
             style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic" }}
           >
-            Cuộn ngược lại để đảo chiều khung hình.
+            Scroll back up to reverse the animation.
           </h2>
           <p className="text-sm text-slate-400 leading-relaxed mb-8">
-            Canvas sticky mượt mà tự động giải phóng vị trí khi cuộn hết timeline và giữ nguyên frame 390. Cuộn lên để xem lại toàn bộ quá trình bay 3D mượt mà.
+            The sticky canvas releases its position when you reach the end of the timeline and keeps the 390 px frame. Scroll up to replay the full 3D sequence.
           </p>
           <div className="flex items-center justify-center gap-4">
             <Link
               href="/"
               className="px-6 py-3 rounded-full bg-red-600 hover:bg-red-500 text-white text-xs font-semibold tracking-wider transition-all"
             >
-              VỀ TRANG CHÍNH
+              BACK TO HOME
             </Link>
           </div>
         </div>
