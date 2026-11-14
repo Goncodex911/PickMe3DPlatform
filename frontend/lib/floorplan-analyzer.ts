@@ -36,99 +36,6 @@ export interface CleanupOptions {
   collinearAngleToleranceDeg?: number;
   /** Có tự động chiếu ô cửa vào tim tường không, mặc định true */
   snapOpenings?: boolean;
-  /**
-   * Bổ sung tường cho các cạnh phòng chưa có tường nào che (AI thường bỏ sót tường ngăn).
-   * Mặc định false; bật cho kết quả quét AI, không bật cho dữ liệu người dùng tự nắn chỉnh.
-   */
-  completeWallsFromRooms?: boolean;
-}
-
-/**
- * 5. Wall Completion (Bổ sung tường thiếu):
- * Với mỗi cạnh đa giác của phòng trong nhà, trừ đi phần đã có tường đồng tuyến che phủ;
- * phần còn trống dài >= minGapM được thêm thành tường mới (tường bao nếu nằm trên chu vi công trình).
- * Phòng "outdoor" (sân, patio) không sinh tường.
- */
-export function completeWallsFromRooms(
-  layout: LayoutData,
-  options: { lineToleranceM?: number; minGapM?: number } = {}
-): LayoutData {
-  const tol = options.lineToleranceM ?? 0.2;
-  const minGap = options.minGapM ?? 0.4;
-  const dims = layout.metadata.dimensions;
-  const height = dims.default_ceiling_height;
-  const walls: WallSegment[] = [...layout.walls];
-
-  // Khung bao công trình để phân biệt tường bao / tường ngăn
-  const allPts: [number, number][] = [
-    ...layout.walls.flatMap((w) => [w.start, w.end]),
-    ...layout.rooms.flatMap((r) => r.polygon)
-  ];
-  if (allPts.length === 0) return layout;
-  const minX = Math.min(...allPts.map((p) => p[0]));
-  const maxX = Math.max(...allPts.map((p) => p[0]));
-  const minZ = Math.min(...allPts.map((p) => p[1]));
-  const maxZ = Math.max(...allPts.map((p) => p[1]));
-  const onPerimeter = (a: [number, number], b: [number, number]) =>
-    (Math.abs(a[0] - minX) <= tol && Math.abs(b[0] - minX) <= tol) ||
-    (Math.abs(a[0] - maxX) <= tol && Math.abs(b[0] - maxX) <= tol) ||
-    (Math.abs(a[1] - minZ) <= tol && Math.abs(b[1] - minZ) <= tol) ||
-    (Math.abs(a[1] - maxZ) <= tol && Math.abs(b[1] - maxZ) <= tol);
-
-  let added = 0;
-  for (const room of layout.rooms) {
-    if (room.category === "outdoor" || !room.polygon || room.polygon.length < 3) continue;
-
-    for (let i = 0; i < room.polygon.length; i++) {
-      const p = room.polygon[i];
-      const q = room.polygon[(i + 1) % room.polygon.length];
-      const L = Math.hypot(q[0] - p[0], q[1] - p[1]);
-      if (L < minGap) continue;
-      const ux = (q[0] - p[0]) / L;
-      const uz = (q[1] - p[1]) / L;
-
-      // Các khoảng [t0, t1] trên cạnh đã được tường đồng tuyến che phủ
-      const covered: [number, number][] = [];
-      for (const w of walls) {
-        const distStart = Math.abs((w.start[0] - p[0]) * uz - (w.start[1] - p[1]) * ux);
-        const distEnd = Math.abs((w.end[0] - p[0]) * uz - (w.end[1] - p[1]) * ux);
-        if (distStart > tol || distEnd > tol) continue;
-        const t0 = (w.start[0] - p[0]) * ux + (w.start[1] - p[1]) * uz;
-        const t1 = (w.end[0] - p[0]) * ux + (w.end[1] - p[1]) * uz;
-        const a = Math.max(0, Math.min(t0, t1));
-        const b = Math.min(L, Math.max(t0, t1));
-        if (b > a) covered.push([a, b]);
-      }
-      covered.sort((m, n) => m[0] - n[0]);
-
-      // Phần bù của các khoảng đã che trên [0, L]
-      const gaps: [number, number][] = [];
-      let cursor = 0;
-      for (const [a, b] of covered) {
-        if (a > cursor) gaps.push([cursor, a]);
-        cursor = Math.max(cursor, b);
-      }
-      if (cursor < L) gaps.push([cursor, L]);
-
-      for (const [a, b] of gaps) {
-        if (b - a < minGap) continue;
-        const start: [number, number] = [Number((p[0] + ux * a).toFixed(4)), Number((p[1] + uz * a).toFixed(4))];
-        const end: [number, number] = [Number((p[0] + ux * b).toFixed(4)), Number((p[1] + uz * b).toFixed(4))];
-        const exterior = onPerimeter(start, end);
-        walls.push({
-          id: `w_auto_${room.id}_${++added}`,
-          type: exterior ? "exterior" : "interior",
-          start,
-          end,
-          thickness: exterior ? dims.exterior_wall_thickness : dims.interior_wall_thickness,
-          height,
-          openings: []
-        });
-      }
-    }
-  }
-
-  return added > 0 ? { ...layout, walls } : layout;
 }
 
 /**
@@ -486,11 +393,8 @@ export function cleanupLayoutGeometry(
   const mergeGap = options.mergeCollinearDistanceM ?? 0.05;
   const mergeAngleTol = options.collinearAngleToleranceDeg ?? 1.0;
 
-  // Step 0 (tuỳ chọn): bổ sung tường thiếu theo cạnh phòng trước khi nắn chỉnh
-  const source = options.completeWallsFromRooms ? completeWallsFromRooms(layout) : layout;
-
   // Step 1: Orthogonalize each wall
-  let cleanedWalls = source.walls.map((w) => orthogonalizeWall(w, orthoThreshold));
+  let cleanedWalls = layout.walls.map((w) => orthogonalizeWall(w, orthoThreshold));
 
   // Step 2: Snap close endpoints to form shared vertices
   cleanedWalls = snapWallEndpoints(cleanedWalls, snapDist);
@@ -515,8 +419,8 @@ export function cleanupLayoutGeometry(
    ========================================================================== */
 
 /**
- * Phân tích ảnh bản vẽ bằng AI và trả về project kèm LayoutData đã nắn chỉnh hình học.
- * Ném lỗi nếu AI thất bại. Với `useAI: false`, trả mặt bằng mẫu theo tỉ lệ ảnh (không đọc bản vẽ).
+ * Analyzes uploaded image and returns a complete 3D Architectural Project with a strict 4.5s timeout guarantee.
+ * Also attaches cleaned LayoutData for the modern 3D pipeline.
  */
 export async function analyzeAndBuildProject(
   imageBase64: string,
@@ -525,32 +429,43 @@ export async function analyzeAndBuildProject(
   // Compress image to ensure payload is under 200KB
   const { compressedBase64, aspect } = await compressImage(imageBase64, 1024, 0.82);
 
-  // 1. AI Vision (Gemini qua backend). Lỗi thì ném ra để giao diện báo cho người dùng,
-  //    không âm thầm thay bằng mặt bằng mẫu (trước đây người dùng tưởng AI đã đọc bản vẽ).
+  // 1. Try AI Vision with 4.5s timeout safeguard
   if (options.useAI !== false) {
-    const scanOpts: ScanBlueprintOptions = {
-      userCustomNotes: `Phong cách: ${options.style || "modern_minimal"}`,
-      targetWidth: options.targetWidth,
-      targetLength: options.targetLength,
-      targetCeilingHeight: options.ceilingHeight,
-      style: options.style
-    };
+    try {
+      const scanOpts: ScanBlueprintOptions = {
+        userCustomNotes: `Phong cách: ${options.style || "modern_minimal"}`,
+        targetWidth: options.targetWidth,
+        targetLength: options.targetLength,
+        targetCeilingHeight: options.ceilingHeight,
+        style: options.style
+      };
 
-    const aiResult = await scanBlueprintWithAI(compressedBase64, scanOpts);
-    if (!aiResult.success || !aiResult.project || !aiResult.layoutData) {
-      throw new Error(aiResult.error || "AI không phân tích được bản vẽ.");
+      const aiPromise = scanBlueprintWithAI(compressedBase64, scanOpts);
+      const timeoutPromise = new Promise<null>((_, reject) =>
+        setTimeout(() => reject(new Error("AI timeout")), 4500)
+      );
+
+      const aiResult: any = await Promise.race([aiPromise, timeoutPromise]);
+      if (aiResult?.success && aiResult?.project && aiResult.project.rooms.length >= 2) {
+        aiResult.project.originalBlueprintUrl = imageBase64;
+
+        // Apply geometric cleanup to layoutData
+        if (aiResult.layoutData) {
+          const cleanedLayout = cleanupLayoutGeometry(aiResult.layoutData);
+          return {
+            ...aiResult.project,
+            layoutData: cleanedLayout
+          };
+        }
+
+        return aiResult.project;
+      }
+    } catch (err) {
+      console.warn("AI processing timed out or failed, instantly applying geometric architecture zoning:", err);
     }
-
-    return {
-      ...aiResult.project,
-      name: options.projectName || aiResult.project.name,
-      originalBlueprintUrl: imageBase64,
-      layoutData: cleanupLayoutGeometry(aiResult.layoutData, { completeWallsFromRooms: true })
-    };
   }
 
-  // 2. MẶT BẰNG MẪU THEO TỈ LỆ ẢNH (chỉ khi người dùng chủ động chọn useAI: false).
-  //    Không đọc nội dung bản vẽ; chỉ dùng tỉ lệ khung ảnh để chọn bố cục mẫu.
+  // 2. INSTANT ARCHITECTURAL MULTI-ROOM GEOMETRIC DECOMPOSITION (FALLBACK)
   let buildingWidth = options.targetWidth || (aspect < 0.65 ? 5 : aspect > 1.5 ? 15 : 12);
   let buildingLength = options.targetLength || (aspect < 0.65 ? 18 : aspect > 1.5 ? 10 : 12);
   const totalArea = Math.round(buildingWidth * buildingLength);

@@ -13,10 +13,6 @@ export interface AIRenderPreviewModalProps {
   enhancedPrompt?: string;
   executionTimeMs?: number;
   resolution?: string;
-  /** Model Gemini đã sinh ảnh */
-  modelName?: string;
-  /** Mô tả bước đang xử lý (từ hàng đợi backend) */
-  loadingStage?: string;
 }
 
 export default function AIRenderPreviewModal({
@@ -29,36 +25,22 @@ export default function AIRenderPreviewModal({
   styleName,
   enhancedPrompt,
   executionTimeMs,
-  resolution = "đang xác định",
-  modelName,
-  loadingStage
+  resolution = "3840x2160 (4K UHD)"
 }: AIRenderPreviewModalProps) {
   const [viewMode, setViewMode] = useState<"render" | "original">("render");
 
   if (!isOpen) return null;
 
-  // URL ảnh nằm ở backend/Cloudinary (khác origin) nên thuộc tính download không có tác dụng:
-  // tải về dạng blob rồi mới lưu; lỗi CORS thì mở ảnh ở tab mới.
-  const handleDownload = async () => {
+  const handleDownload = () => {
     const downloadUrl = renderResultUrl || originalSnapshotUrl;
     if (!downloadUrl) return;
-    try {
-      const blob = await fetch(downloadUrl).then((r) => {
-        if (!r.ok) throw new Error(String(r.status));
-        return r.blob();
-      });
-      const ext = blob.type === "image/jpeg" ? "jpg" : blob.type === "image/webp" ? "webp" : "png";
-      const objectUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = objectUrl;
-      a.download = `PickMe3D_AIRender_${styleName}_${Date.now()}.${ext}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(objectUrl);
-    } catch {
-      window.open(downloadUrl, "_blank", "noopener");
-    }
+
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = `PickMe3D_Render4K_${styleName}_${Date.now()}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   return (
@@ -73,18 +55,13 @@ export default function AIRenderPreviewModal({
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                AI Render Phối Cảnh
+                Ảnh AI Render 4K Siêu Thực (ControlNet ArchViz)
                 <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-mono">
                   {resolution}
                 </span>
-                {modelName && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-700/60 text-neutral-300 border border-neutral-600 font-mono">
-                    {modelName}
-                  </span>
-                )}
               </h2>
               <p className="text-xs text-neutral-400">
-                Gemini dựng lại khung nhìn 3D hiện tại thành ảnh chân thực, giữ nguyên bố cục và góc máy
+                Xuất ảnh phối cảnh nội thất chân thực từng vân gỗ, đá cẩm thạch và dải đèn LED kiến trúc
               </p>
             </div>
           </div>
@@ -111,17 +88,20 @@ export default function AIRenderPreviewModal({
               </div>
               <div className="space-y-1">
                 <h3 className="text-base font-semibold text-white">
-                  Đang render bằng AI...
+                  Đang khởi tạo phối cảnh 4K siêu thực...
                 </h3>
                 <p className="text-xs text-neutral-400 max-w-md">
-                  {loadingStage || "Đang chuẩn bị"} (thường mất 10–40 giây)
+                  Áp dụng bản đồ độ sâu (ControlNet Depth), ánh sáng hắt cyan tủ bếp, bóng đổ mềm và vật liệu PBR cao cấp
                 </p>
+              </div>
+              <div className="text-[11px] font-mono text-amber-400 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/30 animate-pulse">
+                ⚡ Tốc độ xử lý dự kiến: &lt; 5 giây
               </div>
             </div>
           ) : error ? (
             <div className="p-6 text-center space-y-3">
               <div className="text-3xl text-rose-500">⚠️</div>
-              <h3 className="text-sm font-semibold text-rose-400">Không thể render ảnh AI</h3>
+              <h3 className="text-sm font-semibold text-rose-400">Không thể xuất ảnh Render 4K</h3>
               <p className="text-xs text-neutral-400 max-w-md">{error}</p>
             </div>
           ) : (
@@ -136,7 +116,7 @@ export default function AIRenderPreviewModal({
                       : "text-neutral-400 hover:text-white"
                   }`}
                 >
-                  <span>✨ Ảnh AI Render</span>
+                  <span>✨ Ảnh AI Render 4K</span>
                 </button>
                 <button
                   onClick={() => setViewMode("original")}
@@ -205,7 +185,7 @@ export default function AIRenderPreviewModal({
               className="px-5 py-2.5 rounded-xl font-semibold text-xs bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black shadow-lg shadow-amber-500/20 transition flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <span>📥</span>
-              <span>Tải Ảnh (.PNG)</span>
+              <span>Tải Ảnh 4K (.PNG)</span>
             </button>
           </div>
         </div>

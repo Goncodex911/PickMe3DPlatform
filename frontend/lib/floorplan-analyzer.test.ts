@@ -4,8 +4,7 @@ import {
   snapWallEndpoints,
   mergeCollinearWalls,
   snapOpeningsToWalls,
-  cleanupLayoutGeometry,
-  completeWallsFromRooms
+  cleanupLayoutGeometry
 } from "./floorplan-analyzer";
 import {
   normalizedToMeters,
@@ -281,58 +280,3 @@ describe("STORY-THUAN-BP04: Vector Cleanup Algorithms", () => {
   });
 });
 
-
-describe("Wall completion từ cạnh phòng (bù tường AI bỏ sót)", () => {
-  const baseLayout = (): LayoutData => ({
-    metadata: {
-      project_id: "t", project_name: "t", units: "meters", coordinate_system: "right_handed_y_up",
-      dimensions: { width: 10, length: 6, default_ceiling_height: 3.2, exterior_wall_thickness: 0.22, interior_wall_thickness: 0.11 }
-    },
-    // AI chỉ trả tường bao, thiếu tường ngăn ở x = 0
-    walls: [
-      { id: "n", type: "exterior", start: [-5, -3], end: [5, -3], thickness: 0.22, height: 3.2, openings: [] },
-      { id: "e", type: "exterior", start: [5, -3], end: [5, 3], thickness: 0.22, height: 3.2, openings: [] },
-      { id: "s", type: "exterior", start: [5, 3], end: [-5, 3], thickness: 0.22, height: 3.2, openings: [] },
-      { id: "w", type: "exterior", start: [-5, 3], end: [-5, -3], thickness: 0.22, height: 3.2, openings: [] }
-    ],
-    openings: [],
-    rooms: [
-      { id: "a", name: "A", category: "bedroom", polygon: [[-5, -3], [0, -3], [0, 3], [-5, 3]], area_m2: 30 },
-      { id: "b", name: "B", category: "living", polygon: [[0, -3], [5, -3], [5, 3], [0, 3]], area_m2: 30 }
-    ],
-    furniture_assets: []
-  });
-
-  it("thêm đúng 1 tường ngăn ở cạnh chung của hai phòng, không nhân đôi", () => {
-    const result = completeWallsFromRooms(baseLayout());
-    const added = result.walls.filter((w) => w.id.startsWith("w_auto_"));
-    expect(added).toHaveLength(1);
-    expect(added[0].type).toBe("interior");
-    expect(added[0].thickness).toBe(0.11);
-    const xs = [added[0].start[0], added[0].end[0]];
-    expect(xs.every((x) => Math.abs(x) < 1e-6)).toBe(true);
-    expect(Math.abs(added[0].start[1] - added[0].end[1])).toBeCloseTo(6, 3);
-  });
-
-  it("chỉ bù phần cạnh còn trống khi tường có sẵn che một phần", () => {
-    const layout = baseLayout();
-    layout.walls.push({ id: "half", type: "interior", start: [0, -3], end: [0, 0], thickness: 0.11, height: 3.2, openings: [] });
-    const added = completeWallsFromRooms(layout).walls.filter((w) => w.id.startsWith("w_auto_"));
-    expect(added).toHaveLength(1);
-    const zs = [added[0].start[1], added[0].end[1]].sort((m, n) => m - n);
-    expect(zs[0]).toBeCloseTo(0, 3);
-    expect(zs[1]).toBeCloseTo(3, 3);
-  });
-
-  it("không sinh tường cho phòng outdoor và không đổi layout đã đủ tường", () => {
-    const layout = baseLayout();
-    layout.rooms[0].category = "outdoor";
-    layout.rooms[1].category = "outdoor";
-    expect(completeWallsFromRooms(layout)).toBe(layout);
-  });
-
-  it("cleanupLayoutGeometry chỉ bổ sung tường khi bật completeWallsFromRooms", () => {
-    expect(cleanupLayoutGeometry(baseLayout()).walls).toHaveLength(4);
-    expect(cleanupLayoutGeometry(baseLayout(), { completeWallsFromRooms: true }).walls.length).toBeGreaterThan(4);
-  });
-});

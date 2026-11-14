@@ -17,9 +17,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@gltf-transform/core": "^4.5.1",
-    "@gltf-transform/extensions": "^4.5.1",
-    "@gltf-transform/functions": "^4.5.1",
     "@payos/node": "^2.0.5",
     "cloudinary": "^2.11.0",
     "cors": "^2.8.5",

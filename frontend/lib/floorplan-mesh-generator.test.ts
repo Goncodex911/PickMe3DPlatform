@@ -4,9 +4,7 @@ import {
   generateWallSegmentMeshes,
   generateRoomFloorMesh,
   generateRoomCeilingMesh,
-  buildFull3DSceneFromLayout,
-  createFloorPolygonGeometry,
-  isAxisAlignedRectangle
+  buildFull3DSceneFromLayout
 } from "./floorplan-mesh-generator";
 import { exportSceneToGLB, exportLayoutDataToGLB } from "./floorplan-glb-exporter";
 import { WallSegment, OpeningSpec, LayoutData, RoomPolygon } from "./floorplan-types";
@@ -159,46 +157,3 @@ describe("STORY-THUAN-BP06: Scene Assembly & GLB Export", () => {
   });
 });
 
-
-describe("Sàn theo đa giác (đúng chiều trục Z, hỗ trợ phòng chữ L)", () => {
-  // Phòng chữ L nằm hoàn toàn ở phía z dương: nếu bị lật trục, sàn sẽ rơi sang z âm
-  const L_ROOM: [number, number][] = [[0, 2], [4, 2], [4, 4], [2, 4], [2, 6], [0, 6]];
-
-  it("createFloorPolygonGeometry giữ đúng dấu toạ độ z và pháp tuyến hướng lên", () => {
-    const geo = createFloorPolygonGeometry(L_ROOM);
-    geo.computeBoundingBox();
-    const bb = geo.boundingBox!;
-    expect(bb.min.z).toBeCloseTo(2, 5);
-    expect(bb.max.z).toBeCloseTo(6, 5);
-    expect(bb.min.x).toBeCloseTo(0, 5);
-    expect(bb.max.x).toBeCloseTo(4, 5);
-    expect(bb.max.y - bb.min.y).toBeCloseTo(0, 5);
-    expect(geo.attributes.normal.getY(0)).toBeCloseTo(1, 5);
-  });
-
-  it("diện tích tam giác hoá bằng diện tích chữ L (12 m²), không phải khung bao (16 m²)", () => {
-    const geo = createFloorPolygonGeometry(L_ROOM);
-    const pos = geo.attributes.position;
-    const index = geo.index!;
-    let area = 0;
-    for (let i = 0; i < index.count; i += 3) {
-      const a = new THREE.Vector3().fromBufferAttribute(pos, index.getX(i));
-      const b = new THREE.Vector3().fromBufferAttribute(pos, index.getX(i + 1));
-      const c = new THREE.Vector3().fromBufferAttribute(pos, index.getX(i + 2));
-      area += b.clone().sub(a).cross(c.clone().sub(a)).length() / 2;
-    }
-    expect(area).toBeCloseTo(12, 4);
-  });
-
-  it("generateRoomFloorMesh (xuất GLB) không còn bị lật trục Z", () => {
-    const floor = generateRoomFloorMesh({ id: "l", name: "L", category: "living", polygon: L_ROOM, area_m2: 12 });
-    floor.geometry.computeBoundingBox();
-    expect(floor.geometry.boundingBox!.min.z).toBeCloseTo(2, 5);
-  });
-
-  it("isAxisAlignedRectangle phân biệt hình chữ nhật và chữ L", () => {
-    expect(isAxisAlignedRectangle([[0, 0], [3, 0], [3, 2], [0, 2]])).toBe(true);
-    expect(isAxisAlignedRectangle(L_ROOM)).toBe(false);
-    expect(isAxisAlignedRectangle([[0, 0], [3, 1], [3, 3], [0, 2]])).toBe(false);
-  });
-});
