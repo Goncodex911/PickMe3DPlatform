@@ -267,6 +267,50 @@ function createOpeningFillerMesh(
  * 2. POLYGON ROOM FLOOR GENERATOR:
  * Creates clean polygonal floor meshes from RoomPolygon vertices.
  */
+/**
+ * Tạo mặt sàn phẳng (nằm ở y = 0, pháp tuyến hướng lên) theo đúng đa giác phòng [x, z] tính bằng mét.
+ * Lưu ý: Shape vẽ trên mặt phẳng XY rồi xoay -90° quanh X sẽ biến y thành -z,
+ * nên phải vẽ theo (x, -z) để sàn không bị lật ngược so với tường.
+ */
+export function createFloorPolygonGeometry(
+  polygon: [number, number][],
+  uvRepeatPerMeter: number = 2.0
+): THREE.ShapeGeometry {
+  const shape = new THREE.Shape();
+  shape.moveTo(polygon[0][0], -polygon[0][1]);
+  for (let i = 1; i < polygon.length; i++) {
+    shape.lineTo(polygon[i][0], -polygon[i][1]);
+  }
+  shape.closePath();
+
+  const geo = new THREE.ShapeGeometry(shape);
+  geo.rotateX(-Math.PI / 2);
+
+  // TASK 6.1.2: UV theo toạ độ mét thực (1m = uvRepeatPerMeter lần lặp texture)
+  const posAttr = geo.attributes.position;
+  const uvs = new Float32Array(posAttr.count * 2);
+  for (let i = 0; i < posAttr.count; i++) {
+    uvs[i * 2] = posAttr.getX(i) * uvRepeatPerMeter;
+    uvs[i * 2 + 1] = posAttr.getZ(i) * uvRepeatPerMeter;
+  }
+  geo.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
+  geo.computeVertexNormals();
+  return geo;
+}
+
+/** Đa giác có đúng 4 đỉnh tạo thành hình chữ nhật thẳng trục (so với khung bao) hay không. */
+export function isAxisAlignedRectangle(polygon: [number, number][], tolerance: number = 0.05): boolean {
+  if (!polygon || polygon.length !== 4) return false;
+  const xs = polygon.map((p) => p[0]);
+  const zs = polygon.map((p) => p[1]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minZ = Math.min(...zs), maxZ = Math.max(...zs);
+  return polygon.every(([x, z]) =>
+    (Math.abs(x - minX) <= tolerance || Math.abs(x - maxX) <= tolerance) &&
+    (Math.abs(z - minZ) <= tolerance || Math.abs(z - maxZ) <= tolerance)
+  );
+}
+
 export function generateRoomFloorMesh(
   room: RoomPolygon,
   materials: MeshMaterials = createDefaultArchitecturalMaterials(),
@@ -280,27 +324,7 @@ export function generateRoomFloorMesh(
     return new THREE.Mesh(fallbackGeo, materials.concreteFloorMat);
   }
 
-  const shape = new THREE.Shape();
-  shape.moveTo(poly[0][0], poly[0][1]);
-  for (let i = 1; i < poly.length; i++) {
-    shape.lineTo(poly[i][0], poly[i][1]);
-  }
-  shape.closePath();
-
-  const geo = new THREE.ShapeGeometry(shape);
-  // In ShapeGeometry, X is horizontal, Y is vertical. Rotate X by -90° to map Y to Z!
-  geo.rotateX(-Math.PI / 2);
-
-  // TASK 6.1.2: Calculate UV coordinates based on world metric coordinates (1m = 2 repeats)
-  const posAttr = geo.attributes.position;
-  const uvs = new Float32Array(posAttr.count * 2);
-  for (let i = 0; i < posAttr.count; i++) {
-    const x = posAttr.getX(i);
-    const z = posAttr.getZ(i);
-    uvs[i * 2] = Math.abs(x) * uvRepeatPerMeter;
-    uvs[i * 2 + 1] = Math.abs(z) * uvRepeatPerMeter;
-  }
-  geo.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
+  const geo = createFloorPolygonGeometry(poly, uvRepeatPerMeter);
 
   // Pick floor material
   let mat = materials.concreteFloorMat;

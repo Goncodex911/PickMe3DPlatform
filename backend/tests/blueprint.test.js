@@ -1,5 +1,7 @@
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('fs');
+const path = require('path');
 const blueprintJobQueue = require('../src/services/blueprintJobQueue');
 const blueprintController = require('../src/controllers/blueprintController');
 
@@ -82,31 +84,6 @@ describe('STORY-THUAN-BP10: Blueprint Background Queue & CDN Delivery', () => {
     assert.strictEqual(res.statusCode, 200);
   });
 
-  test('Controller: queue3DReconstruction rejects empty blueprint payload with 400', async () => {
-    let statusCode = null;
-    let jsonResponse = null;
-
-    const req = {
-      body: {}, // empty body
-    };
-    const res = {
-      status: (code) => {
-        statusCode = code;
-        return {
-          json: (data) => {
-            jsonResponse = data;
-          },
-        };
-      },
-    };
-
-    await blueprintController.queue3DReconstruction(req, res);
-
-    assert.strictEqual(statusCode, 400);
-    assert.strictEqual(jsonResponse.success, false);
-    assert.ok(jsonResponse.message.includes('Vui lòng cung cấp'));
-  });
-
   test('Controller: upload3DModel accepts base64 GLB payload and returns 200 with URL', async () => {
     let statusCode = null;
     let jsonResponse = null;
@@ -163,40 +140,73 @@ describe('STORY-THUAN-BP10: Blueprint Background Queue & CDN Delivery', () => {
     assert.ok(jsonResponse.message.includes('Vui lòng cung cấp'));
   });
 
-  test('STORY-THUAN-BP16: generateAIRender4K returns photorealistic 4K render payload under 5 seconds', async () => {
-    let statusCode = null;
-    let jsonResponse = null;
-
-    const mockPngBase64 = Buffer.from('mock-png-image-binary-data').toString('base64');
-    const req = {
-      body: {
-        imageBase64: `data:image/png;base64,${mockPngBase64}`,
-        style: 'luxury_marble',
-        customPrompt: 'warm dusk ambiance',
-      },
-    };
-    const res = {
-      status: (code) => {
-        statusCode = code;
-        return {
-          json: (data) => {
-            jsonResponse = data;
-          },
-        };
-      },
+  test('STORY-THUAN-BP16: generateAIRender4K queues a real Gemini render job and stores the AI image', async () => {
+    const geminiImage = require('../src/services/geminiImage');
+    const original = geminiImage.renderImage;
+    // PNG 1x1 hợp lệ do "model" trả về
+    const fakePng = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      'base64'
+    );
+    let received = null;
+    geminiImage.renderImage = async (input) => {
+      received = input;
+      return { model: 'gemini-test-image', mimeType: 'image/png', buffer: fakePng };
     };
 
-    await blueprintController.generateAIRender4K(req, res);
+    try {
+      let statusCode = null;
+      let jsonResponse = null;
+      const req = {
+        auth: { id: 'user_render_1' },
+        body: {
+          imageBase64: `data:image/png;base64,${Buffer.from('snapshot').toString('base64')}`,
+          style: 'luxury_marble',
+          customPrompt: 'warm dusk ambiance',
+        },
+      };
+      const res = { status: (code) => { statusCode = code; return { json: (d) => { jsonResponse = d; } }; } };
 
-    assert.strictEqual(statusCode, 200);
-    assert.strictEqual(jsonResponse.success, true);
-    assert.ok(jsonResponse.renderUrl.includes('render_4k_luxury_marble'));
-    assert.strictEqual(jsonResponse.width, 3840);
-    assert.strictEqual(jsonResponse.height, 2160);
-    assert.strictEqual(jsonResponse.style, 'luxury_marble');
-    assert.ok(jsonResponse.enhancedPrompt.includes('Calacatta white marble'));
-    assert.ok(jsonResponse.enhancedPrompt.includes('cyan LED strip'));
-    assert.ok(jsonResponse.executionTimeMs < 5000, `Execution time ${jsonResponse.executionTimeMs}ms exceeds 5000ms`);
+      await blueprintController.generateAIRender4K(req, res);
+
+      assert.strictEqual(statusCode, 202);
+      assert.ok(jsonResponse.jobId.startsWith('job_bp_'));
+      assert.ok(jsonResponse.enhancedPrompt.includes('Calacatta white marble'));
+      assert.ok(jsonResponse.enhancedPrompt.includes('same camera angle'));
+
+      const job = await new Promise((resolve, reject) => {
+        blueprintJobQueue.once(`completed:${jsonResponse.jobId}`, resolve);
+        blueprintJobQueue.once(`failed:${jsonResponse.jobId}`, (j) => reject(new Error(j.error)));
+      });
+
+      assert.strictEqual(received.mimeType, 'image/png');
+      assert.strictEqual(received.imageBase64, Buffer.from('snapshot').toString('base64'));
+      assert.strictEqual(job.result.simulated, false);
+      assert.strictEqual(job.result.model, 'gemini-test-image');
+      assert.strictEqual(job.result.width, 1);
+      assert.strictEqual(job.result.height, 1);
+      assert.ok(/render_ai_luxury_marble_\d+\.png$/.test(job.result.renderUrl) || job.result.renderUrl.startsWith('http'));
+      // Ảnh base64 không được nằm trong payload của job (job được trả qua API/SSE)
+      assert.strictEqual(job.payload.imageBase64, undefined);
+      assert.strictEqual(job.payload.ownerId, 'user_render_1');
+      // Dọn file ảnh do test sinh ra
+      const localFile = /\/cdn\/renders\/(.+)$/.exec(job.result.renderUrl);
+      if (localFile) fs.rmSync(path.resolve(__dirname, '../uploads/renders', localFile[1]), { force: true });
+    } finally {
+      geminiImage.renderImage = original;
+    }
+  });
+
+  test('getJobStatus hides jobs owned by another user', async () => {
+    const job = blueprintJobQueue.createJob('ai_render', { ownerId: 'owner_a' });
+    const call = async (auth) => {
+      let statusCode = null;
+      const res = { status: (code) => { statusCode = code; return { json: () => {} }; } };
+      await blueprintController.getJobStatus({ params: { jobId: job.id }, auth }, res);
+      return statusCode;
+    };
+    assert.strictEqual(await call({ id: 'owner_a' }), 200);
+    assert.strictEqual(await call({ id: 'someone_else' }), 404);
   });
 
   test('STORY-THUAN-BP16: serveCdnRender sets 1-year immutable caching header for PNG images', () => {
@@ -226,3 +236,36 @@ describe('STORY-THUAN-BP10: Blueprint Background Queue & CDN Delivery', () => {
   });
 });
 
+
+describe('Blueprint render size & route protection', () => {
+  test('readPngSize reads width/height from a real PNG header', () => {
+    const header = Buffer.alloc(24);
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(header, 0);
+    header.writeUInt32BE(1920, 16);
+    header.writeUInt32BE(1080, 20);
+    assert.deepStrictEqual(blueprintController.readPngSize(header), { width: 1920, height: 1080 });
+    assert.strictEqual(blueprintController.readPngSize(Buffer.from('not-a-png')), null);
+  });
+
+  test('write routes of /api/blueprint and /api/ai/complete require authentication', () => {
+    const { attachUser } = require('../src/middlewares/planMiddleware');
+    const routeHandlers = (router, method, routePath) => {
+      const layer = router.stack.find((l) => l.route && l.route.path === routePath && l.route.methods[method]);
+      assert.ok(layer, `missing route ${method.toUpperCase()} ${routePath}`);
+      return layer.route.stack.map((s) => s.handle);
+    };
+
+    const blueprintRoutes = require('../src/routes/blueprintRoutes');
+    for (const p of ['/upload-glb', '/compress-glb', '/ai-render-4k']) {
+      assert.ok(routeHandlers(blueprintRoutes, 'post', p).includes(attachUser), `${p} must use attachUser`);
+    }
+    assert.ok(routeHandlers(blueprintRoutes, 'get', '/jobs/:jobId').includes(attachUser));
+    // Dựng 3D mô phỏng đã bị gỡ
+    assert.ok(!blueprintRoutes.stack.some((l) => l.route && l.route.path === '/queue-job'));
+    // Đọc GLB/ảnh qua CDN vẫn công khai
+    assert.ok(!routeHandlers(blueprintRoutes, 'get', '/cdn/:filename').includes(attachUser));
+
+    const aiRoutes = require('../src/routes/aiRoutes');
+    assert.ok(routeHandlers(aiRoutes, 'post', '/complete').includes(attachUser));
+  });
+});
