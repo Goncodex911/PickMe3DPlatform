@@ -21,7 +21,7 @@ exports.createReport = async (req, res, next) => {
       attachments = [],
     } = req.body;
 
-    const normalizedTicketType = ticketType.toUpperCase() === 'APPEAL' ? 'APPEAL' : 'REPORT';
+    const normalizedTicketType = ticketType && String(ticketType).toUpperCase() === 'APPEAL' ? 'APPEAL' : 'REPORT';
 
     if (!reason || !description) {
       return res.status(400).json({
@@ -30,7 +30,7 @@ exports.createReport = async (req, res, next) => {
       });
     }
 
-    let finalTargetType = targetType || (normalizedTicketType === 'APPEAL' ? 'system' : '');
+    let finalTargetType = targetType ? String(targetType).toLowerCase() : (normalizedTicketType === 'APPEAL' ? 'system' : '');
     let finalTargetId = targetId || '';
     let targetTitle = incomingTargetTitle || '';
 

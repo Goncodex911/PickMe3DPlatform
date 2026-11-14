@@ -65,6 +65,9 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
   // Collection modal state
   const [collectionModalOpen, setCollectionModalOpen] = useState(false);
 
+  // Review options dropdown state
+  const [openReviewMenu, setOpenReviewMenu] = useState<string | null>(null);
+
   // Report modal state
   const [reportModalData, setReportModalData] = useState<{
     isOpen: boolean;
@@ -111,6 +114,21 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
       isMounted = false;
     };
   }, [templateId]);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-review-menu]")) {
+        setOpenReviewMenu(null);
+      }
+    };
+    if (openReviewMenu) {
+      document.addEventListener("click", handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener("click", handleOutsideClick);
+    };
+  }, [openReviewMenu]);
 
   const handleToggleLike = async () => {
     if (!templateId) return;
@@ -564,51 +582,75 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
               </div>
             ) : (
               <div className="space-y-3">
-                {reviewsList.map((rev, idx) => (
-                  <div key={idx} className="p-3.5 rounded-md bg-slate-900 border border-white/5 space-y-1.5 text-xs">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {rev.userAvatar ? (
-                          <img
-                            src={rev.userAvatar}
-                            alt=""
-                            className="w-6 h-6 rounded-full object-cover border border-white/10"
-                          />
-                        ) : (
-                          <div className="w-6 h-6 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center font-bold text-[10px]">
-                            {rev.userName ? rev.userName[0] : "U"}
-                          </div>
-                        )}
-                        <span className="font-semibold text-white">{rev.userName}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center text-amber-400 text-xs">
-                          {Array.from({ length: rev.rating }).map((_, i) => (
-                            <span key={i} className="material-symbols-rounded text-sm">
-                              star
-                            </span>
-                          ))}
+                {reviewsList.map((rev, idx) => {
+                  const reviewId = (rev as any)._id || (rev as any).id || rev.user || `${templateId}-review-${idx}`;
+                  return (
+                    <div key={idx} className="p-3.5 rounded-md bg-slate-900 border border-white/5 space-y-1.5 text-xs">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {rev.userAvatar ? (
+                            <img
+                              src={rev.userAvatar}
+                              alt=""
+                              className="w-6 h-6 rounded-full object-cover border border-white/10"
+                            />
+                          ) : (
+                            <div className="w-6 h-6 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center font-bold text-[10px]">
+                              {rev.userName ? rev.userName[0] : "U"}
+                            </div>
+                          )}
+                          <span className="font-semibold text-white">{rev.userName}</span>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setReportModalData({
-                              isOpen: true,
-                              targetType: "review",
-                              targetId: (rev as any)._id || (rev as any).id || rev.user || `${templateId}-review-${idx}`,
-                              targetTitle: `Đánh giá của ${rev.userName || "Người dùng"} cho "${template.title || 'Mẫu thiết kế'}"`,
-                            })
-                          }
-                          className="text-slate-500 hover:text-red-400 p-1 rounded hover:bg-white/5 transition-colors"
-                          title="Báo cáo đánh giá này"
-                        >
-                          <span className="material-symbols-rounded text-sm">flag</span>
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center text-amber-400 text-xs">
+                            {Array.from({ length: rev.rating }).map((_, i) => (
+                              <span key={i} className="material-symbols-rounded text-sm">
+                                star
+                              </span>
+                            ))}
+                          </div>
+
+                          {/* Three-dots menu for reporting review */}
+                          <div className="relative" data-review-menu>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenReviewMenu(openReviewMenu === reviewId ? null : reviewId);
+                              }}
+                              className="text-slate-400 hover:text-white p-1 rounded hover:bg-white/5 transition-colors cursor-pointer"
+                              title="Tùy chọn khác"
+                            >
+                              <span className="material-symbols-rounded text-base">more_vert</span>
+                            </button>
+                            {openReviewMenu === reviewId && (
+                              <div className="absolute right-0 top-full mt-1 w-36 rounded-lg bg-slate-800 border border-white/10 shadow-xl py-1 z-20 animate-fadeIn">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenReviewMenu(null);
+                                    setReportModalData({
+                                      isOpen: true,
+                                      targetType: "review",
+                                      targetId: reviewId,
+                                      targetTitle: `Đánh giá của ${rev.userName || "Người dùng"} cho "${template.title || 'Mẫu thiết kế'}"`,
+                                    });
+                                  }}
+                                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-rose-400 hover:bg-white/5 hover:text-rose-300 transition-colors cursor-pointer text-left"
+                                >
+                                  <span className="material-symbols-rounded text-sm">flag</span>
+                                  <span>Báo cáo đánh giá</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
+                      {rev.comment && <p className="text-slate-300 leading-relaxed pl-8">{rev.comment}</p>}
                     </div>
-                    {rev.comment && <p className="text-slate-300 leading-relaxed pl-8">{rev.comment}</p>}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

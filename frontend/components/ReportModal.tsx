@@ -7,7 +7,7 @@ import { uploadFileToCloudinary } from "@/lib/mediaUpload";
 interface ReportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  targetType: "template" | "review" | "creator";
+  targetType: "template" | "review" | "creator" | "TEMPLATE" | "REVIEW" | "CREATOR" | string;
   targetId: string;
   targetTitle: string;
   onSuccess?: () => void;
@@ -49,7 +49,8 @@ export default function ReportModal({
   targetTitle,
   onSuccess,
 }: ReportModalProps) {
-  const options = REASON_OPTIONS[targetType] || REASON_OPTIONS.template;
+  const normalizedTargetType = (targetType ? String(targetType).toLowerCase() : "template") as "template" | "review" | "creator";
+  const options = REASON_OPTIONS[normalizedTargetType] || REASON_OPTIONS.template;
   const [reason, setReason] = useState(options[0].value);
   const [description, setDescription] = useState("");
   const [attachments, setAttachments] = useState<string[]>([]);
@@ -97,7 +98,7 @@ export default function ReportModal({
       setErrorMsg("");
       const res = await createReportApi({
         ticketType: "REPORT",
-        targetType,
+        targetType: normalizedTargetType,
         targetId,
         targetTitle,
         reason,
@@ -147,7 +148,7 @@ export default function ReportModal({
           <div>
             <h3 className="text-lg font-bold text-white">Báo cáo vi phạm</h3>
             <p className="text-xs text-slate-400">
-              Đối tượng: <span className="text-amber-400 font-semibold">{TARGET_LABELS[targetType]}</span>
+              Đối tượng: <span className="text-amber-400 font-semibold">{TARGET_LABELS[normalizedTargetType] || "Nội dung"}</span>
               {targetTitle && (
                 <span className="text-slate-300 ml-1 truncate max-w-[260px] inline-block align-bottom font-medium">
                   ({targetTitle})
