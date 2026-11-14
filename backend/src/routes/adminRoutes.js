@@ -31,6 +31,7 @@ const {
 const { updateCreatorStatus, startCreatorReview, reviewTemplate } = require('../controllers/creatorController');
 const { listUiProducts, updateUiProductPrice } = require('../controllers/uiProductAdminController');
 const paymentAdmin = require('../controllers/paymentAdminController');
+const { listPlanPrices, updatePlanPrice } = require('../controllers/planAdminController');
 const { protect, authorize } = require('../middlewares/authMiddleware');
 
 // All admin routes require authentication and 'admin' role
@@ -58,6 +59,10 @@ router.put('/templates/:id/review', reviewTemplate);
 // UI Marketplace pricing: Admin edits prices of the fixed catalogue; there is no endpoint to add products (BR-06).
 router.get('/ui-products', listUiProducts);
 router.put('/ui-products/:productId/price', updateUiProductPrice);
+
+// Subscription plan pricing: Admin never buys a plan but sets its monthly price (payment:plan:configure).
+router.get('/plans', listPlanPrices);
+router.put('/plans/:planId/price', updatePlanPrice);
 
 // Slide Presentations Moderation
 router.get('/presentations', getAdminPresentations);

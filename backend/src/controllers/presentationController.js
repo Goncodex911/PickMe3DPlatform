@@ -113,7 +113,11 @@ exports.update = async (req, res) => {
   }
   const plan = getPlan(req.user.plan) || getPlan('free');
   const patch = {};
-  if (typeof req.body?.title === 'string') patch.title = req.body.title.trim().slice(0, 120);
+  if (typeof req.body?.title === 'string') {
+    const title = req.body.title.trim().slice(0, 120);
+    if (!title) return res.status(400).json({ success: false, code: 'INVALID_TITLE', message: 'Deck name cannot be empty' });
+    patch.title = title;
+  }
   if (Array.isArray(req.body?.slides)) patch.slides = req.body.slides;
   if (req.body?.theme && typeof req.body.theme === 'object') {
     patch.theme = { ...req.body.theme };

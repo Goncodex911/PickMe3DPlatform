@@ -34,6 +34,7 @@ export default function SlidesPage() {
   const [community, setCommunity] = useState<Deck[] | null>(null);
   const [menu, setMenu] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [hintError, setHintError] = useState("");
@@ -56,7 +57,13 @@ export default function SlidesPage() {
   }, [scope, community]);
 
   useEffect(() => {
-    const close = () => setMenu(null);
+    // React's root is `document` in the App Router, so stopPropagation() in the card cannot stop this listener:
+    // ignore clicks on the "…" button and inside an open menu, otherwise the menu closes in the same click.
+    const close = (event: MouseEvent) => {
+      const target = event.target as Element | null;
+      if (target?.closest?.("[data-deck-menu]")) return;
+      setMenu(null);
+    };
     const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") { setMenu(null); setConfirming(null); } };
     document.addEventListener("click", close);
     document.addEventListener("keydown", onKey);
@@ -165,7 +172,8 @@ export default function SlidesPage() {
       onExport(action === "png" ? "image" : action, deck);
       return;
     }
-    if (action === "delete") { setConfirming(deck.id); return; }
+    if (action === "rename") { setConfirming(null); setRenaming(deck.id); return; }
+    if (action === "delete") { setRenaming(null); setConfirming(deck.id); return; }
     if (action === "cancel") { setConfirming(null); return; }
     if (action === "copy") {
       const url = `${window.location.origin}/slides/view/?id=${deck.id}`;
@@ -186,6 +194,21 @@ export default function SlidesPage() {
       }
     } catch (err) {
       handleError(err);
+    }
+  };
+
+  // title === null: rename cancelled. Resolves true when the new name is saved.
+  const onRename = async (deck: Deck, title: string | null) => {
+    if (title === null) { setRenaming(null); return true; }
+    try {
+      const saved = await saveDeck(deck.id, { title });
+      setDecks((rows) => (rows || []).map((row) => (row.id === deck.id ? { ...row, title: saved.title || title } : row)));
+      setRenaming(null);
+      showToast("Deck renamed");
+      return true;
+    } catch (err) {
+      handleError(err);
+      return false;
     }
   };
 
@@ -313,8 +336,10 @@ export default function SlidesPage() {
               canExportPptx={Boolean(account?.features?.exportPptx)}
               menuOpen={menu === deck.id}
               confirming={confirming === deck.id}
+              renaming={renaming === deck.id}
               onMenu={setMenu}
               onAction={onAction}
+              onRename={onRename}
             />
           ))}
         </div>

@@ -11,6 +11,7 @@ import {
   PaginationMeta,
 } from "@/lib/adminService";
 import { PaymentOrderDrawer, ReconcilePanel, StatusBadge } from "@/components/admin/PaymentOps";
+import PlanPriceCard from "@/components/admin/PlanPriceCard";
 
 export default function AdminBillingPage() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
@@ -171,6 +172,9 @@ export default function AdminBillingPage() {
           </button>
         </div>
       </div>
+
+      {/* Subscription plan prices (Admin sets them, never buys a plan) */}
+      <PlanPriceCard />
 
       {/* Top Level KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

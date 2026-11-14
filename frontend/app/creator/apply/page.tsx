@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import CreatorApplicationTracker from "@/components/CreatorApplicationTracker";
+import { getStoredUser } from "@/lib/permissions";
 import {
   applyForCreator,
   fetchCreatorPolicy,
@@ -48,7 +49,17 @@ const OTHER_BANK = "__other__";
 const PHONE_RE = /^(0|\+84)\d{9,10}$/;
 const ACCOUNT_RE = /^\d{6,19}$/;
 const URL_RE = /^https?:\/\/[^\s]+\.[^\s]+$/i;
-const DRAFT_KEY = "pickme3d_creator_application_draft";
+// Unsent draft per tab AND per account: a draft must never be shown to another account signed in on the same tab.
+const DRAFT_PREFIX = "pickme3d_creator_application_draft";
+function draftKey(): string | null {
+  const user = getStoredUser() as { _id?: string; id?: string; email?: string } | null;
+  const owner = String(user?._id || user?.id || user?.email || "");
+  return owner ? `${DRAFT_PREFIX}:${owner}` : null;
+}
+// Drafts saved before they were scoped by account (shared by every account in the tab).
+function dropLegacyDraft() {
+  try { sessionStorage.removeItem(DRAFT_PREFIX); } catch {}
+}
 
 type Errors = Partial<Record<keyof CreatorApplicationPayload, string>>;
 
@@ -214,8 +225,10 @@ export default function CreatorApplyPage() {
         accountNumber: bank.accountNumber || "",
         accountHolder: bank.accountHolder || "",
       };
+      dropLegacyDraft();
       try {
-        const draft = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || "null");
+        const key = draftKey();
+        const draft = key ? JSON.parse(sessionStorage.getItem(key) || "null") : null;
         if (draft && typeof draft === "object") next = { ...next, ...draft, policyVersion: pol.version, acceptPolicy: false, acceptCopyright: false };
       } catch {}
       if (next.bankName && !BANKS.includes(next.bankName)) setOtherBank(true);
@@ -233,7 +246,8 @@ export default function CreatorApplyPage() {
     try {
       const { acceptPolicy, acceptCopyright, ...rest } = form;
       void acceptPolicy; void acceptCopyright;
-      sessionStorage.setItem(DRAFT_KEY, JSON.stringify(rest));
+      const key = draftKey();
+      if (key) sessionStorage.setItem(key, JSON.stringify(rest));
     } catch {}
   }, [form, loading, submitted]);
 
@@ -297,7 +311,7 @@ export default function CreatorApplyPage() {
     });
     setSubmitting(false);
     if (res.success) {
-      try { sessionStorage.removeItem(DRAFT_KEY); } catch {}
+      try { const key = draftKey(); if (key) sessionStorage.removeItem(key); } catch {}
       setSubmitted(true);
       setShowForm(false);
       setStep(0);

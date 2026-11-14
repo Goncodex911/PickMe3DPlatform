@@ -27,15 +27,45 @@ const PLANS = {
   },
 };
 
-function listPlans() {
-  return Object.values(PLANS);
-}
-
 // The Studio plan was retired; accounts/orders still stored as 'studio' are served as Pro.
 const LEGACY_PLAN_ALIASES = { studio: 'pro' };
 
-function getPlan(id) {
-  return PLANS[id] || PLANS[LEGACY_PLAN_ALIASES[id]] || null;
+// Admin-set monthly prices (services/planPriceService.js loads them from the DB). Only paid plans are priced:
+// Free stays 0. Orders already created keep the amount they were quoted.
+const priceOverrides = new Map();
+
+function own(map, key) {
+  return typeof key === 'string' && Object.prototype.hasOwnProperty.call(map, key);
 }
 
-module.exports = { PLANS, listPlans, getPlan };
+function withPrice(plan) {
+  if (!plan) return null;
+  return priceOverrides.has(plan.id) ? { ...plan, price: priceOverrides.get(plan.id) } : plan;
+}
+
+function listPlans() {
+  return Object.values(PLANS).map(withPrice);
+}
+
+function getPlan(id) {
+  const base = own(PLANS, id) ? PLANS[id] : own(LEGACY_PLAN_ALIASES, id) ? PLANS[LEGACY_PLAN_ALIASES[id]] : null;
+  return withPrice(base);
+}
+
+/** Plans whose price the Admin may change: every plan sold by subscription (price > 0 by default). */
+function isPriceConfigurable(id) {
+  return own(PLANS, id) && PLANS[id].price > 0;
+}
+
+function defaultPrice(id) {
+  return own(PLANS, id) ? PLANS[id].price : null;
+}
+
+/** null/undefined clears the override (back to the default price). */
+function setPriceOverride(id, price) {
+  if (!isPriceConfigurable(id)) return;
+  if (price == null) priceOverrides.delete(id);
+  else priceOverrides.set(id, Number(price));
+}
+
+module.exports = { PLANS, listPlans, getPlan, isPriceConfigurable, defaultPrice, setPriceOverride };

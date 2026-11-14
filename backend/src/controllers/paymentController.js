@@ -161,12 +161,14 @@ exports.orderDetail = async (req, res, next) => {
 
 exports.checkout = async (req, res, next) => {
   try {
+    // Admin owns Slide/3D and sets the plan prices; it never buys a plan. The role on the session counts too,
+    // so the rule also holds without a DB (mock accounts).
     const dbUser = await loadDbUser(req.user);
-    if (dbUser && isAdmin(dbUser)) {
+    if ((dbUser && isAdmin(dbUser)) || (req.user && req.user.role === 'admin')) {
       return res.status(403).json({
         success: false,
-        code: 'FORBIDDEN',
-        message: 'Admin sở hữu Slide và 3D nên không cần mua gói đăng ký',
+        code: 'ADMIN_NO_SUBSCRIPTION',
+        message: 'Admin sở hữu Slide và 3D nên không mua gói tháng. Admin chỉnh giá gói tại trang Quản trị > Thanh toán.',
       });
     }
     const pricing = quote(req.body || {});

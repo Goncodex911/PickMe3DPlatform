@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type CSSProperties } from "react";
+import Link from "next/link";
 import PromoCheckout from "@/components/PromoCheckout";
 import StudioShell, { Arrow, Icon } from "@/components/slides/StudioShell";
 import s from "@/components/slides/studio.module.css";
@@ -52,6 +53,8 @@ export default function PricingPage() {
     }
   };
 
+  // Admin owns Slide and 3D: it never buys a plan, it sets the plan prices in the admin console.
+  const isAdmin = account?.role === "admin";
   const mine = account?.plan || "free";
   const sorted = [...plans].sort((a, b) => ORDER.indexOf(a.id) - ORDER.indexOf(b.id));
   const mineName = plans.find((p) => p.id === mine)?.name || "Free";
@@ -96,7 +99,12 @@ export default function PricingPage() {
                   <Feat ok={!plan.watermark} label="No PickMe3D watermark" value={plan.watermark ? "No" : "Yes"} />
                 </ul>
                 <div className={s.cta}>
-                  {isMine ? (
+                  {isAdmin ? (
+                    <>
+                      <div className={s.state}>Admin · không mua gói</div>
+                      <p>{plan.price > 0 ? <Link href="/admin/billing/">Chỉnh giá gói {plan.name}</Link> : "Gói miễn phí"}</p>
+                    </>
+                  ) : isMine ? (
                     <>
                       <div className={s.state}>Your plan</div>
                       <p>{plan.id === "free" ? "Free forever" : account?.planExpiresAt ? `Renews or expires ${formatDate(account.planExpiresAt)}` : ""}</p>

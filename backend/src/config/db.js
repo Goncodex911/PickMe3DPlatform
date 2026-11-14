@@ -31,6 +31,13 @@ const connectDB = async () => {
     } catch (adminSyncErr) {
       console.warn('[Admin Sync Warning]:', adminSyncErr.message);
     }
+
+    // Admin-set subscription prices (otherwise the defaults from config/plans.js apply).
+    try {
+      await require('../services/planPriceService').loadPlanPrices();
+    } catch (planPriceErr) {
+      console.warn('[Plan Price Warning]:', planPriceErr.message);
+    }
   } catch (error) {
     console.warn(`[MongoDB Atlas] Connection warning: ${error.message}`);
     console.warn(`[MongoDB Atlas] Server will continue running without database.`);

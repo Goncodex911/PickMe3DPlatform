@@ -1134,3 +1134,28 @@ export async function deleteAdminReviewApi(
     return { success: false, message: err.message || "Lỗi xóa đánh giá vi phạm" };
   }
 }
+
+// ==========================================
+// SUBSCRIPTION PLAN PRICING (Admin sets the monthly price, never buys a plan)
+// ==========================================
+
+export interface AdminPlanPrice {
+  id: string;
+  name: string;
+  price: number;
+  defaultPrice: number;
+  configurable: boolean;
+  isCustom: boolean;
+  updatedAt: string | null;
+}
+
+export function fetchAdminPlanPricesApi() {
+  return adminJson<AdminPlanPrice[]>("/admin/plans");
+}
+
+export function updatePlanPriceApi(planId: string, price: number) {
+  return adminJson<{ id: string; name: string; price: number; persisted: boolean }>(
+    `/admin/plans/${encodeURIComponent(planId)}/price`,
+    { method: "PUT", body: JSON.stringify({ price }) }
+  );
+}
