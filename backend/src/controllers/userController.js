@@ -1,5 +1,7 @@
 const User = require('../models/User');
 const Template = require('../models/Template');
+const Presentation = require('../models/Presentation');
+const mongoose = require('mongoose');
 const { uploadIfBase64 } = require('../services/cloudinaryService');
 
 // @desc    Get all users
@@ -102,7 +104,8 @@ exports.deleteUserProfile = async (req, res, next) => {
  */
 exports.getPublicProfile = async (req, res, next) => {
   try {
-    const user = await User.findById(req.params.id).select('name picture bio jobRole username createdAt');
+    const user = await User.findOne({ _id: req.params.id, status: { $ne: 'banned' } })
+      .select('name picture bio jobRole username createdAt');
 
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
@@ -123,6 +126,10 @@ exports.getPublicProfile = async (req, res, next) => {
     ]);
 
     const aggregated = stats[0] || { totalDesigns: 0, totalLikes: 0, totalForks: 0, totalViews: 0 };
+    const templates = await Template.find({ author: user._id, isPublic: true })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .select('title description category tags thumbnailUrl docData likesCount viewsCount forksCount avgRating createdAt');
 
     res.status(200).json({
       success: true,
@@ -142,7 +149,38 @@ exports.getPublicProfile = async (req, res, next) => {
           totalForks: aggregated.totalForks,
           totalViews: aggregated.totalViews,
         },
+        templates,
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    List public profile routes for creators with public templates
+ * @route   GET /api/users/public-creators
+ * @access  Public
+ */
+exports.getPublicCreatorRoutes = async (req, res, next) => {
+  try {
+    const [templateAuthors, deckAuthors] = await Promise.all([
+      Template.distinct('author', { isPublic: true, author: { $ne: null } }),
+      Presentation.distinct('userId', { isPublic: true, userId: { $ne: '' } }),
+    ]);
+    const authorIds = [...new Set([...templateAuthors, ...deckAuthors]
+      .map((id) => id && id.toString())
+      .filter((id) => mongoose.Types.ObjectId.isValid(id)))];
+    const creators = await User.find({ _id: { $in: authorIds }, status: { $ne: 'banned' } })
+      .select('_id username')
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      data: creators.map((creator) => ({
+        id: creator._id.toString(),
+        username: creator.username || '',
+      })),
     });
   } catch (error) {
     next(error);
@@ -156,7 +194,7 @@ exports.getPublicProfile = async (req, res, next) => {
  */
 exports.getPublicProfileByUsername = async (req, res, next) => {
   try {
-    const user = await User.findOne({ username: req.params.username.toLowerCase() })
+    const user = await User.findOne({ username: req.params.username.toLowerCase(), status: { $ne: 'banned' } })
       .select('name picture bio jobRole username createdAt');
 
     if (!user) {

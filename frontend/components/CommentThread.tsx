@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { getCreatorProfileHref } from "@/lib/userService";
 import {
   CommentItem,
   fetchCommentsApi,
@@ -95,28 +97,36 @@ function CommentItemView({
 
   const isOwn = currentUserId === comment.user;
   const replyCount = comment.replyCount || 0;
+  const creatorHref = getCreatorProfileHref(comment.user);
+  const avatar = comment.userAvatar ? (
+    <img src={comment.userAvatar} alt="" className="w-8 h-8 rounded-full object-cover shrink-0 border border-white/10" />
+  ) : (
+    <div className="w-8 h-8 rounded-full bg-[#363636] border border-white/10 flex items-center justify-center text-[10px] text-slate-300 font-bold shrink-0">
+      {comment.userName?.[0] || "?"}
+    </div>
+  );
 
   return (
     <div className={`${depth > 0 ? "ml-10 mt-2" : "mt-4"}`}>
       <div className="flex items-start gap-3">
         {/* Avatar */}
-        {comment.userAvatar ? (
-          <img
-            src={comment.userAvatar}
-            alt={comment.userName}
-            className="w-8 h-8 rounded-full object-cover shrink-0 border border-white/10"
-          />
-        ) : (
-          <div className="w-8 h-8 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center text-[10px] text-slate-300 font-bold shrink-0">
-            {comment.userName?.[0] || "?"}
-          </div>
-        )}
+        {creatorHref ? (
+          <Link href={creatorHref} className="shrink-0 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" aria-label={`View ${comment.userName || "creator"}'s profile`}>
+            {avatar}
+          </Link>
+        ) : avatar}
 
         {/* Comment body */}
         <div className="flex-1 min-w-0">
           <div className="bg-white/5 rounded-lg px-3 py-2">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold text-white">{comment.userName}</span>
+              {creatorHref ? (
+                <Link href={creatorHref} className="text-xs font-semibold text-white hover:underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                  {comment.userName}
+                </Link>
+              ) : (
+                <span className="text-xs font-semibold text-white">{comment.userName}</span>
+              )}
               <span className="text-[10px] text-slate-500">{timeAgo(comment.createdAt)}</span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">

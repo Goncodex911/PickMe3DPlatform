@@ -35,6 +35,22 @@ export interface PublicUserProfile {
   }>;
 }
 
+/** Builds a public creator URL from a populated author, author ID, or username. */
+export function getCreatorProfileHref(
+  author?: string | { _id?: string; id?: string; username?: string } | null,
+  fallbackId?: string,
+): string | null {
+  const profile = typeof author === "object" && author ? author : undefined;
+  const rawValue = typeof author === "string"
+    ? author
+    : profile?._id || profile?.id || fallbackId || "";
+  const identifier = (rawValue || profile?.username || "").trim();
+
+  if (!identifier || /\s/.test(identifier)) return null;
+  const queryKey = /^[a-f\d]{24}$/i.test(identifier) ? "id" : "username";
+  return `/creators/?${queryKey}=${encodeURIComponent(identifier)}`;
+}
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
 function getAuthHeaders(): Record<string, string> {
@@ -104,7 +120,7 @@ export async function fetchPublicProfileByIdApi(
   userId: string
 ): Promise<PublicUserProfile | null> {
   try {
-    const res = await fetch(`${API_BASE}/users/${userId}/public`, {
+    const res = await fetch(`${API_BASE}/users/${encodeURIComponent(userId)}/public`, {
       cache: "no-store",
     });
 

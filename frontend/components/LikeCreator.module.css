@@ -1,0 +1,10 @@
+.like { display:inline-flex; align-items:center; justify-content:center; }
+.button { display:inline-flex; width:44px; min-height:44px; align-items:center; justify-content:center; padding:0; border:0; border-radius:0; background:transparent; color:#dedede; cursor:pointer; text-decoration:none; transition:color .16s ease,transform .16s ease; }
+.button:hover:not(:disabled) { color:#ff9caf; transform:scale(1.06); }
+.button[data-liked="true"] { background:transparent; color:#ff6f91; }
+.button:disabled { cursor:wait; opacity:.65; }
+.button .material-symbols-rounded { font-size:22px; }
+.error { flex-basis:100%; margin:0; color:#ffb7c2; font-size:11px; }
+.like :is(a,button):focus-visible { outline:2px solid white; outline-offset:3px; }
+@media(max-width:640px) { .like { justify-content:center; } }
+@media(prefers-reduced-motion:reduce) { .like * { transition-duration:.01ms!important; } }

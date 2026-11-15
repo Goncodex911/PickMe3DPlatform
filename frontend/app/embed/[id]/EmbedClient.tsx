@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { getCreatorProfileHref } from "@/lib/userService";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
@@ -12,6 +14,7 @@ interface TemplateDoc {
   description?: string;
   thumbnailUrl?: string;
   authorName?: string;
+  author?: { _id?: string; id?: string; username?: string } | string;
   docData?: unknown;
 }
 
@@ -33,6 +36,7 @@ export default function EmbedClient({ id }: Props) {
   const watermarkParam = searchParams.get("watermark");
   const showWatermark = watermarkParam !== "false" && watermarkParam !== "0";
   const isDark = themeParam !== "light";
+  const creatorProfileHref = template ? getCreatorProfileHref(template.author) : null;
 
   useEffect(() => {
     // 1. If id === "preview", load live preview from localStorage or fallback to SmartWatch Pro
@@ -259,7 +263,9 @@ export default function EmbedClient({ id }: Props) {
           </h1>
           {template.authorName && (
             <p style={{ margin: "6px 0 0", fontSize: 13, color: subtextColor }}>
-              by {template.authorName}
+              by {creatorProfileHref
+                ? <Link href={creatorProfileHref} className="rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" style={{ color: "inherit", textDecoration: "underline", textUnderlineOffset: 3 }}>{template.authorName}</Link>
+                : template.authorName}
             </p>
           )}
           {template.description && (

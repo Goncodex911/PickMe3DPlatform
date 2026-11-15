@@ -1,19 +1,19 @@
 import React, { Suspense } from "react";
 import CreatorProfileClient from "./CreatorProfileClient";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
+
 export async function generateStaticParams() {
-  // For static export, provide fallback params.
-  // Dynamic usernames are resolved at client-side via the API.
+  // Pre-render known public creator slugs; query-based routes cover new accounts.
   try {
-    const res = await fetch("http://localhost:5001/api/users", {
-      next: { revalidate: 60 },
-    });
+    const res = await fetch(`${API_BASE}/users/public-creators`, { cache: "no-store" });
     if (res.ok) {
-      const data = await res.json();
-      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-        return data.data
-          .filter((u: any) => u.username)
-          .map((u: any) => ({ username: u.username }));
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+        const usernames = json.data
+          .filter((creator: { username?: string }) => creator.username)
+          .map((creator: { username: string }) => ({ username: creator.username }));
+        if (usernames.length > 0) return usernames;
       }
     }
   } catch {}

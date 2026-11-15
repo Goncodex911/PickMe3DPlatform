@@ -7,6 +7,7 @@ import {
   TemplateItem,
   TemplateReview,
   fetchTemplateByIdApi,
+  isTemplateLikedByCurrentUser,
   getCoverEditorLink,
   prepareEditorSession,
   trackCoverTemplateApi,
@@ -23,6 +24,9 @@ import { AddToCollectionModal } from "@/components/CollectionManager";
 import DesignThumbnail from "@/components/DesignThumbnail";
 import ReportModal from "@/components/ReportModal";
 import { isCurrentUserAdmin } from "@/lib/reportService";
+import { getCreatorProfileHref } from "@/lib/userService";
+import { LangContext } from "@/lib/i18n";
+import siteStyles from "../page.module.css";
 
 interface TemplateDetailClientProps {
   id: string;
@@ -55,7 +59,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
   const [copiedEmbed, setCopiedEmbed] = useState(false);
 
   // Review & Rating state
-  const [userRating, setUserRating] = useState<number>(5);
+  const [userRating, setUserRating] = useState<number>(0);
   const [hoverRating, setHoverRating] = useState<number>(0);
   const [userComment, setUserComment] = useState<string>("");
   const [submittingReview, setSubmittingReview] = useState(false);
@@ -106,6 +110,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
         setTemplate(data);
         setActiveImage(data.thumbnailUrl || "");
         setLikes(data.likesCount || 0);
+        setIsLiked(isTemplateLikedByCurrentUser(data));
         setReviewsList(data.reviews || []);
         setAvgRating(data.avgRating || 0);
         setRatingsCount(data.ratingsCount || 0);
@@ -145,7 +150,15 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
     const newLiked = !isLiked;
     setIsLiked(newLiked);
     setLikes((prev) => (newLiked ? prev + 1 : Math.max(0, prev - 1)));
-    await toggleLikeTemplateApi(templateId);
+    const result = await toggleLikeTemplateApi(templateId);
+    if (!result.success) {
+      setIsLiked(!newLiked);
+      setLikes((prev) => (newLiked ? Math.max(0, prev - 1) : prev + 1));
+      return;
+    }
+
+    setIsLiked(result.liked ?? newLiked);
+    if (typeof result.likesCount === "number") setLikes(result.likesCount);
   };
 
   const handleToggleFollow = () => {
@@ -194,6 +207,10 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!templateId) return;
+    if (userRating < 1) {
+      setReviewMessage({ text: "Vui lòng chọn số sao trước khi gửi đánh giá.", error: true });
+      return;
+    }
 
     setSubmittingReview(true);
     setReviewMessage(null);
@@ -242,24 +259,26 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
   if (isEmbed) {
     if (loading) {
       return (
-        <div className="w-full h-full min-h-[400px] flex items-center justify-center bg-[#0a0e17] text-slate-400 text-xs font-mono">
+        <div className="w-full h-full min-h-[400px] flex items-center justify-center bg-[#1c1c1c] text-slate-400 text-xs font-mono">
           Đang tải thiết kế...
         </div>
       );
     }
     if (error || !template) {
       return (
-        <div className="w-full h-full min-h-[400px] flex items-center justify-center bg-[#0a0e17] text-slate-400 text-xs">
+        <div className="w-full h-full min-h-[400px] flex items-center justify-center bg-[#1c1c1c] text-slate-400 text-xs">
           Mẫu không tồn tại hoặc đã bị xóa.
         </div>
       );
     }
     return (
-      <div className="w-full h-full min-h-[480px] bg-[#0e1422] text-white p-4 flex flex-col justify-between border border-white/10 font-sans">
+      <div className="w-full h-full min-h-[480px] bg-[#1c1c1c] text-white p-4 flex flex-col justify-between border border-white/10 font-sans">
         <div className="flex items-center justify-between gap-3 pb-3 border-b border-white/10">
           <div>
             <h2 className="text-sm font-semibold text-white">{template.title}</h2>
-            <p className="text-xs text-slate-400">Bởi {template.authorName}</p>
+            <p className="text-xs text-slate-400">Bởi {getCreatorProfileHref(template.author)
+              ? <Link href={getCreatorProfileHref(template.author)!} className="rounded-sm hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">{template.authorName}</Link>
+              : template.authorName}</p>
           </div>
           <a
             href={`/templates/${templateId}`}
@@ -271,7 +290,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
           </a>
         </div>
 
-        <div className="relative my-3 flex-1 min-h-[300px] flex items-center justify-center bg-slate-950 rounded-md overflow-hidden border border-white/5">
+        <div className="relative my-3 flex-1 min-h-[300px] flex items-center justify-center bg-[#111111] rounded-md overflow-hidden border border-white/5">
           <DesignThumbnail docData={template.docData} thumbnailUrl={template.thumbnailUrl} title={template.title} />
         </div>
 
@@ -286,13 +305,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
   // Loading State
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#070b14] text-white flex flex-col">
-        <div className="border-b border-white/10 px-6 py-4 bg-[#0a0e17]">
-          <Link href="/templates" className="text-xs text-slate-400 hover:text-white flex items-center gap-1">
-            <span className="material-symbols-rounded text-sm">arrow_back</span>
-            <span>Bộ sưu tập mẫu</span>
-          </Link>
-        </div>
+      <div className="min-h-screen bg-[#131313] text-white flex flex-col">
         <div className="flex-1 flex flex-col items-center justify-center gap-3">
           <div className="w-7 h-7 border-2 border-white/20 border-t-red-500 rounded-full animate-spin" />
           <p className="text-xs text-slate-400 font-mono">Đang tải chi tiết thiết kế...</p>
@@ -304,15 +317,9 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
   // Error State
   if (error || !template) {
     return (
-      <div className="min-h-screen bg-[#070b14] text-white flex flex-col">
-        <div className="border-b border-white/10 px-6 py-4 bg-[#0a0e17]">
-          <Link href="/templates" className="text-xs text-slate-400 hover:text-white flex items-center gap-1">
-            <span className="material-symbols-rounded text-sm">arrow_back</span>
-            <span>Bộ sưu tập mẫu</span>
-          </Link>
-        </div>
+      <div className="min-h-screen bg-[#131313] text-white flex flex-col">
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto">
-          <div className="w-12 h-12 rounded-md bg-slate-800 text-slate-400 flex items-center justify-center mb-4">
+          <div className="w-12 h-12 rounded-md bg-[#363636] text-slate-400 flex items-center justify-center mb-4">
             <span className="material-symbols-rounded text-2xl">error_outline</span>
           </div>
           <h2 className="text-lg font-bold text-white mb-2">Không tìm thấy mẫu thiết kế</h2>
@@ -345,79 +352,23 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
   const palette = paletteOf(doc.paletteKey || "purple", doc.customPalette);
 
   return (
-    <div className="min-h-screen bg-[#070b14] text-white flex flex-col">
-      {/* Top Header / Breadcrumb */}
-      <div className="bg-[#0a0e17] border-b border-white/10 px-4 sm:px-8 py-3.5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/templates"
-            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors"
-          >
-            <span className="material-symbols-rounded text-sm">arrow_back</span>
-            <span>Bộ sưu tập</span>
-          </Link>
-          <span className="text-white/20">/</span>
-          <span className="text-xs text-slate-200 font-medium truncate max-w-[200px] sm:max-w-xs">
-            {template.title}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {!isAdmin && (
-            <button
-              type="button"
-              onClick={() =>
-                setReportModalData({
-                  isOpen: true,
-                  targetType: "template",
-                  targetId: template._id || templateId,
-                  targetTitle: template.title || "Mẫu thiết kế",
-                  targetUrl: `/templates/${templateId}`,
-                })
-              }
-              className="px-2.5 py-1.5 rounded-md bg-slate-800/80 hover:bg-red-500/10 text-slate-400 hover:text-red-400 text-xs font-medium border border-white/10 flex items-center gap-1.5 transition-colors cursor-pointer"
-              title="Báo cáo vi phạm mẫu này"
-            >
-              <span className="material-symbols-rounded text-sm text-red-400">flag</span>
-              <span className="hidden md:inline">Báo cáo</span>
-            </button>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setShareModalOpen(true)}
-            className="px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-white/10 flex items-center gap-1.5 transition-colors cursor-pointer"
-          >
-            <span className="material-symbols-rounded text-sm">share</span>
-            <span className="hidden sm:inline">Chia sẻ & Nhúng</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleUseTemplate}
-            className="px-4 py-1.5 rounded-md bg-red-600 hover:bg-red-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-          >
-            <span className="material-symbols-rounded text-sm">content_copy</span>
-            <span>Dùng mẫu này</span>
-          </button>
-        </div>
-      </div>
+    <div className={`${siteStyles.shared} min-h-screen bg-[#131313] text-white flex flex-col`}>
 
       {/* Main Content Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column: 3D Preview Stage + Reviews (cols 1-7) */}
         <section className="lg:col-span-7 flex flex-col gap-6">
           {/* Preview Container Card */}
-          <div className="rounded-md bg-[#0e1422] border border-white/10 p-5 flex flex-col gap-4">
+          <div className="rounded-md bg-[#1c1c1c] border border-white/10 p-5 flex flex-col gap-4">
             {/* View Mode Tabs */}
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-md border border-white/5">
+              <div className="flex items-center gap-1 bg-[#292929] p-1 rounded-md border border-white/5">
                 <button
                   type="button"
                   onClick={() => setViewMode("canvas")}
                   className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                     viewMode === "canvas"
-                      ? "bg-slate-800 text-white font-semibold"
+                      ? "bg-[#363636] text-white font-semibold"
                       : "text-slate-400 hover:text-white"
                   }`}
                 >
@@ -428,7 +379,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                   onClick={() => setViewMode("3d")}
                   className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                     viewMode === "3d"
-                      ? "bg-slate-800 text-white font-semibold"
+                      ? "bg-[#363636] text-white font-semibold"
                       : "text-slate-400 hover:text-white"
                   }`}
                 >
@@ -439,7 +390,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                   onClick={() => setViewMode("image")}
                   className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                     viewMode === "image"
-                      ? "bg-slate-800 text-white font-semibold"
+                      ? "bg-[#363636] text-white font-semibold"
                       : "text-slate-400 hover:text-white"
                   }`}
                 >
@@ -460,7 +411,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
             </div>
 
             {/* Display Stage Area */}
-            <div className="relative w-full aspect-[4/3] sm:aspect-[16/10] bg-slate-950 rounded-md border border-white/5 overflow-hidden flex items-center justify-center">
+            <div className="relative w-full aspect-[4/3] sm:aspect-[16/10] bg-[#111111] rounded-md border border-white/5 overflow-hidden flex items-center justify-center">
               {viewMode === "canvas" ? (
                 <DesignThumbnail docData={template.docData} title={template.title} />
               ) : viewMode === "3d" ? (
@@ -518,19 +469,19 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
 
             {/* Technical Specifications Bar */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-white/10 text-xs">
-              <div className="p-2.5 rounded-md bg-slate-900 border border-white/5">
+              <div className="p-2.5 rounded-md bg-[#292929] border border-white/5">
                 <span className="text-[11px] text-slate-400 block">Khung thiết kế</span>
                 <span className="font-semibold text-white capitalize">{doc.frame || "Phone"}</span>
               </div>
-              <div className="p-2.5 rounded-md bg-slate-900 border border-white/5">
+              <div className="p-2.5 rounded-md bg-[#292929] border border-white/5">
                 <span className="text-[11px] text-slate-400 block">Bảng màu</span>
                 <span className="font-semibold text-white capitalize">{doc.paletteKey || "Purple"}</span>
               </div>
-              <div className="p-2.5 rounded-md bg-slate-900 border border-white/5">
+              <div className="p-2.5 rounded-md bg-[#292929] border border-white/5">
                 <span className="text-[11px] text-slate-400 block">Số nhóm phần tử</span>
                 <span className="font-semibold text-white">{doc.groups?.length || 0} nhóm</span>
               </div>
-              <div className="p-2.5 rounded-md bg-slate-900 border border-white/5">
+              <div className="p-2.5 rounded-md bg-[#292929] border border-white/5">
                 <span className="text-[11px] text-slate-400 block">Danh mục</span>
                 <span className="font-semibold text-white">{template.category}</span>
               </div>
@@ -538,7 +489,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
           </div>
 
           {/* Section: Reviews & Đánh giá */}
-          <div className="rounded-md bg-[#0e1422] border border-white/10 p-5 space-y-5">
+          <div className="rounded-md bg-[#1c1c1c] border border-white/10 p-5 space-y-5">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <div className="flex items-center gap-2">
                 <h2 className="text-sm font-bold text-white uppercase tracking-wider">
@@ -548,15 +499,15 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
               </div>
 
               {avgRating > 0 && (
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold">
-                  <span className="material-symbols-rounded text-sm">star</span>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/5 border border-white/15 text-slate-200 text-xs font-bold">
+                  <span className="material-symbols-rounded text-sm" style={{ fontVariationSettings: '"FILL" 1', color: "#fbbf24" }}>star</span>
                   <span>{avgRating.toFixed(1)} / 5</span>
                 </div>
               )}
             </div>
 
             {/* Add Review Form */}
-            <form onSubmit={handleSubmitReview} className="p-4 rounded-md bg-slate-900 border border-white/5 space-y-3">
+            <form onSubmit={handleSubmitReview} className="p-4 rounded-md bg-[#292929] border border-white/5 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-slate-300">Đánh giá của bạn:</span>
                 <div className="flex items-center gap-1">
@@ -566,15 +517,19 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                       <button
                         key={star}
                         type="button"
+                        aria-label={`${star} sao`}
+                        aria-pressed={userRating === star}
                         onClick={() => setUserRating(star)}
                         onMouseEnter={() => setHoverRating(star)}
                         onMouseLeave={() => setHoverRating(0)}
                         className="p-0.5 text-base cursor-pointer"
                       >
                         <span
-                          className={`material-symbols-rounded text-lg ${
-                            active ? "text-amber-400 fill-amber-400" : "text-slate-600"
-                          }`}
+                          style={{
+                            fontVariationSettings: active ? '"FILL" 1' : '"FILL" 0',
+                            color: active ? "#fbbf24" : undefined,
+                          }}
+                          className={`material-symbols-rounded text-lg ${active ? "text-amber-400" : "text-slate-600"}`}
                         >
                           star
                         </span>
@@ -590,7 +545,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                   placeholder="Để lại nhận xét về mẫu thiết kế..."
                   value={userComment}
                   onChange={(e) => setUserComment(e.target.value)}
-                  className="flex-1 px-3 py-2 rounded-md bg-slate-950 border border-white/10 text-xs text-white placeholder:text-slate-500  outline-none"
+                  className="flex-1 px-3 py-2 rounded-md bg-[#111111] border border-white/10 text-xs text-white placeholder:text-slate-500  outline-none"
                 />
                 <button
                   type="submit"
@@ -623,10 +578,12 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
               <div className="space-y-3">
                 {reviewsList.map((rev, idx) => {
                   const reviewId = (rev as any)._id || (rev as any).id || rev.user || `${templateId}-review-${idx}`;
+                  const reviewerHref = getCreatorProfileHref(rev.user);
                   return (
-                    <div key={idx} className="p-3.5 rounded-md bg-slate-900 border border-white/5 space-y-1.5 text-xs">
+                    <div key={idx} className="p-3.5 rounded-md bg-[#292929] border border-white/5 space-y-1.5 text-xs">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          {reviewerHref && <Link href={reviewerHref} aria-label={`View ${rev.userName || "reviewer"}'s profile`} className="flex min-h-11 items-center gap-2 rounded-md hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
                           {rev.userAvatar ? (
                             <img
                               src={rev.userAvatar}
@@ -634,16 +591,21 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                               className="w-6 h-6 rounded-full object-cover border border-white/10"
                             />
                           ) : (
-                            <div className="w-6 h-6 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center font-bold text-[10px]">
+                            <div className="w-6 h-6 rounded-full bg-[#363636] text-slate-300 flex items-center justify-center font-bold text-[10px]">
                               {rev.userName ? rev.userName[0] : "U"}
                             </div>
                           )}
                           <span className="font-semibold text-white">{rev.userName}</span>
+                          </Link>}
+                          {!reviewerHref && <>
+                            {rev.userAvatar ? <img src={rev.userAvatar} alt="" className="w-6 h-6 rounded-full object-cover border border-white/10" /> : <div className="w-6 h-6 rounded-full bg-[#363636] text-slate-300 flex items-center justify-center font-bold text-[10px]">{rev.userName ? rev.userName[0] : "U"}</div>}
+                            <span className="font-semibold text-white">{rev.userName}</span>
+                          </>}
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="flex items-center text-amber-400 text-xs">
                             {Array.from({ length: rev.rating }).map((_, i) => (
-                              <span key={i} className="material-symbols-rounded text-sm">
+                              <span key={i} className="material-symbols-rounded text-sm" style={{ fontVariationSettings: '"FILL" 1', color: "#fbbf24" }}>
                                 star
                               </span>
                             ))}
@@ -677,7 +639,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                                 <span className="material-symbols-rounded text-base">more_vert</span>
                               </button>
                               {openReviewMenu === reviewId && (
-                                <div className="absolute right-0 top-full mt-1 w-36 rounded-lg bg-slate-800 border border-white/10 shadow-xl py-1 z-20 animate-fadeIn">
+                                <div className="absolute right-0 top-full mt-1 w-36 rounded-lg bg-[#363636] border border-white/10 shadow-xl py-1 z-20 animate-fadeIn">
                                   <button
                                     type="button"
                                     onClick={(e) => {
@@ -711,7 +673,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
           </div>
 
           {/* Section: Comments */}
-          <div className="rounded-md bg-[#0e1422] border border-white/10 p-5">
+          <div className="rounded-md bg-[#1c1c1c] border border-white/10 p-5">
             <CommentThread templateId={templateId} />
           </div>
         </section>
@@ -719,10 +681,10 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
         {/* Right Column: Template Info & Actions (cols 8-12) */}
         <aside className="lg:col-span-5 flex flex-col gap-6">
           {/* Main Info Box */}
-          <div className="rounded-md bg-[#0e1422] border border-white/10 p-6 space-y-5">
+          <div className="rounded-md bg-[#1c1c1c] border border-white/10 p-6 space-y-5">
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-medium uppercase bg-slate-800 text-red-400 border border-white/10">
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-medium uppercase bg-white/5 text-slate-200 border border-white/10">
                   {template.category}
                 </span>
                 <span className="text-[11px] text-slate-400 font-mono">
@@ -752,9 +714,10 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
             </div>
 
             {/* Author Information + Follow Button */}
-            <div className="p-3.5 rounded-md bg-slate-900 border border-white/5 flex items-center justify-between gap-3">
+            <div className="p-3.5 rounded-md bg-[#292929] border border-white/5 flex items-center justify-between gap-3">
               {(() => {
                 const authorUsername = template.author?.username;
+                const authorHref = getCreatorProfileHref(template.author);
                 const avatarEl = template.authorAvatar ? (
                   <img
                     src={template.authorAvatar}
@@ -762,7 +725,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                     className="w-10 h-10 rounded-full object-cover border border-white/20 shrink-0"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center font-bold text-sm shrink-0 border border-white/10">
+                  <div className="w-10 h-10 rounded-full bg-[#363636] text-slate-300 flex items-center justify-center font-bold text-sm shrink-0 border border-white/10">
                     {template.authorName ? template.authorName[0] : "U"}
                   </div>
                 );
@@ -773,14 +736,15 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                       {template.authorName}
                     </span>
                     {authorUsername && (
-                      <span className="text-[10px] text-red-400 font-medium">@{authorUsername}</span>
+                      <span className="text-[10px] text-slate-400 font-medium">@{authorUsername}</span>
                     )}
                   </div>
                 );
-                return authorUsername ? (
+                return authorHref ? (
                   <Link
-                    href={`/creator/?username=${encodeURIComponent(authorUsername)}`}
-                    className="flex items-center gap-3 min-w-0 hover:opacity-80 transition-opacity"
+                    href={authorHref}
+                    aria-label={`View ${template.authorName || "creator"}'s profile`}
+                    className="flex min-h-11 items-center gap-3 min-w-0 rounded-md hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white transition-opacity"
                   >
                     {avatarEl}
                     {nameEl}
@@ -798,7 +762,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                 onClick={handleToggleFollow}
                 className={`px-3 py-1.5 rounded-md text-xs font-semibold border transition-colors cursor-pointer shrink-0 ${
                   isFollowing
-                    ? "bg-slate-800 border-white/20 text-slate-300 hover:border-white/40"
+                    ? "bg-[#363636] border-white/20 text-slate-300 hover:border-white/40"
                     : "bg-white text-slate-900 border-white hover:bg-slate-100"
                 }`}
               >
@@ -811,7 +775,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
               <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 Mô tả thiết kế
               </h3>
-              <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-line p-3 rounded-md bg-slate-900 border border-white/5">
+              <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-line p-3 rounded-md bg-[#292929] border border-white/5">
                 {template.description || "Chưa có mô tả chi tiết cho thiết kế này."}
               </p>
             </div>
@@ -826,7 +790,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                   {template.tags.map((tag, idx) => (
                     <span
                       key={idx}
-                      className="px-2.5 py-1 rounded-md bg-slate-900 border border-white/10 text-xs text-slate-300"
+                      className="px-2.5 py-1 rounded-md bg-[#292929] border border-white/10 text-xs text-slate-300"
                     >
                       #{tag}
                     </span>
@@ -841,7 +805,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
               <button
                 type="button"
                 onClick={handleUseTemplate}
-                className="w-full py-3 px-4 rounded-md bg-red-600 hover:bg-red-500 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                className="w-full py-3 px-4 rounded-md bg-white hover:bg-neutral-200 text-[#131313] font-semibold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
                 <span className="material-symbols-rounded text-base">content_copy</span>
                 <span>Dùng mẫu này (Fork & Chỉnh sửa)</span>
@@ -851,13 +815,12 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                 <button
                   type="button"
                   onClick={handleToggleLike}
-                  className={`py-2 px-3 rounded-md border text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
-                    isLiked
-                      ? "bg-rose-500/10 border-rose-500/40 text-rose-400"
-                      : "bg-slate-900 border-white/10 text-slate-300 hover:text-white hover:border-white/20"
-                  }`}
+                  className="py-2 px-3 rounded-md border border-white/10 bg-[#292929] text-slate-300 hover:text-white hover:border-white/20 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
-                  <span className="material-symbols-rounded text-sm">
+                  <span
+                    className="material-symbols-rounded text-sm"
+                    style={{ fontVariationSettings: isLiked ? '"FILL" 1' : '"FILL" 0', color: isLiked ? "#ff6f91" : undefined }}
+                  >
                     {isLiked ? "favorite" : "favorite_border"}
                   </span>
                   <span>{isLiked ? "Đã thích" : "Thích"}</span>
@@ -866,7 +829,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                 <button
                   type="button"
                   onClick={() => setShareModalOpen(true)}
-                  className="py-2 px-3 rounded-md bg-slate-900 border border-white/10 text-slate-300 hover:text-white hover:border-white/20 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  className="py-2 px-3 rounded-md bg-[#292929] border border-white/10 text-slate-300 hover:text-white hover:border-white/20 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <span className="material-symbols-rounded text-sm">share</span>
                   <span>Chia sẻ</span>
@@ -875,7 +838,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                 <button
                   type="button"
                   onClick={handleDownloadJson}
-                  className="py-2 px-3 rounded-md bg-slate-900 border border-white/10 text-slate-300 hover:text-white hover:border-white/20 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  className="py-2 px-3 rounded-md bg-[#292929] border border-white/10 text-slate-300 hover:text-white hover:border-white/20 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                   title="Tải cấu hình JSON"
                 >
                   <span className="material-symbols-rounded text-sm">download</span>
@@ -887,7 +850,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
               <button
                 type="button"
                 onClick={() => setCollectionModalOpen(true)}
-                className="w-full py-2.5 px-4 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 font-semibold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                className="w-full py-2.5 px-4 rounded-md bg-white/5 hover:bg-white/10 border border-white/15 text-slate-200 font-semibold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
                 <span className="material-symbols-rounded text-sm">bookmark</span>
                 <span>Lưu vào Bộ Sưu Tập</span>
@@ -920,7 +883,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
       {/* Share & Embed Modal */}
       {shareModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-          <div className="w-full max-w-md rounded-md bg-[#0e1422] border border-white/10 p-6 space-y-4 shadow-xl">
+          <div className="w-full max-w-md rounded-md bg-[#1c1c1c] border border-white/10 p-6 space-y-4 shadow-xl">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <h3 className="text-sm font-bold text-white">Chia sẻ & Nhúng thiết kế</h3>
               <button
@@ -940,12 +903,12 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                   type="text"
                   readOnly
                   value={typeof window !== "undefined" ? window.location.href.split("?")[0] : ""}
-                  className="flex-1 px-3 py-2 rounded-md bg-slate-950 border border-white/10 text-xs text-slate-300 select-all outline-none"
+                  className="flex-1 px-3 py-2 rounded-md bg-[#111111] border border-white/10 text-xs text-slate-300 select-all outline-none"
                 />
                 <button
                   type="button"
                   onClick={handleCopyShareLink}
-                  className="px-3 py-2 rounded-md bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold border border-white/10 transition-colors shrink-0"
+                  className="px-3 py-2 rounded-md bg-[#363636] hover:bg-[#454545] text-white text-xs font-semibold border border-white/10 transition-colors shrink-0"
                 >
                   {copiedLink ? "Đã sao chép" : "Sao chép"}
                 </button>
@@ -962,12 +925,12 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                   value={`<iframe src="${
                     typeof window !== "undefined" ? window.location.origin : ""
                   }/templates/${templateId}?embed=true" width="100%" height="600" frameborder="0" allowfullscreen></iframe>`}
-                  className="w-full px-3 py-2 rounded-md bg-slate-950 border border-white/10 text-xs text-slate-300 select-all font-mono resize-none outline-none"
+                  className="w-full px-3 py-2 rounded-md bg-[#111111] border border-white/10 text-xs text-slate-300 select-all font-mono resize-none outline-none"
                 />
                 <button
                   type="button"
                   onClick={handleCopyEmbedCode}
-                  className="w-full py-2 rounded-md bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold border border-white/10 transition-colors"
+                  className="w-full py-2 rounded-md bg-[#363636] hover:bg-[#454545] text-white text-xs font-semibold border border-white/10 transition-colors"
                 >
                   {copiedEmbed ? "Đã sao chép mã nhúng" : "Sao chép mã nhúng iFrame"}
                 </button>
@@ -983,13 +946,15 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
 
       {/* Full Interactive Preview Mode */}
       {fullInteractiveOpen && (
-        <Preview
-          doc={doc}
-          widths={{}}
-          palette={palette}
-          startId={doc.frames?.[0]?.id || null}
-          onClose={() => setFullInteractiveOpen(false)}
-        />
+        <LangContext.Provider value="en">
+          <Preview
+            doc={doc}
+            widths={{}}
+            palette={palette}
+            startId={doc.frames?.[0]?.id || null}
+            onClose={() => setFullInteractiveOpen(false)}
+          />
+        </LangContext.Provider>
       )}
 
       {/* Add to Collection Modal */}
