@@ -132,7 +132,10 @@ function DetailDialog({
   const tokensCSS = useContext(TokensCtx);
   const price = useUiPrice(template.id);
   const isAdminView = useContext(AdminViewCtx);
+  // Source, AI prompt and HTML export are part of what is sold: only owners (and the admin) get them.
+  const canAccessSource = isPurchased || isAdminView;
   const [tab, setTab] = useState<"demo" | "analysis" | "prompt" | "code">("demo");
+  const tabLocked = !canAccessSource && (tab === "prompt" || tab === "code");
   const [copied, setCopied] = useState(false);
   const [customText, setCustomText] = useState(template.titleEn || template.title);
   const [customColor, setCustomColor] = useState(template.hue || "#6366f1");
@@ -182,14 +185,15 @@ Please implement this animated UI component in my project. Adapt the code above 
   }, [template, catLabel, fullCode]);
 
   const handleCopy = useCallback(async () => {
+    if (!canAccessSource) return;
     const text = tab === "prompt" ? promptText : fullCode;
     await navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  }, [tab, promptText, fullCode]);
+  }, [tab, promptText, fullCode, canAccessSource]);
 
   const handleDownload = useCallback(() => {
-    if (!tokensCSS) return;
+    if (!tokensCSS || !canAccessSource) return;
     const html = buildDownloadHTML(template, tokensCSS);
     const blob = new Blob([html], { type: "text/html" });
     const url = URL.createObjectURL(blob);
@@ -198,7 +202,7 @@ Please implement this animated UI component in my project. Adapt the code above 
     a.download = `${template.slug || template.id}.html`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [template, tokensCSS]);
+  }, [template, tokensCSS, canAccessSource]);
 
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
@@ -237,17 +241,21 @@ Please implement this animated UI component in my project. Adapt the code above 
             { key: "analysis" as const, icon: "analytics", label: "Phân Tích UI & Tương Tác" },
             { key: "prompt" as const, icon: "auto_awesome", label: "AI Prompt" },
             { key: "code" as const, icon: "code", label: "Source Code" },
-          ]).map((t) => (
-            <button
-              key={t.key}
-              className={styles.modalTab}
-              aria-selected={tab === t.key}
-              onClick={() => setTab(t.key)}
-            >
-              <span className="material-symbols-rounded" style={{ fontSize: 16 }}>{t.icon}</span>
-              {t.label}
-            </button>
-          ))}
+          ]).map((t) => {
+            const locked = !canAccessSource && (t.key === "prompt" || t.key === "code");
+            return (
+              <button
+                key={t.key}
+                className={styles.modalTab}
+                aria-selected={tab === t.key}
+                onClick={() => setTab(t.key)}
+                title={locked ? "Mua sản phẩm để mở nội dung này" : undefined}
+              >
+                <span className="material-symbols-rounded" style={{ fontSize: 16 }}>{locked ? "lock" : t.icon}</span>
+                {t.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Body */}
@@ -470,6 +478,32 @@ Please implement this animated UI component in my project. Adapt the code above 
                 </div>
               </div>
             </div>
+          ) : tabLocked ? (
+            /* Not purchased: the code / prompt is never rendered into the page */
+            <div
+              style={{
+                padding: "40px 24px",
+                background: "#121212",
+                border: "1px solid #333",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 12,
+                textAlign: "center",
+              }}
+            >
+              <span className="material-symbols-rounded" style={{ fontSize: 36, color: "#fbbf24" }}>lock</span>
+              <strong style={{ fontSize: 15, color: "#fff" }}>
+                {tab === "prompt" ? "AI Prompt" : "Source Code"} chỉ dành cho người đã mua
+              </strong>
+              <p style={{ fontSize: 12, color: "#aaa", margin: 0, maxWidth: 420, lineHeight: 1.6 }}>
+                Mua sản phẩm này để xem mã nguồn, sao chép AI Prompt và xuất file HTML.
+              </p>
+              <button onClick={() => onBuy(template)} className={styles.modalBuyBtn}>
+                <span className="material-symbols-rounded" style={{ fontSize: 16 }}>shopping_bag</span>
+                {actionLabel(price, isAdminView)}
+              </button>
+            </div>
           ) : (
             <div
               style={{
@@ -544,7 +578,7 @@ Please implement this animated UI component in my project. Adapt the code above 
                 {actionLabel(price, isAdminView)}
               </button>
             )}
-            {template.html && (
+            {template.html && canAccessSource && (
               <button
                 onClick={handleDownload}
                 style={{
@@ -565,7 +599,7 @@ Please implement this animated UI component in my project. Adapt the code above 
                 Export HTML
               </button>
             )}
-            {tab !== "demo" && (
+            {(tab === "prompt" || tab === "code") && canAccessSource && (
               <button
                 onClick={handleCopy}
                 style={{
