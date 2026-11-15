@@ -3,11 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ActivityItem, getActivity } from "@/lib/socialService";
+import { getCreatorProfileHref } from "@/lib/userService";
 import styles from "./activity.module.css";
-
-function creatorHref(username?: string) {
-  return username ? `/creator/?username=${encodeURIComponent(username)}` : "/templates/";
-}
 
 function displayDate(value: string) {
   const date = new Date(value);
@@ -26,11 +23,12 @@ function feedErrorMessage(reason: unknown) {
 function FeedCard({ item }: { item: ActivityItem }) {
   const name = item.creator.name || "Creator";
   const image = item.thumbnailUrl;
+  const profileHref = getCreatorProfileHref(item.creator);
 
   return (
     <article className={styles.activityCard}>
       <header className={styles.authorRow}>
-        <Link className={styles.avatarLink} href={creatorHref(item.creator.username)} aria-label={`Xem hồ sơ ${name}`}>
+        <Link className={styles.avatarLink} href={profileHref || "/templates/"} aria-label={`Xem hồ sơ ${name}`}>
           {item.creator.picture ? (
             <img src={item.creator.picture} alt="" loading="lazy" />
           ) : (
@@ -38,7 +36,7 @@ function FeedCard({ item }: { item: ActivityItem }) {
           )}
         </Link>
         <div className={styles.authorInfo}>
-          <Link href={creatorHref(item.creator.username)}>{name}</Link>
+          <Link href={profileHref || "/templates/"}>{name}</Link>
           <span>{item.creator.username ? `@${item.creator.username}` : "PickMe3D Creator"}</span>
         </div>
         <time className={styles.timestamp} dateTime={item.createdAt}>{displayDate(item.createdAt)}</time>

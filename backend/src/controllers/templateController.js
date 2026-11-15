@@ -5,6 +5,7 @@ const { uploadIfBase64 } = require('../services/cloudinaryService');
 const { hasPermission, isAdmin } = require('../config/permissions');
 const { isValidPrice, PRICE_ERROR } = require('../config/pricing');
 const { logPriceChange, getPriceHistory, getPriceDrops } = require('../services/templatePriceHistory');
+const { HIDDEN_REVIEW_STATES, previewOnlyDoc } = require('../services/templateVisibility');
 const {
   templateOwnerType,
   isTemplateOwner,
@@ -12,9 +13,6 @@ const {
   hasTemplateEntitlement,
   templateHasBuyers,
 } = require('../services/accessService');
-
-// Listing states that are not live on the marketplace. A missing reviewStatus = legacy approved listing.
-const HIDDEN_REVIEW_STATES = ['DRAFT', 'PENDING_REVIEW', 'REJECTED', 'TAKEN_DOWN'];
 
 function isListed(template) {
   return Boolean(template && template.isPublic && !HIDDEN_REVIEW_STATES.includes(template.reviewStatus));
@@ -41,30 +39,6 @@ async function withAccess(template, user, priceDrops = {}) {
     plain.locked = true;
   }
   return plain;
-}
-
-// Data a buyer pays for but a thumbnail does not need: animation source, interactions, notes, prompt edits.
-const PREVIEW_ITEM_DROP = ['note', 'noteHistory', 'actions', 'animationHtml', 'animationJs', 'animationCss', 'html', 'js', 'code', 'prompt'];
-const PREVIEW_DOC_DROP = ['promptEdit', 'promptOptions', 'brief'];
-
-function previewOnlyDoc(docData) {
-  if (!docData || typeof docData !== 'object') return null;
-  const doc = { ...docData };
-  for (const key of PREVIEW_DOC_DROP) delete doc[key];
-  doc.groups = Array.isArray(docData.groups)
-    ? docData.groups.map((g) => ({
-        ...g,
-        items: Array.isArray(g.items)
-          ? g.items.map((it) => {
-              const clean = { ...it };
-              for (const key of PREVIEW_ITEM_DROP) delete clean[key];
-              return clean;
-            })
-          : [],
-      }))
-    : [];
-  doc.frames = Array.isArray(docData.frames) ? docData.frames.map(({ note, ...f }) => f) : [];
-  return doc;
 }
 
 function forbid(res, code, message) {

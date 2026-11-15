@@ -232,7 +232,7 @@ export default function BlueprintInputModal({
   const layout = project.layoutData;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/55 backdrop-blur-sm p-3 sm:p-6 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/55 p-3 sm:p-6 overflow-y-auto">
       <div
         role="dialog"
         aria-modal="true"
@@ -700,7 +700,7 @@ export default function BlueprintInputModal({
 
       {/* 2D VECTOR CORRECTION CANVAS MODAL (Story 4.1) */}
       {isEditingVector && (
-        <div className="fixed inset-0 z-[60] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6">
+        <div className="fixed inset-0 z-[60] bg-black/85 flex items-center justify-center p-3 sm:p-6">
           <VectorCorrectionCanvas
             initialLayout={project.layoutData ?? convertBlueprintProjectToLayoutData(project)}
             onConfirm={(updatedLayout) => {

@@ -7,6 +7,8 @@ import {
   getCoverEditorLink,
   trackCoverTemplateApi,
   toggleLikeTemplateApi,
+  isTemplateLikedByCurrentUser,
+  getStoredCurrentUserId,
   addTemplateReviewApi,
   deleteTemplateReviewApi,
 } from "@/lib/templateService";
@@ -14,6 +16,7 @@ import Link from "next/link";
 import DesignThumbnail from "./DesignThumbnail";
 import ReportModal from "./ReportModal";
 import { isCurrentUserAdmin } from "@/lib/reportService";
+import { getCreatorProfileHref } from "@/lib/userService";
 
 interface TemplateDetailModalProps {
   template: TemplateItem | null;
@@ -34,7 +37,7 @@ export default function TemplateDetailModal({
   const [isLiked, setIsLiked] = useState(false);
 
   // Review & Rating state
-  const [userRating, setUserRating] = useState<number>(5);
+  const [userRating, setUserRating] = useState<number>(0);
   const [hoverRating, setHoverRating] = useState<number>(0);
   const [userComment, setUserComment] = useState<string>("");
   const [submittingReview, setSubmittingReview] = useState(false);
@@ -85,7 +88,7 @@ export default function TemplateDetailModal({
     if (template) {
       setActiveImage(template.thumbnailUrl || "");
       setLikes(template.likesCount || 0);
-      setIsLiked(false);
+      setIsLiked(isTemplateLikedByCurrentUser(template));
       setReviewsList(template.reviews || []);
       setAvgRating(template.avgRating || 0);
       setRatingsCount(template.ratingsCount || 0);
@@ -105,6 +108,7 @@ export default function TemplateDetailModal({
   if (!template) return null;
 
   const templateId = template._id || template.id || "";
+  const creatorHref = getCreatorProfileHref(template.author);
 
   const handleCopyLink = () => {
     const url = `${window.location.origin}${getCoverEditorLink(template)}`;
@@ -114,13 +118,33 @@ export default function TemplateDetailModal({
   };
 
   const handleToggleLike = async () => {
+    if (!templateId) return;
+
     const newLiked = !isLiked;
     setIsLiked(newLiked);
     setLikes((prev) => (newLiked ? prev + 1 : Math.max(0, prev - 1)));
 
-    if (templateId) {
-      await toggleLikeTemplateApi(templateId);
+    const result = await toggleLikeTemplateApi(templateId);
+    if (!result.success) {
+      setIsLiked(!newLiked);
+      setLikes((prev) => (newLiked ? Math.max(0, prev - 1) : prev + 1));
+      return;
     }
+
+    const liked = result.liked ?? newLiked;
+    const likedBy = template.likedBy || [];
+    const currentUserId = getStoredCurrentUserId();
+    const updatedLikedBy = liked
+      ? Array.from(new Set([...likedBy.map(String), currentUserId].filter(Boolean)))
+      : likedBy.filter((id) => String(id) !== currentUserId);
+
+    setIsLiked(liked);
+    if (typeof result.likesCount === "number") setLikes(result.likesCount);
+    onTemplateUpdated?.({
+      ...template,
+      likedBy: updatedLikedBy,
+      likesCount: result.likesCount ?? likes + (liked ? 1 : -1),
+    });
   };
 
   const handleDownloadJson = () => {
@@ -137,6 +161,10 @@ export default function TemplateDetailModal({
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!templateId) return;
+    if (userRating < 1) {
+      setReviewMessage({ text: "Choose a rating before submitting your review.", error: true });
+      return;
+    }
 
     setSubmittingReview(true);
     setReviewMessage(null);
@@ -194,12 +222,12 @@ export default function TemplateDetailModal({
       : template.thumbnailUrl ? [template.thumbnailUrl] : [];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-8 bg-black/80 backdrop-blur-md animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-8 bg-black/80 animate-fadeIn">
       {/* Backdrop Click */}
       <div className="absolute inset-0" onClick={onClose} />
 
       {/* Modal Dialog Content */}
-      <div className="relative w-full max-w-4xl max-h-[92vh] overflow-y-auto bg-[#0d131f] border border-white/15 rounded-3xl shadow-2xl z-10 flex flex-col md:flex-row overflow-hidden scrollbar-none">
+      <div className="relative w-full max-w-4xl max-h-[92vh] overflow-y-auto bg-[#131313] border border-white/15 rounded-md shadow-2xl z-10 flex flex-col md:flex-row overflow-hidden scrollbar-none">
         {/* Top Right Actions: Report & Close */}
         <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
           {!isAdmin && (
@@ -232,7 +260,7 @@ export default function TemplateDetailModal({
         </div>
 
         {/* Left Side: Preview Gallery & Specs */}
-        <div className="w-full md:w-1/2 p-6 bg-[#090d16]/90 flex flex-col items-center justify-between border-b md:border-b-0 md:border-r border-white/10">
+        <div className="w-full md:w-1/2 p-6 bg-[#1c1c1c] flex flex-col items-center justify-between border-b md:border-b-0 md:border-r border-white/10">
           {/* Main Active Image Preview */}
           <div className="relative w-full aspect-[4/5] rounded-2xl overflow-hidden bg-slate-900 border border-white/10 shadow-inner group">
             <DesignThumbnail docData={template.docData} thumbnailUrl={activeImage || template.thumbnailUrl} title={template.title} />
@@ -243,7 +271,7 @@ export default function TemplateDetailModal({
             {/* Rating badge on image */}
             {avgRating > 0 && (
               <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-amber-500/30 text-amber-400 text-xs font-bold">
-                <span className="material-symbols-rounded text-xs">star</span>
+                <span className="material-symbols-rounded text-xs" style={{ fontVariationSettings: '"FILL" 1', color: "#fbbf24" }}>star</span>
                 <span>{avgRating.toFixed(1)}</span>
                 <span className="text-[10px] text-slate-400 font-normal">({ratingsCount})</span>
               </div>
@@ -303,7 +331,7 @@ export default function TemplateDetailModal({
               <h2 className="text-2xl font-bold text-white leading-tight">{template.title}</h2>
 
               {/* Author Info */}
-              <div className="flex items-center gap-2.5 mt-3 pt-3 border-t border-white/10">
+              {creatorHref ? <Link href={creatorHref} aria-label={`View ${template.authorName || "creator"}'s profile`} className="flex min-h-11 items-center gap-2.5 mt-3 pt-3 border-t border-white/10 rounded-md hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white transition-colors">
                 {template.authorAvatar ? (
                   <img
                     src={template.authorAvatar}
@@ -319,7 +347,13 @@ export default function TemplateDetailModal({
                   <span className="text-xs text-slate-400 block">Creator</span>
                   <span className="text-sm font-semibold text-slate-200">{template.authorName}</span>
                 </div>
-              </div>
+              </Link> : <div className="flex items-center gap-2.5 mt-3 pt-3 border-t border-white/10">
+                {template.authorAvatar ? <img src={template.authorAvatar} alt="" className="w-8 h-8 rounded-full object-cover border border-white/20" /> : <div className="w-8 h-8 rounded-full bg-red-600/30 text-red-300 border border-red-500/40 flex items-center justify-center text-xs font-bold">{template.authorName ? template.authorName[0] : "U"}</div>}
+                <div>
+                  <span className="text-xs text-slate-400 block">Creator</span>
+                  <span className="text-sm font-semibold text-slate-200">{template.authorName}</span>
+                </div>
+              </div>}
             </div>
 
             {/* Description */}
@@ -367,7 +401,7 @@ export default function TemplateDetailModal({
             <div className="pt-3 border-t border-white/10">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-xs font-mono uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                  <span className="material-symbols-rounded text-sm text-amber-400">star</span>
+                  <span className="material-symbols-rounded text-sm text-amber-400" style={{ fontVariationSettings: '"FILL" 1', color: "#fbbf24" }}>star</span>
                   <span>Reviews ({ratingsCount})</span>
                 </h4>
                 {avgRating > 0 && (
@@ -378,7 +412,7 @@ export default function TemplateDetailModal({
               </div>
 
               {/* Add Review Form */}
-              <form onSubmit={handleSubmitReview} className="bg-white/5 p-3 rounded-2xl border border-white/10 space-y-2.5">
+              <form onSubmit={handleSubmitReview} className="bg-white/5 p-3 rounded-md border border-white/10 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-slate-300 font-medium">Your rating:</span>
                   {/* Star Rating Buttons */}
@@ -389,12 +423,15 @@ export default function TemplateDetailModal({
                         <button
                           key={star}
                           type="button"
+                          aria-label={`${star} stars`}
+                          aria-pressed={userRating === star}
                           onClick={() => setUserRating(star)}
                           onMouseEnter={() => setHoverRating(star)}
                           onMouseLeave={() => setHoverRating(0)}
                           className="p-0.5 text-base transition-transform hover:scale-125 cursor-pointer"
                         >
                           <span
+                            style={{ fontVariationSettings: active ? '"FILL" 1' : '"FILL" 0', color: active ? "#fbbf24" : undefined }}
                             className={`material-symbols-rounded text-lg ${
                               active ? "text-amber-400 fill-amber-400" : "text-slate-600"
                             }`}
@@ -449,7 +486,7 @@ export default function TemplateDetailModal({
                           <div className="flex items-center gap-1.5">
                             <div className="flex items-center text-amber-400 text-xs">
                               {Array.from({ length: rev.rating }).map((_, i) => (
-                                <span key={i} className="material-symbols-rounded text-xs">star</span>
+                                <span key={i} className="material-symbols-rounded text-xs" style={{ fontVariationSettings: '"FILL" 1', color: "#fbbf24" }}>star</span>
                               ))}
                             </div>
 
@@ -537,13 +574,9 @@ export default function TemplateDetailModal({
             <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={handleToggleLike}
-                className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                  isLiked
-                    ? "bg-rose-500/20 border-rose-500 text-rose-400"
-                    : "bg-white/5 border-white/10 hover:border-white/25 text-slate-300 hover:text-white"
-                }`}
+                className="py-2 px-3 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:border-white/25 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all"
               >
-                <span className="material-symbols-rounded text-base">{isLiked ? "favorite" : "favorite_border"}</span>
+                <span className="material-symbols-rounded text-base" style={{ fontVariationSettings: isLiked ? '"FILL" 1' : '"FILL" 0', color: isLiked ? "#ff6f91" : undefined }}>{isLiked ? "favorite" : "favorite_border"}</span>
                 <span>{isLiked ? "Liked" : "Like"}</span>
               </button>
 

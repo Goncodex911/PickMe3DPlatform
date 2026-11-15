@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { confirmDigitalPurchase } from "@/lib/paymentService";
 import { TemplateItem, checkoutTemplateApi, getCoverEditorLink, prepareEditorSession, trackCoverTemplateApi } from "@/lib/templateService";
+import { getCreatorProfileHref } from "@/lib/userService";
 import styles from "./TemplateCard.module.css";
 import DesignThumbnail from "./DesignThumbnail";
 
@@ -18,6 +19,7 @@ const vnd = (n: number) => `${n.toLocaleString("vi-VN")}₫`;
 export default function TemplateCard({ template, onSelect }: TemplateCardProps) {
   const router = useRouter();
   const templateId = template._id || template.id || "";
+  const creatorHref = getCreatorProfileHref(template.author);
   const price = Number(template.price || 0);
   // Only a price drop is announced (tag on the preview + old price struck through); an increase just shows the new price.
   const purchased = Boolean(template.purchased);
@@ -96,10 +98,13 @@ export default function TemplateCard({ template, onSelect }: TemplateCardProps) 
         <p className={styles.description}>{template.description || "A design from the PickMe3D community."}</p>
         <div className={styles.statistics}><span>{template.likesCount || 0} {(template.likesCount || 0) === 1 ? "like" : "likes"}</span><span>{template.viewsCount || 0} views</span></div>
         <div className={styles.bottom}>
-          <div className={styles.author}>
+          {creatorHref ? <Link href={creatorHref} className={`${styles.author} ${styles.authorLink}`} aria-label={`View ${template.authorName || "creator"}'s profile`}>
             {template.authorAvatar ? <img src={template.authorAvatar} alt="" loading="lazy" /> : <span className={styles.avatar}>{template.authorName?.[0] || "P"}</span>}
             <span>{template.authorName || "PickMe3D community"}</span>
-          </div>
+          </Link> : <div className={styles.author}>
+            {template.authorAvatar ? <img src={template.authorAvatar} alt="" loading="lazy" /> : <span className={styles.avatar}>{template.authorName?.[0] || "P"}</span>}
+            <span>{template.authorName || "PickMe3D community"}</span>
+          </div>}
           <div className={styles.price} aria-label={purchased ? "Đã mua" : price ? `Giá ${vnd(price)}` : "Miễn phí"}>
             {purchased ? (
               <span className={styles.owned}><span className="material-symbols-rounded" aria-hidden="true">check_circle</span>Đã mua</span>

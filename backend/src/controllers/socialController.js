@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Follow = require('../models/Follow');
+const CreatorLike = require('../models/CreatorLike');
 const User = require('../models/User');
 const Template = require('../models/Template');
 
@@ -42,6 +43,33 @@ exports.setFollow = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+exports.creatorLikeStatus = async (req, res, next) => {
+  try {
+    if (!await creatorExists(req, res)) return;
+    const [liked, likesCount] = await Promise.all([
+      req.user?._id ? CreatorLike.exists({ user: req.user._id, creator: req.params.id }) : null,
+      CreatorLike.countDocuments({ creator: req.params.id }),
+    ]);
+    res.json({ success: true, data: { liked: Boolean(liked), likesCount } });
+  } catch (err) { next(err); }
+};
+
+exports.setCreatorLike = async (req, res, next) => {
+  try {
+    if (!await creatorExists(req, res)) return;
+    if (String(req.user.id) === req.params.id) {
+      return res.status(400).json({ success: false, message: 'Không thể tự thích hồ sơ của mình' });
+    }
+    const filter = { user: req.user.id, creator: req.params.id };
+    if (req.method === 'DELETE') await CreatorLike.deleteOne(filter);
+    else {
+      try { await CreatorLike.updateOne(filter, { $setOnInsert: filter }, { upsert: true }); }
+      catch (err) { if (err.code !== 11000) throw err; }
+    }
+    return exports.creatorLikeStatus(req, res, next);
+  } catch (err) { next(err); }
+};
+
 // Join in MongoDB so the number of followed creators does not grow request memory.
 exports.activityFeed = async (req, res, next) => {
   try {
@@ -62,7 +90,7 @@ exports.activityFeed = async (req, res, next) => {
       { $match: { 'creator.status': { $ne: 'banned' } } },
       { $skip: (page - 1) * limit }, { $limit: limit + 1 },
       { $project: { title: 1, thumbnailUrl: 1, createdAt: 1,
-        'creator.name': 1, 'creator.username': 1, 'creator.picture': 1 } },
+        'creator._id': 1, 'creator.name': 1, 'creator.username': 1, 'creator.picture': 1 } },
     ]);
     res.json({ success: true, data: data.slice(0, limit), page, hasMore: data.length > limit });
   } catch (err) { next(err); }

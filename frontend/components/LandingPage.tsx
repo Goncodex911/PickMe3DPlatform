@@ -856,7 +856,7 @@ export default function LandingPage({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setAuthOpen(false)}
-              className="absolute inset-0 bg-black/75 backdrop-blur-md"
+              className="absolute inset-0 bg-black/75"
             />
 
             {/* Modal Box */}

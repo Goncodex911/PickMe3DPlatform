@@ -682,7 +682,7 @@ export default function AdminUsersPage() {
 
       {/* ── MODAL: CREATE USER ── */}
       {createModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
           <div className="w-full max-w-lg bg-zinc-950 border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -805,7 +805,7 @@ export default function AdminUsersPage() {
 
       {/* ── MODAL: UPDATE USER PLAN ── */}
       {planModalUser && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-zinc-950 border border-white/10 rounded-2xl p-6 shadow-2xl space-y-4">
             <h3 className="text-lg font-semibold text-white flex items-center gap-2">
               <span className="material-symbols-rounded text-zinc-400">workspace_premium</span>
@@ -896,7 +896,7 @@ export default function AdminUsersPage() {
 
       {/* ── MODAL: BAN / UNBAN USER ── */}
       {statusModalUser && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-zinc-950 border border-white/10 rounded-2xl p-6 shadow-2xl">
             <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
               <span className="material-symbols-rounded text-zinc-400">
@@ -955,7 +955,7 @@ export default function AdminUsersPage() {
 
       {/* ── MODAL: CHANGE ROLE ── */}
       {roleModalUser && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-zinc-950 border border-white/10 rounded-2xl p-6 shadow-2xl">
             <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
               <span className="material-symbols-rounded text-zinc-400">shield_person</span>
@@ -1012,7 +1012,7 @@ export default function AdminUsersPage() {
       )}
 
       {detailModalUser && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
           <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-zinc-950 border border-white/10 rounded-2xl p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -1179,7 +1179,7 @@ export default function AdminUsersPage() {
 
       {/* ── MODAL: BATCH CSV IMPORT ── */}
       {importModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
           <div className="w-full max-w-xl bg-zinc-950 border border-white/10 rounded-2xl p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-white flex items-center gap-2">
