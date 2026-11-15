@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import DeckSource from "@/components/slides/DeckSource";
 import SlideView from "@/components/slides/SlideView";
 import StudioShell, { Icon, useToast } from "@/components/slides/StudioShell";
@@ -76,7 +77,7 @@ export default function SlideViewPage() {
             <div className={s.dhead}>
               <div>
                 <p className={s.sub}>
-                  <span className={s.vis}><Icon name="person" />{deck.authorName || "PickMe3D user"}</span>
+                  <Link className={`${s.vis} ${s.creatorLink}`} href={`/creators/?id=${encodeURIComponent(deck.userId)}`} aria-label={`View ${deck.authorName || "creator"}'s profile`}><Icon name="person" />{deck.authorName || "PickMe3D user"}</Link>
                   <span>·</span><span>{slides.length} slide</span>
                   <span>·</span><span>{editedLabel(deck.updatedAt, deck.createdAt)}</span>
                 </p>

@@ -716,7 +716,7 @@ export default function AdminAnalyticsPage() {
 
       {/* CONFIG MODAL */}
       {configModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 animate-fade-in">
           <div className="w-full max-w-lg bg-[#0e121b] border border-white/15 rounded-2xl p-6 shadow-2xl space-y-5">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <h3 className="text-base font-semibold text-white flex items-center gap-2">

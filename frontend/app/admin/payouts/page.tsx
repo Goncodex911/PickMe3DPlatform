@@ -472,7 +472,7 @@ export default function AdminPayoutsPage() {
 
       {/* Confirmation & Processing Modal */}
       {activePayout && actionType && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl animate-fade-in space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <h3 className="text-base font-semibold text-white flex items-center gap-2">

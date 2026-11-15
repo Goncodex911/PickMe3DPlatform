@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import UpgradeModal from "@/components/UpgradeModal";
 import SlideView from "@/components/slides/SlideView";
 import StudioShell, { Arrow, Icon, useToast } from "@/components/slides/StudioShell";
@@ -173,7 +174,7 @@ export default function DeckPage() {
             <div className={s.dhead}>
               <div>
                 <p className={s.sub}>
-                  {!isOwner && <><span className={s.vis}><Icon name="person" />{deck.authorName || "PickMe3D user"}</span><span>·</span></>}
+                  {!isOwner && <><Link className={`${s.vis} ${s.creatorLink}`} href={`/creators/?id=${encodeURIComponent(deck.userId)}`} aria-label={`View ${deck.authorName || "creator"}'s profile`}><Icon name="person" />{deck.authorName || "PickMe3D user"}</Link><span>·</span></>}
                   <span className={s.vis} data-ro={locked}><Icon name={locked ? "lock" : deck.isPublic ? "public" : "visibility_off"} />{visLabel}</span>
                   <span>·</span><span>{slides.length} slide</span>
                   <span>·</span><span>{editedLabel(deck.updatedAt, deck.createdAt)}</span>
@@ -234,7 +235,7 @@ export default function DeckPage() {
                     <div><strong>{deck.likesCount || 0}</strong><span>likes</span></div>
                   </div>
                   <dl className={s.kv}>
-                    <dt>Author</dt><dd>{isOwner ? "You" : deck.authorName || "PickMe3D user"}</dd>
+                    <dt>Author</dt><dd>{isOwner ? "You" : <Link href={`/creators/?id=${encodeURIComponent(deck.userId)}`} className={`${s.creatorLink} underline-offset-2 hover:underline`}>{deck.authorName || "PickMe3D user"}</Link>}</dd>
                     <dt>Status</dt><dd>{visLabel}</dd>
                     <dt>Comments</dt><dd>{deck.comments?.length || 0}</dd>
                     <dt>Last edited</dt><dd>{editedLabel(deck.updatedAt, deck.createdAt).replace(/^(Edited|Created) /, "")}</dd>

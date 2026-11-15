@@ -40,10 +40,34 @@ export interface TemplateItem {
   ratingsCount?: number;
   avgRating?: number;
   reviews?: TemplateReview[];
-  likedBy?: string[];
+  likedBy?: Array<string | { _id?: string; id?: string }>;
   docData: any;
   createdAt?: string;
   updatedAt?: string;
+}
+
+/** Reads the cached signed-in user's ID without assuming a single API shape. */
+export function getStoredCurrentUserId(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    const user = JSON.parse(localStorage.getItem("pickme3d_user") || "null");
+    return String(user?._id || user?.id || "");
+  } catch {
+    return "";
+  }
+}
+
+/** Returns whether the signed-in user appears in a template's persisted likes. */
+export function isTemplateLikedByCurrentUser(
+  template: Pick<TemplateItem, "likedBy"> | null | undefined,
+): boolean {
+  const currentUserId = getStoredCurrentUserId();
+  if (!currentUserId || !template?.likedBy?.length) return false;
+
+  return template.likedBy.some((likedBy) => {
+    const likedUserId = typeof likedBy === "string" ? likedBy : likedBy._id || likedBy.id;
+    return String(likedUserId || "") === currentUserId;
+  });
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
@@ -150,9 +174,6 @@ export async function fetchTemplatesApi(params?: {
   return { templates: list, isOffline: false };
 }
 
-/**
- * Fetches a single template by ID from local backup or API
- */
 /** Starts payment for a paid template; resolves with the payment page URL. */
 export async function checkoutTemplateApi(templateId: string): Promise<{ success: boolean; checkoutUrl?: string; code?: string; message?: string }> {
   const token = typeof window !== "undefined" ? localStorage.getItem("pickme3d_token") : null;
@@ -170,19 +191,21 @@ export async function checkoutTemplateApi(templateId: string): Promise<{ success
   }
 }
 
+/** Fetches the latest template from the API, falling back to the local backup. */
 export async function fetchTemplateByIdApi(id: string): Promise<TemplateItem | null> {
   if (!id) return null;
 
-  // 1. Check local user designs
+  // Keep a local fallback, but prefer the server so persisted likes and counts are fresh.
+  let localTemplate: TemplateItem | null = null;
   if (typeof window !== "undefined") {
     try {
       const myDesigns: TemplateItem[] = JSON.parse(localStorage.getItem("pickme3d_my_designs") || "[]");
       const found = myDesigns.find((d) => (d._id && d._id === id) || (d.id && d.id === id));
-      if (found) return found;
+      if (found) localTemplate = found;
     } catch {}
   }
 
-  // 2. Query MongoDB backend API
+  // Query the backend first so server-side social state is restored after reload.
   try {
     // Send the token when signed in: the server only includes a paid template's content for owners and buyers.
     const token = typeof window !== "undefined" ? localStorage.getItem("pickme3d_token") : null;
@@ -200,7 +223,7 @@ export async function fetchTemplateByIdApi(id: string): Promise<TemplateItem | n
     console.warn(`Failed to fetch template ${id} from API:`, err);
   }
 
-  return null;
+  return localTemplate;
 }
 
 /**

@@ -62,7 +62,7 @@ export default function AIRenderPreviewModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-6 overflow-y-auto">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/85 p-3 sm:p-6 overflow-y-auto">
       <div className="relative w-full max-w-5xl rounded-2xl bg-[#12141a] border border-[#2b303d] shadow-2xl text-neutral-200 overflow-hidden flex flex-col max-h-[94vh]">
         
         {/* HEADER */}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { editedLabel } from "@/lib/deckFormat";
 import { isPptistSlide, toRenderSlides } from "@/lib/slideLegacy";
 import type { Deck } from "@/lib/presentationService";
@@ -143,7 +144,9 @@ export default function DeckCard({
           </button>
           <p>
             {community ? (
-              <span className={s.vis}><Icon name="person" />{deck.authorName || "PickMe3D user"}</span>
+              <Link className={`${s.vis} ${s.creatorLink}`} href={`/creators/?id=${encodeURIComponent(deck.userId)}`} aria-label={`View ${deck.authorName || "creator"}'s profile`}>
+                <Icon name="person" />{deck.authorName || "PickMe3D user"}
+              </Link>
             ) : locked ? (
               <span className={s.vis} data-ro="true"><Icon name="lock" />View only</span>
             ) : deck.isPublic ? (

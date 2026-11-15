@@ -2,6 +2,7 @@ const Report = require('../models/Report');
 const Template = require('../models/Template');
 const User = require('../models/User');
 const Comment = require('../models/Comment');
+const mongoose = require('mongoose');
 const { notifyAdmins } = require('../helpers/notificationHelper');
 
 // @desc    Submit an incident or content report / direct appeal
@@ -58,12 +59,21 @@ exports.createReport = async (req, res, next) => {
         });
       }
 
-      // Resolve target title / context if not already provided
-      if (!targetTitle) {
+      // Resolve creator names server-side so report titles and admin alerts are trustworthy.
+      if (finalTargetType === 'creator') {
+        if (!mongoose.Types.ObjectId.isValid(finalTargetId)) {
+          return res.status(404).json({ success: false, message: 'Không tìm thấy Creator được báo cáo' });
+        }
+        const creator = await User.findById(finalTargetId).select('name');
+        if (!creator) {
+          return res.status(404).json({ success: false, message: 'Không tìm thấy Creator được báo cáo' });
+        }
+        targetTitle = creator.name;
+      } else if (!targetTitle) {
         if (finalTargetType === 'template') {
           const tmpl = await Template.findById(finalTargetId).select('title');
           if (tmpl) targetTitle = tmpl.title;
-        } else if (finalTargetType === 'creator' || finalTargetType === 'user') {
+        } else if (finalTargetType === 'user') {
           const u = await User.findById(finalTargetId).select('name email');
           if (u) targetTitle = `${u.name} (${u.email})`;
         } else if (finalTargetType === 'comment') {
@@ -87,7 +97,7 @@ exports.createReport = async (req, res, next) => {
       if (finalTargetType === 'template') {
         finalTargetUrl = `/templates/${finalTargetId}`;
       } else if (finalTargetType === 'creator' || finalTargetType === 'user') {
-        finalTargetUrl = `/creator/${finalTargetId}`;
+        finalTargetUrl = `/creators/?id=${encodeURIComponent(finalTargetId)}`;
       } else if (finalTargetType === 'review' && finalTargetId && finalTargetId.includes('-review-')) {
         finalTargetUrl = `/templates/${finalTargetId.split('-review-')[0]}`;
       }
@@ -111,14 +121,13 @@ exports.createReport = async (req, res, next) => {
     });
 
     // Notify all Administrators
-    const notifMessage =
-      normalizedTicketType === 'APPEAL'
-        ? `Người dùng ${req.user.name || 'Người dùng'} đã gửi khiếu nại mới: ${targetTitle || reason}`
+    const notifMessage = normalizedTicketType === 'APPEAL'
+      ? `Người dùng ${req.user.name || 'Người dùng'} đã gửi khiếu nại mới: ${targetTitle || reason}`
+      : finalTargetType === 'creator'
+        ? `User ${req.user.name || 'User'} reported Creator ${targetTitle || 'Creator'}`
         : `Người dùng ${req.user.name || 'Người dùng'} đã báo cáo ${
             finalTargetType === 'template'
               ? `mẫu "${targetTitle}"`
-              : finalTargetType === 'creator'
-              ? `creator "${targetTitle}"`
               : finalTargetType === 'review'
               ? 'một đánh giá vi phạm'
               : finalTargetType

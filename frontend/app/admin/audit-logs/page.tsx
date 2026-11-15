@@ -287,7 +287,7 @@ export default function AdminAuditLogsPage() {
 
       {/* ── MODAL: LOG DETAILS ── */}
       {detailLog && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4">
           <div className="w-full max-w-lg bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold text-white flex items-center gap-2">
