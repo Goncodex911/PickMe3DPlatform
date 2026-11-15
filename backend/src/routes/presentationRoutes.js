@@ -16,6 +16,8 @@ router.get('/:id', presentation.getOne);
 router.put('/:id', presentation.update);
 router.delete('/:id', presentation.remove);
 router.post('/:id/like', presentation.like);
+// Tạo bản sao deck công khai vào không gian của mình: tính năng gói Pro (admin luôn được)
+router.post('/:id/use', requirePlan('pro'), checkQuota('slides'), presentation.useDeck);
 router.post('/:id/comments', presentation.comment);
 router.get('/:id/export.pptx', requirePlan('pro'), presentation.exportPptx);
 

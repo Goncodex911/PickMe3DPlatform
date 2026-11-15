@@ -34,6 +34,13 @@ const NOTICES: Record<string, Notice> = {
     perks: ["Dựng mô hình 3D từ bản vẽ mặt bằng", "Tham quan từng phòng", "Phối cảnh AI 4K"],
     cta: "Mua gói Pro",
   },
+  "use-deck": {
+    kicker: "Gói Pro",
+    title: "Bạn cần mua gói Pro để dùng deck này",
+    body: "Người dùng gói Pro có thể tạo bản sao của bất kỳ deck công khai nào trong Community vào không gian làm việc của mình để chỉnh sửa. Deck gốc của tác giả không bị ảnh hưởng.",
+    perks: ["Dùng deck của Community làm điểm bắt đầu", "Bản sao riêng tư, chỉnh sửa tự do trong Slide Studio", "Không giới hạn số deck, xuất PPTX"],
+    cta: "Mua gói Pro",
+  },
   "export-pptx": {
     kicker: "Gói Pro",
     title: "Xuất PPTX cần gói Pro",

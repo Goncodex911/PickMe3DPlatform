@@ -59,6 +59,36 @@ exports.create = async (req, res) => {
   res.status(201).json({ success: true, data: deck });
 };
 
+// "Dùng deck này" (kiểu Canva): tạo bản sao độc lập của một deck công khai vào không gian của người dùng Pro.
+// Deck gốc không bị đổi gì; bản sao không mang theo lượt thích / xem / bình luận và mặc định riêng tư.
+exports.useDeck = async (req, res) => {
+  const source = await billing.getDeck(req.params.id);
+  if (!source || (!source.isPublic && !owns(source, req.user))) {
+    return res.status(404).json({ success: false, message: 'Deck not found' });
+  }
+  const plan = getPlan(req.user.plan) || getPlan('free');
+  const clone = (value) => JSON.parse(JSON.stringify(value ?? null));
+  const theme = clone(source.theme) || {};
+  // Ghi nguồn để trang deck hiện "Based on ‹deck› by ‹tác giả›" (không lưu id tài khoản tác giả)
+  theme.copiedFrom = {
+    deckId: String(source.id),
+    title: String(source.title || '').slice(0, 120),
+    authorName: String(source.authorName || '').slice(0, 80),
+    copiedAt: new Date().toISOString(),
+  };
+  const title = `Copy of ${String(source.title || 'Untitled deck')}`.slice(0, 120);
+  const deck = await billing.createDeck({
+    userId: req.user.id,
+    authorName: req.user.name || '',
+    title,
+    slides: Array.isArray(source.slides) ? clone(source.slides) : [],
+    theme,
+    thumbnail: source.thumbnail || '',
+    isPublic: !(plan.privateDeck || req.user.role === 'admin'),
+  });
+  res.status(201).json({ success: true, data: deck });
+};
+
 // Pipeline nhiều tầng (Groq + Gemini, 3-5 lượt gọi) có thể quá thời gian chờ của một request:
 // trả 202 + jobId ngay, client hỏi tiến độ ở GET /presentations/jobs/:id.
 exports.generate = async (req, res) => {
@@ -150,6 +180,11 @@ exports.update = async (req, res) => {
   if (Array.isArray(req.body?.slides)) patch.slides = req.body.slides;
   if (req.body?.theme && typeof req.body.theme === 'object') {
     patch.theme = { ...req.body.theme };
+    // Ghi nguồn của bản sao ("Use this deck") do server đặt lúc sao chép: client không xoá / đổi / tự thêm được.
+    // (Studio đổi theme deck cũ sang định dạng mới khi lưu nên có thể làm rơi trường này.)
+    const source = current.theme && current.theme.copiedFrom;
+    if (source) patch.theme.copiedFrom = source;
+    else delete patch.theme.copiedFrom;
     if (!plan.brandKit) {
       delete patch.theme.brandLogo;
     } else if (patch.theme.brandLogo && patch.theme.brandLogo.startsWith('data:')) {

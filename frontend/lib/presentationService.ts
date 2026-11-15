@@ -109,6 +109,20 @@ export async function generateDeck(topic: string, options: GenerateOptions = {})
   throw new Error("AI is taking too long. Check your deck list in a minute.");
 }
 
+// "Use this deck": bản sao độc lập của một deck công khai vào không gian của mình (gói Pro). Deck gốc không đổi.
+export async function copyDeckToWorkspace(id: string) {
+  const res = await apiFetch(`${API_BASE}/presentations/${encodeURIComponent(id)}/use`, { method: "POST" });
+  const data = await read(res);
+  return data.data as Deck;
+}
+
+/** Nguồn của bản sao tạo bằng "Use this deck" (lưu trong theme.copiedFrom). */
+export function copiedFrom(deck: Pick<Deck, "theme"> | null | undefined): { deckId: string; title: string; authorName: string } | null {
+  const source = deck?.theme?.copiedFrom as { deckId?: unknown; title?: unknown; authorName?: unknown } | undefined;
+  if (!source || typeof source.deckId !== "string") return null;
+  return { deckId: source.deckId, title: String(source.title || ""), authorName: String(source.authorName || "") };
+}
+
 export async function getDeck(id: string) {
   const res = await apiFetch(`${API_BASE}/presentations/${id}`);
   const data = await read(res);

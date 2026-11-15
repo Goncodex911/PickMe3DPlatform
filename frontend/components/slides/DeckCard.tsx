@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { editedLabel } from "@/lib/deckFormat";
 import { isPptistSlide, toRenderSlides } from "@/lib/slideLegacy";
 import type { Deck } from "@/lib/presentationService";
+import DeckSource from "./DeckSource";
 import SlideView from "./SlideView";
 import { Icon } from "./StudioShell";
 import s from "./studio.module.css";
@@ -20,7 +21,7 @@ export function DeckCover({ deck }: { deck: Deck }) {
   return <span className={s.cover}><strong>{deck.title}</strong><span>No slides yet</span></span>;
 }
 
-export type DeckMenuAction = "studio" | "pptx" | "pdf" | "png" | "copy" | "toggle" | "rename" | "delete" | "confirm-delete" | "cancel";
+export type DeckMenuAction = "studio" | "pptx" | "pdf" | "png" | "copy" | "toggle" | "rename" | "delete" | "confirm-delete" | "cancel" | "use";
 
 const MAX_TITLE = 120;
 
@@ -157,11 +158,13 @@ export default function DeckCard({
             <span className={s.sep}>·</span>
             <DeckStats deck={deck} />
           </p>
+          <DeckSource deck={deck} compact />
         </div>
       )}
       {menuOpen && community && (
         <div className={s.menu} role="menu" data-deck-menu="" onClick={(event) => event.stopPropagation()}>
           <a role="menuitem" href={href}><Icon name="slideshow" />View deck</a>
+          <button type="button" role="menuitem" onClick={() => onAction("use", deck)}><Icon name="content_copy" />Use this deck</button>
           <a role="menuitem" href={`/slides/view/?id=${deck.id}`} target="_blank" rel="noreferrer"><Icon name="open_in_new" />Public page</a>
           <button type="button" role="menuitem" onClick={() => onAction("copy", deck)}><Icon name="link" />Copy link</button>
         </div>

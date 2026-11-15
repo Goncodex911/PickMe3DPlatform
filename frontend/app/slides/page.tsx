@@ -8,7 +8,7 @@ import s from "@/components/slides/studio.module.css";
 import { startDeckDownload, type DeckExportFormat } from "@/lib/deckExport";
 import { quotaText } from "@/lib/deckFormat";
 import { fetchAccount, type AccountPlan } from "@/lib/paymentService";
-import { createDeck, deleteDeck, generateDeck, listCommunityDecks, listDecks, saveDeck, type Deck } from "@/lib/presentationService";
+import { copyDeckToWorkspace, createDeck, deleteDeck, generateDeck, listCommunityDecks, listDecks, saveDeck, type Deck } from "@/lib/presentationService";
 
 type Filter = "all" | "public" | "private" | "readonly";
 
@@ -175,6 +175,21 @@ export default function SlidesPage() {
     if (action === "rename") { setConfirming(null); setRenaming(deck.id); return; }
     if (action === "delete") { setRenaming(null); setConfirming(deck.id); return; }
     if (action === "cancel") { setConfirming(null); return; }
+    if (action === "use") {
+      // Bản sao deck Community vào không gian của mình: gói Pro (admin luôn được); deck gốc không đổi
+      if (!(account?.role === "admin" || account?.plan === "pro" || account?.plan === "studio")) { setUpgrade("use-deck"); return; }
+      setBusy(true);
+      try {
+        const copy = await copyDeckToWorkspace(deck.id);
+        window.location.href = `/slides/edit/?id=${copy.id}`;
+      } catch (err) {
+        setBusy(false);
+        const coded = err as Error & { code?: string };
+        if (coded.code === "UPGRADE_REQUIRED") setUpgrade("use-deck");
+        else handleError(err);
+      }
+      return;
+    }
     if (action === "copy") {
       const url = `${window.location.origin}/slides/view/?id=${deck.id}`;
       try { await navigator.clipboard.writeText(url); showToast("Link copied"); } catch { showToast(url); }
