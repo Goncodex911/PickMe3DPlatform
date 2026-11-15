@@ -14,19 +14,28 @@ function getTransporter() {
 
   const host = process.env.SMTP_HOST || 'smtp.gmail.com';
   const port = parseInt(process.env.SMTP_PORT || '587', 10);
-  const secure = process.env.SMTP_SECURE === 'true' || port === 465;
   const user = process.env.SMTP_USER || process.env.EMAIL_USER;
-  const pass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
+  const rawPass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
+  const pass = rawPass ? rawPass.replace(/\s+/g, '') : '';
 
   if (user && pass) {
-    transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure,
-      auth: { user, pass },
-    });
+    console.log(`[EmailService] 🚀 Khởi tạo Gmail/SMTP Transporter với tài khoản: ${user}`);
+    if (host.includes('gmail') || (!process.env.SMTP_HOST && user.includes('@gmail.com'))) {
+      transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user, pass },
+      });
+    } else {
+      transporter = nodemailer.createTransport({
+        host,
+        port,
+        secure: process.env.SMTP_SECURE === 'true' || port === 465,
+        auth: { user, pass },
+      });
+    }
   } else {
     // In local dev/test without credentials, simulate transport without crashing
+    console.warn('[EmailService] ⚠️ CHƯA CẤU HÌNH GMAIL SMTP (Thiếu SMTP_USER hoặc SMTP_PASS trong backend/.env). Email sẽ được mô phỏng log.');
     transporter = {
       isMock: true,
       sendMail: async (mailOptions) => {
@@ -62,19 +71,24 @@ function shouldSkipEmail(recipientEmail, recipientRole) {
 
   const cleanEmail = recipientEmail.trim().toLowerCase();
 
+  // If testing override is enabled, allow all recipients including admin
+  if (process.env.ALLOW_ADMIN_EMAIL_FOR_TESTING === 'true') {
+    return { skip: false };
+  }
+
   // 1. Role is admin
   if (recipientRole === 'admin') {
-    return { skip: true, reason: `Recipient has 'admin' role (${cleanEmail})` };
+    return { skip: true, reason: `Recipient has 'admin' role (${cleanEmail}). Set ALLOW_ADMIN_EMAIL_FOR_TESTING=true in backend/.env to bypass for testing.` };
   }
 
   // 2. Sole platform administrator email
   if (cleanEmail === SOLE_ADMIN_EMAIL.toLowerCase()) {
-    return { skip: true, reason: `Recipient is fixed platform administrator (${cleanEmail})` };
+    return { skip: true, reason: `Recipient is fixed platform administrator (${cleanEmail}). Set ALLOW_ADMIN_EMAIL_FOR_TESTING=true in backend/.env to bypass for testing.` };
   }
 
   // 3. Known system admin emails
   if (cleanEmail === 'admin@example.com' || cleanEmail === 'admin@pickme3d.com') {
-    return { skip: true, reason: `Recipient is system administrator (${cleanEmail})` };
+    return { skip: true, reason: `Recipient is system administrator (${cleanEmail}).` };
   }
 
   return { skip: false };
@@ -221,7 +235,8 @@ function generateEmailHtml({
  */
 async function sendEmail({ to, subject, html, text }) {
   const mailTransporter = getTransporter();
-  const from = process.env.EMAIL_FROM || '"PickMe3D Platform" <notifications@pickme3d.com>';
+  const user = process.env.SMTP_USER || process.env.EMAIL_USER;
+  const from = process.env.EMAIL_FROM || (user ? `"PickMe3D Platform" <${user}>` : '"PickMe3D Platform" <notifications@pickme3d.com>');
 
   const mailOptions = {
     from,
@@ -233,9 +248,14 @@ async function sendEmail({ to, subject, html, text }) {
 
   try {
     const result = await mailTransporter.sendMail(mailOptions);
+    if (result.mocked) {
+      console.warn(`[EmailService] ℹ️ Đã ghi nhận mô phỏng gửi email tới: ${to} (Cần điền SMTP_USER và SMTP_PASS trong backend/.env để chuyển đến Gmail thật)`);
+    } else {
+      console.log(`[EmailService] ✅ ĐÃ GỬI EMAIL THÀNH CÔNG TỚI: ${to} (ID: ${result.messageId})`);
+    }
     return { success: true, result };
   } catch (error) {
-    console.warn(`[EmailService] Failed to send email to ${to}:`, error.message);
+    console.error(`[EmailService] ❌ Gửi email thất bại tới ${to}:`, error.message);
     return { success: false, error: error.message };
   }
 }
