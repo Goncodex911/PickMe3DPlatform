@@ -10,6 +10,7 @@ const Presentation = require('../models/Presentation');
 const Payout = require('../models/Payout');
 const { logAdminAction } = require('../helpers/auditLogger');
 const { notifyUser } = require('../helpers/notificationHelper');
+const { sendPayoutStatusEmail, sendReportStatusEmail } = require('../services/emailService');
 
 // Fixed sole administrator of the system
 const SOLE_ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'phantrongquy23032005@gmail.com').toLowerCase().trim();
@@ -1090,6 +1091,16 @@ exports.updateReportStatus = async (req, res, next) => {
           resolutionNotes: report.resolutionNotes,
         },
       });
+
+      // Asynchronously trigger automated email notification to recipient (Admins are excluded)
+      setImmediate(async () => {
+        try {
+          const reporterUser = await User.findById(report.reporter).select('name email role');
+          await sendReportStatusEmail({ report, recipientUser: reporterUser });
+        } catch (emailErr) {
+          console.warn('[AdminController] Automated email dispatch failed for report:', emailErr.message);
+        }
+      });
     }
 
     res.status(200).json({
@@ -1795,6 +1806,16 @@ exports.updatePayoutStatus = async (req, res, next) => {
           adminNote: payout.adminNote,
           paymentProof: payout.paymentProof,
         },
+      });
+
+      // Asynchronously trigger automated email notification to creator (Admins are excluded)
+      setImmediate(async () => {
+        try {
+          const creatorUser = await User.findById(payout.creatorId).select('name email role');
+          await sendPayoutStatusEmail({ payout, recipientUser: creatorUser });
+        } catch (emailErr) {
+          console.warn('[AdminController] Automated email dispatch failed for payout:', emailErr.message);
+        }
       });
     }
 
