@@ -9,11 +9,18 @@ const {
   getPublicProfile,
   getPublicProfileByUsername,
 } = require('../controllers/userController');
-const { protect } = require('../middlewares/authMiddleware');
+const { protect, authorize, requirePermission } = require('../middlewares/authMiddleware');
+const { applyForCreator, getMyCreatorApplication, getCreatorPolicy } = require('../controllers/creatorController');
 
+// Full user records (emails, wallet, plan) are admin-only; public pages use /:id/public and /username/:username.
 router.route('/')
-  .get(getUsers)
-  .post(createUser);
+  .get(protect, authorize('admin'), getUsers)
+  .post(protect, authorize('admin'), createUser);
+
+// Regular user asks to become a Creator (creatorStatus NONE/REJECTED -> PENDING); Admin approves.
+router.get('/creator-policy', getCreatorPolicy);
+router.get('/creator-application', protect, requirePermission('template:creator_application:create:own'), getMyCreatorApplication);
+router.post('/creator-application', protect, requirePermission('template:creator_application:create:own'), applyForCreator);
 
 router.route('/profile')
   .get(protect, getUserProfile)

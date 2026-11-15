@@ -40,4 +40,6 @@ const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {
   console.log(`🚀 PickMe3D Backend Server running on port ${PORT}`);
   console.log(`📡 WebSocket / Socket.io Multiplayer Collaboration Ready`);
+  // Payment maintenance: expire unpaid orders, re-verify unknown payments, retry failed deliveries.
+  require('./services/paymentLifecycle').startJobs();
 });

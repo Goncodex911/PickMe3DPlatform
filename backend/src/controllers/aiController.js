@@ -171,9 +171,14 @@ exports.complete = async (req, res, next) => {
 
 exports.testConnection = async (req, res, next) => {
   try {
-    const { provider, baseUrl, model, key } = req.body;
+    const { provider, baseUrl, model, key } = req.body || {};
+    const ownKey = typeof key === 'string' && key.trim().length > 0;
+    // Không có key riêng nghĩa là sẽ dùng key của server: chỉ người đã đăng nhập mới được dùng.
+    if (!ownKey && !req.auth && !baseUrl?.includes('localhost') && !baseUrl?.includes('127.0.0.1')) {
+      return res.status(401).json({ success: false, message: 'Đăng nhập để kiểm tra bằng key của máy chủ' });
+    }
     const effectiveKey =
-      (key && key.trim()) ||
+      (ownKey && key.trim()) ||
       (provider === "gemini" && process.env.GEMINI_API_KEY) ||
       (provider === "openai" && process.env.OPENAI_API_KEY) ||
       (provider === "claude" && (process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY)) ||

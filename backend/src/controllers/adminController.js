@@ -10,6 +10,10 @@ const Presentation = require('../models/Presentation');
 const Payout = require('../models/Payout');
 const { logAdminAction } = require('../helpers/auditLogger');
 const { notifyUser } = require('../helpers/notificationHelper');
+const { templateOwnerType, templateHasBuyers } = require('../services/accessService');
+const { isValidPrice, PRICE_ERROR } = require('../config/pricing');
+const { logPriceChange } = require('../services/templatePriceHistory');
+const { calculateCreatorBalances } = require('./payoutController');
 const { sendPayoutStatusEmail, sendReportStatusEmail } = require('../services/emailService');
 
 // Fixed sole administrator of the system
@@ -321,9 +325,17 @@ exports.getAdminUsers = async (req, res, next) => {
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 10));
     const skip = (page - 1) * limit;
 
-    const { search, role, status, plan, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+    const { search, role, status, plan, accountType, creatorStatus, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
 
     const query = {};
+
+    if (accountType && accountType !== 'all') {
+      query.accountType = accountType;
+    }
+
+    if (creatorStatus && creatorStatus !== 'all') {
+      query.creatorStatus = creatorStatus;
+    }
 
     if (search) {
       const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -418,6 +430,7 @@ exports.createAdminUser = async (req, res, next) => {
       name: name.trim(),
       email: email.toLowerCase().trim(),
       role: email.toLowerCase().trim() === SOLE_ADMIN_EMAIL ? 'admin' : 'user',
+      ...(email.toLowerCase().trim() === SOLE_ADMIN_EMAIL ? {} : { accountType: 'REGULAR', creatorStatus: 'NONE' }),
       jobRole: jobRole.trim(),
       bio: bio.trim(),
       username: username ? username.toLowerCase().trim() : undefined,
@@ -640,6 +653,8 @@ exports.importUsers = async (req, res, next) => {
         name,
         email,
         role: 'user',
+        accountType: 'REGULAR',
+        creatorStatus: 'NONE',
         jobRole,
         bio,
         status: 'active',
@@ -694,9 +709,14 @@ exports.getAdminTemplates = async (req, res, next) => {
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 12));
     const skip = (page - 1) * limit;
 
-    const { search, category, isSystem, isPublic, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+    const { search, category, isSystem, isPublic, reviewStatus, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
 
     const query = {};
+
+    if (reviewStatus && reviewStatus !== 'all') {
+      // Legacy listings have no reviewStatus and count as APPROVED.
+      query.reviewStatus = reviewStatus === 'APPROVED' ? { $in: ['APPROVED', null] } : reviewStatus;
+    }
 
     if (search) {
       const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -724,7 +744,7 @@ exports.getAdminTemplates = async (req, res, next) => {
         .sort(sort)
         .skip(skip)
         .limit(limit)
-        .select('title description category tags thumbnailUrl isPublic isFeatured isSystem likesCount viewsCount forksCount avgRating author authorName authorAvatar createdAt updatedAt')
+        .select('title description category tags thumbnailUrl isPublic isFeatured isSystem sellerType price reviewStatus reviewNote likesCount viewsCount forksCount avgRating author authorName authorAvatar createdAt updatedAt')
         .lean(),
     ]);
 
@@ -746,58 +766,14 @@ exports.getAdminTemplates = async (req, res, next) => {
 // @desc    Create official system template / 3D asset
 // @route   POST /api/admin/templates
 // @access  Private/Admin
-exports.createSystemTemplate = async (req, res, next) => {
-  try {
-    const {
-      title,
-      description = '',
-      category = 'Official 3D Asset',
-      tags = [],
-      thumbnailUrl = '',
-      docData,
-      isFeatured = false,
-      isPublic = true,
-    } = req.body;
-
-    if (!title || !title.trim()) {
-      return res.status(400).json({ success: false, message: 'Tiêu đề mẫu là bắt buộc' });
-    }
-
-    if (!docData || typeof docData !== 'object') {
-      return res.status(400).json({ success: false, message: 'Dữ liệu thiết kế (docData) không hợp lệ' });
-    }
-
-    const template = await Template.create({
-      title: title.trim(),
-      description: description.trim(),
-      category: category.trim(),
-      tags: Array.isArray(tags) ? tags.map((t) => String(t).trim()).filter(Boolean) : [],
-      thumbnailUrl: thumbnailUrl.trim(),
-      docData,
-      isPublic,
-      isFeatured,
-      isSystem: true,
-      author: req.user._id,
-      authorName: 'PickMe3D Official',
-      authorAvatar: req.user.picture || '',
-    });
-
-    await logAdminAction(req, {
-      action: 'TEMPLATE_CREATE_SYSTEM',
-      targetType: 'template',
-      targetId: template._id,
-      targetLabel: template.title,
-      details: { title: template.title, category: template.category, isSystem: true },
-    });
-
-    res.status(201).json({
-      success: true,
-      message: 'Mẫu thiết kế hệ thống đã được tạo thành công',
-      data: template,
-    });
-  } catch (error) {
-    next(error);
-  }
+exports.createSystemTemplate = async (req, res) => {
+  // BR-05: Admin sells the existing system catalogue but may not create new templates.
+  // New system templates only enter through seed / migration scripts.
+  return res.status(403).json({
+    success: false,
+    code: 'FORBIDDEN',
+    message: 'Admin không có quyền tạo Template mới. Template hệ thống chỉ được nạp qua script seed.',
+  });
 };
 
 // @desc    Update template metadata (admin)
@@ -812,7 +788,24 @@ exports.updateAdminTemplate = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Không tìm thấy mẫu thiết kế' });
     }
 
-    const { title, description, category, tags, thumbnailUrl, isFeatured, isSystem, isPublic } = req.body;
+    const { title, description, category, tags, thumbnailUrl, isFeatured, isSystem, isPublic, price } = req.body;
+    const ownerType = templateOwnerType(template);
+
+    // Ownership never changes hands through this endpoint.
+    if (isSystem !== undefined && Boolean(isSystem) !== Boolean(template.isSystem)) {
+      return res.status(403).json({ success: false, code: 'FORBIDDEN', message: 'Không thể chuyển quyền sở hữu Template' });
+    }
+
+    const touchesListing = [title, description, category, tags, thumbnailUrl, price].some((v) => v !== undefined);
+    if (ownerType === 'CREATOR') {
+      // Creator templates: Admin may only feature or take down (S19). Content and price belong to the Creator.
+      if (touchesListing) {
+        return res.status(403).json({ success: false, code: 'NOT_OWNER', message: 'Admin không được sửa nội dung hoặc giá Template của Creator' });
+      }
+      if (isPublic === true && !template.isPublic) {
+        return res.status(403).json({ success: false, code: 'NOT_OWNER', message: 'Chỉ Creator mới được công khai lại Template của mình' });
+      }
+    }
 
     if (title !== undefined) template.title = title.trim();
     if (description !== undefined) template.description = description.trim();
@@ -821,11 +814,22 @@ exports.updateAdminTemplate = async (req, res, next) => {
       template.tags = tags.map((t) => String(t).trim()).filter(Boolean);
     }
     if (thumbnailUrl !== undefined) template.thumbnailUrl = thumbnailUrl.trim();
+    const previousPrice = Number(template.price || 0);
+    if (price !== undefined) {
+      if (!isValidPrice(price)) {
+        return res.status(400).json({ success: false, code: 'INVALID_PRICE', message: PRICE_ERROR });
+      }
+      template.price = Number(price);
+    }
     if (isFeatured !== undefined) template.isFeatured = Boolean(isFeatured);
-    if (isSystem !== undefined) template.isSystem = Boolean(isSystem);
-    if (isPublic !== undefined) template.isPublic = Boolean(isPublic);
+    if (isPublic !== undefined) {
+      template.isPublic = Boolean(isPublic);
+      if (ownerType === 'CREATOR' && !template.isPublic) template.reviewStatus = 'TAKEN_DOWN';
+      if (ownerType === 'ADMIN') template.reviewStatus = template.isPublic ? 'APPROVED' : 'DRAFT';
+    }
 
     await template.save();
+    await logPriceChange(req, template, previousPrice, template.price);
 
     await logAdminAction(req, {
       action: 'TEMPLATE_UPDATE',
@@ -858,6 +862,24 @@ exports.deleteAdminTemplate = async (req, res, next) => {
     }
 
     const templateTitle = template.title;
+
+    if (templateOwnerType(template) === 'CREATOR' || (await templateHasBuyers(template))) {
+      template.isPublic = false;
+      template.reviewStatus = templateOwnerType(template) === 'CREATOR' ? 'TAKEN_DOWN' : 'DRAFT';
+      await template.save();
+      await logAdminAction(req, {
+        action: 'TEMPLATE_TAKEDOWN',
+        targetType: 'template',
+        targetId: id,
+        targetLabel: templateTitle,
+        details: { title: templateTitle, author: template.author, reason: 'delete requested; kept for owner and buyers' },
+      });
+      return res.status(200).json({
+        success: true,
+        unlisted: true,
+        message: 'Template đã được gỡ khỏi Marketplace. Không xóa hẳn vì Template thuộc Creator hoặc đã có người mua.',
+      });
+    }
 
     // Delete associated comments
     await Comment.deleteMany({ template: template._id });
@@ -1245,11 +1267,12 @@ exports.getReportingAnalytics = async (req, res, next) => {
         { $sort: { _id: 1 } },
       ]),
       Order.aggregate([
-        { $match: { status: 'PAID', createdAt: { $gte: fourteenDaysAgo } } },
+        // Revenue belongs to the day the money arrived (paidAt), not the day the order was opened.
+        { $match: { status: 'PAID', paidAt: { $gte: fourteenDaysAgo } } },
         {
           $group: {
-            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
-            revenue: { $sum: '$amount' },
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$paidAt' } },
+            revenue: { $sum: { $ifNull: ['$adminRevenue', '$amount'] } },
             count: { $sum: 1 },
           },
         },
@@ -1330,8 +1353,8 @@ exports.updateUserPlan = async (req, res, next) => {
     const { id } = req.params;
     const { plan, months = 1 } = req.body;
 
-    if (!['free', 'pro', 'studio'].includes(plan)) {
-      return res.status(400).json({ success: false, message: 'Gói dịch vụ không hợp lệ. Phải là free, pro hoặc studio' });
+    if (!['free', 'pro'].includes(plan)) {
+      return res.status(400).json({ success: false, message: 'Gói dịch vụ không hợp lệ. Phải là free hoặc pro' });
     }
 
     const targetUser = await User.findById(id);
@@ -1394,33 +1417,58 @@ exports.getAdminOrders = async (req, res, next) => {
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 15));
     const skip = (page - 1) * limit;
 
-    const { status, planId, search } = req.query;
+    const { status, planId, search, orderType, sellerType, transactionSource, review, refund, excess } = req.query;
     const query = {};
 
     if (status && status !== 'all') {
-      query.status = status.toUpperCase();
+      query.status = String(status).toUpperCase();
     }
     if (planId && planId !== 'all') {
-      query.planId = planId.toLowerCase();
+      query.planId = String(planId).toLowerCase();
     }
+    if (orderType && orderType !== 'all') query.orderType = String(orderType).toUpperCase();
+    if (sellerType && sellerType !== 'all') query.sellerType = String(sellerType).toUpperCase();
+    if (transactionSource && transactionSource !== 'all') query.transactionSource = String(transactionSource).toUpperCase();
+    if (review === 'true') query.needsReview = true;
+    if (refund && refund !== 'all') query['refund.status'] = String(refund).toUpperCase();
+    if (excess && excess !== 'all') query['excessReturn.status'] = String(excess).toUpperCase();
     if (search) {
       const num = Number(search);
       if (!isNaN(num)) {
         query.orderCode = num;
       } else {
-        query.userId = search;
+        query.$or = [
+          { userId: search },
+          { gatewayReference: search },
+          { 'customer.email': { $regex: String(search).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } },
+        ];
       }
     }
 
-    const [total, orders, totalPaidRevenue, totalPaidCount, totalPendingCount] = await Promise.all([
+    const [total, orders, paidAgg, excessAgg, totalPaidCount, totalPendingCount, statusCounts, needsReviewCount, refundRequests] = await Promise.all([
       Order.countDocuments(query),
-      Order.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      Order.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).select('-raw').lean(),
       Order.aggregate([
-        { $match: { status: 'PAID' } },
-        { $group: { _id: null, total: { $sum: '$amount' } } },
+        { $match: { status: { $in: ['PAID', 'REFUNDED'] } } },
+        {
+          $group: {
+            _id: null,
+            gross: { $sum: { $cond: [{ $eq: ['$status', 'PAID'] }, { $ifNull: ['$grossAmount', '$amount'] }, 0] } },
+            admin: { $sum: { $cond: [{ $eq: ['$status', 'PAID'] }, { $ifNull: ['$adminRevenue', '$amount'] }, 0] } },
+            creator: { $sum: { $cond: [{ $eq: ['$status', 'PAID'] }, { $ifNull: ['$creatorEarnings', 0] }, 0] } },
+            refunded: { $sum: { $cond: [{ $eq: ['$status', 'REFUNDED'] }, { $ifNull: ['$refund.amount', '$amount'] }, 0] } },
+          },
+        },
+      ]),
+      Order.aggregate([
+        { $match: { 'excessReturn.status': { $in: ['PENDING', 'COMPLETED'] } } },
+        { $group: { _id: '$excessReturn.status', amount: { $sum: '$excessReturn.amount' }, count: { $sum: 1 } } },
       ]),
       Order.countDocuments({ status: 'PAID' }),
       Order.countDocuments({ status: 'PENDING' }),
+      Order.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
+      Order.countDocuments({ needsReview: true }),
+      Order.countDocuments({ 'refund.status': { $in: ['REQUESTED', 'APPROVED'] } }),
     ]);
 
     // Lookup user information for orders
@@ -1443,9 +1491,21 @@ exports.getAdminOrders = async (req, res, next) => {
       success: true,
       data: populatedOrders,
       summary: {
-        totalRevenue: totalPaidRevenue[0]?.total || 0,
+        // Net of refunds. totalRevenue is kept for older clients and now means the platform's own revenue.
+        totalRevenue: paidAgg[0]?.admin || 0,
+        totalGrossVolume: paidAgg[0]?.gross || 0,
+        totalAdminRevenue: paidAgg[0]?.admin || 0,
+        totalCreatorEarnings: paidAgg[0]?.creator || 0,
+        totalRefunded: paidAgg[0]?.refunded || 0,
         paidOrdersCount: totalPaidCount,
         pendingOrdersCount: totalPendingCount,
+        statusCounts: Object.fromEntries(statusCounts.map((s) => [s._id, s.count])),
+        needsReviewCount,
+        openRefundsCount: refundRequests,
+        // Money collected by mistake and sent back (not revenue, not a refund)
+        excessReturned: excessAgg.find((e) => e._id === 'COMPLETED')?.amount || 0,
+        excessPendingAmount: excessAgg.find((e) => e._id === 'PENDING')?.amount || 0,
+        openExcessCount: excessAgg.find((e) => e._id === 'PENDING')?.count || 0,
       },
       pagination: {
         total,
@@ -1470,7 +1530,7 @@ exports.exportOrdersCsv = async (req, res, next) => {
     const users = await User.find({ _id: { $in: validObjectIds } }).select('name email').lean();
     const userMap = new Map(users.map((u) => [u._id.toString(), u]));
 
-    const headers = ['Mã đơn hàng', 'Khách hàng', 'Email', 'Gói dịch vụ', 'Thời hạn (tháng)', 'Số tiền (VNĐ)', 'Trạng thái', 'Thời gian thanh toán', 'Ngày tạo'];
+    const headers = ['Mã đơn hàng', 'Loại đơn', 'Khách hàng', 'Email', 'Sản phẩm / Gói', 'Thời hạn (tháng)', 'Số tiền (VNĐ)', 'Admin (VNĐ)', 'Creator (VNĐ)', 'Trạng thái', 'Cấp quyền', 'Mã GD ngân hàng', 'Hoàn tiền', 'Số tiền hoàn (VNĐ)', 'Mã GD hoàn', 'Trả lại thu trùng/thừa', 'Số tiền trả lại (VNĐ)', 'Mã GD trả lại', 'Cần kiểm tra', 'Thời gian thanh toán', 'Ngày tạo'];
 
     const escapeCsv = (val) => {
       if (val === null || val === undefined) return '""';
@@ -1482,12 +1542,24 @@ exports.exportOrdersCsv = async (req, res, next) => {
       const u = userMap.get(String(o.userId));
       return [
         escapeCsv(o.orderCode),
+        escapeCsv(o.orderType || 'SUBSCRIPTION'),
         escapeCsv(u ? u.name : o.userId),
-        escapeCsv(u ? u.email : ''),
-        escapeCsv(o.planId ? o.planId.toUpperCase() : ''),
-        escapeCsv(o.months || 1),
+        escapeCsv(u ? u.email : (o.customer && o.customer.email) || ''),
+        escapeCsv(o.planId ? o.planId.toUpperCase() : o.productTitle || o.productId || o.templateId || ''),
+        escapeCsv(o.orderType === 'SUBSCRIPTION' || !o.orderType ? o.months || 1 : ''),
         escapeCsv(o.amount || 0),
+        escapeCsv(o.adminRevenue ?? o.amount ?? 0),
+        escapeCsv(o.creatorEarnings || 0),
         escapeCsv(o.status || ''),
+        escapeCsv(o.fulfillmentStatus || ''),
+        escapeCsv(o.gatewayReference || ''),
+        escapeCsv((o.refund && o.refund.status) || 'NONE'),
+        escapeCsv((o.refund && o.refund.amount) || 0),
+        escapeCsv((o.refund && o.refund.reference) || ''),
+        escapeCsv(o.excessReturn && o.excessReturn.status && o.excessReturn.status !== 'NONE' ? `${o.excessReturn.type} ${o.excessReturn.status}` : ''),
+        escapeCsv((o.excessReturn && o.excessReturn.amount) || 0),
+        escapeCsv((o.excessReturn && o.excessReturn.reference) || ''),
+        escapeCsv(o.needsReview ? o.reviewReason || 'YES' : ''),
         escapeCsv(o.paidAt ? new Date(o.paidAt).toISOString() : ''),
         escapeCsv(new Date(o.createdAt).toISOString()),
       ];
@@ -1760,17 +1832,51 @@ exports.updatePayoutStatus = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Trạng thái không hợp lệ. Chỉ chấp nhận PAID hoặc REJECTED.' });
     }
 
-    const payout = await Payout.findById(id);
-    if (!payout) {
+    const current = await Payout.findById(id);
+    if (!current) {
       return res.status(404).json({ success: false, message: 'Không tìm thấy yêu cầu rút tiền' });
     }
+    // A processed payout is final: flipping PAID -> REJECTED would put money already sent back into the wallet.
+    if (current.status !== 'PENDING') {
+      return res.status(409).json({
+        success: false,
+        code: 'PAYOUT_ALREADY_PROCESSED',
+        message: `Yêu cầu này đã được xử lý (${current.status}) nên không thể thay đổi.`,
+      });
+    }
 
-    payout.status = status;
-    if (adminNote !== undefined) payout.adminNote = adminNote;
-    if (paymentProof !== undefined) payout.paymentProof = paymentProof;
-    payout.processedAt = new Date();
-    payout.processedBy = req.user ? req.user._id : null;
-    await payout.save();
+    if (status === 'PAID') {
+      // Re-check the balance at approval time: it may have dropped since the request (e.g. a duplicate order voided).
+      const creator = await User.findById(current.creatorId);
+      if (!creator) {
+        return res.status(409).json({ success: false, code: 'CREATOR_NOT_FOUND', message: 'Không tìm thấy tài khoản Creator của yêu cầu này.' });
+      }
+      const { metrics } = await calculateCreatorBalances(creator);
+      // Balance available for THIS payout = everything earned minus what is paid and what other requests reserve.
+      const coverable = metrics.totalEarnings - metrics.paidPayout - (metrics.pendingPayout - Number(current.amount || 0));
+      if (Number(current.amount) > coverable) {
+        return res.status(409).json({
+          success: false,
+          code: 'INSUFFICIENT_CREATOR_BALANCE',
+          message: `Không thể duyệt: số dư hiện tại của Creator chỉ đủ ${Math.max(0, coverable).toLocaleString('vi-VN')}₫ cho yêu cầu ${Number(current.amount).toLocaleString('vi-VN')}₫ (doanh thu đã giảm sau khi gửi yêu cầu). Hãy từ chối yêu cầu này.`,
+          metrics,
+          coverable: Math.max(0, coverable),
+        });
+      }
+    }
+
+    const update = {
+      status,
+      processedAt: new Date(),
+      processedBy: req.user ? req.user._id : null,
+    };
+    if (adminNote !== undefined) update.adminNote = adminNote;
+    if (paymentProof !== undefined) update.paymentProof = paymentProof;
+    // Conditional update: two admins clicking at once cannot both process the same request.
+    const payout = await Payout.findOneAndUpdate({ _id: id, status: 'PENDING' }, { $set: update }, { new: true });
+    if (!payout) {
+      return res.status(409).json({ success: false, code: 'PAYOUT_ALREADY_PROCESSED', message: 'Yêu cầu vừa được xử lý bởi người khác. Vui lòng tải lại.' });
+    }
 
     await logAdminAction(req, {
       action: status === 'PAID' ? 'PAYOUT_APPROVE' : 'PAYOUT_REJECT',

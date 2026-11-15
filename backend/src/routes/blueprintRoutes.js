@@ -2,7 +2,11 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const blueprintController = require('../controllers/blueprintController');
-const { attachUser } = require('../middlewares/planMiddleware');
+const { attachUser, requireFeature } = require('../middlewares/planMiddleware');
+
+// Creating 3D work is a Pro feature (config/plans.js: blueprint3d). Reading finished jobs/files stays public
+// because the viewer loads them by URL.
+const pro3d = [attachUser, requireFeature('blueprint3d')];
 
 // Multer memory storage (limit 25MB for 3D binary files)
 const upload = multer({
@@ -13,12 +17,12 @@ const upload = multer({
 // Các route ghi dữ liệu / tốn tài nguyên bắt buộc đăng nhập (kể cả tài khoản khách).
 
 // 1. Upload .GLB Model to Cloudinary / CDN
-router.post('/upload-glb', attachUser, upload.single('file'), blueprintController.upload3DModel);
+router.post('/upload-glb', ...pro3d, upload.single('file'), blueprintController.upload3DModel);
 
 // 2. Nén Draco file .GLB (gltf-transform + draco3dgltf), trả lại file GLB đã nén
 router.post(
   '/compress-glb',
-  attachUser,
+  ...pro3d,
   express.raw({ type: ['model/gltf-binary', 'application/octet-stream'], limit: '25mb' }),
   blueprintController.compressGlb
 );
@@ -33,7 +37,7 @@ router.get('/jobs/:jobId/events', blueprintController.streamJobEvents);
 router.get('/cdn/:filename', blueprintController.serveCdnGlb);
 
 // 6. AI Render phối cảnh bằng Gemini image model (STORY-THUAN-BP16) -> 202 + jobId
-router.post('/ai-render-4k', attachUser, blueprintController.generateAIRender4K);
+router.post('/ai-render-4k', ...pro3d, blueprintController.generateAIRender4K);
 
 // 7. CDN Cached Delivery for Rendered Images
 router.get('/cdn/renders/:filename', blueprintController.serveCdnRender);

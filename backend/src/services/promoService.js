@@ -9,7 +9,7 @@ function invalid(message) {
 // Configured by the deployment, never accepted from the checkout client.
 function quote({ planId, months = 1, promoCode = '' }) {
   const plan = getPlan(planId);
-  if (!['pro', 'studio'].includes(planId) || !plan || plan.price <= 0) invalid('Gói thanh toán không hợp lệ');
+  if (planId !== 'pro' || !plan || plan.price <= 0) invalid('Gói thanh toán không hợp lệ');
   if (!Number.isInteger(months) || months < 1 || months > 12) invalid('Số tháng phải từ 1 đến 12');
   if (typeof promoCode !== 'string' || promoCode.length > 64) invalid('Mã giảm giá không hợp lệ');
   const code = promoCode.trim().toUpperCase();

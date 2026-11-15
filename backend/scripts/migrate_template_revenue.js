@@ -154,7 +154,11 @@ async function runMigration() {
     }
 
     if (changed) {
-      await o.save();
+      // Bypass the Order pre-save guard on purpose: this one-off migration repairs the financial snapshot of legacy orders.
+      await Order.collection.updateOne(
+        { _id: o._id },
+        { $set: { grossAmount: o.grossAmount, creatorEarnings: o.creatorEarnings, adminRevenue: o.adminRevenue, sellerType: o.sellerType, transactionSource: o.transactionSource } }
+      );
       updatedOrdersCount++;
     }
   }

@@ -153,6 +153,15 @@ import { ShareDialog } from "@/components/ShareMenu";
 import AiGenerateModal from "@/components/AiGenerateModal";
 import SaveDesignModal from "@/components/SaveDesignModal";
 import { TemplateItem, fetchTemplateByIdApi } from "@/lib/templateService";
+import {
+  COVER_ID_KEY,
+  EDIT_ID_KEY,
+  EDIT_ITEM_KEY,
+  buildCoverDoc,
+  editorUrlForSavedDesign,
+  resolveEditorSource,
+  versionHistoryIdFor,
+} from "@/lib/editorSession";
 import { ColorPanel } from "@/components/ColorPanel";
 import { MotionPanel, ShapePanel, TypePanel } from "@/components/ThemePanel";
 import { ThemeContext, ensureFontLoaded, ensureLangFontLoaded } from "@/lib/theme";
@@ -170,8 +179,9 @@ import { collabClient } from "@/lib/collaborationClient";
 
 import { DeviceConfig, findDeviceById } from "@/constants/devices";
 import { TemplateFile } from "@/types/template-file";
-import { UITemplate, translateTemplateSource, getCategoryLabel } from "@/lib/ui-marketplace-data";
+import { UITemplate } from "@/lib/ui-marketplace-data";
 import { getPurchasedTemplates, purchaseTemplate } from "@/lib/purchased-animations";
+import { ANIMATION_QUICK_COLORS, ANIMATION_SPEEDS, REPLAY_ANIMATION_EVENT, TOGGLE_LIVE_ANIMATION_EVENT, createAnimationItem, nextInCycle, normalizeAnimationSpeed } from "@/lib/animationItem";
 
 /** the screens while a model drafts: primary, tertiary and primary container, drifting */
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
@@ -553,6 +563,8 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
   const [saveDesignOpen, setSaveDesignOpen] = useState(false);
   const [editingDesign, setEditingDesign] = useState<TemplateItem | null>(null);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
+  /** `?coverId=` of this session; keys a cover's local version history. */
+  const [coverId, setCoverId] = useState<string | null>(null);
   const [toolsSidebarOpen, setToolsSidebarOpen] = useState(false);
   const [showWires, setShowWires] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -1379,6 +1391,8 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
   useEffect(() => {
     // React's development double-run would otherwise read back its own first save
     if (loadedRef.current) return;
+    /** The saved design's own docData was put in place, so the starter seed must not replace it. */
+    let appliedSavedDoc = false;
     try {
       const d = localStorage.getItem(DOC_KEY);
       if (d) {
@@ -1388,30 +1402,58 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
       }
       if (typeof window !== "undefined") {
         const urlParams = new URLSearchParams(window.location.search);
-        const editIdParam = urlParams.get("editId");
-        if (editIdParam) {
-          const editItem = localStorage.getItem("pickme3d_edit_item");
-          if (editItem) {
-            try {
-              const parsed = JSON.parse(editItem);
-              if ((parsed._id || parsed.id) === editIdParam) {
-                setEditingDesign(parsed);
-              }
-            } catch { }
-          } else {
-            fetchTemplateByIdApi(editIdParam).then((res) => {
-              if (res) {
-                setEditingDesign(res);
-                if (res.docData && !d) {
-                  applyDoc(res.docData as Partial<Doc>, false);
-                }
-              }
-            });
+        const coverIdParam = urlParams.get("coverId");
+        setCoverId(coverIdParam || null);
+        const source = resolveEditorSource({
+          editId: urlParams.get("editId"),
+          coverId: coverIdParam,
+          storedEditItem: localStorage.getItem(EDIT_ITEM_KEY),
+          storedCoverId: localStorage.getItem(COVER_ID_KEY),
+          hasLocalDoc: Boolean(d),
+        });
+        if (source.kind === "local") {
+          if (source.editItem) {
+            setEditingDesign(source.editItem);
+            if (!d && source.editItem.docData) {
+              applyDoc(source.editItem.docData as Partial<Doc>, true);
+              hadDocRef.current = true;
+              appliedSavedDoc = true;
+            }
           }
-        } else {
-          localStorage.removeItem("pickme3d_edit_id");
-          localStorage.removeItem("pickme3d_edit_item");
+        } else if (source.kind === "fetch-edit" || source.kind === "fetch-cover") {
+          // m3e:doc belongs to another design/session; never let it stand in for the requested one.
+          const isEdit = source.kind === "fetch-edit";
+          fetchTemplateByIdApi(source.id)
+            .then((res) => {
+              const nextDoc = res ? (isEdit ? res.docData : buildCoverDoc(res)) : null;
+              if (!res || !nextDoc) {
+                showToast(isEdit ? "Không tải được thiết kế cần chỉnh sửa." : "Không tải được template.", 3200, "error");
+                return;
+              }
+              applyDoc(nextDoc as Partial<Doc>, true);
+              hadDocRef.current = true;
+              try {
+                if (isEdit) {
+                  localStorage.setItem(EDIT_ID_KEY, source.id);
+                  localStorage.setItem(EDIT_ITEM_KEY, JSON.stringify(res));
+                  localStorage.removeItem(COVER_ID_KEY);
+                } else {
+                  localStorage.removeItem(EDIT_ID_KEY);
+                  localStorage.removeItem(EDIT_ITEM_KEY);
+                  localStorage.setItem(COVER_ID_KEY, source.id);
+                }
+              } catch { }
+              if (isEdit) setEditingDesign(res);
+            })
+            .catch(() => {
+              showToast(isEdit ? "Không tải được thiết kế cần chỉnh sửa." : "Không tải được template.", 3200, "error");
+            });
         }
+        if (source.kind !== "local" || !source.editItem) {
+          localStorage.removeItem(EDIT_ID_KEY);
+          localStorage.removeItem(EDIT_ITEM_KEY);
+        }
+        if (source.kind === "draft") localStorage.removeItem(COVER_ID_KEY);
       }
       const before = d ? localStorage.getItem(BEFORE_KEY) : null;
       if (!d) localStorage.removeItem(BEFORE_KEY);
@@ -1435,7 +1477,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
       }
       setGlobalLang(initialLang);
       initialLangRef.current = initialLang;
-      if (!d) {
+      if (!d && !appliedSavedDoc) {
         setGroups(seed(initialLang));
         setFrames([{ ...SEED_FRAMES[0], name: t("home", initialLang) }]);
       }
@@ -1540,6 +1582,16 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
   // ─── Real-time Multiplayer Document Sync ─────────────────────────────────
   const isRemoteSyncRef = useRef(false);
   const broadcastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Unsaved drafts/covers get a private per-tab room. A shared room name would let the
+  // server's last stored doc (from any user) overwrite the template that was just opened.
+  const [draftCanvasId] = useState(() => {
+    try {
+      if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+        return `draft-${crypto.randomUUID()}`;
+      }
+    } catch { }
+    return `draft-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  });
 
   // 1. Subscribe to incoming updates from peers
   useEffect(() => {
@@ -1590,8 +1642,9 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
           isRemoteSyncRef.current = false;
         }, 80);
       },
-      onPeersChange: (currentPeers) => {
-        if (currentPeers.length > 0 && loadedRef.current && !isRemoteSyncRef.current) {
+      // Only the peer the server picks answers a newcomer, so peers never race to overwrite each other.
+      onDocRequest: () => {
+        if (loadedRef.current) {
           collabClient.broadcastDoc({
             groups: groupsRef.current,
             frames: framesRef.current,
@@ -2205,59 +2258,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     e.preventDefault();
     e.stopPropagation();
     flushPending();
-    const cleanTitle = template.titleEn || template.title;
-    const cat = getCategoryLabel(template.category);
-    const { html, js } = translateTemplateSource(template);
-
-    const isSingleButton =
-      template.id === "001" ||
-      template.id === "002" ||
-      (template.id !== "003" && template.id !== "004" && template.id !== "005" && (cat.toLowerCase().includes("button") || cleanTitle.toLowerCase().includes("button")));
-
-    let defaultW = 280;
-    let defaultH = 170;
-
-    if (template.id === "001" || template.id === "002") {
-      defaultW = 260;
-      defaultH = 80;
-    } else if (template.id === "003") {
-      defaultW = 280;
-      defaultH = 170;
-    } else if (template.id === "004") {
-      defaultW = 280;
-      defaultH = 150;
-    } else if (template.shape === "tall") {
-      defaultW = Math.min(320, PHONE_W - 32);
-      defaultH = 280;
-    } else if (isSingleButton) {
-      defaultW = 260;
-      defaultH = 80;
-    } else {
-      defaultW = Math.min(320, PHONE_W - 32);
-      defaultH = 190;
-    }
-
-    const customText = (template as any).customText || cleanTitle;
-    const customColor = (template as any).customColor || p.primary;
-    const customSpeed = (template as any).customSpeed ?? 1;
-    const customInteractive = (template as any).customInteractive !== undefined ? (template as any).customInteractive : true;
-
-    const item: Item = {
-      ...makeItem("animation"),
-      id: uid(),
-      label: customText,
-      animationText: customText,
-      supporting: cat,
-      animationId: template.id,
-      animationHtml: html,
-      animationJs: js,
-      animationDemo: template.demo || [],
-      animationColor: customColor,
-      animationSpeed: customSpeed,
-      animationInteractive: customInteractive,
-      size: defaultW,
-      size2: defaultH,
-    };
+    const item = createAnimationItem(template, p.primary, PHONE_W);
     const pt = toWorld(e.clientX, e.clientY);
     const sz = sizeOf(item, widthsRef.current);
     const offX = Math.min(sz.w / 2, 90);
@@ -2292,59 +2293,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
 
   const onAddAnimation = (template: UITemplate) => {
     flushPending();
-    const cleanTitle = template.titleEn || template.title;
-    const cat = getCategoryLabel(template.category);
-    const { html, js } = translateTemplateSource(template);
-
-    const isSingleButton =
-      template.id === "001" ||
-      template.id === "002" ||
-      (template.id !== "003" && template.id !== "004" && template.id !== "005" && (cat.toLowerCase().includes("button") || cleanTitle.toLowerCase().includes("button")));
-
-    let defaultW = 280;
-    let defaultH = 170;
-
-    if (template.id === "001" || template.id === "002") {
-      defaultW = 260;
-      defaultH = 80;
-    } else if (template.id === "003") {
-      defaultW = 280;
-      defaultH = 170;
-    } else if (template.id === "004") {
-      defaultW = 280;
-      defaultH = 150;
-    } else if (template.shape === "tall") {
-      defaultW = Math.min(320, PHONE_W - 32);
-      defaultH = 280;
-    } else if (isSingleButton) {
-      defaultW = 260;
-      defaultH = 80;
-    } else {
-      defaultW = Math.min(320, PHONE_W - 32);
-      defaultH = 190;
-    }
-
-    const customText = (template as any).customText || cleanTitle;
-    const customColor = (template as any).customColor || p.primary;
-    const customSpeed = (template as any).customSpeed ?? 1;
-    const customInteractive = (template as any).customInteractive !== undefined ? (template as any).customInteractive : true;
-
-    const item: Item = {
-      ...makeItem("animation"),
-      id: uid(),
-      label: customText,
-      animationText: customText,
-      supporting: cat,
-      animationId: template.id,
-      animationHtml: html,
-      animationJs: js,
-      animationDemo: template.demo || [],
-      animationColor: customColor,
-      animationSpeed: customSpeed,
-      animationInteractive: customInteractive,
-      size: defaultW,
-      size2: defaultH,
-    };
+    const item = createAnimationItem(template, p.primary, PHONE_W);
     const sz = sizeOf(item, widthsRef.current);
     const f = selectedFrameId
       ? framesRef.current.find((x) => x.id === selectedFrameId) || framesRef.current[0]
@@ -3669,8 +3618,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
       appendGeneratedDoc(next);
       setTimeout(() => fit(), 400);
     } catch (e) {
-      const m = e instanceof Error ? e.message : "";
-      showToast(m === "json" ? t("aiErrorJson", lang) : m === "refusal" ? t("aiErrorRefusal", lang) : m === "long" ? t("aiErrorLong", lang) : t("aiError", lang), 3200, "error");
+      showToast(aiErrorText(e, lang), 4000, "error");
     } finally {
       setDraftBusy(false);
     }
@@ -3976,7 +3924,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
           onAddAnimation(template);
           setLeftTab("parts");
           setLeftOpen(true);
-          showToast(`Đã chèn animation "${template.titleEn || template.title}" vào Canvas!`, 3000, "check");
+          showToast(t("animInserted", getLang()).replace("{name}", template.titleEn || template.title), 3000, "check");
           if (insertMarketplaceId) {
             const cleanUrl = new URL(window.location.href);
             cleanUrl.searchParams.delete("insertMarketplace");
@@ -4008,26 +3956,26 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
     }
   }, []);
 
-  // Listen to double-click on animation node to toggle direct interaction mode
+  /* An animation part asks to switch live mode on (double-click on it) or off (its LIVE badge). */
   useEffect(() => {
     const handleToggleInteractive = (e: Event) => {
-      const customEvent = e as CustomEvent<{ id: string }>;
-      const id = customEvent.detail?.id;
-      if (id) {
-        setGroups((prev) =>
-          prev.map((g) => ({
-            ...g,
-            items: g.items.map((it) =>
-              it.id === id ? { ...it, animationInteractive: !it.animationInteractive } : it
-            ),
-          }))
-        );
-        setSelectedIds([id]);
-        showToast("⚡ Đã bật Chế độ Tương tác trực tiếp: Nhấp hoặc chạm để thử nghiệm!", 2400, "check");
-      }
+      const id = (e as CustomEvent<{ id?: string }>).detail?.id;
+      if (!id) return;
+      const current = groupsRef.current.flatMap((g) => g.items).find((it) => it.id === id);
+      if (!current || current.kind !== "animation") return;
+      const next = !current.animationInteractive;
+      snapshot();
+      setGroups((prev) =>
+        prev.map((g) => ({
+          ...g,
+          items: g.items.map((it) => (it.id === id ? { ...it, animationInteractive: next } : it)),
+        }))
+      );
+      setSelectedIds([id]);
+      showToast(t(next ? "animLiveOn" : "animLiveOff", getLang()), 2400, next ? "check" : "info");
     };
-    window.addEventListener("pm:toggle_interactive", handleToggleInteractive);
-    return () => window.removeEventListener("pm:toggle_interactive", handleToggleInteractive);
+    window.addEventListener(TOGGLE_LIVE_ANIMATION_EVENT, handleToggleInteractive);
+    return () => window.removeEventListener(TOGGLE_LIVE_ANIMATION_EVENT, handleToggleInteractive);
   }, []);
 
   const updateAiSettings = (s: AiSettings) => {
@@ -5704,7 +5652,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                   if (!g) return null;
                   const b = groupBounds(g, widths);
                   const isInteractive = Boolean(selected.animationInteractive);
-                  const currentSpeed = selected.animationSpeed ?? 1;
+                  const currentSpeed = normalizeAnimationSpeed(selected.animationSpeed ?? 1);
                   const currentColor = selected.animationColor || p.primary;
 
                   return (
@@ -5740,13 +5688,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                           e.stopPropagation();
                           const nextInteractive = !isInteractive;
                           patchSelected({ animationInteractive: nextInteractive });
-                          showToast(
-                            nextInteractive
-                              ? "⚡ Đã bật Chế độ Tương tác: Bấm & test trực tiếp animation trên Canvas!"
-                              : "✋ Đã chuyển sang Chế độ Di chuyển: Kéo thả và đổi vị trí bình thường.",
-                            2500,
-                            nextInteractive ? "check" : "info"
-                          );
+                          showToast(t(nextInteractive ? "animLiveOn" : "animLiveOff", lang), 2500, nextInteractive ? "check" : "info");
                         }}
                         style={{
                           display: "inline-flex",
@@ -5762,23 +5704,21 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                           fontSize: 11,
                           boxShadow: isInteractive ? "0 2px 8px rgba(34,197,94,0.4)" : "none",
                         }}
-                        title={isInteractive ? "Chuyển về chế độ kéo di chuyển" : "Tương tác bấm trực tiếp trên Canvas"}
+                        title={t(isInteractive ? "animLiveExitTitle" : "animLiveEnterTitle", lang)}
                       >
                         <span className="msr" style={{ fontSize: 15 }}>
                           {isInteractive ? "touch_app" : "pan_tool"}
                         </span>
-                        <span>{isInteractive ? "Đang Tương Tác ⚡" : "Bật Tương Tác ⚡"}</span>
+                        <span>{t(isInteractive ? "animLiveActive" : "animLiveEnter", lang)}</span>
                       </button>
 
                       {/* Speed Switcher */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          const speeds = [0.5, 1, 1.5, 2];
-                          const nextIdx = (speeds.indexOf(currentSpeed) + 1) % speeds.length;
-                          const nextSpeed = speeds[nextIdx];
+                          const nextSpeed = nextInCycle(ANIMATION_SPEEDS, currentSpeed as (typeof ANIMATION_SPEEDS)[number]);
                           patchSelected({ animationSpeed: nextSpeed });
-                          showToast(`Tốc độ animation: ${nextSpeed}x`, 1200);
+                          showToast(t("animSpeedToast", lang).replace("{speed}", String(nextSpeed)), 1200);
                         }}
                         style={{
                           display: "inline-flex",
@@ -5793,7 +5733,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                           fontSize: 11,
                           fontWeight: 700,
                         }}
-                        title="Đổi tốc độ chuyển động (0.5x, 1x, 1.5x, 2x)"
+                        title={t("animSpeedTitle", lang)}
                       >
                         <span className="msr" style={{ fontSize: 13 }}>speed</span>
                         <span>{currentSpeed}x</span>
@@ -5803,9 +5743,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          const colors = [p.primary, "#6366f1", "#10b981", "#f59e0b", "#ef4444", "#ec4899", "#8b5cf6", "#06b6d4"];
-                          const nextIdx = (colors.indexOf(currentColor) + 1) % colors.length;
-                          patchSelected({ animationColor: colors[nextIdx] });
+                          patchSelected({ animationColor: nextInCycle([p.primary, ...ANIMATION_QUICK_COLORS], currentColor) });
                         }}
                         style={{
                           display: "inline-flex",
@@ -5819,7 +5757,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                           cursor: "pointer",
                           fontSize: 11,
                         }}
-                        title="Đổi màu sắc chủ đạo của Animation"
+                        title={t("animColorTitle", lang)}
                       >
                         <span
                           style={{
@@ -5831,15 +5769,15 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                             boxShadow: "0 0 0 1px rgba(0,0,0,0.2)",
                           }}
                         />
-                        <span>Màu</span>
+                        <span>{t("animColor", lang)}</span>
                       </button>
 
                       {/* Replay Demo */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          patchSelected({ animationSpeed: currentSpeed });
-                          showToast("Đã tải lại animation", 1000, "check");
+                          window.dispatchEvent(new CustomEvent(REPLAY_ANIMATION_EVENT, { detail: { id: selected.id } }));
+                          showToast(t("animReplayed", lang), 1000, "check");
                         }}
                         style={{
                           display: "inline-flex",
@@ -5851,7 +5789,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                           color: p.onSurface,
                           cursor: "pointer",
                         }}
-                        title="Chạy lại hiệu ứng animation"
+                        title={t("animReplayTitle", lang)}
                       >
                         <span className="msr" style={{ fontSize: 14 }}>replay</span>
                       </button>
@@ -5873,7 +5811,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
                           color: isInteractive ? "#aaa" : p.onSurfaceVariant,
                           cursor: "pointer",
                         }}
-                        title="Mở toàn bộ tùy chỉnh chi tiết ở bảng bên phải"
+                        title={t("openPanel", lang)}
                       >
                         <span className="msr" style={{ fontSize: 15 }}>tune</span>
                       </button>
@@ -6030,7 +5968,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
               </div>
                 {/* ── Real-time Multiplayer Collaboration Presence & Cursors ── */}
                 <CollaborationPresence
-                  canvasId={editingDesign?._id || editingDesign?.id || "draft-canvas"}
+                  canvasId={editingDesign?._id || editingDesign?.id || draftCanvasId}
                   user={{
                     id: currentUser?.id || currentUser?._id || "guest",
                     name: currentUser?.name || "Bạn",
@@ -6684,9 +6622,24 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
             onSaved={(savedItem) => {
               if (savedItem) {
                 setEditingDesign(savedItem);
+                const savedId = savedItem._id || savedItem.id;
                 try {
-                  localStorage.setItem("pickme3d_edit_item", JSON.stringify(savedItem));
+                  localStorage.setItem(EDIT_ITEM_KEY, JSON.stringify(savedItem));
+                  if (savedId) {
+                    localStorage.setItem(EDIT_ID_KEY, savedId);
+                    localStorage.removeItem(COVER_ID_KEY);
+                  }
                 } catch { }
+                // Tie the URL to the saved design: a reload must reopen it, not a draft that saves a duplicate.
+                if (savedId && typeof window !== "undefined") {
+                  const nextUrl = editorUrlForSavedDesign(window.location.href, savedId);
+                  if (nextUrl) {
+                    try {
+                      window.history.replaceState(window.history.state, "", nextUrl);
+                    } catch { }
+                  }
+                  setCoverId(null);
+                }
               }
             }}
           />
@@ -6807,7 +6760,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
         <VersionHistoryDrawer
           open={versionHistoryOpen}
           onClose={() => setVersionHistoryOpen(false)}
-          templateId={editingDesign?._id || editingDesign?.id || "draft"}
+          templateId={versionHistoryIdFor(editingDesign?._id || editingDesign?.id, coverId)}
           currentDocData={doc}
           onRollback={(restoredDocData) => {
             if (restoredDocData) {

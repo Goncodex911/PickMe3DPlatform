@@ -23,13 +23,20 @@ const connectDB = async () => {
             name: 'Phan Trọng Quý',
             role: 'admin',
             status: 'active',
-            plan: 'studio',
+            plan: 'pro',
           },
         },
         { upsert: true }
       );
     } catch (adminSyncErr) {
       console.warn('[Admin Sync Warning]:', adminSyncErr.message);
+    }
+
+    // Admin-set subscription prices (otherwise the defaults from config/plans.js apply).
+    try {
+      await require('../services/planPriceService').loadPlanPrices();
+    } catch (planPriceErr) {
+      console.warn('[Plan Price Warning]:', planPriceErr.message);
     }
   } catch (error) {
     console.warn(`[MongoDB Atlas] Connection warning: ${error.message}`);

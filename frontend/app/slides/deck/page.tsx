@@ -7,7 +7,8 @@ import StudioShell, { Arrow, Icon, useToast } from "@/components/slides/StudioSh
 import s from "@/components/slides/studio.module.css";
 import { editedLabel } from "@/lib/deckFormat";
 import { fetchAccount, type AccountPlan } from "@/lib/paymentService";
-import { getDeck, likeDeck, recordDeckViewOnce, saveDeck, type Deck } from "@/lib/presentationService";
+import DeckSource from "@/components/slides/DeckSource";
+import { copyDeckToWorkspace, getDeck, likeDeck, recordDeckViewOnce, saveDeck, type Deck } from "@/lib/presentationService";
 import { buildInitMessage, STUDIO_URL } from "@/lib/slideBridge";
 import { slideHeadline, toRenderSlides } from "@/lib/slideLegacy";
 
@@ -22,6 +23,7 @@ export default function DeckPage() {
   const [error, setError] = useState("");
   const [upgrade, setUpgrade] = useState("");
   const [exporting, setExporting] = useState("");
+  const [copying, setCopying] = useState(false);
   const [toast, showToast] = useToast();
   const stageRef = useRef<HTMLDivElement>(null);
 
@@ -140,6 +142,24 @@ export default function DeckPage() {
     }
   };
   const visLabel = !isOwner ? "Public · view only" : locked ? "View only (over plan limit)" : deck?.isPublic ? "Public" : "Private";
+  // Bản sao vào không gian của mình là tính năng gói Pro (admin luôn được)
+  const canUseDeck = account?.role === "admin" || account?.plan === "pro" || account?.plan === "studio";
+
+  const copyThisDeck = async () => {
+    if (!deck || copying) return;
+    if (!canUseDeck) { setUpgrade("use-deck"); return; }
+    setCopying(true);
+    try {
+      const copy = await copyDeckToWorkspace(deck.id);
+      window.location.href = `/slides/edit/?id=${copy.id}`;
+    } catch (err) {
+      setCopying(false);
+      const coded = err as Error & { code?: string };
+      if (coded.code === "UPGRADE_REQUIRED") setUpgrade("use-deck");
+      else if (coded.code === "QUOTA") setUpgrade(coded.message);
+      else showToast(coded.message || "Could not copy this deck");
+    }
+  };
   const notes = current?.remark ? plainText(String(current.remark)) : "";
 
   return (
@@ -159,6 +179,7 @@ export default function DeckPage() {
                   <span>·</span><span>{editedLabel(deck.updatedAt, deck.createdAt)}</span>
                 </p>
                 <h1 className={s.h1} id="deckTitle">{deck.title}</h1>
+                <DeckSource deck={deck} />
               </div>
               <div className={s.actions}>
                 <span className={s.btn} aria-label={`${deck.viewsCount || 0} views`} title="Views"><Icon name="visibility" />{deck.viewsCount || 0}</span>
@@ -166,7 +187,12 @@ export default function DeckPage() {
                   <Icon name="favorite" />{deck.likesCount || 0}
                 </button>
                 <button type="button" className={s.btn} onClick={present} disabled={!slides.length}>Present <Icon name="slideshow" /></button>
-                {!isOwner ? null : locked ? (
+                {!isOwner ? (
+                  <button type="button" className={`${s.btn} ${s.primary}`} onClick={copyThisDeck} disabled={copying || !slides.length}
+                    title="Make your own private copy to edit. The original deck stays unchanged.">
+                    {copying ? "Copying…" : "Use this deck"} <Icon name={canUseDeck ? "content_copy" : "lock"} />
+                  </button>
+                ) : locked ? (
                   <a className={`${s.btn} ${s.primary}`} href="/pricing/">Upgrade to edit <Arrow /></a>
                 ) : (
                   <a className={`${s.btn} ${s.primary}`} href={`/slides/edit/?id=${deck.id}`}>Open in studio <Arrow /></a>
@@ -223,7 +249,7 @@ export default function DeckPage() {
                         <input id="shareLink" readOnly value={shareUrl} aria-label="Public link" onFocus={(event) => event.currentTarget.select()} />
                         <button type="button" className={s.btn} onClick={copy}>Copy</button>
                       </div>
-                      <p className={s.note}>Anyone with the link can view, like and comment.</p>
+                      <p className={s.note}>Anyone with the link can view, like and comment. Pro members can also make their own copy; your original stays unchanged.</p>
                     </>
                   ) : (
                     <p className={s.note}>Only you can see a private deck.</p>

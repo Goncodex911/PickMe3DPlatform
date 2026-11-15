@@ -41,7 +41,21 @@ export type CollabListener = {
   onDocSync?: (data: { docData: any; authorName: string }) => void;
   onReaction?: (reaction: FloatingReaction) => void;
   onConnectionChange?: (connected: boolean) => void;
+  /** The server asks this client (the longest-present peer) for the current document. */
+  onDocRequest?: () => void;
 };
+
+/** How long a joiner waits for the room's document before its own edits may be broadcast. */
+const INITIAL_DOC_WAIT_MS = 3000;
+
+function readAuthToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem("pickme3d_token") || localStorage.getItem("token");
+  } catch {
+    return null;
+  }
+}
 
 class CollaborationClient {
   private socket: Socket | null = null;
@@ -52,6 +66,24 @@ class CollaborationClient {
   private listeners: Set<CollabListener> = new Set();
   private lastCursorEmit = 0;
   private cursorThrottleMs = 40; // ~25 FPS
+  /** True once the server has confirmed the join (canvas:init); nothing is sent before that. */
+  private joined = false;
+  /** True while a joiner of an occupied room waits for the room's document. */
+  private awaitingDoc = false;
+  private awaitDocTimer: ReturnType<typeof setTimeout> | null = null;
+
+  private stopAwaitingDoc() {
+    this.awaitingDoc = false;
+    if (this.awaitDocTimer) {
+      clearTimeout(this.awaitDocTimer);
+      this.awaitDocTimer = null;
+    }
+  }
+
+  /** May this client send document changes yet? */
+  private canSendDoc(): boolean {
+    return Boolean(this.socket && this.canvasId && this.joined && !this.awaitingDoc);
+  }
 
   public connect(canvasId: string, user: { id?: string; name?: string; avatar?: string; color?: string }) {
     if (this.socket && this.canvasId === canvasId) {
@@ -68,9 +100,13 @@ class CollaborationClient {
       transports: ["websocket", "polling"],
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
+      // Re-read on every (re)connect so a login during the session is picked up.
+      auth: (cb) => cb({ token: readAuthToken() }),
     });
 
     this.socket.on("connect", () => {
+      this.joined = false;
+      this.stopAwaitingDoc();
       this.notifyConnection(true);
       this.socket?.emit("canvas:join", {
         canvasId: this.canvasId,
@@ -79,10 +115,31 @@ class CollaborationClient {
     });
 
     this.socket.on("disconnect", () => {
+      this.joined = false;
+      this.stopAwaitingDoc();
       this.notifyConnection(false);
     });
 
+    this.socket.on("canvas:denied", ({ canvasId: deniedId }: any) => {
+      if (deniedId && deniedId !== this.canvasId) return;
+      console.warn("[collab] Not allowed to join this canvas room; real-time sync is off.");
+      this.disconnect();
+    });
+
+    this.socket.on("doc:request", () => {
+      if (!this.joined) return;
+      this.listeners.forEach((l) => l.onDocRequest && l.onDocRequest());
+    });
+
     this.socket.on("canvas:init", ({ self, peers, locks, docData }: any) => {
+      this.joined = true;
+      this.stopAwaitingDoc();
+      // Joining an occupied room: the room's document wins over this tab's local copy, so hold
+      // our own broadcasts until it arrives (here or via doc:updated after a doc:request).
+      if (!docData && Array.isArray(peers) && peers.length > 0) {
+        this.awaitingDoc = true;
+        this.awaitDocTimer = setTimeout(() => this.stopAwaitingDoc(), INITIAL_DOC_WAIT_MS);
+      }
       if (self) this.currentUser = self;
       this.peers.clear();
       if (Array.isArray(peers)) {
@@ -150,6 +207,7 @@ class CollaborationClient {
     });
 
     this.socket.on("doc:updated", (data: any) => {
+      this.stopAwaitingDoc();
       this.listeners.forEach((l) => l.onDocSync && l.onDocSync(data));
     });
 
@@ -159,6 +217,8 @@ class CollaborationClient {
   }
 
   public disconnect() {
+    this.joined = false;
+    this.stopAwaitingDoc();
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
@@ -193,7 +253,7 @@ class CollaborationClient {
   }
 
   public patchNode(nodeId: string, patch: any) {
-    if (!this.socket || !this.canvasId) return;
+    if (!this.socket || !this.canSendDoc()) return;
     this.socket.emit("node:patch", {
       canvasId: this.canvasId,
       nodeId,
@@ -202,7 +262,7 @@ class CollaborationClient {
   }
 
   public broadcastDoc(docData: any, versionMeta?: any) {
-    if (!this.socket || !this.canvasId) return;
+    if (!this.socket || !this.canSendDoc()) return;
     this.socket.emit("doc:broadcast", {
       canvasId: this.canvasId,
       docData,

@@ -17,7 +17,18 @@ exports.getUsers = async (req, res, next) => {
 // @route   POST /api/users
 exports.createUser = async (req, res, next) => {
   try {
-    const user = await User.create(req.body);
+    // Never trust role/accountType/creatorStatus/plan/wallet from the request body.
+    const { name, email, jobRole, bio, username } = req.body || {};
+    const user = await User.create({
+      name,
+      email,
+      jobRole,
+      bio,
+      username,
+      role: 'user',
+      accountType: 'REGULAR',
+      creatorStatus: 'NONE',
+    });
     res.status(201).json({ success: true, data: user });
   } catch (error) {
     next(error);

@@ -9,6 +9,7 @@ import {
   fetchTemplateByIdApi,
   getCoverEditorLink,
   prepareEditorSession,
+  checkoutTemplateApi,
   trackCoverTemplateApi,
   toggleLikeTemplateApi,
   addTemplateReviewApi,
@@ -23,6 +24,9 @@ import { AddToCollectionModal } from "@/components/CollectionManager";
 import DesignThumbnail from "@/components/DesignThumbnail";
 import ReportModal from "@/components/ReportModal";
 import { isCurrentUserAdmin } from "@/lib/reportService";
+import TemplatePriceModal from "@/components/TemplatePriceModal";
+import { getStoredUser } from "@/lib/permissions";
+import { confirmDigitalPurchase } from "@/lib/paymentService";
 
 interface TemplateDetailClientProps {
   id: string;
@@ -155,8 +159,41 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
     setIsFollowing(updated);
   };
 
+  // Paid template without access: the server sent no content (locked), so the action becomes "Buy".
+  const isLocked = Boolean(template?.locked);
+  // Only the person who created and owns the template edits its price (the server checks again).
+  const [priceOpen, setPriceOpen] = useState(false);
+  const viewerId = String((getStoredUser() as any)?._id || (getStoredUser() as any)?.id || "");
+  const authorId = String((template?.author as any)?._id || template?.author || "");
+  const isOwner = Boolean(template?.isOwner) || (Boolean(viewerId) && viewerId === authorId && template?.ownerType !== "ADMIN");
+  const priceLabel = template?.price ? `${template.price.toLocaleString("vi-VN")}₫` : "";
+  const [buying, setBuying] = useState(false);
+  const [buyError, setBuyError] = useState("");
+
+  const handleBuyTemplate = async () => {
+    if (!templateId) return;
+    if (!confirmDigitalPurchase(template?.title ? `Template "${template.title}"` : "Template")) return;
+    setBuying(true);
+    setBuyError("");
+    const res = await checkoutTemplateApi(templateId);
+    if (res.success && res.checkoutUrl) {
+      window.location.href = res.checkoutUrl;
+      return;
+    }
+    setBuying(false);
+    if (res.code === "LOGIN_REQUIRED") {
+      router.push("/login");
+      return;
+    }
+    setBuyError(res.message || "Không thể tạo thanh toán");
+  };
+
   const handleUseTemplate = () => {
     if (!template) return;
+    if (isLocked) {
+      void handleBuyTemplate();
+      return;
+    }
     prepareEditorSession(template, false);
     if (templateId) {
       trackCoverTemplateApi(templateId);
@@ -165,7 +202,7 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
   };
 
   const handleDownloadJson = () => {
-    if (!template) return;
+    if (!template || isLocked) return;
     const dataStr =
       "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(template.docData, null, 2));
     const downloadAnchor = document.createElement("a");
@@ -397,8 +434,8 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
             onClick={handleUseTemplate}
             className="px-4 py-1.5 rounded-md bg-red-600 hover:bg-red-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
           >
-            <span className="material-symbols-rounded text-sm">content_copy</span>
-            <span>Dùng mẫu này</span>
+            <span className="material-symbols-rounded text-sm">{isLocked ? "shopping_bag" : "content_copy"}</span>
+            <span>{isLocked ? (buying ? "Đang chuyển…" : `Mua · ${priceLabel}`) : "Dùng mẫu này"}</span>
           </button>
         </div>
       </div>
@@ -843,9 +880,31 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                 onClick={handleUseTemplate}
                 className="w-full py-3 px-4 rounded-md bg-red-600 hover:bg-red-500 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
-                <span className="material-symbols-rounded text-base">content_copy</span>
-                <span>Dùng mẫu này (Fork & Chỉnh sửa)</span>
+                <span className="material-symbols-rounded text-base">{isLocked ? "shopping_bag" : "content_copy"}</span>
+                <span>{isLocked ? (buying ? "Đang chuyển tới thanh toán…" : `Mua Template · ${priceLabel}`) : "Dùng mẫu này (Fork & Chỉnh sửa)"}</span>
               </button>
+              {isLocked && (
+                <p className="text-[11px] text-slate-400 text-center">Mua một lần, dùng và chỉnh sửa bản sao trong Editor. Người bán vẫn giữ quyền sở hữu Template.</p>
+              )}
+              {!isLocked && template.price ? (
+                <p className="text-[11px] text-emerald-400 text-center">{template.isOwner ? `Template của bạn · ${priceLabel}` : template.purchased ? "✓ Đã mua · Bạn có thể dùng và chỉnh sửa bản sao" : `Bạn có quyền sử dụng · ${priceLabel}`}</p>
+              ) : null}
+              {buyError && <p className="text-[11px] text-red-400 text-center" role="alert">{buyError}</p>}
+              {isOwner && (
+                <div className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-md bg-slate-900 border border-white/10 text-xs">
+                  <span className="text-slate-400">
+                    Giá bán: <strong className="text-white tabular-nums">{template.price ? `${template.price.toLocaleString("vi-VN")}₫` : "Miễn phí"}</strong>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPriceOpen(true)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-semibold"
+                  >
+                    <span className="material-symbols-rounded text-sm" aria-hidden="true">sell</span>
+                    Sửa giá
+                  </button>
+                </div>
+              )}
 
               <div className="grid grid-cols-3 gap-2">
                 <button
@@ -875,8 +934,9 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
                 <button
                   type="button"
                   onClick={handleDownloadJson}
-                  className="py-2 px-3 rounded-md bg-slate-900 border border-white/10 text-slate-300 hover:text-white hover:border-white/20 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                  title="Tải cấu hình JSON"
+                  disabled={isLocked}
+                  className="py-2 px-3 rounded-md bg-slate-900 border border-white/10 text-slate-300 hover:text-white hover:border-white/20 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  title={isLocked ? "Mua Template để tải cấu hình" : "Tải cấu hình JSON"}
                 >
                   <span className="material-symbols-rounded text-sm">download</span>
                   <span>Tải JSON</span>
@@ -1008,6 +1068,15 @@ export default function TemplateDetailClient({ id }: TemplateDetailClientProps) 
         targetTitle={reportModalData.targetTitle}
         targetUrl={reportModalData.targetUrl}
       />
+      {priceOpen && template && templateId && (
+        <TemplatePriceModal
+          templateId={templateId}
+          title={template.title}
+          currentPrice={template.price || 0}
+          onClose={() => setPriceOpen(false)}
+          onSaved={(value) => setTemplate((cur) => (cur ? { ...cur, price: value } : cur))}
+        />
+      )}
     </div>
   );
 }

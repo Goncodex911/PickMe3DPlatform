@@ -8,6 +8,9 @@ import { fetchMyDesignsApi, updateDesignApi, deleteDesignApi, prepareEditorSessi
 import { CollectionItem, fetchMyCollectionsApi, deleteCollectionApi } from "@/lib/collectionService";
 import { fetchMyProfileApi, mergeCurrentUserProfile, updateMyProfileApi } from "@/lib/userService";
 import UserAvatar from "@/components/UserAvatar";
+import CreatorApplicationSummary from "@/components/CreatorApplicationSummary";
+import TemplatePriceModal from "@/components/TemplatePriceModal";
+import { accountLabel, can, refreshAccess } from "@/lib/permissions";
 import DesignThumbnail from "@/components/DesignThumbnail";
 import styles from "./page.module.css";
 
@@ -20,6 +23,16 @@ function formatDate(value?: string | Date | null) {
   return Number.isNaN(date.getTime())
     ? "Chưa cập nhật"
     : new Intl.DateTimeFormat("vi-VN", { day: "numeric", month: "long", year: "numeric" }).format(date);
+}
+
+// jobRole is a free-text profession. Old accounts stored role words in it (Buyer, Creator…): never show those as a job.
+const ROLE_WORDS = new Set(["buyer", "creator", "designer", "user", "admin", "người mua", "người dùng"]);
+function professionLabel(user: any): string {
+  const job = typeof user?.jobRole === "string" ? user.jobRole.trim() : "";
+  if (job && !ROLE_WORDS.has(job.toLowerCase())) return job;
+  const specialties = user?.creatorApplication?.specialties;
+  if (Array.isArray(specialties) && specialties.length) return `Creator ${specialties.join(", ")}`;
+  return "Nhà thiết kế số";
 }
 
 function formatCompact(value: number) {
@@ -97,6 +110,10 @@ export default function ProfilePage() {
       setEditUsername(refreshedUser.username || "");
       localStorage.setItem("pickme3d_user", JSON.stringify(refreshedUser));
       window.dispatchEvent(new Event("storage"));
+      // Role, account type and permissions always come from the backend.
+      void refreshAccess().then((access) => {
+        if (active && access) setUser((current: any) => ({ ...current, ...access }));
+      });
     });
 
     return () => { active = false; };
@@ -157,12 +174,29 @@ export default function ProfilePage() {
     setIsEditingBio(false);
   };
 
+  const canPublishTemplates = !Array.isArray(user?.permissions) || can(user, "template:listing:publish:own");
+  const canApplyCreator =
+    can(user, "template:creator_application:create:own") &&
+    user?.accountType !== "CREATOR" &&
+    user?.creatorStatus !== "SUSPENDED";
+  const creatorPending = user?.role !== "admin" && user?.creatorStatus === "PENDING";
+
   const handleTogglePrivacy = async (design: TemplateItem) => {
     const id = (design._id || design.id)!;
     const isPublic = !design.isPublic;
+    if (isPublic && !canPublishTemplates) {
+      showToast("Chỉ Creator đã được duyệt mới được công khai Template.");
+      return;
+    }
     setDesigns((current) => current.map((item) => (item._id || item.id) === id ? { ...item, isPublic } : item));
     const result = await updateDesignApi(id, { isPublic });
-    showToast(result.success ? (isPublic ? "Thiết kế đã được công khai." : "Thiết kế đã chuyển sang riêng tư.") : "Đã cập nhật trạng thái trong phiên này.");
+    if (!result.success && result.code) {
+      // Denied by the backend: roll back the optimistic change.
+      setDesigns((current) => current.map((item) => (item._id || item.id) === id ? { ...item, isPublic: design.isPublic } : item));
+      showToast(result.message || "Bạn không có quyền thực hiện thao tác này.");
+      return;
+    }
+    showToast(result.success ? (isPublic ? "Đã gửi Template để Admin duyệt trước khi lên Marketplace." : "Thiết kế đã chuyển sang riêng tư.") : "Đã cập nhật trạng thái trong phiên này.");
   };
 
   const handleAddTag = async (designId: string) => {
@@ -194,6 +228,16 @@ export default function ProfilePage() {
   const handleEditDesign = (design: TemplateItem) => {
     prepareEditorSession(design, true);
     router.push(`/editor?editId=${design._id || design.id}`);
+  };
+
+  // Creator pricing of own templates (template:listing:sell:own). Admin prices the system catalogue in /admin.
+  // The list only holds the user's own designs; the backend re-checks ownership on every price change.
+  const canSell = can(user, "template:listing:sell:own");
+  const [priceDesign, setPriceDesign] = useState<TemplateItem | null>(null);
+
+  const handlePriceSaved = (id: string, value: number) => {
+    setDesigns((current) => current.map((item) => ((item._id || item.id) === id ? { ...item, price: value } : item)));
+    showToast(value > 0 ? `Đã cập nhật giá ${value.toLocaleString("vi-VN")}₫. Bạn nhận 70% mỗi lượt bán.` : "Template đã chuyển sang miễn phí.");
   };
 
   const handleDeleteDesign = async (id: string) => {
@@ -259,12 +303,12 @@ export default function ProfilePage() {
                     <button className={styles.smallButton} onClick={() => { setEditName(user.name || ""); setIsEditingName(false); }}>Hủy</button>
                   </div>
                 ) : <h1 id="profile-name">{user.name || "Nhà thiết kế PickMe3D"}</h1>}
-                <span className={styles.roleBadge}>{user.role === "admin" ? "Quản trị viên" : "Nhà sáng tạo"}</span>
+                <span className={styles.roleBadge}>{accountLabel(user)}</span>
               </div>
 
               <div className={styles.metaRow}>
                 {user.email && <span><i className="material-symbols-rounded">mail</i>{user.email}</span>}
-                <span><i className="material-symbols-rounded">work</i>{user.jobRole || "Nhà thiết kế số"}</span>
+                <span><i className="material-symbols-rounded">work</i>{professionLabel(user)}</span>
                 <span><i className="material-symbols-rounded">calendar_month</i>Tham gia {formatDate(user.createdAt)}</span>
               </div>
 
@@ -289,6 +333,12 @@ export default function ProfilePage() {
                   <span>Admin Console</span>
                 </Link>
               )}
+              {(canApplyCreator || creatorPending) && (
+                <Link className={styles.outlineButton} href="/creator/apply/" title={creatorPending ? "Xem trạng thái đơn đăng ký Creator" : "Đăng ký để công khai và bán Template"}>
+                  <span className="material-symbols-rounded" aria-hidden="true">{creatorPending ? "hourglass_top" : "storefront"}</span>
+                  <span>{creatorPending ? "Theo dõi đơn Creator" : "Trở thành Creator"}</span>
+                </Link>
+              )}
               <Link className={styles.outlineButton} href="/settings/" aria-label="Mở cài đặt">
                 <span className="material-symbols-rounded" aria-hidden="true">settings</span>
                 <span>Cài đặt</span>
@@ -299,12 +349,14 @@ export default function ProfilePage() {
           </div>
 
           <div className={styles.profileFacts}>
-            <div><span>Vai trò</span><strong>{user.jobRole || "Nhà thiết kế số"}</strong></div>
+            <div><span>Vai trò</span><strong>{accountLabel(user)}</strong></div>
             <div><span>Tên người dùng</span><strong>{user.username ? `@${user.username}` : "Chưa thiết lập"}</strong></div>
             <div><span>Thiết kế công khai</span><strong>{publicCount} tác phẩm</strong></div>
             <div><span>Bộ sưu tập</span><strong>{collections.length} bộ sưu tập</strong></div>
           </div>
         </section>
+
+        {user.role !== "admin" && <CreatorApplicationSummary className="mt-4" />}
 
         <div className={styles.updatedLine}>
           <span />
@@ -350,7 +402,7 @@ export default function ProfilePage() {
                   <div><span>Họ tên</span><strong>{user.name || "Chưa cập nhật"}</strong></div>
                   <div><span>Email</span><strong>{user.email || "Chưa cập nhật"}</strong></div>
                   <div><span>Tên người dùng</span><strong>{user.username ? `@${user.username}` : "Chưa thiết lập"}</strong></div>
-                  <div><span>Lĩnh vực</span><strong>{user.jobRole || "Nhà thiết kế số"}</strong></div>
+                  <div><span>Lĩnh vực</span><strong>{professionLabel(user)}</strong></div>
                   <div className={styles.fullField}><span>Giới thiệu</span><p>{user.bio || "Chưa có phần giới thiệu."}</p></div>
                 </div>
               )}
@@ -428,6 +480,21 @@ export default function ProfilePage() {
                           </div>
                           {editingTagId === id && <form className={styles.tagForm} onSubmit={(event) => { event.preventDefault(); void handleAddTag(id); }}><input autoFocus value={newTagInput} onChange={(event) => setNewTagInput(event.target.value)} placeholder="Tên hashtag" /><button type="submit">Thêm</button><button type="button" onClick={() => setEditingTagId(null)}>Hủy</button></form>}
                         </div>
+                        {canSell && !id.startsWith("local_") && (
+                          <div className="flex flex-wrap items-center gap-2 py-2 text-xs border-t border-[#eceef0]">
+                            <span className="text-[#717985]">Giá bán</span>
+                            <strong className="text-[#20242a] tabular-nums">{design.price ? `${design.price.toLocaleString("vi-VN")}₫` : "Miễn phí"}</strong>
+                            <button
+                              type="button"
+                              onClick={() => setPriceDesign(design)}
+                              className="ml-auto inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-[#d5d8dc] text-[#20242a] font-semibold hover:bg-[#f5f6f7]"
+                              title="Sửa giá và xem lịch sử giá"
+                            >
+                              <span className="material-symbols-rounded text-[15px]" aria-hidden="true">sell</span>
+                              Sửa giá
+                            </button>
+                          </div>
+                        )}
                         <div className={styles.designActions}>
                           <button className={styles.continueButton} onClick={() => handleEditDesign(design)}><span className="material-symbols-rounded">edit</span>Chỉnh sửa tiếp</button>
                           {design.isPublic && <Link className={styles.squareAction} href={`/templates/${id}`} title="Xem thiết kế công khai"><span className="material-symbols-rounded">open_in_new</span></Link>}
@@ -462,6 +529,15 @@ export default function ProfilePage() {
           </section>
         )}
       </main>
+      {priceDesign && (
+        <TemplatePriceModal
+          templateId={(priceDesign._id || priceDesign.id)!}
+          title={priceDesign.title}
+          currentPrice={priceDesign.price || 0}
+          onClose={() => setPriceDesign(null)}
+          onSaved={(value) => handlePriceSaved((priceDesign._id || priceDesign.id)!, value)}
+        />
+      )}
     </div>
   );
 }

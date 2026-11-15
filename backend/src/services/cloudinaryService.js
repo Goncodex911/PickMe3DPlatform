@@ -62,6 +62,10 @@ async function uploadMedia(fileOrDataUri, options = {}) {
 async function uploadIfBase64(value, folder = 'pickme3d/media') {
   if (!value || typeof value !== 'string') return value;
   if (!isDataUri(value)) return value;
+  // Local/dev without Cloudinary credentials: keep the data URI instead of failing the request.
+  if (!process.env.CLOUDINARY_URL && !(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET)) {
+    return value;
+  }
 
   try {
     const res = await uploadMedia(value, { folder, resource_type: 'auto' });

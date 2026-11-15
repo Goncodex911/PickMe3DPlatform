@@ -70,13 +70,57 @@ export async function createDeck(title: string) {
   return data.data as Deck;
 }
 
-export async function generateDeck(topic: string) {
+export interface GenerateOptions {
+  audience?: string;
+  goal?: string;
+  style?: string;
+  slideCount?: number;
+  onProgress?: (progress: number, stage: string) => void;
+}
+
+interface GenerateJob {
+  status: "queued" | "processing" | "completed" | "failed";
+  progress: number;
+  stage: string;
+  error?: string | null;
+  result?: { deckId: string } | null;
+}
+
+const JOB_POLL_MS = 1500;
+const JOB_TIMEOUT_MS = 5 * 60 * 1000;
+
+// Backend chạy pipeline nhiều tầng ở dạng job (202 + jobId): hỏi tiến độ tới khi xong rồi tải deck đã lưu.
+export async function generateDeck(topic: string, options: GenerateOptions = {}) {
+  const { onProgress, ...input } = options;
   const res = await apiFetch(`${API_BASE}/presentations/generate`, {
     method: "POST",
-    body: JSON.stringify({ topic }),
+    body: JSON.stringify({ topic, ...input }),
   });
   const data = await read(res);
+  if (!data.jobId) return data.data as Deck;
+  const started = Date.now();
+  while (Date.now() - started < JOB_TIMEOUT_MS) {
+    await new Promise((resolve) => setTimeout(resolve, JOB_POLL_MS));
+    const job = (await read(await apiFetch(`${API_BASE}/presentations/jobs/${data.jobId}`))).data as GenerateJob;
+    onProgress?.(job.progress, job.stage);
+    if (job.status === "failed") throw new Error(job.error || "AI could not create the deck");
+    if (job.status === "completed" && job.result?.deckId) return getDeck(job.result.deckId);
+  }
+  throw new Error("AI is taking too long. Check your deck list in a minute.");
+}
+
+// "Use this deck": bản sao độc lập của một deck công khai vào không gian của mình (gói Pro). Deck gốc không đổi.
+export async function copyDeckToWorkspace(id: string) {
+  const res = await apiFetch(`${API_BASE}/presentations/${encodeURIComponent(id)}/use`, { method: "POST" });
+  const data = await read(res);
   return data.data as Deck;
+}
+
+/** Nguồn của bản sao tạo bằng "Use this deck" (lưu trong theme.copiedFrom). */
+export function copiedFrom(deck: Pick<Deck, "theme"> | null | undefined): { deckId: string; title: string; authorName: string } | null {
+  const source = deck?.theme?.copiedFrom as { deckId?: unknown; title?: unknown; authorName?: unknown } | undefined;
+  if (!source || typeof source.deckId !== "string") return null;
+  return { deckId: source.deckId, title: String(source.title || ""), authorName: String(source.authorName || "") };
 }
 
 export async function getDeck(id: string) {
