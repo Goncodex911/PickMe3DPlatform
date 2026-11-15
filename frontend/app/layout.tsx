@@ -29,7 +29,6 @@ export const viewport: Viewport = {
 import SiteNavigation from "@/components/SiteNavigation";
 
 import GoogleAuthProvider from "@/components/GoogleAuthProvider";
-import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 export default function RootLayout({
   children,
@@ -64,7 +63,6 @@ export default function RootLayout({
       </head>
       <body style={{ fontFamily: "Roboto, system-ui, sans-serif" }} suppressHydrationWarning>
         <GoogleAuthProvider>
-          <GoogleAnalytics />
           <SiteNavigation />
           {children}
         </GoogleAuthProvider>
