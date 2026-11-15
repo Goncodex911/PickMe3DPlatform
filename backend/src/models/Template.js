@@ -87,6 +87,22 @@ const templateSchema = new mongoose.Schema(
       default: 'TEMPLATE_SECTION',
       index: true,
     },
+    // Marketplace moderation. A Creator publish goes to PENDING_REVIEW; only APPROVED listings are public.
+    // Missing value = legacy listing published before review existed (treated as APPROVED).
+    reviewStatus: {
+      type: String,
+      enum: ['DRAFT', 'PENDING_REVIEW', 'APPROVED', 'REJECTED', 'TAKEN_DOWN'],
+      index: true,
+    },
+    reviewNote: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    reviewedAt: {
+      type: Date,
+      default: null,
+    },
     likesCount: {
       type: Number,
       default: 0,
@@ -155,9 +171,8 @@ templateSchema.pre('save', function (next) {
   if (this.price !== undefined) {
     this.isPaid = Number(this.price) > 0;
   }
-  if (this.isSystem && !this.sellerType) {
-    this.sellerType = 'ADMIN';
-  }
+  // The system catalogue is always Admin-owned; anything else is sold by its Creator.
+  this.sellerType = this.isSystem ? 'ADMIN' : 'CREATOR';
   next();
 });
 

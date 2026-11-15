@@ -10,6 +10,8 @@ import {
   downloadOrdersCsv,
   PaginationMeta,
 } from "@/lib/adminService";
+import { PaymentOrderDrawer, ReconcilePanel, StatusBadge } from "@/components/admin/PaymentOps";
+import PlanPriceCard from "@/components/admin/PlanPriceCard";
 
 export default function AdminBillingPage() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
@@ -24,6 +26,11 @@ export default function AdminBillingPage() {
   const [sellerTypeFilter, setSellerTypeFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [reviewOnly, setReviewOnly] = useState(false);
+  const [refundFilter, setRefundFilter] = useState("all");
+  const [excessOnly, setExcessOnly] = useState(false);
+  const [openOrder, setOpenOrder] = useState<number | null>(null);
+  const [showReconcile, setShowReconcile] = useState(false);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
 
@@ -32,8 +39,15 @@ export default function AdminBillingPage() {
     totalGrossVolume?: number;
     totalAdminRevenue?: number;
     totalCreatorEarnings?: number;
+    totalRefunded?: number;
     paidOrdersCount: number;
     pendingOrdersCount: number;
+    statusCounts?: Record<string, number>;
+    needsReviewCount?: number;
+    openRefundsCount?: number;
+    excessReturned?: number;
+    excessPendingAmount?: number;
+    openExcessCount?: number;
     breakdown?: any;
   }>({
     totalRevenue: 0,
@@ -56,6 +70,9 @@ export default function AdminBillingPage() {
           orderType: orderTypeFilter,
           sellerType: sellerTypeFilter,
           transactionSource: sourceFilter,
+          review: reviewOnly,
+          refund: refundFilter,
+          excess: excessOnly ? "PENDING" : "all",
           search: search.trim() || undefined,
         }),
         fetchAdminStatsApi(),
@@ -74,7 +91,7 @@ export default function AdminBillingPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter, planFilter, orderTypeFilter, sellerTypeFilter, sourceFilter, search]);
+  }, [page, statusFilter, planFilter, orderTypeFilter, sellerTypeFilter, sourceFilter, search, reviewOnly, refundFilter, excessOnly]);
 
   useEffect(() => {
     loadData();
@@ -132,6 +149,13 @@ export default function AdminBillingPage() {
 
         <div className="flex items-center gap-3">
           <button
+            onClick={() => setShowReconcile((v) => !v)}
+            className="px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-white text-xs font-semibold flex items-center gap-2 cursor-pointer"
+          >
+            <span className="material-symbols-rounded text-base">fact_check</span>
+            <span>{showReconcile ? "Ẩn đối soát" : "Đối soát payOS"}</span>
+          </button>
+          <button
             onClick={handleExportCsv}
             disabled={exporting}
             className="px-4 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-semibold tracking-wide transition-all flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
@@ -148,6 +172,9 @@ export default function AdminBillingPage() {
           </button>
         </div>
       </div>
+
+      {/* Subscription plan prices (Admin sets them, never buys a plan) */}
+      <PlanPriceCard />
 
       {/* Top Level KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -332,9 +359,14 @@ export default function AdminBillingPage() {
               className="w-full bg-zinc-950 border border-white/10 text-xs text-zinc-200 rounded-xl px-3 py-2 outline-none"
             >
               <option value="all">Tất cả trạng thái</option>
+              <option value="PENDING">Chờ thanh toán (PENDING)</option>
+              <option value="VERIFYING">Đang xác minh (VERIFYING)</option>
               <option value="PAID">Đã thanh toán (PAID)</option>
-              <option value="PENDING">Chờ xử lý (PENDING)</option>
+              <option value="REFUNDED">Đã hoàn tiền (REFUNDED)</option>
+              <option value="EXPIRED">Hết hạn (EXPIRED)</option>
               <option value="CANCELLED">Đã hủy (CANCELLED)</option>
+              <option value="FAILED">Thất bại (FAILED)</option>
+              <option value="VOIDED">Đơn trùng – trả lại tiền (VOIDED)</option>
             </select>
           </div>
 
@@ -352,6 +384,7 @@ export default function AdminBillingPage() {
               <option value="all">Tất cả loại</option>
               <option value="SUBSCRIPTION">Gói Hội Viên (Subscription)</option>
               <option value="TEMPLATE_PURCHASE">Mua Template</option>
+              <option value="UI_PURCHASE">Mua UI Marketplace</option>
             </select>
           </div>
 
@@ -410,7 +443,36 @@ export default function AdminBillingPage() {
             </div>
           </div>
         </div>
+        <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-300">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={reviewOnly} onChange={(e) => { setReviewOnly(e.target.checked); setPage(1); }} />
+            Chỉ đơn cần kiểm tra{orderSummary.needsReviewCount ? ` (${orderSummary.needsReviewCount})` : ""}
+          </label>
+          <label className="flex items-center gap-2">
+            Hoàn tiền
+            <select
+              value={refundFilter}
+              onChange={(e) => { setRefundFilter(e.target.value); setPage(1); }}
+              className="bg-zinc-950 border border-white/10 text-xs text-zinc-200 rounded-lg px-2 py-1 outline-none"
+            >
+              <option value="all">Tất cả</option>
+              <option value="REQUESTED">Chờ duyệt{orderSummary.openRefundsCount ? ` (đang mở: ${orderSummary.openRefundsCount})` : ""}</option>
+              <option value="APPROVED">Đã duyệt, chưa chuyển</option>
+              <option value="COMPLETED">Đã hoàn</option>
+              <option value="REJECTED">Từ chối</option>
+            </select>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={excessOnly} onChange={(e) => { setExcessOnly(e.target.checked); setPage(1); }} />
+            Chờ trả lại tiền thu trùng/thừa{orderSummary.openExcessCount ? ` (${orderSummary.openExcessCount} · ${formatCurrency(orderSummary.excessPendingAmount)})` : ""}
+          </label>
+          {orderSummary.totalRefunded ? <span className="text-zinc-500">Tổng đã hoàn: {formatCurrency(orderSummary.totalRefunded)}</span> : null}
+          {orderSummary.excessReturned ? <span className="text-zinc-500">Đã trả lại thu trùng/thừa: {formatCurrency(orderSummary.excessReturned)}</span> : null}
+          {orderSummary.statusCounts?.VERIFYING ? <span className="text-orange-300">{orderSummary.statusCounts.VERIFYING} đơn đang xác minh</span> : null}
+        </div>
       </div>
+
+      {showReconcile && <ReconcilePanel onOpenOrder={setOpenOrder} onChanged={loadData} />}
 
       {/* Orders Table */}
       <div className="rounded-2xl bg-zinc-900/50 border border-white/10 overflow-hidden">
@@ -428,12 +490,13 @@ export default function AdminBillingPage() {
                 <th className="py-3.5 px-4">Phân Bổ Doanh Thu</th>
                 <th className="py-3.5 px-4">Trạng Thái</th>
                 <th className="py-3.5 px-4">Ngày Tạo</th>
+                <th className="py-3.5 px-4">Thao Tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5 text-zinc-300">
               {loading ? (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-zinc-400">
+                  <td colSpan={11} className="py-12 text-center text-zinc-400">
                     <div className="flex items-center justify-center gap-2">
                       <span className="w-4 h-4 rounded-full border-2 border-white/20 border-t-white animate-spin" />
                       <span>Đang tải danh sách đơn hàng...</span>
@@ -442,7 +505,7 @@ export default function AdminBillingPage() {
                 </tr>
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-zinc-400">
+                  <td colSpan={11} className="py-12 text-center text-zinc-400">
                     <span className="material-symbols-rounded text-4xl text-zinc-600 block mb-2">
                       receipt_long
                     </span>
@@ -489,7 +552,11 @@ export default function AdminBillingPage() {
 
                       {/* Transaction Type */}
                       <td className="py-3 px-4 whitespace-nowrap">
-                        {order.orderType === "TEMPLATE_PURCHASE" ? (
+                        {order.orderType === "UI_PURCHASE" ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                            Mua UI
+                          </span>
+                        ) : order.orderType === "TEMPLATE_PURCHASE" ? (
                           <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-300 border border-amber-500/20">
                             Mua Template
                           </span>
@@ -530,8 +597,8 @@ export default function AdminBillingPage() {
 
                       {/* Item Purchased */}
                       <td className="py-3 px-4 font-medium text-white max-w-[160px] truncate">
-                        {order.templateTitle ? (
-                          <span title={order.templateTitle}>{order.templateTitle}</span>
+                        {order.templateTitle || order.productTitle ? (
+                          <span title={order.templateTitle || order.productTitle}>{order.templateTitle || order.productTitle}</span>
                         ) : order.planId === "studio" ? (
                           <span className="text-zinc-200 font-mono">STUDIO ({order.months || 1}T)</span>
                         ) : (
@@ -564,29 +631,21 @@ export default function AdminBillingPage() {
 
                       {/* Status */}
                       <td className="py-3 px-4 whitespace-nowrap">
-                        {order.status === "PAID" && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 flex items-center gap-1.5 w-fit">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                            Đã thanh toán
-                          </span>
-                        )}
-                        {order.status === "PENDING" && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-300 border border-amber-500/20 flex items-center gap-1.5 w-fit">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                            Chờ thanh toán
-                          </span>
-                        )}
-                        {order.status === "CANCELLED" && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-zinc-900 text-zinc-500 border border-white/10 flex items-center gap-1.5 w-fit">
-                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-600" />
-                            Đã hủy
-                          </span>
-                        )}
+                        <StatusBadge order={order} />
                       </td>
 
                       {/* Created At */}
                       <td className="py-3 px-4 text-zinc-400 text-[11px] whitespace-nowrap">
                         {formatDate(order.createdAt)}
+                      </td>
+
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <button
+                          onClick={() => setOpenOrder(order.orderCode)}
+                          className="px-2.5 py-1 rounded-lg bg-zinc-900 border border-white/10 text-white text-[11px] hover:bg-zinc-800 cursor-pointer"
+                        >
+                          Chi tiết
+                        </button>
                       </td>
                     </tr>
                   );
@@ -621,6 +680,9 @@ export default function AdminBillingPage() {
           </div>
         )}
       </div>
+      {openOrder !== null && (
+        <PaymentOrderDrawer orderCode={openOrder} onClose={() => setOpenOrder(null)} onChanged={loadData} />
+      )}
     </div>
   );
 }

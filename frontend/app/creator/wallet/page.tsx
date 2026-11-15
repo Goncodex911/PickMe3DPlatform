@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { can, getStoredUser, isAdminUser, refreshAccess } from "@/lib/permissions";
 import {
   fetchCreatorWalletSummaryApi,
   requestPayoutApi,
@@ -57,17 +58,24 @@ export default function CreatorWalletPage() {
   };
 
   useEffect(() => {
-    try {
-      const stored = typeof window !== "undefined" ? localStorage.getItem("pickme3d_user") : null;
-      if (stored) {
-        const u = JSON.parse(stored);
-        if (u?.role === "admin") {
-          router.replace("/admin/payouts");
-          return;
-        }
+    let cancelled = false;
+    (async () => {
+      const u = (await refreshAccess()) || getStoredUser();
+      if (cancelled) return;
+      if (isAdminUser(u)) {
+        router.replace("/admin/payouts");
+        return;
       }
-    } catch {}
-    loadWallet();
+      // Ví Creator chỉ dành cho Creator đã được duyệt; tài khoản khác quay về trang hồ sơ.
+      if (u && Array.isArray(u.permissions) && !can(u, "payment:wallet:view:own")) {
+        router.replace("/profile");
+        return;
+      }
+      loadWallet();
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   const handleOpenPayoutModal = () => {
@@ -122,6 +130,9 @@ export default function CreatorWalletPage() {
       if (!res.success) {
         setPayoutModalError(res.message || "Gửi yêu cầu rút tiền thất bại");
         setSubmittingPayout(false);
+        // The server balance is the truth: refresh the figures shown in the modal without closing it.
+        const fresh = await fetchCreatorWalletSummaryApi();
+        if (fresh.success && fresh.data) setWalletData(fresh.data);
         return;
       }
 
@@ -177,12 +188,17 @@ export default function CreatorWalletPage() {
   const metrics = walletData?.metrics || {
     totalEarnings: 0,
     availableBalance: 0,
+    shortfall: 0,
     pendingPayout: 0,
     paidPayout: 0,
     rejectedPayout: 0,
     salesEarnings: 0,
     seededBalance: 0,
   };
+
+  const requestedAmount = Number(payoutAmount) || 0;
+  const shortfall = metrics.shortfall || 0;
+  const overBalance = requestedAmount > metrics.availableBalance;
 
   return (
     <div className="min-h-screen bg-[#070b14] text-white flex flex-col">
@@ -248,6 +264,11 @@ export default function CreatorWalletPage() {
               {metrics.availableBalance.toLocaleString("vi-VN")}₫
             </div>
             <p className="text-[11px] text-emerald-400/70 mt-1">Sẵn sàng để rút về tài khoản ngân hàng</p>
+            {shortfall > 0 && (
+              <p className="text-[11px] text-red-300 mt-2 font-semibold">
+                Ví đang âm {shortfall.toLocaleString("vi-VN")}₫ (có đơn đã rút tiền bị trả lại cho người mua). Tạm khóa rút tiền đến khi doanh thu mới bù đủ.
+              </p>
+            )}
           </div>
 
           {/* Pending Payout */}
@@ -637,8 +658,20 @@ export default function CreatorWalletPage() {
                   value={payoutAmount}
                   onChange={(e) => setPayoutAmount(e.target.value === "" ? "" : Number(e.target.value))}
                   placeholder="Nhập số tiền (VD: 500000)"
-                  className="w-full bg-slate-900 border border-white/10 rounded-xl px-3.5 py-2.5 text-base font-bold text-emerald-400 font-mono focus:outline-none focus:border-emerald-400 transition-colors"
+                  aria-invalid={overBalance}
+                  className={`w-full bg-slate-900 border rounded-xl px-3.5 py-2.5 text-base font-bold font-mono focus:outline-none transition-colors ${overBalance ? "border-red-500/60 text-red-300 focus:border-red-400" : "border-white/10 text-emerald-400 focus:border-emerald-400"}`}
                 />
+                {overBalance && (
+                  <p role="alert" className="mt-1.5 text-[11px] text-red-300 flex items-center gap-1">
+                    <span className="material-symbols-rounded text-sm">warning</span>
+                    Vượt số dư khả dụng {metrics.availableBalance.toLocaleString("vi-VN")}₫ – không thể gửi yêu cầu.
+                  </p>
+                )}
+                {shortfall > 0 && (
+                  <p role="alert" className="mt-1.5 text-[11px] text-red-300">
+                    Ví đang âm {shortfall.toLocaleString("vi-VN")}₫ nên tạm thời không thể rút tiền.
+                  </p>
+                )}
 
                 {/* Quick percentage buttons */}
                 <div className="grid grid-cols-4 gap-2 mt-2">
@@ -722,7 +755,7 @@ export default function CreatorWalletPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={submittingPayout || !payoutAmount || Number(payoutAmount) < 10000 || !!payoutModalSuccess}
+                  disabled={submittingPayout || !payoutAmount || Number(payoutAmount) < 10000 || overBalance || shortfall > 0 || !!payoutModalSuccess}
                   className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-500 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-emerald-600/30 transition-all cursor-pointer"
                 >
                   {submittingPayout ? (

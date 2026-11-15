@@ -20,6 +20,8 @@ export interface BankInfo {
 export interface WalletMetrics {
   totalEarnings: number;
   availableBalance: number;
+  /** > 0 when the wallet is negative (an order already withdrawn was voided): payouts are blocked until covered */
+  shortfall?: number;
   pendingPayout: number;
   paidPayout: number;
   rejectedPayout: number;

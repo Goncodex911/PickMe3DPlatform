@@ -6,6 +6,7 @@ import {
   createSystemTemplateApi,
   updateAdminTemplateApi,
   deleteAdminTemplateApi,
+  reviewTemplateApi,
   fetchAdminPresentationsApi,
   togglePresentationVisibilityApi,
   deleteAdminPresentationApi,
@@ -36,6 +37,7 @@ export default function AdminTemplatesPage() {
   const [category, setCategory] = useState("all");
   const [isSystem, setIsSystem] = useState("all");
   const [isPublic, setIsPublic] = useState("all");
+  const [reviewStatus, setReviewStatus] = useState("all");
 
   // Tab switcher: "templates" | "presentations"
   const [activeTab, setActiveTab] = useState<"templates" | "presentations">("templates");
@@ -58,6 +60,7 @@ export default function AdminTemplatesPage() {
   const [formCategory, setFormCategory] = useState("Official 3D Asset");
   const [formTags, setFormTags] = useState("");
   const [formThumbnail, setFormThumbnail] = useState("");
+  const [formPrice, setFormPrice] = useState("0");
   const [formIsFeatured, setFormIsFeatured] = useState(false);
   const [formIsPublic, setFormIsPublic] = useState(true);
   const [formIsSystem, setFormIsSystem] = useState(true);
@@ -116,6 +119,7 @@ export default function AdminTemplatesPage() {
       category,
       isSystem,
       isPublic,
+      reviewStatus,
     });
 
     if (res.success && res.data) {
@@ -129,7 +133,7 @@ export default function AdminTemplatesPage() {
 
   useEffect(() => {
     loadTemplates(1);
-  }, [category, isSystem, isPublic]);
+  }, [category, isSystem, isPublic, reviewStatus]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,6 +200,7 @@ export default function AdminTemplatesPage() {
     setFormCategory(tmpl.category || "Outfit");
     setFormTags((tmpl.tags || []).join(", "));
     setFormThumbnail(tmpl.thumbnailUrl || "");
+    setFormPrice(String(tmpl.price || 0));
     setFormIsFeatured(tmpl.isFeatured || false);
     setFormIsPublic(tmpl.isPublic);
     setFormIsSystem(tmpl.isSystem || false);
@@ -215,8 +220,15 @@ export default function AdminTemplatesPage() {
     setModalError(null);
 
     const tagsArray = formTags.split(",").map((t) => t.trim()).filter(Boolean);
+    const priceNum = Number(formPrice.replace(/[.,\s]/g, ""));
+    if (!Number.isInteger(priceNum) || priceNum < 0 || (priceNum > 0 && priceNum < 1000) || priceNum > 50000000) {
+      setModalError("Giá phải là 0 (miễn phí) hoặc từ 1.000₫ đến 50.000.000₫");
+      setActionBusy(false);
+      return;
+    }
 
     const res = await updateAdminTemplateApi(editModalTemplate._id, {
+      price: priceNum,
       title: formTitle.trim(),
       description: formDesc.trim(),
       category: formCategory,
@@ -235,6 +247,21 @@ export default function AdminTemplatesPage() {
       setModalError(res.message || "Không thể cập nhật mẫu thiết kế");
     }
     setActionBusy(false);
+  };
+
+  // 3b. Marketplace moderation: approve / reject Creator listings, take down any listing.
+  const handleReview = async (t: AdminTemplate, decision: "APPROVED" | "REJECTED" | "TAKEN_DOWN") => {
+    const labels = { APPROVED: "Duyệt", REJECTED: "Từ chối", TAKEN_DOWN: "Gỡ khỏi Marketplace" };
+    if (!window.confirm(`${labels[decision]} Template "${t.title}"?`)) return;
+    const note = decision === "APPROVED" ? "" : window.prompt("Lý do (gửi cho Creator, có thể để trống):") || "";
+    setActionBusy(true);
+    const res = await reviewTemplateApi(t._id, decision, note);
+    setActionBusy(false);
+    if (res.success) {
+      loadTemplates(pagination.page);
+    } else {
+      alert("Lỗi: " + (res.message || "Không thể cập nhật trạng thái duyệt"));
+    }
   };
 
   // 4. Delete Template
@@ -278,17 +305,7 @@ export default function AdminTemplatesPage() {
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            resetForm();
-            setCreateModalOpen(true);
-            setModalError(null);
-          }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-semibold tracking-wide transition-all shadow-sm cursor-pointer"
-        >
-          <span className="material-symbols-rounded text-base text-black">add_box</span>
-          <span>Tạo Mẫu Hệ Thống Mới</span>
-        </button>
+        {/* BR-05: Admin sells the existing system catalogue but does not create new templates. */}
       </div>
 
       {/* Tab Switcher: 3D Templates vs Slide Presentations */}
@@ -504,6 +521,23 @@ export default function AdminTemplatesPage() {
               <option value="false">Riêng tư</option>
             </select>
           </div>
+
+          {/* Review status */}
+          <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+            <span>Kiểm duyệt:</span>
+            <select
+              value={reviewStatus}
+              onChange={(e) => setReviewStatus(e.target.value)}
+              className="bg-zinc-900 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none "
+            >
+              <option value="all">Tất cả</option>
+              <option value="PENDING_REVIEW">Chờ duyệt</option>
+              <option value="APPROVED">Đã duyệt</option>
+              <option value="REJECTED">Bị từ chối</option>
+              <option value="TAKEN_DOWN">Đã gỡ</option>
+              <option value="DRAFT">Nháp</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -565,13 +599,23 @@ export default function AdminTemplatesPage() {
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-medium backdrop-blur-md border bg-black/60 text-zinc-300 border-white/10">
                       {t.isPublic ? "Công khai" : "Riêng tư"}
                     </span>
+                    {t.reviewStatus && t.reviewStatus !== "APPROVED" && (
+                      <span className={`ml-1 px-2 py-0.5 rounded-full text-[10px] font-medium backdrop-blur-md border ${t.reviewStatus === "PENDING_REVIEW" ? "bg-amber-500/20 text-amber-200 border-amber-500/40" : "bg-black/60 text-zinc-400 border-white/10"}`}>
+                        {{ PENDING_REVIEW: "Chờ duyệt", REJECTED: "Bị từ chối", TAKEN_DOWN: "Đã gỡ", DRAFT: "Nháp" }[t.reviewStatus] || t.reviewStatus}
+                      </span>
+                    )}
                   </div>
                 </div>
 
                 {/* Content */}
                 <div className="p-4 space-y-2">
                   <div className="flex items-center justify-between text-[11px] text-zinc-400">
-                    <span className="font-medium text-zinc-300">{t.category}</span>
+                    <span className="font-medium text-zinc-300">
+                      {t.category}
+                      <span className={`ml-2 px-1.5 py-0.5 rounded-md text-[10px] font-semibold ${t.price ? "bg-white/10 text-white" : "bg-white/5 text-zinc-500"}`}>
+                        {t.price ? `${t.price.toLocaleString("vi-VN")}₫` : "Miễn phí"}
+                      </span>
+                    </span>
                     <span>{new Date(t.createdAt).toLocaleDateString("vi-VN")}</span>
                   </div>
 
@@ -608,21 +652,56 @@ export default function AdminTemplatesPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="p-3 bg-zinc-900/60 border-t border-white/5 flex items-center justify-end gap-1.5">
-                <button
-                  onClick={() => openEditModal(t)}
-                  className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 hover:text-white text-xs font-medium flex items-center gap-1 transition-colors"
-                >
-                  <span className="material-symbols-rounded text-sm">edit</span>
-                  Sửa
-                </button>
-                <button
-                  onClick={() => setDeleteModalTemplate(t)}
-                  className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white text-xs font-medium flex items-center gap-1 transition-colors"
-                >
-                  <span className="material-symbols-rounded text-sm">delete</span>
-                  Xóa
-                </button>
+              <div className="p-3 bg-zinc-900/60 border-t border-white/5 flex flex-wrap items-center justify-end gap-1.5">
+                {t.reviewStatus === "PENDING_REVIEW" && !t.isSystem && (
+                  <>
+                    <button
+                      disabled={actionBusy}
+                      onClick={() => handleReview(t, "APPROVED")}
+                      className="px-3 py-1.5 rounded-lg bg-white hover:bg-zinc-200 text-black text-xs font-semibold flex items-center gap-1 transition-colors disabled:opacity-40"
+                    >
+                      <span className="material-symbols-rounded text-sm">check</span>
+                      Duyệt
+                    </button>
+                    <button
+                      disabled={actionBusy}
+                      onClick={() => handleReview(t, "REJECTED")}
+                      className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 hover:text-white text-xs font-medium flex items-center gap-1 transition-colors disabled:opacity-40"
+                    >
+                      <span className="material-symbols-rounded text-sm">close</span>
+                      Từ chối
+                    </button>
+                  </>
+                )}
+                {/* Only the system catalogue is edited by Admin; Creator content and price belong to the Creator. */}
+                {t.isSystem && (
+                  <button
+                    onClick={() => openEditModal(t)}
+                    className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 hover:text-white text-xs font-medium flex items-center gap-1 transition-colors"
+                  >
+                    <span className="material-symbols-rounded text-sm">edit</span>
+                    Sửa
+                  </button>
+                )}
+                {!t.isSystem && t.isPublic && t.reviewStatus !== "PENDING_REVIEW" ? (
+                  <button
+                    disabled={actionBusy}
+                    onClick={() => handleReview(t, "TAKEN_DOWN")}
+                    className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white text-xs font-medium flex items-center gap-1 transition-colors disabled:opacity-40"
+                    title="Gỡ khỏi Marketplace; Creator vẫn sở hữu, người mua vẫn giữ quyền sử dụng"
+                  >
+                    <span className="material-symbols-rounded text-sm">block</span>
+                    Gỡ
+                  </button>
+                ) : t.isSystem ? (
+                  <button
+                    onClick={() => setDeleteModalTemplate(t)}
+                    className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white text-xs font-medium flex items-center gap-1 transition-colors"
+                  >
+                    <span className="material-symbols-rounded text-sm">delete</span>
+                    Xóa
+                  </button>
+                ) : null}
               </div>
             </div>
           ))}
@@ -864,6 +943,23 @@ export default function AdminTemplatesPage() {
               </div>
 
               <div>
+                <label className="block font-medium text-zinc-300 mb-1.5">Giá bán (VND)</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={formPrice}
+                    onChange={(e) => setFormPrice(e.target.value.replace(/[^\d]/g, ""))}
+                    className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white focus:outline-none font-mono"
+                  />
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500">₫</span>
+                </div>
+                <p className="text-[11px] text-zinc-500 mt-1">
+                  {Number(formPrice) > 0 ? `Hiển thị: ${Number(formPrice).toLocaleString("vi-VN")}₫ · 100% doanh thu về nền tảng` : "0 = miễn phí"}
+                </p>
+              </div>
+
+              <div>
                 <label className="block font-medium text-zinc-300 mb-1.5">Ảnh Thumbnail (URL)</label>
                 <input
                   type="url"
@@ -878,8 +974,9 @@ export default function AdminTemplatesPage() {
                   <input
                     type="checkbox"
                     checked={formIsSystem}
-                    onChange={(e) => setFormIsSystem(e.target.checked)}
-                    className="rounded accent-white focus:ring-0"
+                    disabled
+                    title="Không thể chuyển quyền sở hữu Template"
+                    className="rounded accent-white focus:ring-0 opacity-50"
                   />
                   <span>Mẫu Hệ Thống (System)</span>
                 </label>

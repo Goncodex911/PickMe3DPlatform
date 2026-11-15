@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import DeckSource from "@/components/slides/DeckSource";
 import SlideView from "@/components/slides/SlideView";
 import StudioShell, { Icon, useToast } from "@/components/slides/StudioShell";
 import s from "@/components/slides/studio.module.css";
@@ -81,6 +82,7 @@ export default function SlideViewPage() {
                   <span>·</span><span>{editedLabel(deck.updatedAt, deck.createdAt)}</span>
                 </p>
                 <h1 className={s.h1} id="viewTitle">{deck.title}</h1>
+                <DeckSource deck={deck} linkBase="/slides/view/" />
               </div>
               <div className={s.actions}>
                 <span className={s.btn} title="Views"><Icon name="visibility" />{deck.viewsCount || 0}</span>

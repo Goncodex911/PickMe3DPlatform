@@ -41,6 +41,7 @@ async function optionalUser(req, res, next) {
 
 function requirePlan(minPlan) {
   return (req, res, next) => {
+    if (req.user?.role === 'admin') return next(); // BR-09: Admin owns Slide/3D
     const plan = req.user?.plan || 'free';
     if ((RANK[plan] || 0) >= (RANK[minPlan] || 0)) return next();
     return res.status(403).json({
@@ -54,6 +55,7 @@ function requirePlan(minPlan) {
 
 function checkQuota(kind) {
   return async (req, res, next) => {
+    if (req.user?.role === 'admin') return next(); // BR-09: Admin owns Slide/3D
     const plan = getPlan(req.user?.plan || 'free') || getPlan('free');
     const limit = plan.quotas[kind];
     if (limit == null) return next();
@@ -73,4 +75,20 @@ function checkQuota(kind) {
   };
 }
 
-module.exports = { attachUser, optionalUser, requirePlan, checkQuota };
+/** Feature switch of the user's plan (config/plans.js), e.g. requireFeature('aiSlides'). Admin always passes. */
+function requireFeature(feature) {
+  return (req, res, next) => {
+    if (req.user?.role === 'admin') return next();
+    const plan = getPlan(req.user?.plan || 'free') || getPlan('free');
+    if (plan[feature]) return next();
+    return res.status(403).json({
+      success: false,
+      code: 'UPGRADE_REQUIRED',
+      feature,
+      message: 'Tính năng này cần gói Pro. Vui lòng nâng cấp tại trang Pricing.',
+      plan: plan.id,
+    });
+  };
+}
+
+module.exports = { attachUser, optionalUser, requirePlan, requireFeature, checkQuota };

@@ -8,7 +8,7 @@ import s from "@/components/slides/studio.module.css";
 import { startDeckDownload, type DeckExportFormat } from "@/lib/deckExport";
 import { quotaText } from "@/lib/deckFormat";
 import { fetchAccount, type AccountPlan } from "@/lib/paymentService";
-import { createDeck, deleteDeck, generateDeck, listCommunityDecks, listDecks, saveDeck, type Deck } from "@/lib/presentationService";
+import { copyDeckToWorkspace, createDeck, deleteDeck, generateDeck, listCommunityDecks, listDecks, saveDeck, type Deck } from "@/lib/presentationService";
 
 type Filter = "all" | "public" | "private" | "readonly";
 
@@ -34,6 +34,7 @@ export default function SlidesPage() {
   const [community, setCommunity] = useState<Deck[] | null>(null);
   const [menu, setMenu] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [hintError, setHintError] = useState("");
@@ -56,7 +57,13 @@ export default function SlidesPage() {
   }, [scope, community]);
 
   useEffect(() => {
-    const close = () => setMenu(null);
+    // React's root is `document` in the App Router, so stopPropagation() in the card cannot stop this listener:
+    // ignore clicks on the "…" button and inside an open menu, otherwise the menu closes in the same click.
+    const close = (event: MouseEvent) => {
+      const target = event.target as Element | null;
+      if (target?.closest?.("[data-deck-menu]")) return;
+      setMenu(null);
+    };
     const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") { setMenu(null); setConfirming(null); } };
     document.addEventListener("click", close);
     document.addEventListener("keydown", onKey);
@@ -64,15 +71,20 @@ export default function SlidesPage() {
   }, []);
 
   const handleError = (err: unknown) => {
-    const coded = err as Error & { code?: string };
-    if (coded.code === "QUOTA" || coded.code === "UPGRADE_REQUIRED" || coded.code === "READ_ONLY") setUpgrade(coded.message);
+    const coded = err as Error & { code?: string; feature?: string };
+    if (coded.code === "UPGRADE_REQUIRED") setUpgrade(coded.feature || coded.message);
+    else if (coded.code === "QUOTA" || coded.code === "READ_ONLY") setUpgrade(coded.message);
     else setError(coded.message || "Something went wrong. Please try again.");
   };
 
   const list = decks || [];
   const quotas = account?.quotas;
   const deckLimit = quotas ? quotas.slides : 3;
-  const aiLimit = account ? account.aiLimit : 3;
+  // AI slide generation is a Pro feature (unknown account: assume locked until it loads).
+  const aiAllowed = Boolean(
+    account?.features?.aiSlides ?? (account?.role === "admin" || account?.plan === "pro" || account?.plan === "studio")
+  );
+  const aiLimit = account ? account.aiLimit : 0;
   const aiUsed = account?.aiUsed || 0;
   const aiLeft = aiLimit == null ? Infinity : Math.max(0, aiLimit - aiUsed);
   const deckFull = deckLimit != null && list.length >= deckLimit;
@@ -93,6 +105,15 @@ export default function SlidesPage() {
   const onGenerate = async (event: React.FormEvent) => {
     event.preventDefault();
     setError("");
+    // Not on Pro (or out of credits): explain why instead of silently doing nothing.
+    if (!aiAllowed) {
+      setUpgrade("ai-slides");
+      return;
+    }
+    if (aiLeft === 0) {
+      setUpgrade("ai-credits");
+      return;
+    }
     const value = topic.trim();
     if (!value) {
       setHintError("Enter a topic first, for example: Silk L’Heure lookbook for a distributor meeting.");
@@ -151,8 +172,24 @@ export default function SlidesPage() {
       onExport(action === "png" ? "image" : action, deck);
       return;
     }
-    if (action === "delete") { setConfirming(deck.id); return; }
+    if (action === "rename") { setConfirming(null); setRenaming(deck.id); return; }
+    if (action === "delete") { setRenaming(null); setConfirming(deck.id); return; }
     if (action === "cancel") { setConfirming(null); return; }
+    if (action === "use") {
+      // Bản sao deck Community vào không gian của mình: gói Pro (admin luôn được); deck gốc không đổi
+      if (!(account?.role === "admin" || account?.plan === "pro" || account?.plan === "studio")) { setUpgrade("use-deck"); return; }
+      setBusy(true);
+      try {
+        const copy = await copyDeckToWorkspace(deck.id);
+        window.location.href = `/slides/edit/?id=${copy.id}`;
+      } catch (err) {
+        setBusy(false);
+        const coded = err as Error & { code?: string };
+        if (coded.code === "UPGRADE_REQUIRED") setUpgrade("use-deck");
+        else handleError(err);
+      }
+      return;
+    }
     if (action === "copy") {
       const url = `${window.location.origin}/slides/view/?id=${deck.id}`;
       try { await navigator.clipboard.writeText(url); showToast("Link copied"); } catch { showToast(url); }
@@ -175,12 +212,28 @@ export default function SlidesPage() {
     }
   };
 
+  // title === null: rename cancelled. Resolves true when the new name is saved.
+  const onRename = async (deck: Deck, title: string | null) => {
+    if (title === null) { setRenaming(null); return true; }
+    try {
+      const saved = await saveDeck(deck.id, { title });
+      setDecks((rows) => (rows || []).map((row) => (row.id === deck.id ? { ...row, title: saved.title || title } : row)));
+      setRenaming(null);
+      showToast("Deck renamed");
+      return true;
+    } catch (err) {
+      handleError(err);
+      return false;
+    }
+  };
+
   const filters: [Filter, string][] = [["all", "All"], ["public", "Public"], ["private", "Private"]];
   if (readOnlyCount) filters.push(["readonly", "View only"]);
 
   let hint: React.ReactNode = `AI writes a 6–8 slide deck on your topic (about 15–40 seconds), then opens it in the studio.${aiLimit == null ? "" : ` ${aiLeft} AI ${aiLeft === 1 ? "credit" : "credits"} left this month.`}`;
   let hintWarn = false;
-  if (hintError) { hint = hintError; hintWarn = true; }
+  if (!aiAllowed) { hint = <>AI slide generation is part of the <strong>Pro</strong> plan. You can still build a blank deck by hand, or <a href="/pricing/">upgrade to Pro</a> to generate decks with AI.</>; }
+  else if (hintError) { hint = hintError; hintWarn = true; }
   else if (deckFull) { hint = <>You have reached the {deckLimit}-deck limit of the {planName} plan. Delete a deck or <a href="/pricing/">upgrade</a> to create more.</>; hintWarn = true; }
   else if (aiLeft === 0) { hint = "No AI credits left this month. You can still create a blank deck."; hintWarn = true; }
 
@@ -215,8 +268,19 @@ export default function SlidesPage() {
                 placeholder="Topic for AI, e.g. Silk L’Heure lookbook for a distributor meeting"
               />
             </label>
-            <button className={`${s.btn} ${s.primary}`} type="submit" disabled={busy || aiLeft === 0 || deckFull}>
-              {busy ? "AI is writing…" : "Generate with AI"} <Arrow />
+            {/* Always clickable: without Pro (or credits) it opens the upgrade notice instead of being greyed out. */}
+            <button
+              className={`${s.btn} ${s.primary}`}
+              type="submit"
+              disabled={busy || deckFull}
+              title={aiAllowed ? undefined : "AI slide generation needs the Pro plan"}
+            >
+              {!aiAllowed && <Icon name="lock" />}
+              {busy ? "AI is writing…" : "Generate with AI"}
+              {!aiAllowed && (
+                <span style={{ marginLeft: 6, padding: "2px 6px", fontSize: 10, fontWeight: 700, letterSpacing: 1, background: "#FF4D00", color: "#fff" }}>PRO</span>
+              )}
+              <Arrow />
             </button>
             <button className={s.btn} type="button" onClick={onBlank} disabled={busy || deckFull}>
               Blank deck <span className={s.arrow} aria-hidden="true">+</span>
@@ -226,7 +290,7 @@ export default function SlidesPage() {
             <p className={`${s.hint} ${hintWarn ? s.warn : ""}`}>{hint}</p>
             <div className={s.usage}>
               <Meter label="Deck" used={list.length} limit={deckLimit} />
-              <Meter label={`AI · ${new Date().toLocaleString("en-US", { month: "short" })}`} used={aiUsed} limit={aiLimit} />
+              {aiAllowed && <Meter label={`AI · ${new Date().toLocaleString("en-US", { month: "short" })}`} used={aiUsed} limit={aiLimit} />}
             </div>
           </div>
         </form>
@@ -287,8 +351,10 @@ export default function SlidesPage() {
               canExportPptx={Boolean(account?.features?.exportPptx)}
               menuOpen={menu === deck.id}
               confirming={confirming === deck.id}
+              renaming={renaming === deck.id}
               onMenu={setMenu}
               onAction={onAction}
+              onRename={onRename}
             />
           ))}
         </div>

@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { editedLabel } from "@/lib/deckFormat";
 import { isPptistSlide, toRenderSlides } from "@/lib/slideLegacy";
 import type { Deck } from "@/lib/presentationService";
+import DeckSource from "./DeckSource";
 import SlideView from "./SlideView";
 import { Icon } from "./StudioShell";
 import s from "./studio.module.css";
@@ -21,7 +22,51 @@ export function DeckCover({ deck }: { deck: Deck }) {
   return <span className={s.cover}><strong>{deck.title}</strong><span>No slides yet</span></span>;
 }
 
-export type DeckMenuAction = "studio" | "pptx" | "pdf" | "png" | "copy" | "toggle" | "delete" | "confirm-delete" | "cancel";
+export type DeckMenuAction = "studio" | "pptx" | "pdf" | "png" | "copy" | "toggle" | "rename" | "delete" | "confirm-delete" | "cancel" | "use";
+
+const MAX_TITLE = 120;
+
+/** Inline deck name editor: Enter or blur saves, Escape cancels. */
+function RenameForm({ deck, onSave, onCancel }: { deck: Deck; onSave: (title: string) => Promise<boolean>; onCancel: () => void }) {
+  const [value, setValue] = useState(deck.title);
+  const [saving, setSaving] = useState(false);
+  const input = useRef<HTMLInputElement>(null);
+  const done = useRef(false);
+
+  useEffect(() => { input.current?.focus(); input.current?.select(); }, []);
+
+  const submit = async () => {
+    if (done.current || saving) return;
+    const title = value.trim();
+    if (!title || title === deck.title) { done.current = true; onCancel(); return; }
+    setSaving(true);
+    const ok = await onSave(title);
+    setSaving(false);
+    if (ok) done.current = true;
+    else input.current?.focus();
+  };
+
+  return (
+    <form
+      className={s.rename}
+      onSubmit={(event) => { event.preventDefault(); void submit(); }}
+      onClick={(event) => event.stopPropagation()}
+    >
+      <input
+        ref={input}
+        value={value}
+        maxLength={MAX_TITLE}
+        disabled={saving}
+        aria-label="Deck name"
+        onChange={(event) => setValue(event.target.value)}
+        onBlur={() => void submit()}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") { event.stopPropagation(); done.current = true; onCancel(); }
+        }}
+      />
+    </form>
+  );
+}
 
 // Lượt xem và lượt thích hiện ngay trên thẻ
 export function DeckStats({ deck }: { deck: Deck }) {
@@ -40,8 +85,10 @@ export default function DeckCard({
   canExportPptx,
   menuOpen,
   confirming,
+  renaming = false,
   onMenu,
   onAction,
+  onRename,
 }: {
   deck: Deck;
   // Thẻ của người khác (mục Cộng đồng): chỉ xem, không sửa
@@ -52,6 +99,9 @@ export default function DeckCard({
   confirming: boolean;
   onMenu: (id: string | null) => void;
   onAction: (action: DeckMenuAction, deck: Deck) => void;
+  // Inline rename (own decks only). Resolves true when saved.
+  renaming?: boolean;
+  onRename?: (deck: Deck, title: string | null) => Promise<boolean>;
 }) {
   const locked = Boolean(deck.readOnly) && !community;
   const href = `/slides/deck/?id=${deck.id}`;
@@ -76,13 +126,18 @@ export default function DeckCard({
         </div>
       ) : (
         <div className={s.meta}>
-          <h3><a href={href}>{deck.title}</a></h3>
+          {renaming && onRename ? (
+            <RenameForm deck={deck} onSave={(title) => onRename(deck, title)} onCancel={() => void onRename(deck, null)} />
+          ) : (
+            <h3><a href={href}>{deck.title}</a></h3>
+          )}
           <button
             type="button"
             className={s.more}
             aria-label={`Options for ${deck.title}`}
             aria-haspopup="menu"
             aria-expanded={menuOpen}
+            data-deck-menu=""
             onClick={(event) => { event.stopPropagation(); onMenu(menuOpen ? null : deck.id); }}
           >
             <Icon name="more_horiz" />
@@ -106,41 +161,21 @@ export default function DeckCard({
             <span className={s.sep}>·</span>
             <DeckStats deck={deck} />
           </p>
+          <DeckSource deck={deck} compact />
         </div>
       )}
       {menuOpen && community && (
-        <div className={s.menu} role="menu" onClick={(event) => event.stopPropagation()}>
+        <div className={s.menu} role="menu" data-deck-menu="" onClick={(event) => event.stopPropagation()}>
           <a role="menuitem" href={href}><Icon name="slideshow" />View deck</a>
+          <button type="button" role="menuitem" onClick={() => onAction("use", deck)}><Icon name="content_copy" />Use this deck</button>
           <a role="menuitem" href={`/slides/view/?id=${deck.id}`} target="_blank" rel="noreferrer"><Icon name="open_in_new" />Public page</a>
           <button type="button" role="menuitem" onClick={() => onAction("copy", deck)}><Icon name="link" />Copy link</button>
         </div>
       )}
       {menuOpen && !community && (
-        <div className={s.menu} role="menu" onClick={(event) => event.stopPropagation()}>
-          {locked ? (
-            <a role="menuitem" href={href}><Icon name="slideshow" />View deck</a>
-          ) : (
-            <button type="button" role="menuitem" onClick={() => onAction("studio", deck)}><Icon name="edit" />Open in studio</button>
-          )}
-          {!locked && (
-            <>
-              <button type="button" role="menuitem" onClick={() => onAction("pptx", deck)}>
-                <Icon name="present_to_all" />PPTX
-                {!canExportPptx && <small>Pro</small>}
-              </button>
-              <button type="button" role="menuitem" onClick={() => onAction("pdf", deck)}><Icon name="picture_as_pdf" />PDF</button>
-              <button type="button" role="menuitem" onClick={() => onAction("png", deck)}><Icon name="image" />PNG</button>
-            </>
-          )}
-          <a role="menuitem" href={`/slides/view/?id=${deck.id}`} target="_blank" rel="noreferrer" aria-disabled={!deck.isPublic} style={deck.isPublic ? undefined : { pointerEvents: "none", color: "var(--faint)" }}>
-            <Icon name="open_in_new" />Public page
-          </a>
-          <button type="button" role="menuitem" disabled={!deck.isPublic} onClick={() => onAction("copy", deck)}><Icon name="link" />Copy link</button>
-          <button type="button" role="menuitem" disabled={locked} onClick={() => onAction("toggle", deck)}>
-            <Icon name={deck.isPublic ? "visibility_off" : "public"} />
-            {deck.isPublic ? "Make private" : "Make public"}
-            {!canPrivate && deck.isPublic && <small>Pro</small>}
-          </button>
+        <div className={s.menu} role="menu" data-deck-menu="" onClick={(event) => event.stopPropagation()}>
+          {/* Own decks: only rename and delete. A view-only deck (over the plan limit) cannot be renamed. */}
+          <button type="button" role="menuitem" disabled={locked} onClick={() => onAction("rename", deck)}><Icon name="drive_file_rename_outline" />Rename</button>
           <button type="button" role="menuitem" className={s.danger} onClick={() => onAction("delete", deck)}><Icon name="delete" />Delete deck</button>
         </div>
       )}

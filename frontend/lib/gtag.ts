@@ -75,7 +75,7 @@ export function event({ action, category, label, value, ...params }: GTagEvent):
  * Specialized tracking helpers for PickMe3D Platform
  */
 export const trackEvent = {
-  login: (method: "google" | "admin" | "guest", userEmail?: string) => {
+  login: (method: "google" | "admin" | "guest" | "email", userEmail?: string) => {
     event({
       action: "login",
       category: "Authentication",

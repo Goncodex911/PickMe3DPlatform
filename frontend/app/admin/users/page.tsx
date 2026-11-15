@@ -7,12 +7,28 @@ import {
   updateUserStatusApi,
   updateUserRoleApi,
   updateUserPlanApi,
+  updateCreatorStatusApi,
+  startCreatorReviewApi,
   importUsersApi,
   AdminUser,
   PaginationMeta,
 } from "@/lib/adminService";
+import RejectCreatorModal from "@/components/admin/RejectCreatorModal";
 
 const SOLE_ADMIN_EMAIL = "phantrongquy23032005@gmail.com";
+
+/** Mirrors backend resolveAccess: a 'user' without accountType is a pre-migration (legacy) Creator. */
+function creatorInfo(u: AdminUser): { label: string; accountType: "REGULAR" | "CREATOR"; status: string } {
+  const accountType = u.accountType || "CREATOR";
+  const status = u.creatorStatus || (u.accountType ? "NONE" : "APPROVED");
+  if (status === "PENDING") {
+    const last = u.creatorApplicationHistory?.[u.creatorApplicationHistory.length - 1]?.event;
+    return { label: last === "IN_REVIEW" ? "Đang xét duyệt Creator" : "Chờ duyệt Creator", accountType, status };
+  }
+  if (accountType === "CREATOR" && status === "APPROVED") return { label: "Creator", accountType, status };
+  if (accountType === "CREATOR" && status === "SUSPENDED") return { label: "Creator · Tạm khóa", accountType, status };
+  return { label: "Người dùng", accountType, status };
+}
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -25,10 +41,11 @@ export default function AdminUsersPage() {
   const [role, setRole] = useState("all");
   const [status, setStatus] = useState("all");
   const [plan, setPlan] = useState("all");
+  const [creatorStatus, setCreatorStatus] = useState("all");
 
   // Plan modal state
   const [planModalUser, setPlanModalUser] = useState<AdminUser | null>(null);
-  const [selectedPlan, setSelectedPlan] = useState<"free" | "pro" | "studio">("free");
+  const [selectedPlan, setSelectedPlan] = useState<"free" | "pro">("free");
   const [planMonths, setPlanMonths] = useState<number>(1);
 
   // Modals state
@@ -38,6 +55,7 @@ export default function AdminUsersPage() {
   const [banReason, setBanReason] = useState("");
   const [roleModalUser, setRoleModalUser] = useState<AdminUser | null>(null);
   const [detailModalUser, setDetailModalUser] = useState<AdminUser | null>(null);
+  const [rejectUser, setRejectUser] = useState<AdminUser | null>(null);
 
   // Create form state
   const [newName, setNewName] = useState("");
@@ -63,6 +81,7 @@ export default function AdminUsersPage() {
       role,
       status,
       plan,
+      creatorStatus,
     });
     if (res.success && res.data) {
       setUsers(res.data);
@@ -75,7 +94,7 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     loadUsers(1);
-  }, [role, status, plan]);
+  }, [role, status, plan, creatorStatus]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,6 +179,47 @@ export default function AdminUsersPage() {
     }
     alert("Hệ thống chỉ duy nhất có 1 Quản trị viên cố định (Phan Trọng Quý). Không thể phân quyền Quản trị viên cho tài khoản khác.");
     setRoleModalUser(null);
+  };
+
+  // Opening a pending application starts its review: the applicant's tracker moves to "Đang xét duyệt".
+  const openUserDetail = (u: AdminUser) => {
+    setDetailModalUser(u);
+    startReview(u);
+  };
+
+  const startReview = (u: AdminUser) => {
+    if (creatorInfo(u).status !== "PENDING" || !u.creatorApplication?.submittedAt) return;
+    void startCreatorReviewApi(u._id).then((res) => {
+      if (!res.success || !res.history) return;
+      const patch = (x: AdminUser) => (x._id === u._id ? { ...x, creatorApplicationHistory: res.history } : x);
+      setUsers((list) => list.map(patch));
+      setDetailModalUser((cur) => (cur ? patch(cur) : cur));
+    });
+  };
+
+  // 3b. Creator lifecycle (approve / reject / suspend). Role stays 'user'.
+  const handleCreatorStatus = async (u: AdminUser, next: "APPROVED" | "SUSPENDED" | "NONE") => {
+    // Rejecting an application uses the structured form (reasons, fields to fix, message, resubmit date).
+    if (next === "NONE" && creatorInfo(u).status === "PENDING") {
+      startReview(u);
+      setRejectUser(u);
+      return;
+    }
+    const prompts: Record<string, string> = {
+      APPROVED: `Cấp quyền Creator cho ${u.name}? Họ sẽ được công khai và bán Template.`,
+      SUSPENDED: `Tạm khóa quyền Creator của ${u.name}? Các Template đang bán sẽ bị gỡ khỏi Marketplace, người mua vẫn giữ quyền sử dụng.`,
+      NONE: `Từ chối đơn đăng ký Creator của ${u.name}?`,
+    };
+    if (!window.confirm(prompts[next])) return;
+    const note = next === "APPROVED" ? "" : window.prompt("Lý do (gửi kèm thông báo cho người dùng, có thể để trống):") || "";
+    setActionBusy(true);
+    const res = await updateCreatorStatusApi(u._id, next, note);
+    setActionBusy(false);
+    if (res.success) {
+      loadUsers(pagination.page);
+    } else {
+      alert("Lỗi: " + (res.message || "Không thể cập nhật trạng thái Creator"));
+    }
   };
 
   // 4. Batch Import Users
@@ -290,6 +350,22 @@ export default function AdminUsersPage() {
             </select>
           </div>
 
+          {/* Creator Status Filter */}
+          <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+            <span>Creator:</span>
+            <select
+              value={creatorStatus}
+              onChange={(e) => setCreatorStatus(e.target.value)}
+              className="bg-zinc-900 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none "
+            >
+              <option value="all">Tất cả</option>
+              <option value="PENDING">Chờ duyệt</option>
+              <option value="APPROVED">Đã duyệt</option>
+              <option value="SUSPENDED">Tạm khóa</option>
+              <option value="NONE">Người dùng thường</option>
+            </select>
+          </div>
+
           {/* Status Filter */}
           <div className="flex items-center gap-1.5 text-xs text-zinc-400">
             <span>Trạng thái:</span>
@@ -315,7 +391,6 @@ export default function AdminUsersPage() {
               <option value="all">Tất cả gói</option>
               <option value="free">Free</option>
               <option value="pro">Pro</option>
-              <option value="studio">Studio</option>
             </select>
           </div>
         </div>
@@ -393,8 +468,17 @@ export default function AdminUsersPage() {
                           Quản Trị Viên (Cố Định)
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-medium text-[10px] uppercase tracking-wider bg-white/5 text-zinc-400 border border-white/10">
-                          Người Dùng
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-medium text-[10px] uppercase tracking-wider border ${
+                            creatorInfo(u).status === "PENDING"
+                              ? "bg-amber-500/10 text-amber-300 border-amber-500/30"
+                              : creatorInfo(u).label === "Creator"
+                                ? "bg-white/10 text-zinc-200 border-white/20"
+                                : "bg-white/5 text-zinc-400 border-white/10"
+                          }`}
+                          title="Role: USER"
+                        >
+                          {creatorInfo(u).label}
                         </span>
                       )}
                     </td>
@@ -466,7 +550,7 @@ export default function AdminUsersPage() {
                           <div className="inline-flex items-center gap-1.5">
                             {/* View Detail */}
                             <button
-                              onClick={() => setDetailModalUser(u)}
+                              onClick={() => openUserDetail(u)}
                               className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
                               title="Xem chi tiết"
                             >
@@ -477,7 +561,7 @@ export default function AdminUsersPage() {
                             <button
                               onClick={() => {
                                 setPlanModalUser(u);
-                                setSelectedPlan(u.plan || "free");
+                                setSelectedPlan(u.plan === "free" || !u.plan ? "free" : "pro");
                                 setPlanMonths(1);
                               }}
                               className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
@@ -504,6 +588,36 @@ export default function AdminUsersPage() {
                                 <span className="material-symbols-rounded text-base">manage_accounts</span>
                               </button>
                             )}
+
+                            {/* Creator approval */}
+                            {!isSoleAdmin && u.role !== "admin" && (() => {
+                              const info = creatorInfo(u);
+                              const btn = "p-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white transition-colors cursor-pointer disabled:opacity-40";
+                              if (info.status === "PENDING") {
+                                return (
+                                  <>
+                                    <button disabled={actionBusy} onClick={() => handleCreatorStatus(u, "APPROVED")} className={btn} title="Duyệt đơn đăng ký Creator">
+                                      <span className="material-symbols-rounded text-base">how_to_reg</span>
+                                    </button>
+                                    <button disabled={actionBusy} onClick={() => handleCreatorStatus(u, "NONE")} className={btn} title="Từ chối đơn đăng ký Creator">
+                                      <span className="material-symbols-rounded text-base">person_remove</span>
+                                    </button>
+                                  </>
+                                );
+                              }
+                              if (info.accountType === "CREATOR" && info.status === "APPROVED") {
+                                return (
+                                  <button disabled={actionBusy} onClick={() => handleCreatorStatus(u, "SUSPENDED")} className={btn} title="Tạm khóa quyền Creator">
+                                    <span className="material-symbols-rounded text-base">storefront</span>
+                                  </button>
+                                );
+                              }
+                              return (
+                                <button disabled={actionBusy} onClick={() => handleCreatorStatus(u, "APPROVED")} className={btn} title={info.status === "SUSPENDED" ? "Khôi phục quyền Creator" : "Cấp quyền Creator"}>
+                                  <span className="material-symbols-rounded text-base">add_business</span>
+                                </button>
+                              );
+                            })()}
 
                             {/* Ban / Unban */}
                             {isSoleAdmin ? (
@@ -706,7 +820,7 @@ export default function AdminUsersPage() {
                 <label className="block text-xs font-medium text-zinc-300 mb-1.5">
                   Chọn Gói Thuê Bao
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setSelectedPlan("free")}
@@ -730,18 +844,6 @@ export default function AdminUsersPage() {
                   >
                     <div className="text-xs">Pro</div>
                     <div className="text-[10px] text-zinc-400 mt-0.5">99k / tháng</div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedPlan("studio")}
-                    className={`p-3 rounded-xl border text-center transition-all ${
-                      selectedPlan === "studio"
-                        ? "bg-white/15 border-white/30 text-white font-medium"
-                        : "bg-zinc-900 border-white/10 text-zinc-400 hover:text-white"
-                    }`}
-                  >
-                    <div className="text-xs">Studio</div>
-                    <div className="text-[10px] text-zinc-400 mt-0.5">199k / tháng</div>
                   </button>
                 </div>
               </div>
@@ -898,9 +1000,20 @@ export default function AdminUsersPage() {
       )}
 
       {/* ── MODAL: USER DETAILS ── */}
+      {rejectUser && (
+        <RejectCreatorModal
+          user={rejectUser}
+          onClose={() => setRejectUser(null)}
+          onDone={() => {
+            setRejectUser(null);
+            loadUsers(pagination.page);
+          }}
+        />
+      )}
+
       {detailModalUser && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-zinc-950 border border-white/10 rounded-2xl p-6 shadow-2xl">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-zinc-950 border border-white/10 rounded-2xl p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                 <span className="material-symbols-rounded text-zinc-400">badge</span>
@@ -942,7 +1055,7 @@ export default function AdminUsersPage() {
                 <div className="p-3 rounded-xl bg-zinc-900 border border-white/10">
                   <span className="text-zinc-500 block mb-1">Vai trò</span>
                   <span className="font-medium text-white">
-                    {detailModalUser.email === SOLE_ADMIN_EMAIL ? "Quản Trị Viên (Cố Định)" : "Người Dùng"}
+                    {detailModalUser.email === SOLE_ADMIN_EMAIL ? "Quản Trị Viên (Cố Định)" : creatorInfo(detailModalUser).label}
                   </span>
                 </div>
                 <div className="p-3 rounded-xl bg-zinc-900 border border-white/10">
@@ -959,6 +1072,73 @@ export default function AdminUsersPage() {
                   {detailModalUser.bannedReason || "Không có ghi chú"}
                 </div>
               )}
+
+              {/* Creator application (submitted from /creator/apply) */}
+              {detailModalUser.creatorApplication?.submittedAt && (() => {
+                const app = detailModalUser.creatorApplication!;
+                const bank = detailModalUser.savedBankInfo;
+                const rows: Array<[string, React.ReactNode]> = [
+                  ["Tên hiển thị", app.displayName],
+                  ["Điện thoại", app.phone],
+                  ["Lĩnh vực", (app.specialties || []).join(", ")],
+                  ["Kinh nghiệm", app.experience ? `${app.experience} năm` : "—"],
+                  [
+                    "Portfolio",
+                    app.portfolioUrl ? (
+                      <a href={app.portfolioUrl} target="_blank" rel="noopener noreferrer" className="underline break-all">{app.portfolioUrl}</a>
+                    ) : "—",
+                  ],
+                  [
+                    "Sản phẩm mẫu",
+                    app.sampleLinks?.length ? (
+                      <span className="flex flex-col gap-0.5">
+                        {app.sampleLinks.map((l) => (
+                          <a key={l} href={l} target="_blank" rel="noopener noreferrer" className="underline break-all">{l}</a>
+                        ))}
+                      </span>
+                    ) : "—",
+                  ],
+                  ["Giới thiệu", <span className="whitespace-pre-line">{app.introduction}</span>],
+                  ["Ngân hàng", bank?.bankName ? `${bank.bankName}${app.bankBranch ? ` · ${app.bankBranch}` : ""}` : "—"],
+                  ["Số tài khoản", <span className="font-mono">{bank?.accountNumber || "—"}</span>],
+                  ["Chủ tài khoản", bank?.accountHolder || "—"],
+                  ["Chính sách", `v${app.policyVersion} · đồng ý ${app.policyAcceptedAt ? new Date(app.policyAcceptedAt).toLocaleString("vi-VN") : "—"}`],
+                ];
+                return (
+                  <div className="rounded-xl bg-zinc-900 border border-white/10 overflow-hidden">
+                    <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between">
+                      <span className="font-semibold text-white">Hồ sơ đăng ký Creator</span>
+                      <span className="text-[10px] text-zinc-500">Gửi {new Date(app.submittedAt!).toLocaleString("vi-VN")}</span>
+                    </div>
+                    <dl className="divide-y divide-white/5">
+                      {rows.map(([k, v]) => (
+                        <div key={k} className="grid grid-cols-[110px_1fr] gap-2 px-3 py-2">
+                          <dt className="text-zinc-500">{k}</dt>
+                          <dd className="text-white break-words">{v}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                    {creatorInfo(detailModalUser).status === "PENDING" && (
+                      <div className="flex justify-end gap-2 px-3 py-2 border-t border-white/10">
+                        <button
+                          disabled={actionBusy}
+                          onClick={() => { setRejectUser(detailModalUser); setDetailModalUser(null); }}
+                          className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 text-xs font-medium disabled:opacity-40"
+                        >
+                          Từ chối
+                        </button>
+                        <button
+                          disabled={actionBusy}
+                          onClick={async () => { await handleCreatorStatus(detailModalUser, "APPROVED"); setDetailModalUser(null); }}
+                          className="px-3 py-1.5 rounded-lg bg-white hover:bg-zinc-200 text-black text-xs font-semibold disabled:opacity-40"
+                        >
+                          Duyệt Creator
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               <div className="p-3 rounded-xl bg-zinc-900 border border-white/10">
                 <span className="text-zinc-500 block mb-1">Nghề nghiệp</span>

@@ -1,6 +1,9 @@
 const billing = require('../services/billingStore');
 const { getPlan } = require('../config/plans');
-const { generateDeck } = require('../services/slideAi');
+const { generatePresentation, cleanInput } = require('../services/slidePipeline');
+const jobQueue = require('../services/blueprintJobQueue');
+
+const SLIDE_JOB = 'slide_deck';
 const { buildPptx } = require('../services/pptx');
 const { uploadIfBase64 } = require('../services/cloudinaryService');
 
@@ -56,22 +59,78 @@ exports.create = async (req, res) => {
   res.status(201).json({ success: true, data: deck });
 };
 
-exports.generate = async (req, res) => {
-  const topic = String(req.body?.topic || '').trim();
-  if (!topic) return res.status(400).json({ success: false, message: 'Enter a topic' });
-  const generated = await generateDeck(topic);
+// "Dùng deck này" (kiểu Canva): tạo bản sao độc lập của một deck công khai vào không gian của người dùng Pro.
+// Deck gốc không bị đổi gì; bản sao không mang theo lượt thích / xem / bình luận và mặc định riêng tư.
+exports.useDeck = async (req, res) => {
+  const source = await billing.getDeck(req.params.id);
+  if (!source || (!source.isPublic && !owns(source, req.user))) {
+    return res.status(404).json({ success: false, message: 'Deck not found' });
+  }
+  const plan = getPlan(req.user.plan) || getPlan('free');
+  const clone = (value) => JSON.parse(JSON.stringify(value ?? null));
+  const theme = clone(source.theme) || {};
+  // Ghi nguồn để trang deck hiện "Based on ‹deck› by ‹tác giả›" (không lưu id tài khoản tác giả)
+  theme.copiedFrom = {
+    deckId: String(source.id),
+    title: String(source.title || '').slice(0, 120),
+    authorName: String(source.authorName || '').slice(0, 80),
+    copiedAt: new Date().toISOString(),
+  };
+  const title = `Copy of ${String(source.title || 'Untitled deck')}`.slice(0, 120);
   const deck = await billing.createDeck({
     userId: req.user.id,
     authorName: req.user.name || '',
-    title: generated.title,
-    slides: generated.slides,
-    theme: generated.theme,
-    thumbnail: '',
-    isPublic: true,
+    title,
+    slides: Array.isArray(source.slides) ? clone(source.slides) : [],
+    theme,
+    thumbnail: source.thumbnail || '',
+    isPublic: !(plan.privateDeck || req.user.role === 'admin'),
   });
-  // Chỉ trừ lượt khi deck đã lưu và thật sự do AI viết (bộ mẫu dự phòng không tính)
-  if (generated.source === 'ai') await billing.bumpAi(req.user.id);
-  res.status(201).json({ success: true, data: deck, source: generated.source });
+  res.status(201).json({ success: true, data: deck });
+};
+
+// Pipeline nhiều tầng (Groq + Gemini, 3-5 lượt gọi) có thể quá thời gian chờ của một request:
+// trả 202 + jobId ngay, client hỏi tiến độ ở GET /presentations/jobs/:id.
+exports.generate = async (req, res) => {
+  const input = cleanInput(req.body || {});
+  if (!input.topic) return res.status(400).json({ success: false, message: 'Enter a topic' });
+  const user = { id: req.user.id, name: req.user.name || '' };
+  const job = jobQueue.createJob(SLIDE_JOB, { userId: String(user.id) });
+  jobQueue.processJob(job.id, async (_job, update) => {
+    const generated = await generatePresentation(input, update);
+    const deck = await billing.createDeck({
+      userId: user.id,
+      authorName: user.name,
+      title: generated.title,
+      slides: generated.slides,
+      theme: generated.theme,
+      thumbnail: '',
+      isPublic: true,
+    });
+    // Chỉ trừ một lượt cho cả pipeline, và chỉ khi có tầng do AI làm (deck dựng hoàn toàn theo luật không tính)
+    if (generated.source === 'ai') await billing.bumpAi(user.id);
+    return { deckId: deck.id, source: generated.source, stages: generated.stages, quality: generated.quality };
+  });
+  res.status(202).json({ success: true, jobId: job.id, status: job.status });
+};
+
+exports.job = (req, res) => {
+  const job = jobQueue.getJob(req.params.jobId);
+  if (!job || job.type !== SLIDE_JOB || job.payload?.userId !== String(req.user.id)) {
+    return res.status(404).json({ success: false, message: 'Job not found' });
+  }
+  const done = job.status === 'completed';
+  res.json({
+    success: true,
+    data: {
+      id: job.id,
+      status: job.status,
+      progress: job.progress,
+      stage: done ? 'Done' : job.status === 'failed' ? 'Failed' : job.progress < 10 ? 'Starting' : job.stage,
+      error: job.error,
+      result: done ? job.result : null,
+    },
+  });
 };
 
 // Chủ deck xem đầy đủ; tài khoản khác chỉ xem được deck công khai, ở chế độ chỉ xem
@@ -113,10 +172,19 @@ exports.update = async (req, res) => {
   }
   const plan = getPlan(req.user.plan) || getPlan('free');
   const patch = {};
-  if (typeof req.body?.title === 'string') patch.title = req.body.title.trim().slice(0, 120);
+  if (typeof req.body?.title === 'string') {
+    const title = req.body.title.trim().slice(0, 120);
+    if (!title) return res.status(400).json({ success: false, code: 'INVALID_TITLE', message: 'Deck name cannot be empty' });
+    patch.title = title;
+  }
   if (Array.isArray(req.body?.slides)) patch.slides = req.body.slides;
   if (req.body?.theme && typeof req.body.theme === 'object') {
     patch.theme = { ...req.body.theme };
+    // Ghi nguồn của bản sao ("Use this deck") do server đặt lúc sao chép: client không xoá / đổi / tự thêm được.
+    // (Studio đổi theme deck cũ sang định dạng mới khi lưu nên có thể làm rơi trường này.)
+    const source = current.theme && current.theme.copiedFrom;
+    if (source) patch.theme.copiedFrom = source;
+    else delete patch.theme.copiedFrom;
     if (!plan.brandKit) {
       delete patch.theme.brandLogo;
     } else if (patch.theme.brandLogo && patch.theme.brandLogo.startsWith('data:')) {

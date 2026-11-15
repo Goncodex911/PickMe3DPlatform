@@ -15,6 +15,6 @@ export const paymentCopy = {
   openSlides: "Open Slide Studio",
   quota: "You have reached your plan limit",
   upgradeTitle: "Upgrade to unlock",
-  upgradeBody: "This feature is part of the Pro or Studio plan.",
+  upgradeBody: "This feature is part of the Pro plan.",
   close: "Close",
 };

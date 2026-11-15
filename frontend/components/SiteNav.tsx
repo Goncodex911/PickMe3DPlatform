@@ -6,6 +6,7 @@ import NotificationBell from "@/components/NotificationBell";
 import { useEffect, useState } from "react";
 import styles from "@/app/landing/page.module.css";
 import { Logo } from "@/components/Logo";
+import { refreshAccess } from "@/lib/permissions";
 
 // Navigation is rendered once by the root layout.
 
@@ -19,8 +20,12 @@ export interface AuthState {
   authenticated: boolean;
   name: string;
   role: string;
+  permissions: string[];
   logout: () => void;
 }
+
+// Pull fresh permissions from the backend once per page load (stored users from older logins have none).
+let accessRefreshed = false;
 
 // Trạng thái đăng nhập lấy từ localStorage (token + user), đồng bộ giữa các tab
 export function useAuthState(): AuthState {
@@ -28,6 +33,7 @@ export function useAuthState(): AuthState {
   const [authenticated, setAuthenticated] = useState(false);
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
+  const [permissions, setPermissions] = useState<string[]>([]);
 
   useEffect(() => {
     function syncAuth() {
@@ -37,12 +43,18 @@ export function useAuthState(): AuthState {
         const user = JSON.parse(localStorage.getItem("pickme3d_user") ?? "null");
         setName(typeof user?.name === "string" ? user.name : "Account");
         setRole(typeof user?.role === "string" ? user.role : "");
+        setPermissions(Array.isArray(user?.permissions) ? user.permissions : []);
       } catch {
         setName("Account");
         setRole("");
+        setPermissions([]);
       }
     }
     syncAuth();
+    if (!accessRefreshed && localStorage.getItem("pickme3d_token")) {
+      accessRefreshed = true;
+      void refreshAccess();
+    }
     window.addEventListener("storage", syncAuth);
     window.addEventListener("focus", syncAuth);
     return () => {
@@ -57,17 +69,19 @@ export function useAuthState(): AuthState {
     setAuthenticated(false);
     setName("");
     setRole("");
+    setPermissions([]);
+    accessRefreshed = false;
     window.dispatchEvent(new Event("storage"));
   }
 
-  return { authenticated, name, role, logout };
+  return { authenticated, name, role, permissions, logout };
 }
 
 export default function SiteNav() {
   const pathname = usePathname();
   const router = useRouter();
   const ownAuth = useAuthState();
-  const { authenticated, name, role, logout } = ownAuth;
+  const { authenticated, name, role, permissions, logout } = ownAuth;
   const [menuOpen, setMenuOpen] = useState(false);
   const isLanding = pathname === "/" || pathname === "/landing" || pathname === "/landing/";
   const [scrolled, setScrolled] = useState(false);
@@ -109,7 +123,7 @@ export default function SiteNav() {
           </Link>
         )}
         {authenticated && <Link href="/activity/" aria-current={current("/activity") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Activity</Link>}
-        {authenticated && role !== "admin" && <Link href="/creator/wallet/" aria-current={current("/creator/wallet") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Ví Creator</Link>}
+        {authenticated && permissions.includes("payment:wallet:view:own") && <Link href="/creator/wallet/" aria-current={current("/creator/wallet") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Ví Creator</Link>}
         {authenticated && role !== "admin" && <Link href="/appeals/" aria-current={current("/appeals") ? "page" : undefined} onClick={() => setMenuOpen(false)}>Khiếu nại</Link>}
         {authenticated && <NotificationBell />}
         {authenticated

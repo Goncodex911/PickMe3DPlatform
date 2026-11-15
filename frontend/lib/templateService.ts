@@ -24,6 +24,17 @@ export interface TemplateItem {
   forksCount?: number;
   isFeatured?: boolean;
   isPublic?: boolean;
+  price?: number;
+  reviewStatus?: "DRAFT" | "PENDING_REVIEW" | "APPROVED" | "REJECTED" | "TAKEN_DOWN";
+  reviewNote?: string;
+  locked?: boolean;
+  canUse?: boolean;
+  isOwner?: boolean;
+  /** the viewer bought this template (owners and free templates are not purchases) */
+  purchased?: boolean;
+  ownerType?: "ADMIN" | "CREATOR";
+  /** latest price change lowered the price: shown as a tag; null when unchanged or increased */
+  priceDrop?: { previousPrice: number; note: string; percent: number; at: string } | null;
   ratingsCount?: number;
   avgRating?: number;
   reviews?: TemplateReview[];
@@ -93,8 +104,10 @@ export async function fetchTemplatesApi(params?: {
       url.searchParams.set("forkable", "true");
     }
 
+    const listToken = typeof window !== "undefined" ? localStorage.getItem("pickme3d_token") : null;
     const res = await fetch(url.toString(), {
       cache: "no-store",
+      headers: listToken ? { Authorization: `Bearer ${listToken}` } : undefined,
     });
 
     if (res.ok) {
@@ -159,6 +172,23 @@ export async function fetchTemplatesApi(params?: {
   return { templates: list, isOffline: false };
 }
 
+/** Starts payment for a paid template; resolves with the payment page URL. */
+export async function checkoutTemplateApi(templateId: string): Promise<{ success: boolean; checkoutUrl?: string; code?: string; message?: string }> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("pickme3d_token") : null;
+  if (!token) return { success: false, code: "LOGIN_REQUIRED", message: "Vui lòng đăng nhập để mua Template" };
+  try {
+    const res = await fetch(`${API_BASE}/payments/checkout-template`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ templateId }),
+    });
+    const json = await res.json();
+    return { success: Boolean(json?.success), checkoutUrl: json?.checkoutUrl, code: json?.code, message: json?.message };
+  } catch (err: any) {
+    return { success: false, message: err?.message || "Lỗi kết nối máy chủ" };
+  }
+}
+
 /** Fetches the latest template from the API, falling back to the local backup. */
 export async function fetchTemplateByIdApi(id: string): Promise<TemplateItem | null> {
   if (!id) return null;
@@ -175,8 +205,11 @@ export async function fetchTemplateByIdApi(id: string): Promise<TemplateItem | n
 
   // Query the backend first so server-side social state is restored after reload.
   try {
+    // Send the token when signed in: the server only includes a paid template's content for owners and buyers.
+    const token = typeof window !== "undefined" ? localStorage.getItem("pickme3d_token") : null;
     const res = await fetch(`${API_BASE}/templates/${id}`, {
       cache: "no-store",
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     });
     if (res.ok) {
       const json = await res.json();
@@ -291,7 +324,11 @@ export async function saveDesignApi(payload: {
       const json = await res.json();
       if (res.ok && json.success) {
         saveToLocalBackup(json.data);
-        return { success: true, data: json.data };
+        // publishDenied: saved privately because only Creators may publish to the Marketplace.
+        return { success: true, data: json.data, message: json.publishDenied || json.data?.reviewStatus === "PENDING_REVIEW" ? json.message : undefined };
+      }
+      if (res.status === 403) {
+        return { success: false, message: json?.message || "Bạn không có quyền thực hiện thao tác này" };
       }
     }
   } catch (err) {
@@ -394,7 +431,7 @@ export async function fetchMyDesignsApi(): Promise<TemplateItem[]> {
 export async function updateDesignApi(
   id: string,
   updates: Partial<TemplateItem>
-): Promise<{ success: boolean; data?: TemplateItem }> {
+): Promise<{ success: boolean; data?: TemplateItem; code?: string; message?: string }> {
   const token = typeof window !== "undefined" ? localStorage.getItem("pickme3d_token") : null;
 
   if (token && !id.startsWith("local_")) {
@@ -411,6 +448,10 @@ export async function updateDesignApi(
       if (res.ok && json.success) {
         saveToLocalBackup(json.data);
         return { success: true, data: json.data };
+      }
+      // A permission denial must not be "applied locally" as if it worked.
+      if (res.status === 403) {
+        return { success: false, code: json?.code, message: json?.message };
       }
     } catch (err) {
       console.warn("Failed to update design on API:", err);

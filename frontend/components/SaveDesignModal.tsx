@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { TemplateItem, saveDesignApi, updateDesignApi } from "@/lib/templateService";
+import { can, getStoredUser } from "@/lib/permissions";
 
 interface SaveDesignModalProps {
   open: boolean;
@@ -34,20 +35,25 @@ export default function SaveDesignModal({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Only approved Creators may publish; unknown permissions (offline / old session) leave it to the backend.
+  const [canPublish, setCanPublish] = useState(true);
 
   useEffect(() => {
     if (open) {
+      const stored = getStoredUser();
+      const publishAllowed = !Array.isArray(stored?.permissions) || can(stored, "template:listing:publish:own");
+      setCanPublish(publishAllowed);
       if (editingDesign) {
         setTitle(editingDesign.title || docData?.title || "Thiết kế của tôi");
         setDescription(editingDesign.description || docData?.brief || "");
         setSelectedTags(editingDesign.tags || []);
-        setIsPublic(editingDesign.isPublic ?? true);
+        setIsPublic(editingDesign.isPublic ?? publishAllowed);
         setSaveMode("overwrite");
       } else {
         setTitle(docData?.title || "Thiết kế của tôi");
         setDescription(docData?.brief || "");
         setSelectedTags([]);
-        setIsPublic(true);
+        setIsPublic(publishAllowed);
         setSaveMode("new");
       }
       setSaving(false);
@@ -101,7 +107,7 @@ export default function SaveDesignModal({
           onClose();
         }, 1200);
       } else {
-        setErrorMessage("Không thể cập nhật thiết kế. Vui lòng thử lại.");
+        setErrorMessage(result.message || "Không thể cập nhật thiết kế. Vui lòng thử lại.");
       }
     } else {
       // Save as new design
@@ -243,9 +249,11 @@ export default function SaveDesignModal({
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <button
                     type="button"
-                    onClick={() => setIsPublic(true)}
+                    onClick={() => canPublish && setIsPublic(true)}
+                    disabled={!canPublish}
+                    title={canPublish ? undefined : "Chỉ Creator đã được duyệt mới được công khai Template"}
                     aria-pressed={isPublic}
-                    className={`py-2 px-3 rounded-md border text-center transition-colors cursor-pointer ${
+                    className={`py-2 px-3 rounded-md border text-center transition-colors ${canPublish ? "cursor-pointer" : "cursor-not-allowed opacity-50"} ${
                       isPublic
                         ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-300 font-semibold"
                         : "bg-slate-950 border-white/10 text-slate-400 hover:text-white"
@@ -268,7 +276,11 @@ export default function SaveDesignModal({
                 </div>
                 <p className="flex items-start gap-1.5 text-[11px] leading-5 text-slate-400">
                   <span className="material-symbols-rounded mt-0.5 text-sm text-slate-500" aria-hidden="true">info</span>
-                  {isPublic ? "Thiết kế sẽ xuất hiện trong thư viện và trang Creator của bạn." : "Chỉ bạn mới xem được thiết kế này."}
+                  {!canPublish
+                    ? "Chỉ bạn mới xem được thiết kế này. Đăng ký Creator ở trang Hồ sơ để công khai và bán Template."
+                    : isPublic
+                      ? "Thiết kế sẽ được Admin duyệt trước khi xuất hiện trên Marketplace."
+                      : "Chỉ bạn mới xem được thiết kế này."}
                 </p>
               </div>
 
