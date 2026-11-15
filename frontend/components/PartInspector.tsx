@@ -52,7 +52,8 @@ import { arcPath, wavePath } from "./Loading";
 import { Icon } from "./M3Node";
 import { AiHooks } from "./Inspector";
 import { AlignBox, CornerRows, EdgeCornerRows, EntryList, FillRun, IconRow, IconStrip, ListStyleRun, NoTriggerNote, NoteSection, PartHeader, PartTabs, PlaceFn, StyleRun, Tab, TriggerSection, WidthRows, hasTrigger } from "./PartPanel";
-import { t, useLang } from "@/lib/i18n";
+import { t, useLang, type Lang } from "@/lib/i18n";
+import { ANIMATION_SPEEDS, ANIMATION_TRIGGER_DELAYS, isButtonAnimation, normalizeAnimationSpeed, normalizeTriggerDelay, opaqueHex, safeCssColor } from "@/lib/animationItem";
 
 /* One panel for every part that is not a button. It wears the button's chrome -- the title row,
  * the two tabs, the align grid, the spec field -- and fills the design tab with only what the
@@ -382,9 +383,12 @@ function AnimationColorPicker({
   value: string;
   onChange: (hex: string | undefined) => void;
   p: Palette;
-  lang: any;
+  lang: Lang;
 }) {
   const currentColor = value || p.primary;
+  /* a typed color the frame cannot use is drawn in the palette's primary instead: say so */
+  const invalid = !!value && safeCssColor(value, "") === "";
+  const pickerHex = opaqueHex(currentColor) ?? opaqueHex(p.primary) ?? "#6A57F2";
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -417,7 +421,7 @@ function AnimationColorPicker({
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <input
           type="color"
-          value={currentColor.startsWith("#") && currentColor.length === 7 ? currentColor : "#6A57F2"}
+          value={pickerHex.toLowerCase()}
           onChange={(e) => onChange(e.target.value)}
           style={{
             width: 36,
@@ -428,7 +432,7 @@ function AnimationColorPicker({
             cursor: "pointer",
             background: p.surfaceContainerHigh,
           }}
-          title="Color picker"
+          title={t("animColorTitle", lang)}
         />
         <Field
           value={value || ""}
@@ -452,11 +456,41 @@ function AnimationColorPicker({
               whiteSpace: "nowrap",
             }}
           >
-            Reset
+            {t("animColorReset", lang)}
           </button>
         )}
       </div>
+      {invalid && (
+        <div role="alert" style={{ fontSize: 11, color: p.error, lineHeight: 1.45, padding: "0 4px" }}>
+          {t("animColorInvalid", lang)}
+        </div>
+      )}
     </div>
+  );
+}
+
+/** When an animation's tap runs its action: right away, or once the tap has had time to play.
+ *  Only shown once the part leads somewhere. */
+function AnimationTriggerRows({ item, onChange, p, lang }: { item: Item; onChange: Change; p: Palette; lang: Lang }) {
+  if (!item.action) return null;
+  const delay = normalizeTriggerDelay(item.animationTriggerDelay);
+  const offered: number[] = [...ANIMATION_TRIGGER_DELAYS];
+  /* a wait set some other way (an older file, a model's edit) is still shown as chosen */
+  if (!offered.includes(delay)) offered.push(delay);
+  offered.sort((a, b) => a - b);
+  return (
+    <Section id="animation-trigger" icon="timer" title={t("animTriggerDelay", lang)} p={p}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <Segmented<string>
+          options={offered.map((ms) => ({ key: String(ms), label: ms === 0 ? t("animDelayNow", lang) : `${ms / 1000}s`, title: `${ms} ms` }))}
+          value={String(delay)}
+          onChange={(v) => onChange({ animationTriggerDelay: normalizeTriggerDelay(Number(v)) || undefined })}
+          p={p}
+          label={t("animTriggerDelay", lang)}
+        />
+        <div style={{ fontSize: 11, color: p.onSurfaceVariant, lineHeight: 1.45, padding: "0 4px" }}>{t("animTriggerHint", lang)}</div>
+      </div>
+    </Section>
   );
 }
 
@@ -593,18 +627,6 @@ export function PartInspector({
       {kind === "snackbar" && (
         <Section id="part-text" icon="short_text" title={t("text", lang)} p={p}>
           <TextRows item={item} onChange={onChange} p={p} labelKey="message" supportingKey="action" />
-        </Section>
-      )}
-      {kind === "animation" && (
-        <Section id="part-text" icon="short_text" title="Text & Label" p={p}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <Field
-              value={item.animationText ?? item.label ?? ""}
-              onChange={(txt) => onChange({ label: txt, animationText: txt })}
-              placeholder="Animation label / title..."
-              p={p}
-            />
-          </div>
         </Section>
       )}
       {kind === "card" && (
@@ -765,45 +787,40 @@ export function PartInspector({
               lang={lang}
             />
           </Section>
-          <Section id="animation-motion" icon="speed" title="Motion & Effects" p={p}>
+          <Section id="animation-motion" icon="speed" title={t("animMotion", lang)} p={p}>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: p.onSurfaceVariant }}>
-                  Animation Speed
+                  {t("animSpeed", lang)}
                 </div>
                 <Segmented<string>
-                  options={[
-                    { key: "0.5", label: "0.5x", title: "0.5x Slow" },
-                    { key: "0.75", label: "0.75x", title: "0.75x" },
-                    { key: "1", label: "1.0x", title: "1.0x Normal" },
-                    { key: "1.5", label: "1.5x", title: "1.5x Smooth Fast" },
-                    { key: "2", label: "2.0x", title: "2.0x Ultra Fast" },
-                  ]}
-                  value={String(item.animationSpeed ?? 1)}
-                  onChange={(v) => onChange({ animationSpeed: parseFloat(v) })}
+                  options={ANIMATION_SPEEDS.map((s) => ({ key: String(s), label: `${s}x`, title: `${s}x` }))}
+                  value={String(normalizeAnimationSpeed(item.animationSpeed ?? 1))}
+                  onChange={(v) => onChange({ animationSpeed: normalizeAnimationSpeed(parseFloat(v)) })}
                   p={p}
                 />
               </div>
-              <Toggle
-                on={item.animationGlow !== false}
-                onChange={(animationGlow) => onChange({ animationGlow })}
-                p={p}
-                icon="auto_awesome"
-                label="Glow & Shadow Depth"
-                grow
-              />
+              {/* the glow belongs to the button templates' own styling; the others have none to turn off */}
+              {isButtonAnimation(item.animationId, item.supporting) && (
+                <Toggle
+                  on={item.animationGlow !== false}
+                  onChange={(animationGlow) => onChange({ animationGlow })}
+                  p={p}
+                  icon="auto_awesome"
+                  label={t("animGlow", lang)}
+                  grow
+                />
+              )}
               <Toggle
                 on={item.animationInteractive ?? false}
                 onChange={(animationInteractive) => onChange({ animationInteractive })}
                 p={p}
                 icon="touch_app"
-                label="Direct Canvas Interact"
+                label={t("animLive", lang)}
                 grow
               />
               <div style={{ fontSize: 11, color: p.onSurfaceVariant, lineHeight: 1.45, padding: "0 4px" }}>
-                {item.animationInteractive
-                  ? "Interactive mode active: click & test buttons directly inside canvas."
-                  : "Canvas edit mode: click to select, drag to reposition smoothly."}
+                {t(item.animationInteractive ? "animLiveHintOn" : "animLiveHintOff", lang)}
               </div>
             </div>
           </Section>
@@ -865,10 +882,10 @@ export function PartInspector({
         sizeSection(
           <>
             {heightRow([
-              { key: "56", value: 56 },
-              { key: "78", value: 78 },
-              { key: "120", value: 120 },
-              { key: "200", value: 200 },
+              /* the three sizes a template is dropped at: a button, a card and a tall card */
+              { key: "s", value: 80 },
+              { key: "m", value: 190 },
+              { key: "l", value: 280 },
             ])}
             {widthRows()}
           </>,
@@ -908,17 +925,6 @@ export function PartInspector({
           heightRow(CAROUSEL_HEIGHTS),
         )}
       {(kind === "datePicker" || kind === "timePicker") && sizeSection(widthRows())}
-      {kind === "animation" &&
-        sizeSection(
-          <>
-            {widthRows()}
-            {heightRow([
-              { key: "btn", value: 78 },
-              { key: "card", value: 160 },
-              { key: "tall", value: 240 },
-            ])}
-          </>
-        )}
       {kind === "slider" &&
         sizeSection(
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -995,7 +1001,10 @@ export function PartInspector({
             /* a bar is tapped at its icons or along its entries: the row picks which place */
             <TriggerSection item={item} frame={frame} allFrames={allFrames} selfRect={selfRect} onChange={onChange} p={p} slot={slotKey} head={<SlotStrip item={item} selected={slotKey} onSelect={setSlot} p={p} />} />
           ) : hasTrigger(kind) ? (
-            <TriggerSection item={item} frame={frame} allFrames={allFrames} selfRect={selfRect} onChange={onChange} p={p} />
+            <>
+              <TriggerSection item={item} frame={frame} allFrames={allFrames} selfRect={selfRect} onChange={onChange} p={p} />
+              {kind === "animation" && <AnimationTriggerRows item={item} onChange={onChange} p={p} lang={lang} />}
+            </>
           ) : (
             <NoTriggerNote p={p} />
           )}

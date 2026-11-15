@@ -503,7 +503,6 @@ Please implement this animated UI component in my project. Adapt the code above 
                   customText: customText.trim() || template.titleEn || template.title,
                   customColor,
                   customSpeed,
-                  customInteractive: true,
                 });
                 onClose();
               }}
@@ -709,7 +708,7 @@ function SystemTemplateCard({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onInsert({ ...template, customInteractive: true });
+                onInsert(template);
               }}
               style={{
                 height: 30,
