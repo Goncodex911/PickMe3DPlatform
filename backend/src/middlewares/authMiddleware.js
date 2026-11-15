@@ -65,6 +65,27 @@ exports.optionalProtect = async (req, res, next) => {
 };
 
 /**
+ * Resolve a JWT to its user for non-HTTP transports (Socket.io handshake).
+ * Returns null for a missing/invalid token or a banned/unknown user, like `optionalProtect`.
+ * @param {string | undefined | null} token raw JWT (no "Bearer " prefix)
+ */
+exports.userFromToken = async (token) => {
+  if (typeof token !== 'string' || !token) return null;
+  try {
+    const secret = process.env.JWT_SECRET || 'super_secret_pickme3d_jwt_key_2024';
+    const decoded = jwt.verify(token, secret);
+    const mockUser = mockUsers.isEnabled() ? mockUsers.findById(decoded.id) : null;
+    const user = mockUser
+      ? (await mockUsers.syncToDb(mockUser)) || mockUsers.requestUser(mockUser)
+      : await User.findById(decoded.id);
+    if (!user || user.status === 'banned') return null;
+    return user;
+  } catch {
+    return null;
+  }
+};
+
+/**
  * Grant access to specific roles
  * @param  {...string} roles Allowed roles (e.g. 'admin')
  */

@@ -153,6 +153,15 @@ import { ShareDialog } from "@/components/ShareMenu";
 import AiGenerateModal from "@/components/AiGenerateModal";
 import SaveDesignModal from "@/components/SaveDesignModal";
 import { TemplateItem, fetchTemplateByIdApi } from "@/lib/templateService";
+import {
+  COVER_ID_KEY,
+  EDIT_ID_KEY,
+  EDIT_ITEM_KEY,
+  buildCoverDoc,
+  editorUrlForSavedDesign,
+  resolveEditorSource,
+  versionHistoryIdFor,
+} from "@/lib/editorSession";
 import { ColorPanel } from "@/components/ColorPanel";
 import { MotionPanel, ShapePanel, TypePanel } from "@/components/ThemePanel";
 import { ThemeContext, ensureFontLoaded, ensureLangFontLoaded } from "@/lib/theme";
@@ -554,6 +563,8 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
   const [saveDesignOpen, setSaveDesignOpen] = useState(false);
   const [editingDesign, setEditingDesign] = useState<TemplateItem | null>(null);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
+  /** `?coverId=` of this session; keys a cover's local version history. */
+  const [coverId, setCoverId] = useState<string | null>(null);
   const [toolsSidebarOpen, setToolsSidebarOpen] = useState(false);
   const [showWires, setShowWires] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -1380,6 +1391,8 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
   useEffect(() => {
     // React's development double-run would otherwise read back its own first save
     if (loadedRef.current) return;
+    /** The saved design's own docData was put in place, so the starter seed must not replace it. */
+    let appliedSavedDoc = false;
     try {
       const d = localStorage.getItem(DOC_KEY);
       if (d) {
@@ -1389,30 +1402,58 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
       }
       if (typeof window !== "undefined") {
         const urlParams = new URLSearchParams(window.location.search);
-        const editIdParam = urlParams.get("editId");
-        if (editIdParam) {
-          const editItem = localStorage.getItem("pickme3d_edit_item");
-          if (editItem) {
-            try {
-              const parsed = JSON.parse(editItem);
-              if ((parsed._id || parsed.id) === editIdParam) {
-                setEditingDesign(parsed);
-              }
-            } catch { }
-          } else {
-            fetchTemplateByIdApi(editIdParam).then((res) => {
-              if (res) {
-                setEditingDesign(res);
-                if (res.docData && !d) {
-                  applyDoc(res.docData as Partial<Doc>, false);
-                }
-              }
-            });
+        const coverIdParam = urlParams.get("coverId");
+        setCoverId(coverIdParam || null);
+        const source = resolveEditorSource({
+          editId: urlParams.get("editId"),
+          coverId: coverIdParam,
+          storedEditItem: localStorage.getItem(EDIT_ITEM_KEY),
+          storedCoverId: localStorage.getItem(COVER_ID_KEY),
+          hasLocalDoc: Boolean(d),
+        });
+        if (source.kind === "local") {
+          if (source.editItem) {
+            setEditingDesign(source.editItem);
+            if (!d && source.editItem.docData) {
+              applyDoc(source.editItem.docData as Partial<Doc>, true);
+              hadDocRef.current = true;
+              appliedSavedDoc = true;
+            }
           }
-        } else {
-          localStorage.removeItem("pickme3d_edit_id");
-          localStorage.removeItem("pickme3d_edit_item");
+        } else if (source.kind === "fetch-edit" || source.kind === "fetch-cover") {
+          // m3e:doc belongs to another design/session; never let it stand in for the requested one.
+          const isEdit = source.kind === "fetch-edit";
+          fetchTemplateByIdApi(source.id)
+            .then((res) => {
+              const nextDoc = res ? (isEdit ? res.docData : buildCoverDoc(res)) : null;
+              if (!res || !nextDoc) {
+                showToast(isEdit ? "Không tải được thiết kế cần chỉnh sửa." : "Không tải được template.", 3200, "error");
+                return;
+              }
+              applyDoc(nextDoc as Partial<Doc>, true);
+              hadDocRef.current = true;
+              try {
+                if (isEdit) {
+                  localStorage.setItem(EDIT_ID_KEY, source.id);
+                  localStorage.setItem(EDIT_ITEM_KEY, JSON.stringify(res));
+                  localStorage.removeItem(COVER_ID_KEY);
+                } else {
+                  localStorage.removeItem(EDIT_ID_KEY);
+                  localStorage.removeItem(EDIT_ITEM_KEY);
+                  localStorage.setItem(COVER_ID_KEY, source.id);
+                }
+              } catch { }
+              if (isEdit) setEditingDesign(res);
+            })
+            .catch(() => {
+              showToast(isEdit ? "Không tải được thiết kế cần chỉnh sửa." : "Không tải được template.", 3200, "error");
+            });
         }
+        if (source.kind !== "local" || !source.editItem) {
+          localStorage.removeItem(EDIT_ID_KEY);
+          localStorage.removeItem(EDIT_ITEM_KEY);
+        }
+        if (source.kind === "draft") localStorage.removeItem(COVER_ID_KEY);
       }
       const before = d ? localStorage.getItem(BEFORE_KEY) : null;
       if (!d) localStorage.removeItem(BEFORE_KEY);
@@ -1436,7 +1477,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
       }
       setGlobalLang(initialLang);
       initialLangRef.current = initialLang;
-      if (!d) {
+      if (!d && !appliedSavedDoc) {
         setGroups(seed(initialLang));
         setFrames([{ ...SEED_FRAMES[0], name: t("home", initialLang) }]);
       }
@@ -1541,6 +1582,16 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
   // ─── Real-time Multiplayer Document Sync ─────────────────────────────────
   const isRemoteSyncRef = useRef(false);
   const broadcastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Unsaved drafts/covers get a private per-tab room. A shared room name would let the
+  // server's last stored doc (from any user) overwrite the template that was just opened.
+  const [draftCanvasId] = useState(() => {
+    try {
+      if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+        return `draft-${crypto.randomUUID()}`;
+      }
+    } catch { }
+    return `draft-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  });
 
   // 1. Subscribe to incoming updates from peers
   useEffect(() => {
@@ -1591,8 +1642,9 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
           isRemoteSyncRef.current = false;
         }, 80);
       },
-      onPeersChange: (currentPeers) => {
-        if (currentPeers.length > 0 && loadedRef.current && !isRemoteSyncRef.current) {
+      // Only the peer the server picks answers a newcomer, so peers never race to overwrite each other.
+      onDocRequest: () => {
+        if (loadedRef.current) {
           collabClient.broadcastDoc({
             groups: groupsRef.current,
             frames: framesRef.current,
@@ -5916,7 +5968,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
               </div>
                 {/* ── Real-time Multiplayer Collaboration Presence & Cursors ── */}
                 <CollaborationPresence
-                  canvasId={editingDesign?._id || editingDesign?.id || "draft-canvas"}
+                  canvasId={editingDesign?._id || editingDesign?.id || draftCanvasId}
                   user={{
                     id: currentUser?.id || currentUser?._id || "guest",
                     name: currentUser?.name || "Bạn",
@@ -6570,9 +6622,24 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
             onSaved={(savedItem) => {
               if (savedItem) {
                 setEditingDesign(savedItem);
+                const savedId = savedItem._id || savedItem.id;
                 try {
-                  localStorage.setItem("pickme3d_edit_item", JSON.stringify(savedItem));
+                  localStorage.setItem(EDIT_ITEM_KEY, JSON.stringify(savedItem));
+                  if (savedId) {
+                    localStorage.setItem(EDIT_ID_KEY, savedId);
+                    localStorage.removeItem(COVER_ID_KEY);
+                  }
                 } catch { }
+                // Tie the URL to the saved design: a reload must reopen it, not a draft that saves a duplicate.
+                if (savedId && typeof window !== "undefined") {
+                  const nextUrl = editorUrlForSavedDesign(window.location.href, savedId);
+                  if (nextUrl) {
+                    try {
+                      window.history.replaceState(window.history.state, "", nextUrl);
+                    } catch { }
+                  }
+                  setCoverId(null);
+                }
               }
             }}
           />
@@ -6693,7 +6760,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
         <VersionHistoryDrawer
           open={versionHistoryOpen}
           onClose={() => setVersionHistoryOpen(false)}
-          templateId={editingDesign?._id || editingDesign?.id || "draft"}
+          templateId={versionHistoryIdFor(editingDesign?._id || editingDesign?.id, coverId)}
           currentDocData={doc}
           onRollback={(restoredDocData) => {
             if (restoredDocData) {
