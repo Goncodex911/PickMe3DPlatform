@@ -11,6 +11,7 @@ router.get('/community', presentation.community);
 router.post('/', checkQuota('slides'), presentation.create);
 // AI slide generation is a Pro feature; blank decks stay available on Free.
 router.post('/generate', requireFeature('aiSlides'), checkQuota('slides'), checkQuota('ai'), presentation.generate);
+router.get('/jobs/:jobId', presentation.job);
 router.get('/:id', presentation.getOne);
 router.put('/:id', presentation.update);
 router.delete('/:id', presentation.remove);
