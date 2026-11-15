@@ -3,6 +3,11 @@ const Template = require('../models/Template');
 const Presentation = require('../models/Presentation');
 const mongoose = require('mongoose');
 const { uploadIfBase64 } = require('../services/cloudinaryService');
+const {
+  HIDDEN_REVIEW_STATES,
+  publicCreatorTemplateFilter,
+  sanitizePublicTemplate,
+} = require('../services/templateVisibility');
 
 // @desc    Get all users
 // @route   GET /api/users
@@ -124,7 +129,7 @@ exports.getPublicProfile = async (req, res, next) => {
 
     // Aggregate stats from the user's public templates
     const stats = await Template.aggregate([
-      { $match: { author: user._id, isPublic: true } },
+      { $match: publicCreatorTemplateFilter(user._id) },
       {
         $group: {
           _id: null,
@@ -137,10 +142,12 @@ exports.getPublicProfile = async (req, res, next) => {
     ]);
 
     const aggregated = stats[0] || { totalDesigns: 0, totalLikes: 0, totalForks: 0, totalViews: 0 };
-    const templates = await Template.find({ author: user._id, isPublic: true })
+    const templates = await Template.find(publicCreatorTemplateFilter(user._id))
       .sort({ createdAt: -1 })
       .limit(20)
-      .select('title description category tags thumbnailUrl docData likesCount viewsCount forksCount avgRating createdAt');
+      .select('title description category tags thumbnailUrl docData likesCount viewsCount forksCount avgRating createdAt price isPaid')
+      .lean();
+    const safeTemplates = templates.map(sanitizePublicTemplate);
 
     res.status(200).json({
       success: true,
@@ -160,7 +167,7 @@ exports.getPublicProfile = async (req, res, next) => {
           totalForks: aggregated.totalForks,
           totalViews: aggregated.totalViews,
         },
-        templates,
+        templates: safeTemplates,
       },
     });
   } catch (error) {
@@ -176,7 +183,11 @@ exports.getPublicProfile = async (req, res, next) => {
 exports.getPublicCreatorRoutes = async (req, res, next) => {
   try {
     const [templateAuthors, deckAuthors] = await Promise.all([
-      Template.distinct('author', { isPublic: true, author: { $ne: null } }),
+      Template.distinct('author', {
+        isPublic: true,
+        reviewStatus: { $nin: HIDDEN_REVIEW_STATES },
+        author: { $ne: null },
+      }),
       Presentation.distinct('userId', { isPublic: true, userId: { $ne: '' } }),
     ]);
     const authorIds = [...new Set([...templateAuthors, ...deckAuthors]
@@ -213,7 +224,7 @@ exports.getPublicProfileByUsername = async (req, res, next) => {
     }
 
     const stats = await Template.aggregate([
-      { $match: { author: user._id, isPublic: true } },
+      { $match: publicCreatorTemplateFilter(user._id) },
       {
         $group: {
           _id: null,
@@ -228,10 +239,12 @@ exports.getPublicProfileByUsername = async (req, res, next) => {
     const aggregated = stats[0] || { totalDesigns: 0, totalLikes: 0, totalForks: 0, totalViews: 0 };
 
     // Fetch public templates by this user
-    const templates = await Template.find({ author: user._id, isPublic: true })
+    const templates = await Template.find(publicCreatorTemplateFilter(user._id))
       .sort({ createdAt: -1 })
       .limit(20)
-      .select('title description category tags thumbnailUrl docData likesCount viewsCount forksCount avgRating createdAt');
+      .select('title description category tags thumbnailUrl docData likesCount viewsCount forksCount avgRating createdAt price isPaid')
+      .lean();
+    const safeTemplates = templates.map(sanitizePublicTemplate);
 
     res.status(200).json({
       success: true,
@@ -251,7 +264,7 @@ exports.getPublicProfileByUsername = async (req, res, next) => {
           totalForks: aggregated.totalForks,
           totalViews: aggregated.totalViews,
         },
-        templates,
+        templates: safeTemplates,
       },
     });
   } catch (error) {
