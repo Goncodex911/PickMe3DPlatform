@@ -35,6 +35,11 @@
 .btnPrimary { border-color: #24272c; background: #24272c; color: #fff; }
 .btnPrimary:hover { border-color: #3c4047; background: #3c4047; }
 .btnDanger { border-color: #ecd3d2; color: var(--bad); }
+/* Trang Cài đặt tô màu mọi link trong thẻ (.card a { color: var(--accent) }, hover gạch chân):
+   giữ màu chữ của nút khi nút là thẻ <a>/<Link>, kẻo nút tối có chữ tối */
+.root .btn, .root .btn:hover { color: #2c3138; text-decoration: none; }
+.root .btnPrimary, .root .btnPrimary:hover { color: #fff; }
+.root .btnDanger, .root .btnDanger:hover { color: var(--bad); }
 .btnDanger:hover { border-color: #ddb0ae; background: #fff7f7; }
 .iconBtn { width: 38px; padding: 0; }
 .btn:focus-visible, .rowMain:focus-visible, .tab:focus-visible { outline: 3px solid #8d86d8; outline-offset: 2px; }

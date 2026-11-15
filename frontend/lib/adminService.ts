@@ -105,7 +105,7 @@ export interface AdminOrder {
   needsReview?: boolean;
   reviewReason?: string;
   cancelReason?: string;
-  customer?: { name?: string; email?: string };
+  customer?: { name?: string; email?: string; plan?: string; planExpiresAt?: string | null };
   refund?: {
     status: "NONE" | "REQUESTED" | "APPROVED" | "REJECTED" | "COMPLETED";
     reason?: string; amount?: number; requestedAt?: string | null; reviewedAt?: string | null;

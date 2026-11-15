@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
+import { formatPlanExpiry, planExpiry } from "@/lib/planExpiry";
+import { useActionDialog } from "./ActionDialog";
 import {
   AdminOrder,
   ExcessInfo,
@@ -68,7 +70,8 @@ export function PaymentOrderDrawer({ orderCode, onClose, onChanged }: { orderCod
     setLoading(true);
     const res = await fetchPaymentDetailApi(orderCode);
     if (res.success && res.data) {
-      setOrder(res.data.order);
+      // API trả thông tin khách (tên, email, gói, hạn gói) tách riêng khỏi đơn: gộp vào để drawer đọc từ một chỗ
+      setOrder({ ...res.data.order, customer: res.data.customer || res.data.order.customer });
       setEvents(res.data.events || []);
       setExcess(res.data.excess || null);
     } else {
@@ -89,15 +92,20 @@ export function PaymentOrderDrawer({ orderCode, onClose, onChanged }: { orderCod
     onChanged();
   };
 
-  const ask = (label: string, required = true) => {
-    const v = window.prompt(label);
-    if (v === null) return null;
-    if (required && !v.trim()) { window.alert("Bắt buộc nhập"); return null; }
-    return v.trim();
-  };
+  // Mọi thao tác cần xác nhận / nhập liệu đều mở hộp thoại trong trang (không dùng prompt/confirm của trình duyệt)
+  const [dialog, openDialog] = useActionDialog();
 
   const o = order;
   const refund = o?.refund?.status || "NONE";
+
+  // Thông tin đơn hiển thị trong hộp thoại để Admin đối chiếu trước khi xác nhận
+  const summary = (extra: [string, string][] = []): [string, string][] => (o ? [
+    ["Đơn", `#${o.orderCode}`],
+    ["Khách hàng", `${o.customer?.name || o.userName || o.userId}${o.customer?.email || o.userEmail ? ` (${o.customer?.email || o.userEmail})` : ""}`],
+    ["Sản phẩm", `${o.productTitle || o.templateTitle || o.planId?.toUpperCase() || o.orderType}${o.orderType === "SUBSCRIPTION" ? ` · ${o.months} tháng` : ""}`],
+    ["Giá trị đơn", vnd(o.amount)],
+    ...extra,
+  ] : extra);
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/60" onClick={onClose}>
@@ -109,6 +117,7 @@ export function PaymentOrderDrawer({ orderCode, onClose, onChanged }: { orderCod
 
         {msg && <div className={`rounded-lg px-3 py-2 text-xs border ${msg.ok ? "border-emerald-500/30 text-emerald-200" : "border-red-500/30 text-red-200"}`}>{msg.text}</div>}
         {loading && !o && <p className="text-zinc-400">Đang tải…</p>}
+        {dialog}
 
         {o && (
           <>
@@ -128,6 +137,18 @@ export function PaymentOrderDrawer({ orderCode, onClose, onChanged }: { orderCod
               <dt className="text-zinc-500">Tạo / hết hạn</dt><dd>{when(o.createdAt)} → {when(o.expiresAt)}</dd>
               <dt className="text-zinc-500">Thanh toán</dt><dd>{when(o.paidAt)} · nhận {o.paidAmount != null ? vnd(o.paidAmount) : "—"} · mã GD {o.gatewayReference || "—"}</dd>
               <dt className="text-zinc-500">Cấp quyền</dt><dd>{o.fulfillmentStatus} ({o.fulfillmentAttempts || 0} lần){o.fulfillmentError ? ` – ${o.fulfillmentError}` : ""}</dd>
+              {o.orderType === "SUBSCRIPTION" && (() => {
+                // Thời hạn lấy từ tài khoản khách (các đơn gia hạn cộng dồn vào cùng một mốc)
+                const info = planExpiry(o.customer?.plan, o.customer?.planExpiresAt);
+                return (
+                  <>
+                    <dt className="text-zinc-500">Gói hiện tại của khách</dt>
+                    <dd className={info && (info.expired || info.daysLeft <= 3) ? "text-amber-300" : undefined}>
+                      {(o.customer?.plan || "free").toUpperCase()} · {info ? formatPlanExpiry(info) : o.customer?.plan && o.customer.plan !== "free" ? "không có ngày hết hạn" : "đang ở gói Free"}
+                    </dd>
+                  </>
+                );
+              })()}
               {o.cancelReason && <><dt className="text-zinc-500">Lý do đóng</dt><dd>{o.cancelReason}</dd></>}
               {refund !== "NONE" && (
                 <>
@@ -149,25 +170,41 @@ export function PaymentOrderDrawer({ orderCode, onClose, onChanged }: { orderCod
                 <button className={btnGood} disabled={busy} onClick={() => run(() => paymentActionApi(o.orderCode, "retry-fulfillment"))}>Cấp quyền lại</button>
               )}
               {["PENDING", "VERIFYING", "EXPIRED", "CANCELLED", "FAILED"].includes(o.status) && (
-                <button className={btnGood} disabled={busy} onClick={() => {
-                  const reference = ask("Mã giao dịch ngân hàng đã đối chiếu (bắt buộc):");
-                  if (!reference) return;
-                  const note = ask("Ghi chú đối soát (bắt buộc, ví dụ: sao kê VCB ngày ...):");
-                  if (!note) return;
-                  if (!window.confirm(`Xác nhận đơn #${o.orderCode} ĐÃ THANH TOÁN ${vnd(o.amount)} và cấp quyền cho khách?`)) return;
-                  run(() => paymentActionApi(o.orderCode, "mark-paid", { reference, note }));
+                <button className={btnGood} disabled={busy} onClick={async () => {
+                  const v = await openDialog({
+                    title: "Xác nhận đã thanh toán (thủ công)", icon: "price_check", tone: "good",
+                    summary: summary(),
+                    warning: `Đơn sẽ chuyển sang ĐÃ THANH TOÁN ${vnd(o.amount)} và khách được cấp quyền ngay. Chỉ làm khi đã thấy tiền trong sao kê ngân hàng.`,
+                    fields: [
+                      { name: "reference", label: "Mã giao dịch ngân hàng đã đối chiếu", required: true },
+                      { name: "note", label: "Ghi chú đối soát", type: "textarea", required: true, placeholder: "Ví dụ: sao kê VCB ngày 15/11/2026, dòng 12" },
+                    ],
+                    confirmLabel: "Xác nhận đã thanh toán",
+                  });
+                  if (v) run(() => paymentActionApi(o.orderCode, "mark-paid", { reference: String(v.reference), note: String(v.note) }));
                 }}>Xác nhận đã thanh toán (thủ công)</button>
               )}
               {["PENDING", "VERIFYING"].includes(o.status) && (
-                <button className={btnBad} disabled={busy} onClick={() => {
-                  const note = ask("Lý do hủy đơn (hệ thống sẽ kiểm tra payOS trước khi hủy):");
-                  if (note) run(() => paymentActionApi(o.orderCode, "cancel", { note }));
+                <button className={btnBad} disabled={busy} onClick={async () => {
+                  const v = await openDialog({
+                    title: "Hủy đơn", icon: "cancel", tone: "bad",
+                    summary: summary(),
+                    message: "Hệ thống sẽ kiểm tra lại với payOS trước khi hủy; đơn đã được thanh toán sẽ không bị hủy.",
+                    fields: [{ name: "note", label: "Lý do hủy đơn", type: "textarea", required: true }],
+                    confirmLabel: "Hủy đơn",
+                  });
+                  if (v) run(() => paymentActionApi(o.orderCode, "cancel", { note: String(v.note) }));
                 }}>Hủy đơn</button>
               )}
               {o.needsReview && (
-                <button className={btnNeutral} disabled={busy} onClick={() => {
-                  const note = ask("Đã xử lý thế nào?");
-                  if (note) run(() => paymentActionApi(o.orderCode, "resolve-review", { note }));
+                <button className={btnNeutral} disabled={busy} onClick={async () => {
+                  const v = await openDialog({
+                    title: "Đánh dấu đã kiểm tra", icon: "task_alt",
+                    summary: summary([["Cần kiểm tra", o.reviewReason || "—"]]),
+                    fields: [{ name: "note", label: "Đã xử lý thế nào?", type: "textarea", required: true }],
+                    confirmLabel: "Đánh dấu đã kiểm tra",
+                  });
+                  if (v) run(() => paymentActionApi(o.orderCode, "resolve-review", { note: String(v.note) }));
                 }}>Đánh dấu đã kiểm tra</button>
               )}
             </div>
@@ -198,30 +235,45 @@ export function PaymentOrderDrawer({ orderCode, onClose, onChanged }: { orderCod
 
                 <div className="flex flex-wrap gap-2">
                   {o.excessReturn?.status !== "PENDING" && o.excessReturn?.status !== "COMPLETED" && excess?.options.map((opt) => (
-                    <button key={opt.type} className={btnGood} disabled={busy} title={opt.reason} onClick={() => {
-                      const raw = window.prompt(`${EXCESS_LABEL[opt.type]}\n${opt.reason}\n\nSố tiền trả lại (tối đa ${vnd(opt.amount)}):`, String(opt.amount));
-                      if (raw === null) return;
-                      const amount = Number(raw.replace(/[^\d]/g, ""));
-                      const note = ask("Ghi chú (tùy chọn):", false) ?? "";
-                      const warn = opt.type === "DUPLICATE_ORDER"
-                        ? `\n\nĐơn này sẽ chuyển VOIDED: không tính doanh thu, không tính phần Creator. Quyền sử dụng giữ ở đơn #${opt.keepOrderCode}.`
-                        : opt.type === "PARTIAL_PAYMENT" ? "\n\nLink payOS sẽ bị đóng và đơn bị hủy." : "";
-                      if (!window.confirm(`Mở trả lại ${vnd(amount)} cho khách?${warn}`)) return;
-                      run(() => excessReturnApi(o.orderCode, { action: "CREATE", type: opt.type, amount, note }));
+                    <button key={opt.type} className={btnGood} disabled={busy} title={opt.reason} onClick={async () => {
+                      const v = await openDialog({
+                        title: `Mở trả lại tiền: ${EXCESS_LABEL[opt.type]}`, icon: "currency_exchange", tone: "good",
+                        summary: summary([["Lý do hệ thống", opt.reason]]),
+                        warning: opt.type === "DUPLICATE_ORDER"
+                          ? `Đơn này sẽ chuyển VOIDED: không tính doanh thu, không tính phần Creator. Quyền sử dụng giữ ở đơn #${opt.keepOrderCode}.`
+                          : opt.type === "PARTIAL_PAYMENT" ? "Link payOS sẽ bị đóng và đơn bị hủy." : undefined,
+                        fields: [
+                          { name: "amount", label: "Số tiền trả lại", type: "number", required: true, min: 1, max: opt.amount, defaultValue: opt.amount, suffix: "₫", hint: `Tối đa ${vnd(opt.amount)}` },
+                          { name: "note", label: "Ghi chú", type: "textarea" },
+                        ],
+                        confirmLabel: "Mở trả lại tiền",
+                      });
+                      if (v) run(() => excessReturnApi(o.orderCode, { action: "CREATE", type: opt.type, amount: Number(v.amount), note: String(v.note) }));
                     }}>{EXCESS_LABEL[opt.type]}: {vnd(opt.amount)}</button>
                   ))}
                   {o.excessReturn?.status === "PENDING" && (
                     <>
-                      <button className={btnGood} disabled={busy} onClick={() => {
-                        const reference = ask(`Mã giao dịch đã chuyển trả ${vnd(o.excessReturn?.amount)}:`);
-                        if (!reference) return;
-                        const proof = ask("Link ảnh chứng từ (tùy chọn):", false) || "";
-                        run(() => excessReturnApi(o.orderCode, { action: "COMPLETE", reference, proof }));
+                      <button className={btnGood} disabled={busy} onClick={async () => {
+                        const v = await openDialog({
+                          title: "Ghi nhận đã chuyển trả", icon: "receipt_long", tone: "good",
+                          summary: summary([["Số tiền chuyển trả", vnd(o.excessReturn?.amount)]]),
+                          fields: [
+                            { name: "reference", label: "Mã giao dịch đã chuyển trả", required: true },
+                            { name: "proof", label: "Link ảnh chứng từ", placeholder: "https://…" },
+                          ],
+                          confirmLabel: "Ghi nhận đã chuyển trả",
+                        });
+                        if (v) run(() => excessReturnApi(o.orderCode, { action: "COMPLETE", reference: String(v.reference), proof: String(v.proof) }));
                       }}>Ghi nhận đã chuyển trả</button>
                       {o.excessReturn.type !== "PARTIAL_PAYMENT" && (
-                        <button className={btnBad} disabled={busy} onClick={() => {
-                          const note = ask("Lý do hủy (mở nhầm):");
-                          if (note) run(() => excessReturnApi(o.orderCode, { action: "CANCEL", note }));
+                        <button className={btnBad} disabled={busy} onClick={async () => {
+                          const v = await openDialog({
+                            title: "Hủy trả lại tiền (mở nhầm)", icon: "undo", tone: "bad",
+                            summary: summary([["Số tiền đang mở", vnd(o.excessReturn?.amount)]]),
+                            fields: [{ name: "note", label: "Lý do hủy", type: "textarea", required: true }],
+                            confirmLabel: "Hủy trả lại tiền",
+                          });
+                          if (v) run(() => excessReturnApi(o.orderCode, { action: "CANCEL", note: String(v.note) }));
                         }}>Hủy (mở nhầm)</button>
                       )}
                     </>
@@ -234,9 +286,14 @@ export function PaymentOrderDrawer({ orderCode, onClose, onChanged }: { orderCod
               <div className="rounded-lg border border-white/10 bg-zinc-900 p-3 text-xs text-zinc-400">
                 Sản phẩm số (Template / UI Marketplace) không áp dụng hoàn tiền theo chính sách.
                 {refund === "REQUESTED" && (
-                  <button className={`${btnBad} ml-2`} disabled={busy} onClick={() => {
-                    const note = ask("Lý do từ chối (gửi cho khách):") || "Sản phẩm số không áp dụng hoàn tiền";
-                    run(() => processRefundApi(o.orderCode, { action: "REJECT", note }));
+                  <button className={`${btnBad} ml-2`} disabled={busy} onClick={async () => {
+                    const v = await openDialog({
+                      title: "Từ chối yêu cầu hoàn tiền", icon: "block", tone: "bad",
+                      summary: summary([["Lý do của khách", o.refund?.reason || "—"]]),
+                      fields: [{ name: "note", label: "Lý do từ chối (gửi cho khách)", type: "textarea", defaultValue: "Sản phẩm số không áp dụng hoàn tiền" }],
+                      confirmLabel: "Từ chối",
+                    });
+                    if (v) run(() => processRefundApi(o.orderCode, { action: "REJECT", note: String(v.note) || "Sản phẩm số không áp dụng hoàn tiền" }));
                   }}>Từ chối yêu cầu cũ</button>
                 )}
               </div>
@@ -246,25 +303,54 @@ export function PaymentOrderDrawer({ orderCode, onClose, onChanged }: { orderCod
                 <p className="text-xs font-semibold text-indigo-200">Hoàn tiền gói đăng ký (chuyển khoản thủ công – payOS không có API hoàn tiền)</p>
                 <div className="flex flex-wrap gap-2">
                   {(refund === "REQUESTED" || refund === "NONE") && (
-                    <button className={btnGood} disabled={busy} onClick={() => {
-                      const note = ask(refund === "NONE" ? "Lý do Admin chủ động hoàn tiền:" : "Ghi chú duyệt (tùy chọn):", refund === "NONE");
-                      if (note === null) return;
-                      run(() => processRefundApi(o.orderCode, { action: "APPROVE", note }));
+                    <button className={btnGood} disabled={busy} onClick={async () => {
+                      // Xác nhận lại trước khi duyệt: sau bước này Admin phải tự chuyển khoản hoàn tiền cho khách
+                      const opening = refund === "NONE";
+                      const v = await openDialog({
+                        title: opening ? "Mở hoàn tiền" : "Duyệt hoàn tiền", icon: "verified", tone: "good",
+                        summary: summary([
+                          ["Số tiền hoàn", vnd(o.refund?.amount || o.amount)],
+                          ...(o.refund?.reason ? [["Lý do của khách", o.refund.reason] as [string, string]] : []),
+                        ]),
+                        warning: "Sau khi duyệt, bạn cần chuyển khoản thủ công cho khách rồi bấm \"Ghi nhận đã hoàn tiền\".",
+                        fields: [{
+                          name: "note", type: "textarea", required: opening,
+                          label: opening ? "Lý do Admin chủ động hoàn tiền" : "Ghi chú duyệt",
+                        }],
+                        confirmLabel: opening ? "Mở hoàn tiền" : "Duyệt hoàn tiền",
+                      });
+                      if (v) run(() => processRefundApi(o.orderCode, { action: "APPROVE", note: String(v.note) }));
                     }}>{refund === "NONE" ? "Mở hoàn tiền" : "Duyệt hoàn tiền"}</button>
                   )}
                   {refund === "REQUESTED" && (
-                    <button className={btnBad} disabled={busy} onClick={() => {
-                      const note = ask("Lý do từ chối (gửi cho khách):");
-                      if (note) run(() => processRefundApi(o.orderCode, { action: "REJECT", note }));
+                    <button className={btnBad} disabled={busy} onClick={async () => {
+                      const v = await openDialog({
+                        title: "Từ chối yêu cầu hoàn tiền", icon: "block", tone: "bad",
+                        summary: summary([["Lý do của khách", o.refund?.reason || "—"]]),
+                        message: "Khách sẽ nhận được thông báo kèm lý do từ chối.",
+                        fields: [{ name: "note", label: "Lý do từ chối (gửi cho khách)", type: "textarea", required: true }],
+                        confirmLabel: "Từ chối",
+                      });
+                      if (v) run(() => processRefundApi(o.orderCode, { action: "REJECT", note: String(v.note) }));
                     }}>Từ chối</button>
                   )}
                   {refund === "APPROVED" && (
-                    <button className={btnGood} disabled={busy} onClick={() => {
-                      const reference = ask(`Mã giao dịch đã chuyển hoàn ${vnd(o.refund?.amount || o.amount)}:`);
-                      if (!reference) return;
-                      const proof = ask("Link ảnh chứng từ (tùy chọn):", false) || "";
-                      const revokeAccess = window.confirm("Rút ngắn hạn gói tương ứng số tháng đã hoàn? (OK = rút ngắn)");
-                      run(() => processRefundApi(o.orderCode, { action: "COMPLETE", reference, proof, revokeAccess }));
+                    <button className={btnGood} disabled={busy} onClick={async () => {
+                      const v = await openDialog({
+                        title: "Ghi nhận đã hoàn tiền", icon: "receipt_long", tone: "good",
+                        summary: summary([["Số tiền đã hoàn", vnd(o.refund?.amount || o.amount)]]),
+                        fields: [
+                          { name: "reference", label: "Mã giao dịch đã chuyển hoàn", required: true },
+                          { name: "proof", label: "Link ảnh chứng từ", placeholder: "https://…" },
+                          {
+                            name: "revokeAccess", type: "checkbox", defaultChecked: true,
+                            label: `Rút ngắn hạn gói ${o.months || 1} tháng (${(o.months || 1) * 30} ngày)`,
+                            hint: "Bỏ chọn nếu vẫn giữ nguyên thời hạn gói cho khách.",
+                          },
+                        ],
+                        confirmLabel: "Ghi nhận đã hoàn tiền",
+                      });
+                      if (v) run(() => processRefundApi(o.orderCode, { action: "COMPLETE", reference: String(v.reference), proof: String(v.proof), revokeAccess: Boolean(v.revokeAccess) }));
                     }}>Ghi nhận đã hoàn tiền</button>
                   )}
                 </div>

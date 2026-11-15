@@ -8,11 +8,14 @@ import {
   OrderInfo,
   cancelOrder,
   displayStatusOf,
+  fetchAccount,
   fetchOrders,
   historyLabel,
   requestRefund,
+  type AccountPlan,
   type DisplayStatus,
 } from "@/lib/paymentService";
+import { formatPlanExpiry, planExpiry } from "@/lib/planExpiry";
 import s from "./BillingHistory.module.css";
 
 type Filter = "all" | "paid" | "open" | "closed";
@@ -85,6 +88,7 @@ export default function BillingHistory() {
   const [notice, setNotice] = useState<{ text: string; bad?: boolean } | null>(null);
   const [refundFor, setRefundFor] = useState<number | null>(null);
   const [refundReason, setRefundReason] = useState("");
+  const [account, setAccount] = useState<AccountPlan | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -94,8 +98,19 @@ export default function BillingHistory() {
       .then((rows) => { if (active) setOrders(rows); })
       .catch((reason) => { if (active) setError(reason instanceof Error ? reason.message : "Không thể tải lịch sử thanh toán."); })
       .finally(() => { if (active) setLoading(false); });
+    // Thời hạn gói nằm trên tài khoản; không tải được thì chỉ ẩn dòng hết hạn, lịch sử vẫn hiển thị
+    fetchAccount()
+      .then((acc) => { if (active) setAccount(acc); })
+      .catch(() => { if (active) setAccount(null); });
     return () => { active = false; };
   }, [retry]);
+
+  const expiry = account ? planExpiry(account.plan, account.planExpiresAt) : null;
+  // Đơn gói mới nhất đã hoàn tất là đơn đang tạo ra thời hạn hiện tại (các đơn gia hạn được cộng dồn vào đó)
+  const currentPlanOrder = useMemo(
+    () => orders.find((o) => (o.orderType || "SUBSCRIPTION") === "SUBSCRIPTION" && displayStatusOf(o) === "COMPLETED")?.orderCode ?? null,
+    [orders],
+  );
 
   const stats = useMemo(() => {
     let paid = 0, paidCount = 0, waiting = 0, returned = 0;
@@ -236,6 +251,14 @@ export default function BillingHistory() {
 
       {!loading && !error && orders.length > 0 && (
         <>
+          {expiry && (
+            <div className={s.notice} data-tone={expiry.expired || expiry.daysLeft <= 3 ? "bad" : undefined} role="status">
+              <span className="material-symbols-rounded" aria-hidden="true">event</span>
+              Gói {(account?.plan || "").toUpperCase()}: {formatPlanExpiry(expiry)}.
+              {!expiry.expired && expiry.daysLeft <= 3 && " Gia hạn để không bị gián đoạn."}
+              {(expiry.expired || expiry.daysLeft <= 3) && <> <Link href="/pricing/">Gia hạn</Link></>}
+            </div>
+          )}
           <div className={s.tabs} role="tablist" aria-label="Lọc đơn hàng">
             {([
               ["all", "Tất cả"],
@@ -275,7 +298,10 @@ export default function BillingHistory() {
                       </span>
                       <span className={s.rowText}>
                         <span className={s.rowTitle}>{info.name}</span>
-                        <span className={s.rowMeta}>{info.type} · {shortDate(order.paidAt || order.createdAt)}</span>
+                        <span className={s.rowMeta}>
+                          {info.type} · {shortDate(order.paidAt || order.createdAt)}
+                          {expiry && order.orderCode === currentPlanOrder && ` · ${expiry.expired ? "đã hết hạn" : `hết hạn ${shortDate(expiry.expiresAt.toISOString())}`}`}
+                        </span>
                       </span>
                       <span className={s.chip} data-tone={TONE[d]}>{DISPLAY_STATUS_LABEL[d]}</span>
                       <span className={s.rowAmount}>{vnd(order.amount)}</span>
@@ -295,6 +321,9 @@ export default function BillingHistory() {
                             <dt>Số tiền</dt><dd><b>{vnd(order.amount)}</b></dd>
                             <dt>Tạo lúc</dt><dd>{fullDate(order.createdAt)}</dd>
                             {order.paidAt && <><dt>Thanh toán lúc</dt><dd>{fullDate(order.paidAt)}</dd></>}
+                            {expiry && order.orderCode === currentPlanOrder && (
+                              <><dt>Thời hạn gói</dt><dd>{formatPlanExpiry(expiry)}</dd></>
+                            )}
                             {d === "AWAITING_PAYMENT" && order.expiresAt && <><dt>Hết hạn lúc</dt><dd>{fullDate(order.expiresAt)}</dd></>}
                             {(order.gatewayReference || isMock) && (
                               <><dt>Mã giao dịch</dt><dd className={isMock ? undefined : s.mono}>{isMock ? "Thanh toán thử nghiệm" : order.gatewayReference}</dd></>
