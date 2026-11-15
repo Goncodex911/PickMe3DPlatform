@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { Palette } from "@/lib/tokens";
 import { t, useLang } from "@/lib/i18n";
-import { AiSettings, PROVIDERS, Provider, providerSpec } from "@/lib/ai";
+import { AiSettings, PROVIDERS, Provider, hasKey, providerSpec, testAiConnection, usesServerKey } from "@/lib/ai";
 import { Icon } from "./M3Node";
 
 /** the message shown for a failed request, mapped from the error codes lib/ai throws */
@@ -13,6 +13,9 @@ export function aiErrorText(e: unknown, lang: ReturnType<typeof useLang>): strin
   if (m === "json" || m === "empty") return t("aiErrorJson", lang);
   if (m === "model") return t("aiErrorModel", lang);
   if (m === "insecure") return t("aiErrorInsecure", lang);
+  if (m === "long") return t("aiErrorLong", lang);
+  if (m === "login") return t("aiErrorLogin", lang);
+  if (m === "server") return t("aiErrorServer", lang);
   if (/failed to fetch|networkerror|load failed/i.test(m)) return t("aiErrorNetwork", lang);
   return `${t("aiError", lang)}: ${m}`;
 }
@@ -181,20 +184,13 @@ export function AiPanel({
     setTestBusy(true);
     setTestResult(null);
     try {
-      const res = await fetch("/api/ai/test", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          provider: settings.provider,
-          baseUrl: settings.baseUrl,
-          model: settings.model,
-          key: settings.key,
-        }),
+      const r = await testAiConnection(settings);
+      setTestResult({
+        success: r.success,
+        message: r.success
+          ? t(usesServerKey(settings) ? "aiTestOkServer" : "aiTestOk", lang).replace("{model}", r.message)
+          : aiErrorText(new Error(r.message), lang),
       });
-      const data = await res.json();
-      setTestResult(data);
-    } catch (e: any) {
-      setTestResult({ success: false, message: e?.message || "Lỗi kiểm tra kết nối" });
     } finally {
       setTestBusy(false);
     }
@@ -317,14 +313,14 @@ export function AiPanel({
             </Label>
             <Input label={t("aiKey", lang)} value={settings.key} onChange={(key) => { setTestResult(null); onSettings({ ...settings, key }); }} placeholder="sk-…" p={p} type="password" />
             <div style={{ fontSize: 12, lineHeight: 1.5, color: p.onSurfaceVariant, marginTop: 8, padding: "0 4px" }}>
-              {settings.provider === "gemini" ? "Lấy khóa miễn phí nhanh tại Google AI Studio và dán vào đây để bắt đầu." : t("aiKeyHint", lang)}
+              {usesServerKey(settings) ? t("aiServerKeyHint", lang) : t("aiKeyHint", lang)}
             </div>
 
             {/* Test connection button */}
             <div style={{ marginTop: 12 }}>
               <button
                 type="button"
-                disabled={testBusy || (!settings.key.trim() && !settings.baseUrl.includes("localhost"))}
+                disabled={testBusy || !hasKey(settings)}
                 onClick={testConnection}
                 style={{
                   width: "100%",
@@ -340,11 +336,11 @@ export function AiPanel({
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 6,
-                  opacity: (!settings.key.trim() && !settings.baseUrl.includes("localhost")) ? 0.6 : 1,
+                  opacity: hasKey(settings) ? 1 : 0.6,
                 }}
               >
                 <Icon name={testBusy ? "progress_activity" : "bolt"} size={16} />
-                {testBusy ? "Đang kiểm tra kết nối..." : "Kiểm tra kết nối (Test Model)"}
+                {t(testBusy ? "aiTesting" : "aiTest", lang)}
               </button>
               {testResult && (
                 <div

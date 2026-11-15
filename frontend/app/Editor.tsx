@@ -3566,8 +3566,7 @@ export default function Editor({ initialLang, onReady }: { initialLang: Lang; on
       appendGeneratedDoc(next);
       setTimeout(() => fit(), 400);
     } catch (e) {
-      const m = e instanceof Error ? e.message : "";
-      showToast(m === "json" ? t("aiErrorJson", lang) : m === "refusal" ? t("aiErrorRefusal", lang) : m === "long" ? t("aiErrorLong", lang) : t("aiError", lang), 3200, "error");
+      showToast(aiErrorText(e, lang), 4000, "error");
     } finally {
       setDraftBusy(false);
     }

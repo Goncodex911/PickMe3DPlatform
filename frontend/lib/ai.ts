@@ -66,13 +66,16 @@ export const PROVIDERS: {
 
 export const providerSpec = (k: Provider) => PROVIDERS.find((p) => p.key === k) ?? PROVIDERS[0];
 
-const DEFAULT_GEMINI_KEY = process.env.NEXT_PUBLIC_GEMINI_DEFAULT_KEY || "";
+/** the PickMe3D backend; with no key of their own, Gemini requests go through it and its GEMINI_API_KEY */
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api").replace(/\/+$/, "");
 
+/* No key is ever built into the page: a NEXT_PUBLIC_ value ships in the public JavaScript, where
+ * anyone can read it. A blank Gemini key means "use the server's key" instead. */
 export const DEFAULT_AI: AiSettings = {
   provider: "gemini",
   baseUrl: PROVIDERS[0].baseUrl,
   model: "gemini-3.6-flash",
-  key: DEFAULT_GEMINI_KEY,
+  key: "",
 };
 
 function settingsStoreKey() {
@@ -124,9 +127,6 @@ export function loadAiSettings(): AiSettings {
       if (s.provider === "gemini" && (!s.baseUrl || s.baseUrl.includes("generativelanguage.googleapis.com"))) {
         s.baseUrl = "https://generativelanguage.googleapis.com/v1beta/openai";
       }
-      if ((!s.key || !s.key.trim()) && s.provider === "gemini") {
-        s.key = DEFAULT_GEMINI_KEY;
-      }
     }
   } catch {}
   return s;
@@ -147,8 +147,99 @@ export function saveAiSettings(s: AiSettings) {
 
 const isLocal = (u: string) => /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/i.test(u.trim());
 
-/** a hosted endpoint needs a key; a server on this machine may run without one */
-export const hasKey = (s: AiSettings) => s.key.trim().length > 0 || isLocal(s.baseUrl);
+const GEMINI_HOST = "generativelanguage.googleapis.com";
+
+/** Gemini with no key of the author's own: the request goes through the PickMe3D server, which
+ *  holds the key (GEMINI_API_KEY on the backend). Only Google's own endpoint qualifies, since the
+ *  server always calls Google with that key. */
+export const usesServerKey = (s: AiSettings) => s.provider === "gemini" && s.key.trim().length === 0 && (!s.baseUrl.trim() || s.baseUrl.includes(GEMINI_HOST));
+
+/** a hosted endpoint needs a key, or the server's Gemini key; a server on this machine may run without one */
+export const hasKey = (s: AiSettings) => s.key.trim().length > 0 || isLocal(s.baseUrl) || usesServerKey(s);
+
+function loginToken(): string | null {
+  try {
+    return typeof localStorage !== "undefined" ? localStorage.getItem("pickme3d_token") : null;
+  } catch {
+    return null;
+  }
+}
+
+/** the server's answer, or null when it did not send JSON (a proxy's error page, say) */
+async function readJson(res: Response): Promise<Record<string, any> | null> {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * One round trip through the backend's POST /ai/complete with the server's Gemini key. The route
+ * needs the visitor signed in, so the key cannot be used anonymously. Errors: "login" (no session
+ * or an expired one), "server" (the backend could not be reached), "long", "empty", or the
+ * backend's own message (for instance a server with no GEMINI_API_KEY set).
+ */
+async function completeOnServer(model: string, system: string, user: string, signal: AbortSignal | undefined, maxTokens: number): Promise<string> {
+  const token = loginToken();
+  if (!token) throw new Error("login");
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/ai/complete`, {
+      method: "POST",
+      signal,
+      headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+      body: JSON.stringify({ provider: "gemini", model, system, user, maxTokens }),
+    });
+  } catch (err) {
+    if (signal?.aborted || (err instanceof Error && err.name === "AbortError")) throw err;
+    throw new Error("server");
+  }
+  const j = await readJson(res);
+  if (res.status === 401) throw new Error("login");
+  if (!res.ok || !j || j.success === false) {
+    const detail = j?.error?.message ?? j?.message;
+    throw new Error(typeof detail === "string" && detail ? detail : `${res.status} ${res.statusText}`.trim());
+  }
+  if (j.finish_reason === "length") throw new Error("long");
+  if (typeof j.content === "string" && j.content.length > 0) return j.content;
+  throw new Error("empty");
+}
+
+/** Checks the settings with a one-word request: through the server for the server's key, or with
+ *  the author's own key. Never throws. On success `message` is the model; on failure it is an
+ *  error code of complete() ("login", "server", "model", "insecure"...) or the provider's detail. */
+export async function testAiConnection(s: AiSettings): Promise<{ success: boolean; message: string }> {
+  const model = s.model.trim();
+  if (!model) return { success: false, message: "model" };
+  if (!usesServerKey(s)) {
+    try {
+      await complete(s, "Reply with OK.", "Hi", undefined, 32);
+      return { success: true, message: model };
+    } catch (err) {
+      const m = err instanceof Error ? err.message : String(err);
+      /* the model answered, just not in full within the tiny budget: the key and model work */
+      if (m === "long" || m === "empty") return { success: true, message: model };
+      return { success: false, message: m };
+    }
+  }
+  const token = loginToken();
+  if (!token) return { success: false, message: "login" };
+  try {
+    const res = await fetch(`${API_BASE}/ai/test`, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+      body: JSON.stringify({ provider: "gemini", model }),
+    });
+    const j = await readJson(res);
+    if (res.status === 401) return { success: false, message: "login" };
+    if (res.ok && j?.success === true) return { success: true, message: model };
+    const detail = j?.message ?? j?.error?.message;
+    return { success: false, message: typeof detail === "string" && detail ? detail : `${res.status} ${res.statusText}`.trim() };
+  } catch {
+    return { success: false, message: "server" };
+  }
+}
 
 /** the key must not travel over plain http, except to this machine */
 export const isSecureUrl = (u: string) => /^https:\/\//i.test(u.trim()) || isLocal(u);
@@ -173,43 +264,11 @@ export async function complete(s: AiSettings, system: string, user: string, sign
   const model = s.model.trim();
   if (!model) throw new Error("model");
 
-  // In browser runtime, prefer the server-side Next.js AI proxy route to avoid CORS, extension blockers, and expose fallback keys
-  if (typeof window !== "undefined" && !isLocal(s.baseUrl) && !s.baseUrl.includes("example.test")) {
-    try {
-      const res = await fetch("/api/ai", {
-        method: "POST",
-        signal,
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          provider: s.provider,
-          baseUrl: s.baseUrl,
-          model,
-          key: s.key,
-          system,
-          user,
-          maxTokens,
-        }),
-      });
+  /* No key of the author's own: the PickMe3D backend makes the call with its GEMINI_API_KEY. (The
+   * site is a static export, so there is no Next.js /api route in production to do it.) */
+  if (usesServerKey(s)) return completeOnServer(model, system, user, signal, maxTokens);
 
-      if (res.ok) {
-        const j = await res.json();
-        if (j.stop_reason === "refusal") throw new Error("refusal");
-        if (j.finish_reason === "length" || j.stop_reason === "max_tokens") throw new Error("long");
-        if (typeof j.content === "string") return j.content;
-      } else {
-        const errJson = await res.json().catch(() => null);
-        if (errJson?.error?.message) {
-          throw new Error(errJson.error.message);
-        }
-      }
-    } catch (proxyErr: any) {
-      if (proxyErr?.message && !proxyErr.message.includes("Failed to fetch") && !proxyErr.message.includes("404")) {
-        throw proxyErr;
-      }
-      // If /api/ai failed to reach, proceed to direct client fetch
-    }
-  }
-
+  /* The author's own key goes straight from this browser to the provider, never through us. */
   const base = trimSlash(s.baseUrl);
   if (!isSecureUrl(base)) throw new Error("insecure");
   if (s.provider === "claude") {
