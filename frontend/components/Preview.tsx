@@ -573,7 +573,17 @@ function Tappable({
       onClick={item.kind === "animation" ? undefined : onPick ? () => onMenu?.(!menu) : onTap}
       style={{ cursor: item.kind === "animation" ? "default" : live || onValue ? "pointer" : "default", display: "flex", position: "relative", touchAction: item.kind === "animation" ? "auto" : scrollRow ? "pan-x" : "none" }}
     >
-      <M3Node item={item} palette={p} widths={widths} radii={radii} interactive={false} pressed={pressed && !onValue && !boxless} tabScroll={scrollRow ? tabScroll : undefined} />
+      <M3Node
+        item={item}
+        palette={p}
+        widths={widths}
+        radii={radii}
+        interactive={false}
+        pressed={pressed && !onValue && !boxless}
+        tabScroll={scrollRow ? tabScroll : undefined}
+        /* an animation takes its taps inside its own frame, which reports them back up */
+        onAnimationTap={item.kind === "animation" ? onTap : undefined}
+      />
       {live && !boxless && !segmented && TAP_LIT.includes(item.kind) && (
         <div
           aria-hidden

@@ -1741,6 +1741,8 @@ export type Item = {
   animationInteractive?: boolean;
   animationGlow?: boolean;
   animationDemo?: unknown[];
+  /** how long, in ms, a tap inside the animation plays before its action runs; 0 when unset */
+  animationTriggerDelay?: number;
   /** runtime-only: the editor is showing this FAB's menu open. Never written to JSON. */
   [fabOpen]?: boolean;
   /** runtime-only: the menu rises out of the part's top rather than dropping below it. */
@@ -2013,7 +2015,7 @@ export function actionsOf(it: Item): { slot: string; action: Action }[] {
 export const RIPPLE_KINDS: Kind[] = ["button", "iconButton", "chip", "fab", "extendedFab", "splitButton"];
 
 /** kinds a user can tap in the preview */
-export const TAPPABLE: Kind[] = ["button", "iconButton", "fab", "extendedFab", "chip", "listItem", "card", "image", "text", "splitButton", "radio", "datePicker", "timePicker"];
+export const TAPPABLE: Kind[] = ["button", "iconButton", "fab", "extendedFab", "chip", "listItem", "card", "image", "text", "splitButton", "radio", "datePicker", "timePicker", "animation"];
 
 /** palette roles a user may pick as a background */
 export type ColorToken =

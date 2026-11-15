@@ -71,8 +71,17 @@ import { CarouselBody, DatePickerBody, TimePickerBody } from "./Pickers";
 import { t, useLang } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
 import { railSelectedLabelColor } from "@/lib/color";
-import { DEMO_RUNNER_CODE } from "@/lib/ui-marketplace-data";
 import { getPurchasedTemplates } from "@/lib/purchased-animations";
+import {
+  ANIMATION_SANDBOX,
+  REPLAY_ANIMATION_EVENT,
+  TOGGLE_LIVE_ANIMATION_EVENT,
+  buildAnimationDocument,
+  isAnimationTapMessage,
+  isButtonAnimation,
+  normalizeAnimationSpeed,
+  normalizeTriggerDelay,
+} from "@/lib/animationItem";
 
 /** weight of a heading or label: heavier under the emphasized type setting */
 const useWeight = () => {
@@ -878,7 +887,237 @@ function FabMenuContent({ item, p, shown = true }: { item: Item; p: Palette; sho
   );
 }
 
-function Body({ item, p, tabScroll, menuShown, interactive, dragging }: { item: Item; p: Palette; tabScroll?: number; menuShown?: boolean; interactive?: boolean; dragging?: boolean }) {
+/**
+ * A marketplace animation, running in its own sandboxed frame. The page is rebuilt only when
+ * something it is made of changes, and a replay request from the editor remounts the frame so
+ * the animation starts over.
+ */
+function AnimationBody({
+  item,
+  p,
+  interactive,
+  dragging,
+  onTap,
+}: {
+  item: Item;
+  p: Palette;
+  interactive?: boolean;
+  dragging?: boolean;
+  /** runs the part's action; given only where a tap should lead somewhere (the preview) */
+  onTap?: () => void;
+}) {
+  const lang = useLang();
+  const [replay, setReplay] = useState(0);
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  useEffect(() => {
+    const onReplay = (e: Event) => {
+      if ((e as CustomEvent<{ id?: string }>).detail?.id === item.id) setReplay((n) => n + 1);
+    };
+    window.addEventListener(REPLAY_ANIMATION_EVENT, onReplay);
+    return () => window.removeEventListener(REPLAY_ANIMATION_EVENT, onReplay);
+  }, [item.id]);
+
+  /* A tap inside the frame never reaches this page as a click, so the frame posts it instead.
+     Only this part's own frame is listened to, and a tap waits out the delay the author set so
+     the animation is seen before the screen changes; taps during that wait are not queued. */
+  const tapRef = useRef(onTap);
+  useEffect(() => {
+    tapRef.current = onTap;
+  });
+  const delay = normalizeTriggerDelay(item.animationTriggerDelay);
+  const hasTap = Boolean(onTap);
+  useEffect(() => {
+    if (!hasTap) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const onMessage = (e: MessageEvent) => {
+      const frame = frameRef.current;
+      if (!frame || e.source !== frame.contentWindow || !isAnimationTapMessage(e.data)) return;
+      if (timer !== null) return;
+      if (delay === 0) {
+        tapRef.current?.();
+        return;
+      }
+      timer = setTimeout(() => {
+        timer = null;
+        tapRef.current?.();
+      }, delay);
+    };
+    window.addEventListener("message", onMessage);
+    return () => {
+      window.removeEventListener("message", onMessage);
+      if (timer !== null) clearTimeout(timer);
+    };
+  }, [hasTap, delay]);
+
+  const title = item.label || "Animation";
+  const button = isButtonAnimation(item.animationId, item.supporting);
+  const dark = Boolean(p.key?.toLowerCase().includes("dark")) || p.surface === "#141218" || p.surface === "#000000";
+  const color = item.animationColor || p.primary;
+  const label = item.animationText || item.label || "";
+  const speed = normalizeAnimationSpeed(item.animationSpeed ?? 1);
+  const glow = item.animationGlow !== false;
+  const live = Boolean(item.animationInteractive);
+  /* the frame reports taps whenever the part leads somewhere, so an exported copy of it does too */
+  const reportTaps = Boolean(item.action);
+
+  /* a part saved before its demo was copied onto it falls back to the purchased template's */
+  const demo = useMemo(() => {
+    if (Array.isArray(item.animationDemo) && item.animationDemo.length > 0) return item.animationDemo;
+    if (!item.animationId) return null;
+    return getPurchasedTemplates().find((tpl) => tpl.id === item.animationId)?.demo ?? null;
+  }, [item.animationDemo, item.animationId]);
+
+  const srcDoc = useMemo(
+    () =>
+      buildAnimationDocument({
+        html: item.animationHtml || "",
+        js: item.animationJs || "",
+        demo,
+        dark,
+        color: item.animationColor,
+        fallbackColor: p.primary,
+        onSurface: p.onSurface,
+        label,
+        speed,
+        glow,
+        button,
+        reportTaps,
+      }),
+    [item.animationHtml, item.animationJs, item.animationColor, demo, dark, p.primary, p.onSurface, label, speed, glow, button, reportTaps],
+  );
+
+  /* while the part is carried, a light stand-in keeps the drag smooth instead of reloading the frame */
+  if (dragging) {
+    return (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          borderRadius: button ? 28 : 16,
+          background: `linear-gradient(135deg, ${color}, color-mix(in srgb, ${color} 65%, #38bdf8))`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 10,
+          padding: "0 18px",
+          color: "#ffffff",
+          boxShadow: `0 14px 34px color-mix(in srgb, ${color} 50%, transparent)`,
+          border: "1.5px solid rgba(255,255,255,0.45)",
+          fontFamily: "system-ui, sans-serif",
+          fontWeight: 700,
+          fontSize: 14,
+          letterSpacing: "0.2px",
+          transform: "translateZ(0)",
+          willChange: "transform",
+        }}
+      >
+        <span className="msr" style={{ fontSize: 20 }}>auto_awesome</span>
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label || title}</span>
+      </div>
+    );
+  }
+
+  const toggleLive = () => window.dispatchEvent(new CustomEvent(TOGGLE_LIVE_ANIMATION_EVENT, { detail: { id: item.id } }));
+
+  return (
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        position: "relative",
+        background: "transparent",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+        borderRadius: button ? 28 : 16,
+        boxShadow: interactive && live ? "0 0 0 2px #22c55e, 0 8px 24px rgba(34,197,94,0.22)" : undefined,
+        transition: "box-shadow 0.2s ease",
+      }}
+    >
+      {srcDoc ? (
+        <>
+          <iframe
+            key={replay}
+            ref={frameRef}
+            /* read by an exported prototype, which runs the action itself */
+            data-tap-delay={reportTaps && delay > 0 ? delay : undefined}
+            srcDoc={srcDoc}
+            scrolling="no"
+            sandbox={ANIMATION_SANDBOX}
+            tabIndex={-1}
+            style={{
+              width: "100%",
+              height: "100%",
+              border: "none",
+              overflow: "hidden",
+              pointerEvents: !interactive || live ? "auto" : "none",
+              background: "transparent",
+              willChange: "transform",
+              transform: "translateZ(0)",
+            }}
+            title={title}
+          />
+          {/* live on the canvas: the frame takes the clicks, and this badge is the way back to editing */}
+          {interactive && live && (
+            <button
+              type="button"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleLive();
+              }}
+              title={t("animLiveExitTitle", lang)}
+              aria-label={t("animLiveExitTitle", lang)}
+              style={{
+                position: "absolute",
+                top: 6,
+                right: 8,
+                zIndex: 10,
+                background: "rgba(34, 197, 94, 0.95)",
+                color: "#000000",
+                fontSize: 9,
+                fontWeight: 800,
+                padding: "2px 7px",
+                border: "none",
+                borderRadius: 12,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                boxShadow: "0 2px 8px rgba(34, 197, 94, 0.4)",
+                letterSpacing: "0.5px",
+                userSelect: "none",
+              }}
+            >
+              <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#000" }} />
+              LIVE
+              <span className="msr" style={{ fontSize: 11 }}>close</span>
+            </button>
+          )}
+          {/* in edit mode a clear cover takes the pointer, so the part is selected and dragged like any other */}
+          {interactive && !live && (
+            <div
+              aria-hidden
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                toggleLive();
+              }}
+              style={{ position: "absolute", inset: 0, cursor: "grab", zIndex: 2, background: "transparent" }}
+              title={t("animOverlayHint", lang)}
+            />
+          )}
+        </>
+      ) : (
+        <div style={{ display: "grid", placeItems: "center", height: "100%", color: p.onSurfaceVariant, fontSize: 12 }}>
+          Animation #{item.animationId || ""}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Body({ item, p, tabScroll, menuShown, interactive, dragging, onAnimationTap }: { item: Item; p: Palette; tabScroll?: number; menuShown?: boolean; interactive?: boolean; dragging?: boolean; onAnimationTap?: () => void }) {
   const lang = useLang();
   const w = useWeight();
   const hasLabel = item.label.trim().length > 0;
@@ -888,405 +1127,8 @@ function Body({ item, p, tabScroll, menuShown, interactive, dragging }: { item: 
   if (MEASURED.includes(item.kind)) return <MeasuredContent item={item} p={p} />;
 
   switch (item.kind) {
-    case "animation": {
-      const title = item.label || "Animation Component";
-      const cat = item.supporting || "Buttons";
-      let html = item.animationHtml || "";
-      let js = item.animationJs || "";
-      const isSingleButton =
-        item.animationId === "001" ||
-        item.animationId === "002" ||
-        (item.animationId !== "003" && item.animationId !== "004" && item.animationId !== "005" && (cat.toLowerCase().includes("button") || title.toLowerCase().includes("button")));
-      const isDark = p.key?.toLowerCase().includes("dark") || p.surface === "#141218" || p.surface === "#000000";
-      const themeAttr = isDark ? "dark" : "light";
-      const customColor = item.animationColor || p.primary;
-      const customLabel = item.animationText || item.label || "";
-      const speed = item.animationSpeed ?? 1;
-      const glow = item.animationGlow !== false;
-      const isInteractiveOnCanvas = Boolean(item.animationInteractive);
-
-      // Siêu mượt: Khi đang kéo thả (dragging), hiển thị bản xem trước GPU cực nhẹ không tải lại iframe để đảm bảo 120 FPS
-      if (dragging) {
-        return (
-          <div
-            style={{
-              width: "100%",
-              height: "100%",
-              borderRadius: isSingleButton ? 28 : 16,
-              background: `linear-gradient(135deg, ${customColor}, color-mix(in srgb, ${customColor} 65%, #38bdf8))`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 10,
-              padding: "0 18px",
-              color: "#ffffff",
-              boxShadow: `0 14px 34px color-mix(in srgb, ${customColor} 50%, transparent)`,
-              border: "1.5px solid rgba(255,255,255,0.45)",
-              fontFamily: "system-ui, sans-serif",
-              fontWeight: 700,
-              fontSize: 14,
-              letterSpacing: "0.2px",
-              transform: "translateZ(0)",
-              willChange: "transform",
-            }}
-          >
-            <span className="msr" style={{ fontSize: 20 }}>auto_awesome</span>
-            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {customLabel || title}
-            </span>
-          </div>
-        );
-      }
-
-      // Dịch tất cả các chuỗi tiếng Hàn còn sót lại sang tiếng Anh
-      const KR_REPLACEMENTS: [string | RegExp, string][] = [
-        [/프로젝트 시작하기/g, "Start a project"],
-        [/준비됐어요/g, "You’re all set"],
-        [/계속하기/g, "Continue"],
-        [/저장했어요/g, "Saved"],
-        [/저장하는 중/g, "Saving"],
-        [/길게 눌러 브랜드 시안 v3\.fig 삭제/g, "Hold to delete Brand concept v3.fig"],
-        [/브랜드 시안 v3\.fig/g, "Brand concept v3.fig"],
-        [/48\.2 MB · 어제 수정/g, "48.2 MB · Edited yesterday"],
-        [/길게 눌러 삭제/g, "Hold to delete"],
-        [/파일을 삭제했어요/g, "File deleted"],
-        [/되돌리기/g, "Undo"],
-        [/삭제하려면 길게 누르세요/g, "Hold to delete"],
-        [/삭제됨/g, "Deleted"],
-        [/2026 분기 리포트 다운로드/g, "Download the 2026 quarterly report"],
-        [/2026 분기 리포트\.pdf/g, "2026 quarterly report.pdf"],
-        [/다운로드/g, "Download"],
-        [/남은 시간 계산 중/g, "Estimating time left"],
-        [/다운로드 폴더에 저장됨/g, "Saved to Downloads"],
-        [/다운로드 시작/g, "Download started"],
-        [/다운로드 완료/g, "Download complete"],
-        [/다운로드를 취소했어요/g, "Download canceled"],
-        [/보내기/g, "Send"],
-        [/전송 중/g, "Sending"],
-        [/보내는 중/g, "Sending"],
-        [/전송됨/g, "Sent"],
-        [/전송 완료/g, "Sent"],
-        [/민지/g, "Minji"],
-        [/지금 활동 중/g, "Active now"],
-        [/사진 보내 줄 수 있어\?/g, "Can you send me the photo?"],
-        [/구독하기/g, "Subscribe"],
-        [/구독 중/g, "Subscribed"],
-        [/복사됨/g, "Copied"],
-        [/복사/g, "Copy"],
-        [/재생/g, "Play"],
-        [/일시정지/g, "Pause"],
-        [/버튼/g, "Button"],
-        [/LUCIAN/g, "HIẾU THUẬN"],
-        [/LucianLabs/gi, "Hiếu Thuận"],
-        [/Lucian/g, "Hiếu Thuận"],
-      ];
-      for (const [from, to] of KR_REPLACEMENTS) {
-        html = html.replace(from, to);
-        js = js.replace(from, to);
-      }
-
-      // Demo sequence to showcase animation continuously (same as UI Marketplace)
-      const demoData = item.animationDemo && item.animationDemo.length > 0
-        ? item.animationDemo
-        : (item.animationId ? getPurchasedTemplates().find((t) => t.id === item.animationId)?.demo : null);
-
-      const demoScript = Array.isArray(demoData) && demoData.length > 0
-        ? `<script>window.__UX_DEMO__ = ${JSON.stringify(demoData)};<\/script><script>${DEMO_RUNNER_CODE}<\/script>`
-        : "";
-
-      const srcDoc = html
-        ? `<!DOCTYPE html>
-<html data-theme="${themeAttr}">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="stylesheet" href="/ux-tokens.css">
-<script>
-(function() {
-  try {
-    window.focus = function() {};
-    window.scrollTo = function() {};
-    window.scrollBy = function() {};
-    if (window.Element && window.Element.prototype) {
-      window.Element.prototype.scrollIntoView = function() {};
-    }
-    HTMLElement.prototype.focus = function() {};
-    if (window.HTMLInputElement && HTMLInputElement.prototype) {
-      HTMLInputElement.prototype.select = function() {};
-    }
-  } catch(e) {}
-})();
-<\/script>
-<style>
-:root {
-  --anim-speed: ${speed};
-  --ux-spring: cubic-bezier(.34, 1.45, .64, 1);
-  --ux-ease: cubic-bezier(.2, .8, .2, 1);
-  --ux-mint: #119C72;
-  --ux-ink: ${isDark ? "#F4F0E8" : "#16151B"};
-  --ux-ink-2: ${isDark ? "rgba(244,240,232,.68)" : "#57535F"};
-  --ux-ink-3: ${isDark ? "rgba(244,240,232,.42)" : "#8E8A97"};
-  --ux-line: ${isDark ? "rgba(255,255,255,.08)" : "rgba(22,21,27,.09)"};
-  --ux-line-2: ${isDark ? "rgba(255,255,255,.16)" : "rgba(22,21,27,.17)"};
-  --ux-surface: ${isDark ? "#13141C" : "#FFFFFF"};
-  --ux-surface-2: ${isDark ? "#1A1B25" : "#F5F3EF"};
-  --ux-page: transparent;
-  --ux-accent: ${customColor} !important;
-  --color-primary: ${customColor} !important;
-  --blob: linear-gradient(135deg, ${customColor}, color-mix(in srgb, ${customColor} 60%, #38bdf8)) !important;
-  --ux-grad: linear-gradient(135deg, ${customColor}, color-mix(in srgb, ${customColor} 60%, #38bdf8)) !important;
-}
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent !important;
-  color: ${p.onSurface};
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  overflow: hidden !important;
-  user-select: none;
-  -webkit-font-smoothing: antialiased;
-  scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
-}
-::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
-}
-* {
-  scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
-}
-.ux {
-  transform-origin: center center;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  will-change: transform;
-  backface-visibility: hidden;
-  transform: translateZ(0);
-}
-${
-  isSingleButton
-    ? `
-.ux {
-  width: 100% !important;
-  height: 100% !important;
-  min-height: 0 !important;
-  max-height: none !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-.u001-blobs {
-  display: none !important;
-}
-.u001-float {
-  animation: u001-float-anim calc(4.5s / ${speed}) cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
-  will-change: transform;
-  backface-visibility: hidden;
-}
-.u001-sheen {
-  animation: u001-shimmer-anim calc(3.8s / ${speed}) cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
-  will-change: transform;
-  backface-visibility: hidden;
-}
-.u001-btn {
-  --g1: color-mix(in srgb, ${customColor} 25%, rgba(255,255,255,0.85));
-  --g2: color-mix(in srgb, ${customColor} 45%, rgba(255,255,255,0.55));
-  --g3: color-mix(in srgb, ${customColor} 65%, rgba(255,255,255,0.7));
-  box-shadow: inset 0 1.5px 0 rgba(255,255,255,.8), inset 0 -12px 20px -14px rgba(255,255,255,.8), inset 0 0 0 1px rgba(255,255,255,.45), 0 20px 36px -16px color-mix(in srgb, ${customColor} ${glow ? "45%" : "20%"}, transparent) !important;
-  transition: transform 0.2s cubic-bezier(0.34, 1.45, 0.64, 1), box-shadow 0.2s ease !important;
-  will-change: transform, box-shadow;
-}
-.u002-glow {
-  opacity: 0.55 !important;
-  animation: u002-glow-pulse calc(3.5s / ${speed}) cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
-  background: linear-gradient(135deg, ${customColor}, color-mix(in srgb, ${customColor} 60%, #38bdf8)) !important;
-  will-change: transform, opacity, filter;
-  backface-visibility: hidden;
-}
-.u002-fill {
-  background: linear-gradient(135deg, ${customColor}, color-mix(in srgb, ${customColor} 60%, #38bdf8)) !important;
-}
-`
-    : ""
-}
-</style>
-</head>
-<body>
-${html}
-<script>${js}<\/script>
-${demoScript}
-<script>
-(function() {
-  // Cập nhật chữ tùy chỉnh vào nút nếu có
-  var customText = ${JSON.stringify(customLabel)};
-  if (customText) {
-    function applyCustomText() {
-      var u002 = document.querySelector('.u002-txt');
-      if (u002) {
-        var s1 = u002.querySelector('span:first-child');
-        if (s1) { s1.textContent = customText; return; }
-      }
-      var u001 = document.querySelector('.u001-txt');
-      if (u001) {
-        u001.textContent = customText;
-        return;
-      }
-      var txtEl = document.querySelector('[class*="-txt"], button > span:not([class*="orb"]):not([class*="icon"]):not([class*="spin"]):not([class*="sheen"]), button');
-      if (txtEl) {
-        var inner = txtEl.querySelector('span:first-child');
-        if (inner) inner.textContent = customText;
-        else txtEl.textContent = customText;
-      }
-    }
-    applyCustomText();
-    setTimeout(applyCustomText, 50);
-  }
-
-  // Tự động scale cho vừa vặn container, tuyệt đối không bao giờ xuất hiện thanh cuộn
-  function fit() {
-    var el = document.querySelector('.ux');
-    if (!el) return;
-    ${
-      isSingleButton
-        ? `
-    var btn = el.querySelector('button') || el;
-    var btnW = btn.offsetWidth || 252;
-    var btnH = btn.offsetHeight || 78;
-    var winW = window.innerWidth;
-    var winH = window.innerHeight;
-    var s = Math.min(1, winW / Math.max(btnW, 1), winH / Math.max(btnH, 1));
-    if (s < 0.98) {
-      el.style.transform = 'translate3d(0, 0, 0) scale(' + s.toFixed(3) + ')';
-    } else {
-      el.style.transform = 'translate3d(0, 0, 0)';
-    }
-    el.style.transformOrigin = 'center center';
-    `
-        : `
-    var w = el.offsetWidth || 300;
-    var h = el.offsetHeight || 170;
-    var winW = window.innerWidth;
-    var winH = window.innerHeight;
-    var s = Math.min(1, winW / Math.max(w, 1), winH / Math.max(h, 1));
-    el.style.transform = 'translate3d(0, 0, 0) scale(' + s.toFixed(3) + ')';
-    el.style.transformOrigin = 'center center';
-    `
-    }
-  }
-  window.addEventListener('resize', fit);
-  fit();
-  setTimeout(fit, 80);
-})();
-<\/script>
-</body>
-</html>`
-        : "";
-
-      return (
-        <div
-          style={{
-            width: "100%",
-            height: "100%",
-            position: "relative",
-            background: "transparent",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            overflow: "hidden",
-            borderRadius: isSingleButton ? 28 : 16,
-            boxShadow: isInteractiveOnCanvas
-              ? "0 0 0 2px #22c55e, 0 8px 24px rgba(34,197,94,0.22)"
-              : undefined,
-            transition: "box-shadow 0.2s ease",
-          }}
-        >
-          {srcDoc ? (
-            <>
-              <iframe
-                srcDoc={srcDoc}
-                scrolling="no"
-                sandbox="allow-scripts allow-same-origin"
-                tabIndex={-1}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  border: "none",
-                  overflow: "hidden",
-                  pointerEvents: (!interactive || isInteractiveOnCanvas) ? "auto" : "none",
-                  background: "transparent",
-                  willChange: "transform",
-                  transform: "translateZ(0)",
-                }}
-                title={title}
-              />
-              {/* Badge thông báo trạng thái đang tương tác trực tiếp */}
-              {interactive && isInteractiveOnCanvas && (
-                <div
-                  aria-hidden
-                  style={{
-                    position: "absolute",
-                    top: 6,
-                    right: 8,
-                    zIndex: 10,
-                    background: "rgba(34, 197, 94, 0.95)",
-                    color: "#000000",
-                    fontSize: 9,
-                    fontWeight: 800,
-                    padding: "2px 7px",
-                    borderRadius: 12,
-                    pointerEvents: "none",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 4,
-                    boxShadow: "0 2px 8px rgba(34, 197, 94, 0.4)",
-                    letterSpacing: "0.5px",
-                    userSelect: "none",
-                  }}
-                >
-                  <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#000" }} />
-                  LIVE
-                </div>
-              )}
-              {/* Overlay trong suốt khi ở chế độ canvas edit để nhấp chọn và kéo thả node; nhấp đúp để bật tương tác trực tiếp */}
-              {interactive && !isInteractiveOnCanvas && (
-                <div
-                  aria-hidden
-                  onDoubleClick={(e) => {
-                    e.stopPropagation();
-                    window.dispatchEvent(new CustomEvent("pm:toggle_interactive", { detail: { id: item.id } }));
-                  }}
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    cursor: "grab",
-                    zIndex: 2,
-                    background: "transparent",
-                  }}
-                  title="Nhấp để chọn • Kéo để di chuyển • Nhấp đúp để bật tương tác trực tiếp"
-                />
-              )}
-            </>
-          ) : (
-            <div style={{ display: "grid", placeItems: "center", height: "100%", color: p.onSurfaceVariant, fontSize: 12 }}>
-              Animation #{item.animationId || ""}
-            </div>
-          )}
-        </div>
-      );
-    }
+    case "animation":
+      return <AnimationBody item={item} p={p} interactive={interactive} dragging={dragging} onTap={onAnimationTap} />;
 
     case "bottomSheet":
       return (
@@ -2218,6 +2060,7 @@ export function M3Node({
   instant,
   ripple,
   lit,
+  onAnimationTap,
 }: {
   item: Item;
   palette: Palette;
@@ -2226,6 +2069,8 @@ export function M3Node({
   pressed?: boolean;
   dragging?: boolean;
   selected?: boolean;
+  /** an animation part was tapped inside its frame; the preview passes the part's action */
+  onAnimationTap?: () => void;
   /** the part sits in a connected run (non-free group, or a hidden run inside a free group) */
   inRun?: boolean;
   /** the width is being dragged on the canvas: it must follow the pointer with no easing */
@@ -2341,7 +2186,7 @@ export function M3Node({
       }}
     >
       <RippleCtx.Provider value={{ list: shown, color: contentColor(drawn, palette) }}>
-        <Body item={drawn} p={palette} tabScroll={tabScroll} menuShown={menu.open} interactive={interactive} dragging={dragging} />
+        <Body item={drawn} p={palette} tabScroll={tabScroll} menuShown={menu.open} interactive={interactive} dragging={dragging} onAnimationTap={onAnimationTap} />
         {/* a part drawn as one shape is lit through its own box; one made of several -- a split
             button -- carries the light inside each of them instead */}
         {(lights || !!carried) && item.kind !== "splitButton" && <RippleShape part={null} />}

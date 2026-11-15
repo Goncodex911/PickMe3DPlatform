@@ -5,10 +5,13 @@ import {
   AiSettings,
   Provider,
   PROVIDERS,
+  hasKey,
   loadAiSettings,
   loadProviderSettings,
   providerSpec,
   saveAiSettings,
+  testAiConnection,
+  usesServerKey,
 } from "@/lib/ai";
 import s from "@/app/settings/settings.module.css";
 
@@ -37,6 +40,8 @@ export default function SettingsAI() {
   const activeConfig = config;
   const selectedProvider = providerSpec(activeConfig.provider);
   const hasSavedKey = Boolean(activeConfig.key.trim());
+  /* Gemini with the key left blank runs on the PickMe3D server's key */
+  const serverKey = usesServerKey(activeConfig);
 
   function selectProvider(provider: Provider) {
     setConfig(loadProviderSettings(provider));
@@ -51,7 +56,7 @@ export default function SettingsAI() {
   }
 
   async function testConnection() {
-    if (!activeConfig.key.trim() || !activeConfig.model.trim()) {
+    if (!hasKey(activeConfig) || !activeConfig.model.trim()) {
       showFeedback("Nhập API key và model trước khi kiểm tra.", "error");
       return;
     }
@@ -60,22 +65,19 @@ export default function SettingsAI() {
     setMessage("");
     setFeedbackTone("");
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api"}/ai/test`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(activeConfig),
-          signal: AbortSignal.timeout(30000),
-        },
-      );
-      const result = await response.json();
-      showFeedback(
-        result.message || result.error || "Không thể kiểm tra kết nối.",
-        response.ok && result.success !== false ? "success" : "error",
-      );
-    } catch {
-      showFeedback("Không thể kết nối máy chủ AI. Vui lòng thử lại.", "error");
+      const result = await testAiConnection(activeConfig);
+      if (result.success) {
+        showFeedback(
+          serverKey ? `Kết nối thành công với ${result.message} bằng key của máy chủ.` : `Kết nối thành công với ${result.message}.`,
+          "success",
+        );
+      } else if (result.message === "login") {
+        showFeedback("Đăng nhập để dùng key Gemini của máy chủ.", "error");
+      } else if (result.message === "server") {
+        showFeedback("Không thể kết nối máy chủ AI. Vui lòng thử lại.", "error");
+      } else {
+        showFeedback(result.message || "Không thể kiểm tra kết nối.", "error");
+      }
     } finally {
       setTesting(false);
     }
@@ -111,8 +113,8 @@ export default function SettingsAI() {
             <p>Chọn nhà cung cấp và cấu hình key.</p>
           </div>
         </div>
-        <span className={s.badge} data-ready={hasSavedKey}>
-          {hasSavedKey ? "Đã nhập key" : "Chưa có key"}
+        <span className={s.badge} data-ready={hasSavedKey || serverKey}>
+          {hasSavedKey ? "Đã nhập key" : serverKey ? "Dùng key máy chủ" : "Chưa có key"}
         </span>
       </header>
 

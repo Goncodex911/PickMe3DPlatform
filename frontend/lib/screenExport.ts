@@ -34,6 +34,36 @@ export const safeName = (name: string) =>
     .replace(/^-+|-+$/g, "")
     .slice(0, 80) || "screen";
 
+/**
+ * Plain JS every exported prototype runs. An animation part plays inside a sandboxed frame, so a
+ * tap on it never reaches this page as a click: the frame posts "pm:animation-tap" instead. The
+ * tap is handed to the part's own [data-action-to] box as a click, after the wait its author set
+ * (data-tap-delay on the frame), so the prototype's usual navigation takes it from there. Only a
+ * frame on this page counts, and taps during the wait are not queued.
+ */
+export const ANIMATION_TAP_BRIDGE = `(function () {
+  if (typeof window === "undefined" || window.__pmAnimationTapBridge) return;
+  window.__pmAnimationTapBridge = true;
+  var waiting = typeof WeakSet === "function" ? new WeakSet() : null;
+  window.addEventListener("message", function (e) {
+    var data = e.data;
+    if (!data || typeof data !== "object" || data.type !== "pm:animation-tap") return;
+    var frames = document.getElementsByTagName("iframe");
+    for (var i = 0; i < frames.length; i++) {
+      if (frames[i].contentWindow !== e.source) continue;
+      var box = frames[i].closest("[data-action-to]");
+      if (!box || (waiting && waiting.has(box))) return;
+      var wait = Math.max(0, Math.min(5000, Number(frames[i].getAttribute("data-tap-delay")) || 0));
+      if (waiting) waiting.add(box);
+      setTimeout(function () {
+        if (waiting) waiting.delete(box);
+        box.click();
+      }, wait);
+      return;
+    }
+  });
+})();`;
+
 export function download(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -233,7 +263,8 @@ body { margin: 0; min-height: 100vh; background: #0b0e14; font-family: 'Roboto',
       window.addEventListener("keydown", e => {
         if (e.key === "Backspace" || e.key === "ArrowLeft") goBack();
       });
-    })();`;
+    })();
+    ${ANIMATION_TAP_BRIDGE}`;
 
     return `<!doctype html>
 <html lang="vi">
@@ -269,6 +300,9 @@ body { margin: 0; min-height: 100vh; background: #0b0e14; font-family: 'Roboto',
     return `import React, { useState, useEffect } from 'react';
 
 const SCREENS = ${screensArray};
+
+// An animation's tap arrives as a message from its frame; it is handed on as a click.
+${ANIMATION_TAP_BRIDGE}
 
 export default function App() {
   const [currentId, setCurrentId] = useState(${JSON.stringify(initialId)});
@@ -566,6 +600,11 @@ body {
 
 [data-action-to] * {
   pointer-events: none !important;
+}
+
+/* an animation part plays its own tap inside its frame, then hands the tap on (see the bridge) */
+[data-action-to] iframe {
+  pointer-events: auto !important;
 }
 
 [data-action-to]:hover {
@@ -944,7 +983,8 @@ body {
       toggleHotspots();
     }
   });
-})();`;
+})();
+${ANIMATION_TAP_BRIDGE}`;
 
   const readme = `# ${payload.projectName} - Interactive Prototype Export
 
@@ -1150,6 +1190,9 @@ const SCREENS = ${JSON.stringify(
     null,
     2
   )};
+
+// An animation's tap arrives as a message from its frame; it is handed on as a click.
+${ANIMATION_TAP_BRIDGE}
 
 export default function App() {
   const [currentId, setCurrentId] = useState(${JSON.stringify(initialId)});
