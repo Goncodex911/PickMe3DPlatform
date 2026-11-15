@@ -1,3 +1,5 @@
+import { COVER_ID_KEY, DOC_STORAGE_KEY, EDIT_ID_KEY, EDIT_ITEM_KEY, buildCoverDoc } from "./editorSession";
+
 export interface TemplateReview {
   user: string;
   userName: string;
@@ -235,23 +237,22 @@ export function toggleFollowAuthor(authorKey: string): boolean {
  */
 export function prepareEditorSession(template: TemplateItem, isEditMode: boolean = false) {
   if (typeof window === "undefined" || !template) return;
-  const targetDoc = isEditMode
-    ? template.docData
-    : {
-        ...template.docData,
-        title: `${template.title} (Cover)`,
-      };
+  const targetDoc = isEditMode ? template.docData : buildCoverDoc(template);
   try {
     if (targetDoc) {
-      localStorage.setItem("m3e:doc", JSON.stringify(targetDoc));
+      localStorage.setItem(DOC_STORAGE_KEY, JSON.stringify(targetDoc));
     }
     const id = template._id || template.id;
     if (isEditMode && id) {
-      localStorage.setItem("pickme3d_edit_id", id);
-      localStorage.setItem("pickme3d_edit_item", JSON.stringify(template));
+      localStorage.setItem(EDIT_ID_KEY, id);
+      localStorage.setItem(EDIT_ITEM_KEY, JSON.stringify(template));
+      localStorage.removeItem(COVER_ID_KEY);
     } else {
-      localStorage.removeItem("pickme3d_edit_id");
-      localStorage.removeItem("pickme3d_edit_item");
+      localStorage.removeItem(EDIT_ID_KEY);
+      localStorage.removeItem(EDIT_ITEM_KEY);
+      // Marks the working copy as this template's cover, so the editor knows it may keep it.
+      if (id && targetDoc) localStorage.setItem(COVER_ID_KEY, id);
+      else localStorage.removeItem(COVER_ID_KEY);
     }
   } catch {}
 }

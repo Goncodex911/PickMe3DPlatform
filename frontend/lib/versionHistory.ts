@@ -1,3 +1,5 @@
+import { isDraftVersionId } from "./editorSession";
+
 export interface VersionStats {
   frameCount: number;
   nodeCount: number;
@@ -111,7 +113,7 @@ export async function fetchRemoteVersions(
   templateId: string,
   token?: string | null
 ): Promise<DesignVersionItem[]> {
-  if (!templateId || templateId === "draft") {
+  if (isDraftVersionId(templateId)) {
     return getLocalVersions(templateId);
   }
 
@@ -171,7 +173,7 @@ export async function createRemoteVersion(
   // Always create a local copy first for resilience
   const localVer = saveLocalVersion(templateId, docData, versionName, description, isSnapshot);
 
-  if (!templateId || templateId === "draft") {
+  if (isDraftVersionId(templateId)) {
     return localVer;
   }
 
@@ -218,7 +220,7 @@ export async function rollbackRemoteVersion(
   );
 
   // If local version ID or offline/draft
-  if (versionId.startsWith("local_v_") || !templateId || templateId === "draft") {
+  if (versionId.startsWith("local_v_") || isDraftVersionId(templateId)) {
     const locals = getLocalVersions(templateId);
     const target = locals.find((v) => v._id === versionId);
     if (!target || !target.docData) {
