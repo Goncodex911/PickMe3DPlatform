@@ -11,11 +11,11 @@ export default function PromoCheckout({
   busy,
   onBuy,
 }: {
-  planId: "pro" | "studio";
+  planId: "pro";
   name: string;
   price: number;
   busy: boolean;
-  onBuy: (id: "pro" | "studio", code: string) => void;
+  onBuy: (id: "pro", code: string) => void;
 }) {
   const [code, setCode] = useState("");
   const [quote, setQuote] = useState<PaymentQuote | null>(null);

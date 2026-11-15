@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import Link from "next/link";
+import { fetchAccount } from "@/lib/paymentService";
 import dynamic from "next/dynamic";
 import { BlueprintProject, CASA_SERRA_PRESET, NHA_LAU2_PRESET, TOWNHOUSE_PRESET, APARTMENT_PRESET, RoomSpec } from "@/lib/floorplan-types";
 import { applyStyleToBlueprintProject } from "@/lib/floorplan-auto-staging";
@@ -45,6 +47,15 @@ export default function Blueprint3DStudioPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // The 3D blueprint studio is a Pro feature (Admin always has it). "checking" until the plan is known.
+  const [access, setAccess] = useState<"checking" | "allowed" | "locked">("checking");
+  useEffect(() => {
+    fetchAccount()
+      .then((acc) => setAccess(acc?.features?.blueprint3d ? "allowed" : "locked"))
+      .catch(() => setAccess("locked"));
+  }, []);
+  const allowed = access === "allowed";
+
   // 1. FILE UPLOAD: đọc ảnh rồi mở modal để AI quét thật (không đoán theo tên file)
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -53,6 +64,7 @@ export default function Blueprint3DStudioPage() {
   };
 
   const processFile = (file: File) => {
+    if (!allowed) return;
     setUploadError(null);
     if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
       setUploadError("Chỉ hỗ trợ ảnh PNG, JPG hoặc WEBP. Với PDF/CAD, hãy xuất bản vẽ ra ảnh trước.");
@@ -81,6 +93,7 @@ export default function Blueprint3DStudioPage() {
   // Drag and drop onto screen
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    if (!allowed) return;
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       processFile(e.dataTransfer.files[0]);
     }
@@ -156,7 +169,7 @@ export default function Blueprint3DStudioPage() {
           project={project}
           scrollProgress={scrollProgress}
           onScrollProgressChange={(p) => setScrollProgress(p)}
-          onUploadClick={() => fileInputRef.current?.click()}
+          onUploadClick={() => allowed && fileInputRef.current?.click()}
           onResetToDemo={handleResetToDemo}
           onSelectArchetype={handleSelectArchetype}
           onUpdateRoom={handleUpdateRoom}
@@ -186,6 +199,37 @@ export default function Blueprint3DStudioPage() {
             onApply={handleApplyFromModal}
             onClose={() => setInputModalProject(null)}
           />
+        </div>
+      )}
+
+      {/* Pro gate: the demo stays visible behind, but the studio cannot be used without the Pro plan */}
+      {access === "locked" && (
+        <div className="absolute inset-0 z-[60] flex items-center justify-center p-4 bg-[#ece5d8]/70 backdrop-blur-[3px]" role="dialog" aria-modal="true" aria-labelledby="bp-lock-title">
+          <div className="w-full max-w-md bg-white border border-neutral-300 shadow-[0_20px_60px_rgba(0,0,0,0.18)] p-7 space-y-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-neutral-900 flex items-center justify-center text-[#FF4D00] font-black text-sm">3D</div>
+              <div>
+                <p className="text-[10px] font-mono tracking-widest uppercase text-neutral-500">Gói Pro</p>
+                <h2 id="bp-lock-title" className="text-xl font-bold text-neutral-900">Bản vẽ 3D cần gói Pro</h2>
+              </div>
+            </div>
+            <p className="text-sm text-neutral-600 leading-relaxed">
+              Tải bản vẽ mặt bằng 2D lên để dựng mô hình 3D, đi bộ trong từng phòng và xuất phối cảnh AI 4K. Tính năng này dành cho tài khoản gói Pro.
+            </p>
+            <ul className="text-sm text-neutral-700 space-y-1.5">
+              <li className="flex gap-2"><span className="text-[#FF4D00]">✓</span>Chuyển bản vẽ 2D thành mô hình 3D</li>
+              <li className="flex gap-2"><span className="text-[#FF4D00]">✓</span>Tham quan từng phòng bằng cuộn chuột</li>
+              <li className="flex gap-2"><span className="text-[#FF4D00]">✓</span>Phối cảnh AI độ phân giải 4K</li>
+            </ul>
+            <div className="flex gap-2 pt-1">
+              <Link href="/pricing/" className="flex-1 inline-flex items-center justify-between px-5 py-3 bg-neutral-900 hover:bg-neutral-700 text-white text-sm font-semibold">
+                Nâng cấp lên Pro <span aria-hidden="true">↗</span>
+              </Link>
+              <Link href="/" className="inline-flex items-center px-5 py-3 border border-neutral-400 text-sm text-neutral-800 hover:bg-neutral-100">
+                Về trang chủ
+              </Link>
+            </div>
+          </div>
         </div>
       )}
     </div>

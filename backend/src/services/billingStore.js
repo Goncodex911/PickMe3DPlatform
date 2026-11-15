@@ -22,12 +22,17 @@ function publicAccount(account) {
     id: String(account.id),
     email: account.email || '',
     name: account.name || '',
+    // Admin owns Slide and 3D (BR-09): plan and quota checks are skipped for this role, no fake subscription.
+    role: account.role === 'admin' ? 'admin' : 'user',
     plan: plan.id,
     planExpiresAt: account.planExpiresAt || null,
     aiUsed: account.aiUsed || 0,
     aiLimit: plan.quotas.ai,
     quotas: plan.quotas,
     features: {
+      // Admin owns Slide and 3D (BR-09): every feature is on without a subscription.
+      aiSlides: account.role === 'admin' || plan.aiSlides,
+      blueprint3d: account.role === 'admin' || plan.blueprint3d,
       exportPptx: plan.exportPptx,
       privateDeck: plan.privateDeck,
       brandKit: plan.brandKit,
@@ -63,6 +68,9 @@ async function findDbUser(decoded) {
     user = await User.create({
       name: decoded.name || 'Designer',
       email,
+      role: 'user',
+      accountType: 'REGULAR',
+      creatorStatus: 'NONE',
     });
   }
   return user;
@@ -73,6 +81,7 @@ function accountFromUser(user) {
     id: user._id,
     email: user.email,
     name: user.name,
+    role: user.role,
     plan: user.plan || 'free',
     planExpiresAt: user.planExpiresAt,
     aiUsed: user.aiUsed,
@@ -164,6 +173,8 @@ function plainOrder(order) {
     planId: o.planId || null,
     months: o.months || 1,
     templateId: o.templateId || null,
+    productId: o.productId || '',
+    productTitle: o.productTitle || '',
     sellerId: o.sellerId || null,
     sellerType: o.sellerType || 'ADMIN',
     transactionSource: o.transactionSource || 'SUBSCRIPTION',
@@ -178,6 +189,15 @@ function plainOrder(order) {
     createdAt: o.createdAt || null,
     status: o.status,
     paidAt: o.paidAt || null,
+    currency: o.currency || 'VND',
+    expiresAt: o.expiresAt || null,
+    paymentMode: o.paymentMode || '',
+    checkoutUrl: o.checkoutUrl || '',
+    paidAmount: o.paidAmount ?? null,
+    gatewayReference: o.gatewayReference || '',
+    fulfillmentStatus: o.fulfillmentStatus || (o.status === 'PAID' ? 'DONE' : 'NONE'),
+    refund: o.refund || { status: 'NONE' },
+    statusHistory: o.statusHistory || [],
   };
 }
 

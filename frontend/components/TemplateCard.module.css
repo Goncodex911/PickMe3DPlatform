@@ -2,7 +2,8 @@
 .preview { position:relative; display:block; width:100%; aspect-ratio:4/3; border:0; padding:0; overflow:hidden; background:#252525; cursor:pointer; text-align:left; color:#fff; }
 .preview>img { width:100%; height:100%; object-fit:cover; transition:transform 300ms; }
 .preview:hover>img { transform:scale(1.03); }
-.category { position:absolute; top:16px; left:16px; padding:8px 12px; font-size:10px; letter-spacing:1px; text-transform:uppercase; background:#131313e6; color:#eee; }
+.badges { position:absolute; top:16px; left:16px; right:16px; display:flex; align-items:stretch; gap:6px; min-width:0; pointer-events:none; }
+.category { flex-shrink:0; padding:8px 12px; font-size:10px; letter-spacing:1px; text-transform:uppercase; background:#131313e6; color:#eee; }
 .view { position:absolute; bottom:16px; right:16px; display:flex; align-items:center; gap:20px; padding:12px 16px; background:#e7e7e7; color:#131313; font-size:12px; }
 .info { display:flex; flex-direction:column; flex:1; padding:22px; }
 .metrics { display:flex; flex-wrap:wrap; justify-content:space-between; gap:10px; font-size:10px; color:#aaa; margin-bottom:18px; }
@@ -19,3 +20,34 @@
 .use:hover { background:#fff; }
 .card button:focus-visible,.card a:focus-visible { outline:2px solid #fff; outline-offset:4px; }
 @media(prefers-reduced-motion:reduce) { .preview>img { transition:none; } }
+/* price-drop tag next to the category: owner note (scrolling when long) + percent, or "Giảm X%" */
+.promo { display:inline-flex; align-items:center; gap:8px; min-width:0; max-width:100%; padding:0 10px; font-size:10px; font-weight:600; letter-spacing:.4px; background:#e5484d; color:#fff; }
+.promo>span:first-child { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.promo>strong { flex-shrink:0; padding-left:8px; border-left:1px solid #ffffff59; font-weight:700; }
+.marquee { flex:1 1 auto; min-width:0; max-width:220px; overflow:hidden; white-space:nowrap; -webkit-mask-image:linear-gradient(90deg,transparent,#000 8px,#000 calc(100% - 8px),transparent); mask-image:linear-gradient(90deg,transparent,#000 8px,#000 calc(100% - 8px),transparent); }
+.marqueeTrack { display:inline-flex; animation:promoScroll 14s linear infinite; }
+.marqueeTrack>span { padding-right:32px; }
+.card:hover .marqueeTrack { animation-play-state:paused; }
+@keyframes promoScroll { from { transform:translateX(0); } to { transform:translateX(-50%); } }
+@media(prefers-reduced-motion:reduce) { .marqueeTrack { animation:none; } .marqueeTrack>span+span { display:none; } .marquee { text-overflow:ellipsis; } }
+/* price, bottom row between the author and the action */
+.price { display:flex; flex-direction:column; align-items:flex-end; gap:2px; margin-left:auto; line-height:1.1; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.price>strong { font-size:15px; font-weight:600; color:#fff; }
+.price>s { font-size:10px; color:#8a8a8a; }
+.price>.free { font-size:12px; font-weight:500; color:#aaa; }
+.bottom .use { margin-left:4px; }
+/* not bought: preview visible but not clickable */
+.previewLocked { cursor:default; }
+.previewLocked:hover>img { transform:none; }
+.lockNote { position:absolute; bottom:16px; right:16px; display:inline-flex; align-items:center; gap:6px; padding:10px 14px; background:#131313e6; color:#eee; font-size:11px; }
+.lockNote>.material-symbols-rounded { font-size:15px; }
+.titleStatic { cursor:default; margin:0; }
+.titleStatic:hover { text-decoration:none; }
+button.use { border:0; font-family:inherit; cursor:pointer; }
+button.use:disabled { opacity:.6; cursor:wait; }
+.buyError { margin:10px 0 0; font-size:11px; color:#ff8a8f; text-align:right; }
+/* bought by the viewer */
+.ownedTag { display:inline-flex; align-items:center; gap:4px; padding:0 10px; font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; background:#1f7a4d; color:#fff; }
+.ownedTag>.material-symbols-rounded { font-size:14px; }
+.owned { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:600; color:#4ade80; }
+.owned>.material-symbols-rounded { font-size:16px; }

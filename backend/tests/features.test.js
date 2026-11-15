@@ -21,13 +21,17 @@ const fail = err => { throw err; };
 test('quote normalizes promo codes and computes percent and fixed VND discounts on server', () => {
   process.env.PROMO_CODES_JSON = JSON.stringify([
     { code: 'SAVE20', type: 'percent', value: 20 },
-    { code: 'FIXED', type: 'fixed', value: 15000, plans: ['studio'] },
+    { code: 'FIXED', type: 'fixed', value: 15000, plans: ['pro'] },
+    { code: 'OTHERPLAN', type: 'fixed', value: 15000, plans: ['studio'] },
   ]);
   assert.deepEqual(quote({ planId: 'pro', months: 2, promoCode: ' save20 ' }), {
     planId: 'pro', months: 2, subtotal: 198000, discount: 39600, amount: 158400, promoCode: 'SAVE20',
   });
-  assert.equal(quote({ planId: 'studio', promoCode: 'FIXED' }).amount, 234000);
-  assert.throws(() => quote({ planId: 'pro', promoCode: 'FIXED' }), /không/);
+  assert.equal(quote({ planId: 'pro', promoCode: 'FIXED' }).amount, 84000);
+  // A code limited to another plan does not apply to Pro.
+  assert.throws(() => quote({ planId: 'pro', promoCode: 'OTHERPLAN' }), /không/);
+  // The Studio plan was retired: it can no longer be bought (old accounts are served as Pro).
+  assert.throws(() => quote({ planId: 'studio' }), { statusCode: 400 });
 });
 test('rejects expired, disabled, unknown, excessive promos and malformed checkout inputs', () => {
   process.env.PROMO_CODES_JSON = JSON.stringify([

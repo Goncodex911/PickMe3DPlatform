@@ -198,8 +198,15 @@ export async function syncPurchasedTemplatesWithServer(): Promise<UITemplate[]> 
     if (!res.ok) return localTemplates;
     const json = await res.json();
     const serverTemplateIds: string[] = Array.isArray(json.templateIds) ? json.templateIds : [];
+    // Signed in: the server list is authoritative (UI products are paid, a local-only claim is not ownership).
+    const owned = new Set(serverTemplateIds);
+    const ownedLocal = localTemplates.filter((t) => owned.has(t.id));
 
-    if (serverTemplateIds.length === 0) return localTemplates;
+    if (serverTemplateIds.length === 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+      window.dispatchEvent(new CustomEvent(EVENT_KEY, { detail: { templates: [] } }));
+      return [];
+    }
 
     // Load full catalog to reconstruct missing template objects
     const catalog = await getFullCatalog();
@@ -209,7 +216,7 @@ export async function syncPurchasedTemplatesWithServer(): Promise<UITemplate[]> 
     }
 
     const mergedMap = new Map<string, UITemplate>();
-    for (const t of localTemplates) {
+    for (const t of ownedLocal) {
       mergedMap.set(t.id, t);
     }
 
