@@ -231,11 +231,6 @@ export function orderItemLabel(order: Pick<OrderStatus, "orderType" | "planId" |
   return order.months ? `${plan} · ${order.months} tháng` : plan;
 }
 
-/** Local test checkout only: the server refuses it unless mock mode is on and you own the order. */
-export async function confirmMockPayment(orderCode: string) {
-  const res = await apiFetch(`${API_BASE}/payments/mock/confirm/${encodeURIComponent(orderCode)}`, { method: "POST" });
-  return readJson(res);
-}
 
 export async function cancelOrder(orderCode: string | number, reason = ""): Promise<{ message: string; data: OrderStatus }> {
   const res = await apiFetch(`${API_BASE}/payments/orders/${encodeURIComponent(String(orderCode))}/cancel`, {
