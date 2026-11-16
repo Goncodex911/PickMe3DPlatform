@@ -380,7 +380,11 @@ export interface AnalyticsData {
   };
   monetization: {
     status: string;
-    message: string;
+    provider?: string;
+    totalRevenue?: number;
+    paidOrdersCount?: number;
+    recentRevenueTrends?: Array<{ _id: string; revenue: number; count: number }>;
+    message?: string;
   };
 }
 
